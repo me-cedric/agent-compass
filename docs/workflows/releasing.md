@@ -17,6 +17,7 @@ npm run check
 
 ```bash
 git tag -a v0.2.0 -m "v0.2.0"
+npm run lint:release
 ```
 
 5. Push the commit and tag:

@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { runNode } from './helpers.mjs'
+
+const root = new URL('..', import.meta.url)
+const scripts = [
+  'bootstrap.mjs',
+  'install.mjs',
+  'pull-knowledge.mjs',
+  'check-docs.mjs',
+  'check-indexes.mjs',
+  'check-naming.mjs',
+  'check-release.mjs',
+]
+
+test('scripts expose --help', async () => {
+  for (const script of scripts) {
+    const result = await runNode([new URL(`../scripts/${script}`, import.meta.url).pathname, '--help'], { cwd: root.pathname })
+    assert.equal(result.code, 0, `${script}: ${result.stderr}`)
+    assert.match(result.stdout, /Usage:/, script)
+  }
+})

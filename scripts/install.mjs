@@ -13,6 +13,21 @@ import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
+const help = `Usage: node scripts/install.mjs [--dry] [--doctor] [host-dir]
+
+Wire agent-compass pointers, hooks, and config templates into a host project.
+
+Options:
+  --dry       Preview files that would be created.
+  --doctor    Verify host wiring.
+  --help      Show this help.
+`
+
+if (args.includes('--help')) {
+  console.log(help)
+  process.exit(0)
+}
+
 const dry = args.includes('--dry')
 const doctor = args.includes('--doctor')
 const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
@@ -68,6 +83,15 @@ const runDoctor = () => {
     process.exit(1)
   }
   console.log('\n✓ doctor passed')
+  const specAdvisories = [
+    ['specs/README.md exists', existsSync(join(HOST, 'specs', 'README.md'))],
+    ['specs/constitution.md exists', existsSync(join(HOST, 'specs', 'constitution.md'))],
+    ['.projectmem/README.md exists', existsSync(join(HOST, '.projectmem', 'README.md'))],
+    ['.projectmem/projectmem-policy.md exists', existsSync(join(HOST, '.projectmem', 'projectmem-policy.md'))],
+  ].filter(([, ok]) => !ok)
+  if (specAdvisories.length) {
+    console.log(`\nAdvisory: ${specAdvisories.map(([label]) => label).join(', ')}.`)
+  }
 }
 
 if (doctor) {
@@ -162,8 +186,23 @@ const configs = [
   ['templates/monorepo/tsconfig.base.json', 'tsconfig.base.json'],
   ['templates/security/.osv-scanner.toml', '.osv-scanner.toml'],
   ['templates/monorepo/env.example.tpl', '.env.example'],
+  ['templates/specs/specs-readme.md', 'specs/README.md'],
+  ['templates/specs/constitution-template.md', 'specs/constitution.md'],
+  ['templates/memory/projectmem-readme.md', '.projectmem/README.md'],
+  ['templates/memory/projectmem-policy.md', '.projectmem/projectmem-policy.md'],
 ]
 for (const [s, d] of configs) place(s, d)
+
+const specAdvisories = [
+  ['specs/README.md exists', existsSync(join(HOST, 'specs', 'README.md'))],
+  ['specs/constitution.md exists', existsSync(join(HOST, 'specs', 'constitution.md'))],
+]
+if (!dry) {
+  const missingSpecs = specAdvisories.filter(([, ok]) => !ok)
+  if (missingSpecs.length) {
+    skipped.push(`spec advisory (${missingSpecs.map(([label]) => label).join(', ')})`)
+  }
+}
 
 // --- report ---
 console.log(`\nagent-compass install ${dry ? '(dry run) ' : ''}→ ${HOST}`)

@@ -10,6 +10,8 @@ cases, security, naming, dead code, and doc sync. The `caveman-review` /
 
 ## 2. Doc + spec sync check
 
+- Spec current? `specs/<id-slug>/spec.md`, `plan.md`, `tasks.md`, and
+  `checklist.md` match the code?
 - Module README current? Project README setup still accurate?
 - `.env.example` covers new vars?
 - API specs (OpenAPI/Scalar + Bruno + Gherkin) match the code?

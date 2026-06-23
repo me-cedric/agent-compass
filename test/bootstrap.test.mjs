@@ -29,6 +29,10 @@ test('next-web maps to its own stack preset', () => {
 
   assert.match(prompt, /stacks\/next-web\.md/)
   assert.doesNotMatch(prompt, /Create app \*\*next-web\*\* from `@AC\/stacks\/react-admin\.md`/)
+  assert.match(prompt, /specs\/000-project\/spec\.md/)
+  assert.match(prompt, /templates\/specs\/spec-template\.md/)
+  assert.match(prompt, /docs\/workflows\/project-memory\.md/)
+  assert.match(prompt, /pjm init/)
 })
 
 test('bootstrap prompt covers common app matrices', () => {

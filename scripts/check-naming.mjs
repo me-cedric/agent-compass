@@ -11,6 +11,21 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, extname, basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+const help = `Usage: node scripts/check-naming.mjs [--root <dir>]
+
+Fail if project/domain names leak into generic agent-compass files.
+Also validates SKILL.md frontmatter.
+
+Options:
+  --root <dir>  Check another root directory.
+  --help        Show this help.
+`
+
+if (process.argv.includes('--help')) {
+  console.log(help)
+  process.exit(0)
+}
+
 const rootArg = process.argv.indexOf('--root')
 const ROOT = rootArg === -1 ? dirname(dirname(fileURLToPath(import.meta.url))) : resolve(process.argv[rootArg + 1] || '')
 const SELF = basename(fileURLToPath(import.meta.url))

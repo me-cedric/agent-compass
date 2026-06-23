@@ -27,7 +27,9 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `security/`       | `.osv-scanner.toml`                                                              | [security-scanning](../docs/tooling/security-scanning.md) |
 | `scripts/`        | `checkmarx-package.sh`, `sonar-setup.sh`                                         | [security-scanning](../docs/tooling/security-scanning.md), [sonarqube](../docs/tooling/sonarqube.md) |
 | `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`                            | CI starting points (GitHub Actions)                  |
-| `agent/.github/`  | `PULL_REQUEST_TEMPLATE.md`, `instructions/*.instructions.md`                     | per-path agent rules + PR template                   |
+| `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`     | per-path agent rules + PR template                   |
+| `specs/`          | `constitution-template.md`, `spec-template.md`, `plan-template.md`, `tasks-template.md`, `checklist-template.md`, `specs-readme.md` | [spec-driven-development](../docs/workflows/spec-driven-development.md) |
+| `memory/`         | `projectmem-readme.md`, `projectmem-policy.md`                                  | [projectmem](../docs/tooling/projectmem.md), [project-memory](../docs/workflows/project-memory.md) |
 
 ## Notes
 

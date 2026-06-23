@@ -29,11 +29,11 @@ agent-compass/
 │   │                        documentation, agent-behavior, performance
 │   ├── architecture/      ← generic principles: monorepo, resilience, observability,
 │   │                        feature-flags, api-design, shared-types
-│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, sonarqube, docker,
+│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, projectmem, sonarqube, docker,
 │   │                        husky, env-management, api-contract-sync,
 │   │                        security-scanning, version-pinning
-│   ├── workflows/         ← playbooks: new-project, new-module, review-and-ship,
-│   │                        knowledge-capture
+│   ├── workflows/         ← playbooks: spec-driven-development, new-project,
+│   │                        new-module, review-and-ship, knowledge-capture
 │   └── agent-setup.md     ← mapping a global agent config into a project
 ├── skills/                ← portable agent skills (caveman, ponytail, gen-docs,
 │                            verify-*, NestJS/Drizzle/BullMQ/React/Expo patterns)
@@ -46,6 +46,10 @@ agent-compass/
 ```
 
 Start with **[AGENTS.md](AGENTS.md)**. Everything else is depth behind it.
+Install optional integration prerequisites from
+[`docs/tooling/prerequisites.md`](docs/tooling/prerequisites.md): projectmem
+needs Python, and optional upstream Spec Kit CLI needs Python plus `uv` or
+`pipx`.
 
 ---
 
@@ -144,6 +148,9 @@ that you're chatting from inside the repo).
 > into `knowledge/` and `docs/` with a short PR.
 
 More live in [`docs/workflows/`](docs/workflows/), including
+[`spec-driven-development.md`](docs/workflows/spec-driven-development.md) for
+idea/spec/plan/task flow,
+[`project-memory.md`](docs/workflows/project-memory.md) for durable agent memory,
 [`releasing.md`](docs/workflows/releasing.md) for tagged releases and
 [`upgrading.md`](docs/workflows/upgrading.md) for safe submodule bumps.
 
@@ -161,6 +168,10 @@ Full steps: [`docs/workflows/releasing.md`](docs/workflows/releasing.md).
 ## What it enforces (the short list)
 
 - **The workflow:** gather → clarify → plan → implement → review → validate. No code before a plan.
+- **Spec-driven flow:** for project creation, new features, ambiguous changes,
+  or high-risk work, create/update `specs/<id-slug>/` before implementation.
+- **Project memory:** when configured, use projectmem summaries, pre-action
+  warnings, and factual work logs to avoid repeated mistakes.
 - **TDD:** test first; ≥ 80% coverage on changed code. → [testing-tdd](docs/guidelines/testing-tdd.md)
 - **Quality gate:** lint + typecheck + relevant tests must pass; honest [Completion Gate](AGENTS.md#4-completion-gate) reporting.
 - **Per-module docs:** every module has an up-to-date `README.md`. → [documentation](docs/guidelines/documentation.md)

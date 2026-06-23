@@ -28,6 +28,45 @@ Node is pinned by `.nvmrc`; pnpm by `packageManager` in `package.json`
 > installed it on your other machines. Once on `PATH`, agent-compass and your
 > agents pick it up automatically.
 
+## Agent integrations (optional)
+
+Install these only when the project uses the matching workflow. Agent Compass
+ships guidance and templates; it does not install global agent tooling.
+
+| Integration | Purpose | Required locally | Verify |
+| ----------- | ------- | ---------------- | ------ |
+| projectmem | Durable local project memory and pre-action warnings | Python `>=3.10`, `pip`, projectmem package | `python --version`, `pjm --help` |
+| GitHub Spec Kit CLI | Optional upstream spec artifact generator | Python `>=3.11`, `uv` recommended or `pipx`, `git` | `uv --version`, `specify --help` |
+| MCP clients | Let agents read projectmem through MCP | Agent/client that supports MCP, absolute Python path for server config | client shows `projectmem` tools |
+
+projectmem quick setup:
+
+```bash
+python3 --version      # must be >= 3.10
+python3 -m pip install projectmem
+pjm init
+pjm brief
+```
+
+Spec Kit CLI quick setup (optional; Agent Compass has native templates too):
+
+```bash
+uv --version           # install uv first if missing
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX.Y.Z
+specify --help
+```
+
+Use an absolute Python path in MCP configs because GUI agents often do not
+inherit your shell `PATH`:
+
+```bash
+which python3
+python3 -m projectmem.mcp_server --root /absolute/path/to/project
+```
+
+See [projectmem.md](projectmem.md) and
+[spec-driven-development.md](../workflows/spec-driven-development.md).
+
 ## Quality & security (per project need)
 
 | Tool             | Purpose                       | Install                                                          |
@@ -51,7 +90,7 @@ See [api-contract-sync.md](api-contract-sync.md).
 ## One-shot check
 
 ```bash
-for t in node pnpm git gh rtk docker; do printf '%-8s ' "$t"; command -v "$t" >/dev/null && "$t" --version 2>/dev/null | head -1 || echo MISSING; done
+for t in node pnpm git gh rtk docker python3 uv pjm specify; do printf '%-10s ' "$t"; command -v "$t" >/dev/null && "$t" --version 2>/dev/null | head -1 || echo MISSING; done
 ```
 
 Missing tools degrade gracefully — e.g. without `rtk`, commands just run

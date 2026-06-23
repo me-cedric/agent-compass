@@ -22,16 +22,21 @@ Do not jump straight to code. For any non-trivial task, run this loop:
 2. **Clarify.** If the request is ambiguous or under-specified, ask focused
    questions *before* planning. One decision per question. Don't ask what the
    code or a sensible default already answers.
-3. **Plan.** Produce a short plan: goal, assumptions, files to change, the
+3. **Spec when needed.** For new projects, new features, ambiguous behavior
+   changes, or high-risk work, use the spec workflow before implementation:
+   write/update `specs/<id-slug>/spec.md`, clarify unresolved questions, then
+   plan/tasks. Small mechanical edits may use an inline spec brief instead.
+   See [spec-driven-development](docs/workflows/spec-driven-development.md).
+4. **Plan.** Produce a short plan: goal, assumptions, files to change, the
    validation commands you will run. Keep it to verifiable steps.
-4. **Implement** the smallest change that works, one step at a time. Reuse
+5. **Implement** the smallest change that works, one step at a time. Reuse
    before adding. No speculative abstraction, no new dependency when an
    installed one suffices. See [coding-style](docs/guidelines/coding-style.md).
-5. **Clarify again** if implementation surfaces a real fork — don't guess on
+6. **Clarify again** if implementation surfaces a real fork — don't guess on
    irreversible or outward-facing choices.
-6. **Review** your own diff as a senior engineer would: correctness, edge cases,
+7. **Review** your own diff as a senior engineer would: correctness, edge cases,
    security, naming, dead code.
-7. **Validate.** Run lint, typecheck, and the relevant tests. Report results
+8. **Validate.** Run lint, typecheck, and the relevant tests. Report results
    honestly (see Completion Gate).
 
 Write tests first where practical — see [testing-tdd](docs/guidelines/testing-tdd.md).
@@ -50,6 +55,15 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
 - **Never invent commands.** Use only scripts that exist in the project's
   `package.json` (or documented equivalents). If none matches, report `not run`
   with the reason.
+- **Spec workflow.** For broad or ambiguous work, keep `specs/`, plans, tasks,
+  code, tests, and docs aligned. Do not add implementation details to the spec
+  phase; put technical decisions in the plan.
+- **Project memory.** When projectmem or another durable project memory tool is
+  configured, read relevant summaries and pre-action warnings before work; log
+  failed attempts and important findings during work; log decisions, fixes,
+  changed files, validation, and remaining risks after work. Never log secrets,
+  credentials, tokens, personal data, or temporary brainstorming. See
+  [project-memory](docs/workflows/project-memory.md).
 
 ## 3. Validation (mandatory)
 

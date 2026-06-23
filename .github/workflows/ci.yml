@@ -21,3 +21,5 @@ jobs:
         run: node scripts/check-naming.mjs
       - name: Enforce index freshness
         run: node scripts/check-indexes.mjs
+      - name: Check docs and template placeholders
+        run: node scripts/check-docs.mjs

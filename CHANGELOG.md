@@ -5,6 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Docs/template guard that checks local Markdown links and catches unknown
+  placeholder tokens under `templates/`.
+- Release guard that checks `package.json`, `CHANGELOG.md`, and the local
+  `v<version>` tag agree before publishing.
+- Lightweight native spec workflow: `specs/` templates, workflow doc,
+  `spec-workflow` skill, bootstrap prompt support, and install-created
+  `specs/README.md` / `specs/constitution.md`.
+- Project memory support: projectmem tooling/workflow docs, install-created
+  `.projectmem/README.md` / `.projectmem/projectmem-policy.md`, and
+  `project-memory` skill.
+
 ## [0.2.0] - 2026-06-23
 
 ### Added

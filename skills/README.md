@@ -21,6 +21,8 @@ Copilot as referenced context.
 | Skill             | What it does                                              |
 | ----------------- | -------------------------------------------------------- |
 | `gen-docs`        | Scaffolds `README.md` + `DESIGN.md` for a module.        |
+| `project-memory`  | Reads and writes durable projectmem context safely.      |
+| `spec-workflow`   | Guides idea → spec → clarify → plan → tasks → docs sync. |
 | `verify-module`   | Checks module structure/doc completeness.                |
 | `verify-quality`  | Complexity, code smells, naming, function length.        |
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |

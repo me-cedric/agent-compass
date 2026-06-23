@@ -6,6 +6,8 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | ---------------------------------------------- | ----------------------------------------------- |
 | [new-project.md](new-project.md)               | Starting a project from scratch.                |
 | [new-module.md](new-module.md)                 | Adding a module/feature to an existing project. |
+| [spec-driven-development.md](spec-driven-development.md) | Turning ideas into specs, plans, tasks, and synced docs. |
+| [project-memory.md](project-memory.md)         | Reading and writing durable agent memory during work. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
 | [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |
 | [releasing.md](releasing.md)                   | Tagging a reviewed agent-compass release.       |

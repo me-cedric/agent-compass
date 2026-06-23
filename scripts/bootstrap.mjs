@@ -16,6 +16,23 @@ import { pathToFileURL } from 'node:url'
 const interactive = Boolean(input.isTTY)
 const rl = interactive ? createInterface({ input, output }) : null
 
+const help = `Usage: node scripts/bootstrap.mjs
+
+Interactive project bootstrap prompt generator.
+
+Outputs:
+  BOOTSTRAP_PROMPT.md
+  agent-compass.answers.json
+
+Options:
+  --help    Show this help.
+`
+
+if (process.argv.includes('--help')) {
+  console.log(help)
+  process.exit(0)
+}
+
 const ask = async (q, def) => {
   if (!interactive) return def
   const hint = def !== undefined && def !== '' ? ` [${def}]` : ''
@@ -100,6 +117,8 @@ export const buildPrompt = (answers) => {
 ## Read first (from @AC)
 
 - \`AGENTS.md\` — the agent contract (workflow, validation, completion gate, safety).
+- \`docs/workflows/project-memory.md\` — use projectmem summaries and logs when
+  project memory is configured.
 - Stack presets:
 ${list(stackDocs) || '  - (none)'}
 ${archDocs.length ? `- Architecture:\n${list(archDocs)}` : ''}
@@ -134,20 +153,33 @@ inventing config.
 
 1. **Plan before code.** Produce a step-by-step plan (goal, files, validation
    commands) and **STOP for my review** before implementing.
-2. **TDD.** Write tests first; ≥ 80% coverage on new code.
-3. **Smallest change; reuse first.** Stdlib → installed dep → a few lines, before
+2. **Spec before plan.** Create \`specs/000-project/spec.md\` from
+   \`@AC/templates/specs/spec-template.md\`, clarify every
+   \`[NEEDS CLARIFICATION]\`, then create \`plan.md\`, \`tasks.md\`, and
+   \`checklist.md\` from \`@AC/templates/specs/\`.
+3. **TDD.** Write tests first; ≥ 80% coverage on new code.
+4. **Smallest change; reuse first.** Stdlib → installed dep → a few lines, before
    adding anything new. No speculative abstraction.
-4. **Per-module README.** Every module/package gets a README per
+5. **Per-module README.** Every module/package gets a README per
    \`@AC/docs/guidelines/documentation.md\`.
-5. **Pin versions** (\`.nvmrc\`, \`packageManager\`, \`engines\`).
-6. **Conventional commits**, husky \`pre-commit\`/\`pre-push\`/\`commit-msg\`.
-7. **No secrets in git**; ship \`.env.example\` only, keep it current.
-8. **Do not commit, push, or deploy** unless I explicitly ask.
-9. **Completion gate:** report files changed, exact commands run, pass/fail per
+6. **Pin versions** (\`.nvmrc\`, \`packageManager\`, \`engines\`).
+7. **Conventional commits**, husky \`pre-commit\`/\`pre-push\`/\`commit-msg\`.
+8. **No secrets in git**; ship \`.env.example\` only, keep it current.
+9. **Do not commit, push, or deploy** unless I explicitly ask.
+10. **Completion gate:** report files changed, exact commands run, pass/fail per
    command, pre-existing vs introduced failures, remaining risks.
+11. **Project memory:** if projectmem is configured, read memory before work,
+    check pre-action warnings before fragile edits, log failed attempts and
+    findings during work, and log decisions/fixes/validation/risks after work.
 
 ## Build plan (after I approve the plan)
 
+0. **Create spec artifacts** under \`specs/000-project/\`: \`spec.md\`,
+   \`plan.md\`, \`tasks.md\`, and \`checklist.md\`. Keep the spec focused on
+   what/why; put stack decisions in the plan.
+0.1. **Initialize memory policy** from \`@AC/templates/memory/\`. If the team
+     chooses projectmem, run \`pip install projectmem\`, \`pjm init\`, and
+     configure MCP using \`@AC/docs/tooling/projectmem.md\`.
 1. **Scaffold the ${monorepo ? 'monorepo' : 'project'}** from \`@AC/templates/monorepo/\`
    (${monorepo ? 'turbo.json, pnpm-workspace.yaml, ' : ''}tsconfig.base.json, .prettierrc,
    commitlint.config.js, husky hooks, .nvmrc, .npmrc${security ? ', .osv-scanner.toml' : ''}).

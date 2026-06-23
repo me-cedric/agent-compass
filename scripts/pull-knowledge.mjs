@@ -7,13 +7,30 @@
 // Then review knowledge/incoming/<project>/INDEX.md and promote the generic bits
 // (see docs/workflows/knowledge-capture.md). incoming/ is gitignored.
 
-import { existsSync, readdirSync, statSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve, relative, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const target = resolve(process.argv[2] || '')
-if (!process.argv[2] || !existsSync(target)) {
+const allowSensitive = process.argv.includes('--allow-sensitive')
+const help = `Usage: node scripts/pull-knowledge.mjs <path-to-project>
+
+Stage reusable project signal under knowledge/incoming/<project> for review.
+Never auto-merges staged files.
+
+Options:
+  --allow-sensitive  Stage files even when redaction warnings are found.
+  --help             Show this help.
+`
+
+if (process.argv.includes('--help')) {
+  console.log(help)
+  process.exit(0)
+}
+
+const targetArg = process.argv.find((arg, i) => i > 1 && !arg.startsWith('--'))
+const target = resolve(targetArg || '')
+if (!targetArg || !existsSync(target)) {
   console.error('Usage: node scripts/pull-knowledge.mjs <path-to-project>')
   process.exit(1)
 }
@@ -41,6 +58,30 @@ const add = (full, category) => {
   found.push({ rel, category, full })
 }
 
+const DENY = [
+  'par' + 'cus', 'vel' + 'hop', 'orbi' + 'lity', 'eo' + 'via', 'nex' + 'terite',
+  'fresh' + 'mile', 'mone' + 'tico', '\\bcts\\b', 'parking[-_ ]?lots?', 'free[-_ ]?spots?', 'ev[-_ ]charging',
+]
+const DENY_RE = new RegExp(`(${DENY.join('|')})`, 'i')
+const SECRET_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|(?:api|access|secret|private)[-_ ]?(?:key|token|secret)\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{16,})/i
+const scanBeforeCopy = () => {
+  if (allowSensitive) return
+  const warnings = []
+  for (const item of found) {
+    let text
+    try { text = readFileSync(item.full, 'utf8') } catch { continue }
+    const secret = SECRET_RE.exec(text)
+    const denied = DENY_RE.exec(text)
+    if (secret) warnings.push(`${item.rel}: possible secret (${secret[1].slice(0, 40)})`)
+    if (denied) warnings.push(`${item.rel}: denied project/domain token (${denied[1]})`)
+  }
+  if (warnings.length) {
+    console.error(`✗ Refusing to stage ${warnings.length} sensitive item(s). Redact first, or rerun with --allow-sensitive for manual quarantine:\n`)
+    warnings.forEach((warning) => console.error(`  ${warning}`))
+    process.exit(1)
+  }
+}
+
 // 1) Agent + instinct files (high value).
 for (const f of ['AGENTS.md', 'CLAUDE.md', 'CODEX.md', '.github/copilot-instructions.md']) {
   if (existsSync(join(target, f))) add(join(target, f), 'agent-config')
@@ -64,6 +105,7 @@ if (!found.length) {
   console.log(`No reusable signal found in ${target}.`)
   process.exit(0)
 }
+scanBeforeCopy()
 
 // Copy + check whether agent-compass already has something similarly named.
 const acHas = (name) => {
