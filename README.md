@@ -241,6 +241,7 @@ All scripts are dependency-free Node scripts.
 | `npm run release` | Prepare version/changelog release metadata. |
 | `npm run upgrade-host` | Update host submodule and run deep doctor. |
 | `npm run check` | Run tests + naming/index/docs guards. |
+| `npm run lint:actions` | Enforce supported GitHub Action majors. |
 
 Examples:
 

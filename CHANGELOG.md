@@ -7,9 +7,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- GitHub Actions version guard (`check-actions.mjs`) and CI/tooling guidance for
+  required action majors.
 - Helper scripts for PR creation/review packets, host readiness reports, agent
   runbooks, release prep, and host submodule upgrades.
 - Design-system extraction template for Figma/design-token workflows.
+
+### Changed
+
+- CI and CI templates now use current action majors and the repo now includes
+  `.nvmrc` for `actions/setup-node`.
 
 ## [0.3.0] - 2026-06-23
 

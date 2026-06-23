@@ -9,12 +9,14 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
       - name: Syntax-check scripts
         run: for f in scripts/*.mjs; do node --check "$f"; done
+      - name: Enforce GitHub Actions versions
+        run: node scripts/check-actions.mjs
       - name: Run tests
         run: npm test
       - name: Enforce generic naming

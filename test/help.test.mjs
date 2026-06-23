@@ -6,6 +6,7 @@ import { runNode } from './helpers.mjs'
 const root = new URL('..', import.meta.url)
 const scripts = [
   'bootstrap.mjs',
+  'check-actions.mjs',
   'context.mjs',
   'doctor-report.mjs',
   'install.mjs',

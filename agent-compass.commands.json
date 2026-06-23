@@ -6,6 +6,7 @@
   "context": "npm run context",
   "doctorReport": "npm run doctor-report",
   "lint": {
+    "actions": "npm run lint:actions",
     "naming": "npm run lint:naming",
     "indexes": "npm run lint:indexes",
     "docs": "npm run lint:docs",

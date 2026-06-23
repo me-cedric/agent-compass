@@ -6,6 +6,7 @@
   "context": null,
   "doctorReport": null,
   "lint": null,
+  "lintActions": null,
   "typecheck": null,
   "test": null,
   "build": null,

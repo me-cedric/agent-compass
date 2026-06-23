@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # ── JSON scan — used for the severity gate below ───────────────────────
       - name: Run OSV Scanner (JSON)
@@ -144,7 +144,7 @@ jobs:
       # ── On failure: open or update a tracking issue ────────────────────────
       - name: Create or update tracking issue
         if: steps.gate.outputs.count != '0'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const TITLE = '\u{1F6A8} Critical CVE: dependency scan requires action';
