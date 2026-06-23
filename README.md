@@ -29,11 +29,12 @@ agent-compass/
 │   │                        documentation, agent-behavior, performance
 │   ├── architecture/      ← generic principles: monorepo, resilience, observability,
 │   │                        feature-flags, api-design, shared-types
-│   ├── tooling/           ← rtk, pnpm, turbo, sonarqube, docker, husky,
-│   │                        env-management, api-contract-sync, security-scanning,
-│   │                        version-pinning
-│   └── workflows/         ← playbooks: new-project, new-module, review-and-ship,
-│                            knowledge-capture
+│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, sonarqube, docker,
+│   │                        husky, env-management, api-contract-sync,
+│   │                        security-scanning, version-pinning
+│   ├── workflows/         ← playbooks: new-project, new-module, review-and-ship,
+│   │                        knowledge-capture
+│   └── agent-setup.md     ← mapping a global agent config into a project
 ├── skills/                ← portable agent skills (caveman, ponytail, gen-docs,
 │                            verify-*, NestJS/Drizzle/BullMQ/React/Expo patterns)
 ├── stacks/                ← opinionated presets the bootstrap offers

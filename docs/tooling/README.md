@@ -5,6 +5,7 @@ Concrete setup guides. Each points at runnable files in
 
 | Guide                                          | Tool / concern                                          |
 | ---------------------------------------------- | ------------------------------------------------------- |
+| [prerequisites.md](prerequisites.md)           | Install the toolchain (node, pnpm, rtk, docker, scanners…). |
 | [rtk.md](rtk.md)                               | Compact, token-cheap wrappers for noisy shell commands. |
 | [pnpm.md](pnpm.md)                             | Workspaces, filters, `.npmrc`, `packageManager` pin.    |
 | [turbo.md](turbo.md)                           | Task pipeline, caching, the `check` verb.               |
