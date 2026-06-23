@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# GIT_INDEX_FILE is set to a relative path during `git commit --amend`,
+# which breaks lint-staged when it changes directories internally.
+# Unsetting it is safe: git defaults to .git/index anyway.
+unset GIT_INDEX_FILE
+npx lint-staged

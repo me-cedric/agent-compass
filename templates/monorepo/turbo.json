@@ -1,0 +1,36 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "tasks": {
+    "dev": {
+      "persistent": true,
+      "cache": false
+    },
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "build-keycloak-theme": {
+      "outputs": [
+        "dist/**",
+        "dist_keycloak/**"
+      ]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "format": {
+      "outputs": []
+    },
+    "test": {},
+    "e2e": {},
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {}
+  }
+}

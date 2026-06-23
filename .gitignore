@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+# internal build/resume note
+.agent-compass-progress.md
+# staged knowledge pulls awaiting review (kept local until promoted)
+knowledge/incoming/
+# generated bootstrap output (users keep their own copy)
+BOOTSTRAP_PROMPT.md
+agent-compass.answers.json

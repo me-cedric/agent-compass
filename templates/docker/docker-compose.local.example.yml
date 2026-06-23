@@ -1,0 +1,137 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    container_name: <project>-postgres
+    environment:
+      POSTGRES_USER: <project>
+      POSTGRES_PASSWORD: <project>123
+      POSTGRES_DB: <project>_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db-roles.sql:/docker-entrypoint-initdb.d/01-init-roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U <project> -d <project>_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak-postgres:
+    image: postgres:16-alpine
+    restart: always
+    container_name: <project>-keycloak-postgres
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak123
+      POSTGRES_DB: keycloak_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    restart: always
+    container_name: <project>-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: password
+      KC_FEATURES: token-exchange,admin-fine-grained-authz:v1
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak_db
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak123
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      WEBHOOK_URL: http://host.docker.internal:3000/api/webhooks/keycloak?secret=${KEYCLOAK_WEBHOOK_SECRET:-<project>-secret-token-123}
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    ports:
+      - "9080:8080"
+    volumes:
+      - ./config/<project>-realm.json:/opt/keycloak/data/import/<project>-realm.json
+      - ./config/<project>-backoffice-realm.json:/opt/keycloak/data/import/<project>-backoffice-realm.json
+      - ./config/keycloak-theme-backoffice.jar:/opt/keycloak/providers/keycloak-theme-backoffice.jar
+      - ./config/keycloak-theme-mobile.jar:/opt/keycloak/providers/keycloak-theme-mobile.jar
+      - ./config/apple-identity-provider-1.16.0.jar:/opt/keycloak/providers/apple-identity-provider.jar
+      - ./config/custom-event-listener.jar:/opt/keycloak/providers/custom-event-listener.jar
+    depends_on:
+      keycloak-postgres:
+        condition: service_healthy
+    command: ["start-dev", "--import-realm"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /realms/<project> HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && timeout 2 cat <&3 | grep -q '<project>'",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  analytics-postgres:
+    image: postgres:16-alpine
+    restart: always
+    container_name: <project>-analytics-postgres
+    environment:
+      POSTGRES_USER: <project>
+      POSTGRES_PASSWORD: <project>123
+      POSTGRES_DB: <project>_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - analytics_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U <project> -d <project>_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    container_name: <project>-minio
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console UI
+    volumes:
+      - minio_data:/data
+      - ./scripts/minio-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  redis:
+    image: redis:8-alpine
+    restart: always
+    container_name: <project>-redis
+    command: ["--bind", "0.0.0.0", "--port", "6379", "--protected-mode", "no"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  keycloak_postgres_data:
+  analytics_postgres_data:
+  minio_data:
+  redis_data:

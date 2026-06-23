@@ -1,0 +1,69 @@
+# Dependencies - exclude from build context, will be installed in container
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage
+.nyc_output
+
+# Misc
+.turbo
+.cache
+
+# Development files
+.github
+*.md
+README*
+LICENSE*
+docs
+
+# Unused apps in backend/backoffice image builds
+apps/mobile-app
+apps/keycloak-theme
+apps/keycloak-theme-backoffice
+apps/k6
+
+# CI and analysis outputs
+sonar-issues-*.csv
+sonar-report-*.html
+test-report.xml
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+**/__tests__
+**/__mocks__

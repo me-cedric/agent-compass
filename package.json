@@ -1,0 +1,19 @@
+{
+  "name": "agent-compass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Central agentic standards, guidelines, skills and bootstrap tooling for AI coding agents (Claude, Codex, Copilot).",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "pull-knowledge": "node scripts/pull-knowledge.mjs",
+    "install-into": "node scripts/install.mjs"
+  },
+  "bin": {
+    "agent-compass": "scripts/bootstrap.mjs"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

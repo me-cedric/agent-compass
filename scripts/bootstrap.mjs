@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+// bootstrap.mjs — interactive Q&A that produces a precise project-bootstrap
+// prompt for an AI agent (Claude / Codex / Copilot), plus a replayable answers
+// file. Dependency-free (Node >= 20). Run: `node scripts/bootstrap.mjs`.
+//
+// Outputs (in cwd):
+//   BOOTSTRAP_PROMPT.md          the prompt to paste into your agent
+//   agent-compass.answers.json   your answers (re-runnable, used by install.mjs)
+
+import { createInterface } from 'node:readline/promises'
+import { stdin as input, stdout as output } from 'node:process'
+import { writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const interactive = Boolean(input.isTTY)
+const rl = interactive ? createInterface({ input, output }) : null
+
+const ask = async (q, def) => {
+  if (!interactive) return def
+  const hint = def !== undefined && def !== '' ? ` [${def}]` : ''
+  const a = (await rl.question(`${q}${hint}: `)).trim()
+  return a || def
+}
+const askBool = async (q, def = true) => /^y/i.test(await ask(`${q} (y/n)`, def ? 'y' : 'n'))
+const askChoice = async (q, choices, def) => {
+  if (!interactive) return def
+  console.log(`\n${q}`)
+  choices.forEach((c, i) => console.log(`  ${i + 1}) ${c}`))
+  const a = await ask('choose number or name', def)
+  const byNum = choices[Number(a) - 1]
+  return byNum || (choices.includes(a) ? a : def)
+}
+const askMulti = async (q, choices, def = []) => {
+  if (!interactive) return def
+  console.log(`\n${q} (comma-separated numbers or names; Enter for default)`)
+  choices.forEach((c, i) => console.log(`  ${i + 1}) ${c}`))
+  const a = await ask('select', def.join(','))
+  if (!a) return def
+  return a
+    .split(',')
+    .map((t) => t.trim())
+    .map((t) => choices[Number(t) - 1] || (choices.includes(t) ? t : null))
+    .filter(Boolean)
+}
+
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
+
+console.log(`\n agent-compass · project bootstrap`)
+if (!interactive) console.log(' (non-interactive stdin: using all defaults)\n')
+
+const name = slug(await ask('Project name', 'my-app')) || 'my-app'
+const scope = (await ask('npm scope for internal packages', `@${name}`)) || `@${name}`
+const monorepo = await askBool('Monorepo (pnpm + turbo)?', true)
+const apps = await askMulti('Which apps?', ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'], ['nestjs-api'])
+const pm = await askChoice('Package manager?', ['pnpm', 'npm', 'yarn'], 'pnpm')
+const hasApi = apps.includes('nestjs-api')
+const hasWeb = apps.includes('react-admin') || apps.includes('next-web')
+
+const db = hasApi ? await askChoice('Database / ORM?', ['drizzle+postgres', 'prisma+postgres', 'none'], 'drizzle+postgres') : 'none'
+const queues = hasApi ? await askBool('Queues/jobs (BullMQ)?', true) : false
+const auth = await askChoice('Auth provider?', ['keycloak', 'auth0', 'clerk', 'custom', 'none'], hasApi || hasWeb ? 'keycloak' : 'none')
+const resilience = hasApi ? await askBool('Resilience patterns (circuit breaker + retry)?', true) : false
+const observability = hasApi ? await askBool('Observability (OpenTelemetry + structured logs)?', true) : false
+const featureFlags = await askBool('Feature flags (env, dormant-by-default)?', true)
+const apiContract = hasApi ? await askBool('API contract tooling (Scalar/OpenAPI + Bruno + Gherkin)?', true) : false
+const e2e = await askBool('E2E tests (Playwright for web)?', hasWeb)
+const docker = await askBool('Docker (multi-stage images + local compose)?', true)
+const ci = await askChoice('CI provider?', ['github-actions', 'gitlab-ci', 'none'], 'github-actions')
+const sonar = await askBool('Local SonarQube (scan + reports)?', true)
+const security = await askBool('Security scanning (OSV + Checkmarx)?', true)
+const targetDir = (await ask('Target directory', `./${name}`)) || `./${name}`
+
+if (rl) rl.close()
+
+const answers = {
+  name, scope, monorepo, apps, pm, db, queues, auth, resilience,
+  observability, featureFlags, apiContract, e2e, docker, ci, sonar, security, targetDir,
+  generatedFrom: 'agent-compass/scripts/bootstrap.mjs',
+}
+
+// --- assemble the lists the prompt should tell the agent to read ---
+const stackDocs = apps
+  .map((a) => ({ 'nestjs-api': 'stacks/nestjs-api.md', 'react-admin': 'stacks/react-admin.md', 'expo-mobile': 'stacks/expo-mobile.md', 'next-web': 'stacks/react-admin.md' }[a]))
+  .filter(Boolean)
+if (monorepo) stackDocs.unshift('stacks/turbo-monorepo.md')
+
+const archDocs = [
+  resilience && 'docs/architecture/resilience.md',
+  observability && 'docs/architecture/observability.md',
+  featureFlags && 'docs/architecture/feature-flags.md',
+  hasApi && 'docs/architecture/api-design.md',
+  monorepo && 'docs/architecture/monorepo.md',
+].filter(Boolean)
+
+const toolingDocs = [
+  monorepo && 'docs/tooling/pnpm.md',
+  monorepo && 'docs/tooling/turbo.md',
+  'docs/tooling/version-pinning.md',
+  'docs/tooling/husky.md',
+  apiContract && 'docs/tooling/api-contract-sync.md',
+  docker && 'docs/tooling/docker.md',
+  sonar && 'docs/tooling/sonarqube.md',
+  security && 'docs/tooling/security-scanning.md',
+  'docs/tooling/env-management.md',
+].filter(Boolean)
+
+const list = (arr) => arr.map((x) => `  - \`${x}\``).join('\n')
+const yn = (b) => (b ? 'yes' : 'no')
+
+const prompt = `# Bootstrap prompt — ${name}
+
+> Generated by agent-compass. Paste this into Claude Code, Codex, or Copilot.
+> Assumes agent-compass is reachable at \`@AC\` (set it to this repo's path, e.g.
+> \`docs/agent-compass\` or \`.\` if you run the agent from inside agent-compass).
+
+## Read first (from @AC)
+
+- \`AGENTS.md\` — the agent contract (workflow, validation, completion gate, safety).
+- Stack presets:
+${list(stackDocs) || '  - (none)'}
+${archDocs.length ? `- Architecture:\n${list(archDocs)}` : ''}
+${toolingDocs.length ? `- Tooling:\n${list(toolingDocs)}` : ''}
+
+Use the templates in \`@AC/templates/\` and the skills in \`@AC/skills/\` rather than
+inventing config.
+
+## Project parameters
+
+| Setting        | Value |
+| -------------- | ----- |
+| Name           | \`${name}\` |
+| Internal scope | \`${scope}\` |
+| Target dir     | \`${targetDir}\` |
+| Monorepo       | ${yn(monorepo)} (${pm} + ${monorepo ? 'turbo' : 'single package'}) |
+| Apps           | ${apps.join(', ') || '(none yet)'} |
+| Database/ORM   | ${db} |
+| Queues (BullMQ)| ${yn(queues)} |
+| Auth           | ${auth} |
+| Resilience     | ${yn(resilience)} |
+| Observability  | ${yn(observability)} |
+| Feature flags  | ${yn(featureFlags)} |
+| API contract   | ${yn(apiContract)} (Scalar + Bruno + Gherkin) |
+| E2E            | ${yn(e2e)} |
+| Docker         | ${yn(docker)} |
+| CI             | ${ci} |
+| SonarQube      | ${yn(sonar)} |
+| Security scan  | ${yn(security)} |
+
+## Hard rules (enforce throughout)
+
+1. **Plan before code.** Produce a step-by-step plan (goal, files, validation
+   commands) and **STOP for my review** before implementing.
+2. **TDD.** Write tests first; ≥ 80% coverage on new code.
+3. **Smallest change; reuse first.** Stdlib → installed dep → a few lines, before
+   adding anything new. No speculative abstraction.
+4. **Per-module README.** Every module/package gets a README per
+   \`@AC/docs/guidelines/documentation.md\`.
+5. **Pin versions** (\`.nvmrc\`, \`packageManager\`, \`engines\`).
+6. **Conventional commits**, husky \`pre-commit\`/\`pre-push\`/\`commit-msg\`.
+7. **No secrets in git**; ship \`.env.example\` only, keep it current.
+8. **Do not commit, push, or deploy** unless I explicitly ask.
+9. **Completion gate:** report files changed, exact commands run, pass/fail per
+   command, pre-existing vs introduced failures, remaining risks.
+
+## Build plan (after I approve the plan)
+
+1. **Scaffold the ${monorepo ? 'monorepo' : 'project'}** from \`@AC/templates/monorepo/\`
+   (${monorepo ? 'turbo.json, pnpm-workspace.yaml, ' : ''}tsconfig.base.json, .prettierrc,
+   commitlint.config.js, husky hooks, .nvmrc, .npmrc${security ? ', .osv-scanner.toml' : ''}).
+   Use scope \`${scope}\`.
+${apps.map((a, i) => `2.${i + 1} Create app **${a}** from \`@AC/${{ 'nestjs-api': 'stacks/nestjs-api.md', 'react-admin': 'stacks/react-admin.md', 'expo-mobile': 'stacks/expo-mobile.md', 'next-web': 'stacks/react-admin.md' }[a]}\`${a === 'nestjs-api' ? ` (DB: ${db}${queues ? ', BullMQ' : ''}${auth !== 'none' ? `, ${auth} auth` : ''})` : ''}.`).join('\n')}
+3. **Shared types** package \`${scope}/shared-types\` for cross-app contracts.
+${resilience ? '4. Apply **resilience** policies (created once in onModuleInit; shared env-configurable defaults).\n' : ''}${observability ? '5. Wire **OpenTelemetry** tracing + structured logger; span helpers for jobs/payments.\n' : ''}${featureFlags ? '6. Add **feature-flag** scaffolding (env, dormant-by-default) for risky capabilities.\n' : ''}${apiContract ? '7. Set up **API contract** layers: Scalar/OpenAPI decorators, Bruno collection, Gherkin features — kept in sync.\n' : ''}8. **Testing:** ${hasApi ? 'Jest (jest-mock-extended) for API' : ''}${hasApi && hasWeb ? '; ' : ''}${hasWeb ? 'Vitest for web' : ''}${e2e ? '; Playwright e2e for critical flows' : ''}; coverage for Sonar.
+${docker ? '9. **Docker:** multi-stage images + local/test compose from `@AC/templates/docker/`.\n' : ''}${ci !== 'none' ? `10. **CI (${ci}):** lint + typecheck + test + build; adapt \`@AC/templates/ci/\`.\n` : ''}${sonar ? '11. **SonarQube:** sonar-project.properties per app + scan/report scripts.\n' : ''}${security ? '12. **Security:** OSV config + baseline; Checkmarx packaging script.\n' : ''}13. **Root README:** prerequisites, install, env setup, and how to run locally
+    and partially/fully connected to dev/preprod.
+
+## Validate before reporting
+
+\`\`\`bash
+${pm} install
+${pm === 'pnpm' && monorepo ? `${pm} check` : `${pm} run lint && ${pm} run typecheck && ${pm} test`}
+\`\`\`
+
+Report against the completion gate. Then I will wire agent-compass in as a
+submodule and run \`@AC/scripts/install.mjs\`.
+`
+
+const promptPath = resolve(process.cwd(), 'BOOTSTRAP_PROMPT.md')
+const answersPath = resolve(process.cwd(), 'agent-compass.answers.json')
+writeFileSync(promptPath, prompt)
+writeFileSync(answersPath, JSON.stringify(answers, null, 2) + '\n')
+
+console.log(`\n✓ Wrote ${promptPath}`)
+console.log(`✓ Wrote ${answersPath}`)
+console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)

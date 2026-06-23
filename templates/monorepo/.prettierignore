@@ -1,0 +1,8 @@
+# CocoaPods vendor dependencies (third-party, not maintained in this repo)
+apps/mobile-app/ios/Pods/
+
+# Expo generated files
+apps/mobile-app/.expo/
+
+# External package vendored in packages/ (not maintained in this repo)
+packages/nest-keycloak-connect/

@@ -1,0 +1,89 @@
+name: Backend CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - develop
+      - master
+    paths:
+      - "apps/api/**"
+      - "packages/shared-types/**"
+      - ".github/workflows/ci-backend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-node
+        with:
+          github-token: ${{ secrets.GH_PRIVATE_REPO_TOKEN }}
+
+      - name: Run typecheck and lint
+        run: |
+          pnpm typecheck --filter @scope/api
+          pnpm lint --filter @scope/api
+
+  test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    needs: [validate]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-node
+        with:
+          github-token: ${{ secrets.GH_PRIVATE_REPO_TOKEN }}
+
+      - name: Run tests
+        run: pnpm --filter @scope/api test:cov
+
+      - name: Upload detailed test artifacts (failure only)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-test-artifacts-${{ github.run_id }}
+          retention-days: 7
+          path: |
+            apps/api/test-report.xml
+            apps/api/coverage/
+          if-no-files-found: warn
+
+      - name: Upload coverage summary (success only)
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-coverage-summary-${{ github.run_id }}
+          retention-days: 3
+          path: |
+            apps/api/coverage/cobertura.xml
+            apps/api/coverage/lcov.info
+          if-no-files-found: warn
+
+      - name: Cleanup CI temporary files
+        if: always()
+        run: |
+          rm -rf apps/api/coverage
+          rm -rf .turbo
+          rm -rf .scannerwork
+
+      - name: Report disk usage
+        if: always()
+        run: df -h /Users/runner || true

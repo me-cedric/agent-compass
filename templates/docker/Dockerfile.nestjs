@@ -1,0 +1,67 @@
+FROM --platform=$BUILDPLATFORM node:22-slim AS builder
+ARG TARGETARCH
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /usr/src/app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages ./packages
+
+# Tell pnpm to fetch sharp's optional deps for the target Linux/glibc platform,
+# not the build host platform, so pnpm deploy carries the correct binaries.
+# pnpm requires kebab-case with array notation ([]=) in .npmrc; camelCase is silently ignored.
+RUN NPMARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x64" || echo "$TARGETARCH") && \
+    printf 'supported-architectures.os[]=linux\nsupported-architectures.cpu[]=%s\n' "$NPMARCH" >> .npmrc
+
+RUN pnpm install --frozen-lockfile --ignore-scripts && pnpm store prune
+
+COPY apps/api ./apps/api
+COPY turbo.json* ./
+COPY scripts ./scripts
+
+RUN pnpm build --filter @scope/api
+RUN pnpm deploy --filter @scope/api --legacy --ignore-scripts /deploy
+
+
+FROM node:22-slim
+ARG TARGETARCH
+
+WORKDIR /usr/src/app
+
+COPY --from=builder /deploy/node_modules ./node_modules
+COPY --from=builder /usr/src/app/apps/api/dist ./dist
+COPY --from=builder /usr/src/app/apps/api/assets ./dist/assets
+COPY --from=builder /usr/src/app/apps/api/package.json ./package.json
+COPY --from=builder /usr/src/app/apps/api/config ./config
+COPY --from=builder /usr/src/app/apps/api/drizzle ./drizzle
+COPY apps/api/data ./data
+
+# pnpm deploy --legacy re-evaluates optional package conditions against the builder
+# platform, so sharp platform binaries can be missing in the deploy output.
+# Install in an isolated dir to avoid npm choking on workspace:* deps in package.json,
+# then copy the @img packages into the app's node_modules.
+RUN RAW_ARCH="${TARGETARCH:-$(node -p "process.arch")}" && \
+    NPMARCH=$([ "$RAW_ARCH" = "amd64" ] && echo "x64" || echo "$RAW_ARCH") && \
+    export NPMARCH && \
+    echo "Installing sharp optional packages for arch: $NPMARCH" && \
+    SHARP=$(node -e "const p=require('./package.json'); const a=process.env.NPMARCH; \
+      process.stdout.write(p.optionalDependencies['@img/sharp-linux-'+a]||'')") && \
+    LIBVIPS=$(node -e "const p=require('./package.json'); const a=process.env.NPMARCH; \
+      process.stdout.write(p.optionalDependencies['@img/sharp-libvips-linux-'+a]||'')") && \
+    test -n "$SHARP" && test -n "$LIBVIPS" && \
+    npm --prefix /tmp/sharp-native install --no-package-lock --ignore-scripts \
+      "@img/sharp-linux-${NPMARCH}@${SHARP}" \
+      "@img/sharp-libvips-linux-${NPMARCH}@${LIBVIPS}" && \
+    mkdir -p node_modules/@img && \
+    rm -rf "node_modules/@img/sharp-linux-${NPMARCH}" "node_modules/@img/sharp-libvips-linux-${NPMARCH}" && \
+    cp -r /tmp/sharp-native/node_modules/@img/. node_modules/@img/ && \
+    rm -rf /tmp/sharp-native
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["node", "dist/src/main"]

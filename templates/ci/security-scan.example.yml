@@ -1,0 +1,191 @@
+name: Security — OSV Vulnerability Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5' # 02:00 UTC Mon–Fri (04:00 CEST)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # open/comment tracking issue on failure
+
+jobs:
+  osv-scan:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # ── JSON scan — used for the severity gate below ───────────────────────
+      - name: Run OSV Scanner (JSON)
+        uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --lockfile=pnpm-lock.yaml
+            --format=json
+            --output=results.json
+
+      # ── Generate summary report & gate: fail only on CRITICAL (CVSS ≥ 9.0) ─
+      - name: Generate summary report
+        id: gate
+        run: |
+          python3 <<'PYEOF'
+          import json, os
+          from datetime import date
+
+          try:
+              with open("results.json") as f:
+                  data = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError) as e:
+              # Graceful fallback if OSV scanner didn't produce valid output
+              data = {"results": []}
+              print(f"::warning::OSV scanner output not available ({e}), treating as empty")
+
+          seen = set()
+          by_severity = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+          unknowns = 0
+          details = []
+
+          for result in data.get("results", []):
+              for pkg in result.get("packages", []):
+                  pkg_name = pkg.get("package", {}).get("name", "unknown")
+                  ecosystem = pkg.get("package", {}).get("ecosystem", "unknown")
+                  for vuln in pkg.get("vulnerabilities", []):
+                      vid = vuln.get("id")
+                      if vid in seen:
+                          continue
+                      seen.add(vid)
+                      db = vuln.get("database_specific", {})
+                      severity = db.get("severity", "").upper()
+                      if severity not in by_severity:
+                          # Fallback: numeric CVSS score (some advisories omit the text field)
+                          cvss = db.get("cvss", {}).get("score", 0)
+                          if isinstance(cvss, (int, float)):
+                              if cvss >= 9.0:
+                                  severity = "CRITICAL"
+                              elif cvss >= 7.0:
+                                  severity = "HIGH"
+                              elif cvss >= 4.0:
+                                  severity = "MEDIUM"
+                              elif cvss > 0:
+                                  severity = "LOW"
+                              else:
+                                  severity = "UNKNOWN"
+                          else:
+                              severity = "UNKNOWN"
+
+                      if severity in by_severity:
+                          by_severity[severity] += 1
+                      else:
+                          unknowns += 1
+
+                      details.append({
+                          "id": vid,
+                          "severity": severity,
+                          "package": pkg_name,
+                          "ecosystem": ecosystem,
+                          "summary": vuln.get("summary", "").strip(),
+                      })
+
+          critical_count = by_severity["CRITICAL"]
+          total = sum(by_severity.values()) + unknowns
+
+          # ── Build Markdown summary ──────────────────────────────────────────
+          emoji = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢", "UNKNOWN": "⚪"}
+          lines = []
+          lines.append("## \U0001f512 OSV Dependency Scan Report")
+          lines.append(f"_Scan date: {date.today().isoformat()}_")
+          lines.append("")
+
+          if total == 0:
+              lines.append("\u2705 **No vulnerabilities found.**")
+              lines.append("")
+              lines.append("_Dependencies are up-to-date. No action required._")
+          else:
+              lines.append("### Summary by Severity")
+              lines.append("| Severity | Count |")
+              lines.append("|----------|-------|")
+              for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"]:
+                  cnt = unknowns if sev == "UNKNOWN" else by_severity.get(sev, 0)
+                  if cnt > 0:
+                      lines.append(f"| {emoji.get(sev, '\u26aa')} **{sev}** | {cnt} |")
+              lines.append(f"| **Total** | **{total}** |")
+              lines.append("")
+
+              lines.append("### Vulnerability Details")
+              lines.append("| ID | Severity | Package | Ecosystem | Summary |")
+              lines.append("|----|----------|---------|-----------|---------|")
+              order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "UNKNOWN": 4}
+              for d in sorted(details, key=lambda x: order.get(x["severity"], 99)):
+                  s = d["summary"].replace("|", "\\|").replace("\n", " ")
+                  lines.append(f"| `{d['id']}` | {emoji.get(d['severity'], '\u26aa')} {d['severity']} | `{d['package']}` | {d['ecosystem']} | {s[:120]} |")
+
+          lines.append("")
+          summary = "\n".join(lines)
+
+          # Write to GitHub Step Summary
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              with open(summary_path, "a") as f:
+                  f.write(summary + "\n")
+
+          # Output critical count for the gate (downstream steps)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"count={critical_count}\n")
+
+          print(f"Report generated: {total} vulnerabilities found, {critical_count} critical")
+          if critical_count > 0:
+              print(f"::warning::{critical_count} critical CVE(s) detected. See workflow summary for details.")
+          PYEOF
+
+      # ── On failure: open or update a tracking issue ────────────────────────
+      - name: Create or update tracking issue
+        if: steps.gate.outputs.count != '0'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const TITLE = '\u{1F6A8} Critical CVE: dependency scan requires action';
+            const LABELS = ['security', 'dependencies'];
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: 'open',
+              labels: LABELS.join(','),
+            });
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `**OSV Scanner detected ${{ steps.gate.outputs.count }} critical CVE(s) (CVSS ≥ 9.0)** in \`pnpm-lock.yaml\`.`,
+              '',
+              `- [Workflow run](${runUrl})`,
+              `- [Security tab](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/security/code-scanning)`,
+              '',
+              `Date: ${new Date().toISOString().split('T')[0]}`,
+              '',
+              'Fix the dependency or add an `[[IgnoreVulns]]` entry with a reason to `.osv-scanner.toml`.',
+            ].join('\n');
+
+            const existing = issues.find(i => i.title === TITLE);
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                ...context.repo,
+                title: TITLE,
+                body,
+                labels: LABELS,
+              });
+            }
+
+      - name: Fail on critical CVE
+        if: steps.gate.outputs.count != '0'
+        run: |
+          echo "::error::${{ steps.gate.outputs.count }} critical CVE(s) detected (CVSS ≥ 9.0). See Security tab and tracking issue."
+          exit 1

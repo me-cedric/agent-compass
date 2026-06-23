@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+echo "🔍 Running typecheck and lint before push..."
+
+# Build shared-types first (other apps depend on it)
+pnpm build:packages || {
+  echo "❌ shared-types build failed. Push aborted."
+  exit 1
+}
+
+# Run typecheck and lint in parallel via turbo
+pnpm typecheck || {
+  echo "❌ Typecheck failed. Push aborted."
+  exit 1
+}
+
+pnpm lint || {
+  echo "❌ Lint failed. Push aborted."
+  exit 1
+}
+
+echo "✅ Typecheck and lint passed."

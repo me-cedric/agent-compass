@@ -1,0 +1,36 @@
+# Copilot — agent-compass
+
+**Read [`AGENTS.md`](../AGENTS.md) first.** It is the canonical contract; the
+points below are the Copilot-flavored summary.
+
+## 1. Plan before code
+
+For any non-trivial task, start with a short, verifiable plan. Do not write code
+before the plan is clear. Break work into small steps and state which step you're
+on.
+
+## 2. Smallest correct change
+
+Prefer simple, minimal solutions. Fix root causes, not symptoms. Limit changes to
+what the task needs. If a solution feels hacky, propose a cleaner one instead of
+shipping the hack.
+
+## 3. Verify everything
+
+Never call a task complete without validation. Always include how to test,
+expected results, and edge cases. Add or update tests for behavior changes. Run
+lint + typecheck + relevant tests and report honestly (see the Completion Gate in
+`AGENTS.md`).
+
+## 4. Per-path rules
+
+When working inside an app or package, also consult any matching instruction file
+under `.github/instructions/` (examples shipped in
+`templates/agent/.github/instructions/`).
+
+## 5. Self-improvement
+
+When a mistake is corrected, extract the general rule and record it (project
+`tasks/lessons.md` or feed it back via `scripts/pull-knowledge.mjs`).
+
+Do not commit, push, or deploy unless explicitly asked.

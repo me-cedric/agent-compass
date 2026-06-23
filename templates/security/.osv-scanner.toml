@@ -1,0 +1,11 @@
+# OSV Scanner configuration
+# https://google.github.io/osv-scanner/configuration/
+#
+# Add entries here to suppress known/accepted vulnerabilities that cannot
+# currently be fixed (no upstream fix, breaking upgrade, transitive dep).
+#
+# Example:
+# [[IgnoreVulns]]
+# id = "GHSA-xxxx-yyyy-zzzz"
+# ignoreUntil = 2026-12-31   # optional: re-surface after this date
+# reason = "No fix available; transitive dep of react-native build toolchain"
