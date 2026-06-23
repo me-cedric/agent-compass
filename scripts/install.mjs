@@ -7,13 +7,14 @@
 //   node docs/agent-compass/scripts/install.mjs --dry      # preview only
 //   node docs/agent-compass/scripts/install.mjs <host-dir> # explicit host root
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, statSync, chmodSync } from 'node:fs'
 import { dirname, resolve, relative, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
 const dry = args.includes('--dry')
+const doctor = args.includes('--doctor')
 const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
 
 if (HOST === AC) {
@@ -38,6 +39,42 @@ const created = []
 const skipped = []
 const TEXT = /\.(md|json|ya?ml|mjs|cjs|js|ts|toml|properties|txt|sh|tpl)$|^\.|husky\//
 
+const isExecutable = (file) => {
+  try { return Boolean(statSync(file).mode & 0o111) } catch { return false }
+}
+
+const runDoctor = () => {
+  const hooks = ['pre-commit', 'pre-push', 'commit-msg']
+  const pointers = ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md', '.cursor/rules/agent-compass.mdc', '.windsurf/rules/agent-compass.md']
+  const pkgPath = join(HOST, 'package.json')
+  const gitmodulesPath = join(HOST, '.gitmodules')
+  let pkg = {}
+  try { pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) } catch {}
+  const checks = [
+    ['AGENTS.md exists', existsSync(join(HOST, 'AGENTS.md'))],
+    ['AGENTS.md points at agent-compass', existsSync(join(HOST, 'AGENTS.md')) && /agent-compass|AGENTS\.md/.test(readFileSync(join(HOST, 'AGENTS.md'), 'utf8'))],
+    ['package.json has "prepare": "husky"', pkg.scripts?.prepare === 'husky'],
+    ['.gitmodules mentions agent-compass when present', !existsSync(gitmodulesPath) || /agent-compass/.test(readFileSync(gitmodulesPath, 'utf8'))],
+    ...pointers.map((p) => [`${p} exists`, existsSync(join(HOST, p))]),
+    ...pointers.map((p) => [`${p} points at AGENTS.md`, existsSync(join(HOST, p)) && /AGENTS\.md/.test(readFileSync(join(HOST, p), 'utf8'))]),
+    ...hooks.map((h) => [`.husky/${h} exists`, existsSync(join(HOST, '.husky', h))]),
+    ...hooks.map((h) => [`.husky/${h} executable`, isExecutable(join(HOST, '.husky', h))]),
+  ]
+  const failed = checks.filter(([, ok]) => !ok)
+  console.log(`\nagent-compass doctor → ${HOST}\n`)
+  checks.forEach(([label, ok]) => console.log(`${ok ? '✓' : '✗'} ${label}`))
+  if (failed.length) {
+    console.error(`\n${failed.length} check(s) failed. Run install, add package.json prepare, or chmod hooks.`)
+    process.exit(1)
+  }
+  console.log('\n✓ doctor passed')
+}
+
+if (doctor) {
+  runDoctor()
+  process.exit(0)
+}
+
 const place = (srcRel, destRel, transform = true) => {
   const src = join(AC, srcRel)
   const dest = join(HOST, destRel)
@@ -50,7 +87,16 @@ const place = (srcRel, destRel, transform = true) => {
   } else {
     copyFileSync(src, dest)
   }
-  if (srcRel.includes('husky/')) try { statSync(dest); } catch {}
+  if (srcRel.includes('husky/')) chmodSync(dest, 0o755)
+  created.push(destRel)
+}
+
+const writeTextIfMissing = (destRel, text) => {
+  const dest = join(HOST, destRel)
+  if (existsSync(dest)) { skipped.push(destRel); return }
+  if (dry) { created.push(destRel + ' (dry)'); return }
+  mkdirSync(dirname(dest), { recursive: true })
+  writeFileSync(dest, text)
   created.push(destRel)
 }
 
@@ -73,6 +119,30 @@ agent-compass baseline on conflict.
 } else {
   skipped.push('AGENTS.md (exists — add a pointer to ' + acRel + '/AGENTS.md manually)')
 }
+
+const pointerText = (tool) => `# ${name} — ${tool} Agent Guide
+
+Read \`${acRel}/AGENTS.md\` first. It is the canonical agent-compass contract.
+
+Host project \`AGENTS.md\` takes precedence when it adds project-specific rules.
+`
+const toolPointers = [
+  ['CLAUDE.md', pointerText('Claude')],
+  ['CODEX.md', pointerText('Codex')],
+  ['GEMINI.md', pointerText('Gemini')],
+  ['.github/copilot-instructions.md', pointerText('GitHub Copilot')],
+  ['.cursor/rules/agent-compass.mdc', `---
+description: Agent Compass contract
+alwaysApply: true
+---
+
+Read \`${acRel}/AGENTS.md\` first. It is the canonical agent-compass contract.
+
+Host project \`AGENTS.md\` takes precedence when it adds project-specific rules.
+`],
+  ['.windsurf/rules/agent-compass.md', pointerText('Windsurf')],
+]
+for (const [dest, text] of toolPointers) writeTextIfMissing(dest, text)
 
 // 2) Husky hooks (only if the host has no .husky yet).
 if (!existsSync(join(HOST, '.husky'))) {
@@ -108,4 +178,5 @@ console.log(`\nNext steps:
   - If you have turbo/pnpm workspace files, copy the relevant ones from
     ${acRel}/templates/monorepo/ and adapt.
   - Wire husky: add "prepare": "husky" to package.json, then run install.
+  - Verify wiring: node ${acRel}/scripts/install.mjs --doctor
   - Read ${acRel}/AGENTS.md and ${acRel}/docs/guidelines/.\n`)

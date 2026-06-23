@@ -5,6 +5,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-23
+
+### Added
+
+- Stdlib `node:test` coverage for bootstrap, installer, knowledge-pull, and
+  naming/frontmatter checks.
+- Bootstrap smoke matrix coverage for API-only, full app, and Next.js-only
+  prompts.
+- `next-web` stack preset and correct bootstrap mapping.
+- Installer `--doctor` verification plus non-destructive front-door pointers for
+  Claude, Codex, Copilot, Cursor, Windsurf, and Gemini.
+- Index drift guard for stack, workflow, and skill README catalogs.
+- Release and upgrade workflows for tagged agent-compass bumps in host projects.
+
 ### Changed
 
 - SonarQube tooling overhauled to the consolidated `sonar:do` runner (scan +

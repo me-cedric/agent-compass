@@ -11,6 +11,7 @@ import { createInterface } from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const interactive = Boolean(input.isTTY)
 const rl = interactive ? createInterface({ input, output }) : null
@@ -45,69 +46,52 @@ const askMulti = async (q, choices, def = []) => {
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
 
-console.log(`\n agent-compass · project bootstrap`)
-if (!interactive) console.log(' (non-interactive stdin: using all defaults)\n')
-
-const name = slug(await ask('Project name', 'my-app')) || 'my-app'
-const scope = (await ask('npm scope for internal packages', `@${name}`)) || `@${name}`
-const monorepo = await askBool('Monorepo (pnpm + turbo)?', true)
-const apps = await askMulti('Which apps?', ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'], ['nestjs-api'])
-const pm = await askChoice('Package manager?', ['pnpm', 'npm', 'yarn'], 'pnpm')
-const hasApi = apps.includes('nestjs-api')
-const hasWeb = apps.includes('react-admin') || apps.includes('next-web')
-
-const db = hasApi ? await askChoice('Database / ORM?', ['drizzle+postgres', 'prisma+postgres', 'none'], 'drizzle+postgres') : 'none'
-const queues = hasApi ? await askBool('Queues/jobs (BullMQ)?', true) : false
-const auth = await askChoice('Auth provider?', ['keycloak', 'auth0', 'clerk', 'custom', 'none'], hasApi || hasWeb ? 'keycloak' : 'none')
-const resilience = hasApi ? await askBool('Resilience patterns (circuit breaker + retry)?', true) : false
-const observability = hasApi ? await askBool('Observability (OpenTelemetry + structured logs)?', true) : false
-const featureFlags = await askBool('Feature flags (env, dormant-by-default)?', true)
-const apiContract = hasApi ? await askBool('API contract tooling (Scalar/OpenAPI + Bruno + Gherkin)?', true) : false
-const e2e = await askBool('E2E tests (Playwright for web)?', hasWeb)
-const docker = await askBool('Docker (multi-stage images + local compose)?', true)
-const ci = await askChoice('CI provider?', ['github-actions', 'gitlab-ci', 'none'], 'github-actions')
-const sonar = await askBool('Local SonarQube (scan + reports)?', true)
-const security = await askBool('Security scanning (OSV + Checkmarx)?', true)
-const targetDir = (await ask('Target directory', `./${name}`)) || `./${name}`
-
-if (rl) rl.close()
-
-const answers = {
-  name, scope, monorepo, apps, pm, db, queues, auth, resilience,
-  observability, featureFlags, apiContract, e2e, docker, ci, sonar, security, targetDir,
-  generatedFrom: 'agent-compass/scripts/bootstrap.mjs',
+export const STACK_DOC_BY_APP = {
+  'nestjs-api': 'stacks/nestjs-api.md',
+  'react-admin': 'stacks/react-admin.md',
+  'expo-mobile': 'stacks/expo-mobile.md',
+  'next-web': 'stacks/next-web.md',
 }
 
-// --- assemble the lists the prompt should tell the agent to read ---
-const stackDocs = apps
-  .map((a) => ({ 'nestjs-api': 'stacks/nestjs-api.md', 'react-admin': 'stacks/react-admin.md', 'expo-mobile': 'stacks/expo-mobile.md', 'next-web': 'stacks/react-admin.md' }[a]))
-  .filter(Boolean)
-if (monorepo) stackDocs.unshift('stacks/turbo-monorepo.md')
+export const stackDocsForApps = (apps, monorepo) => {
+  const docs = apps.map((a) => STACK_DOC_BY_APP[a]).filter(Boolean)
+  if (monorepo) docs.unshift('stacks/turbo-monorepo.md')
+  return docs
+}
 
-const archDocs = [
-  resilience && 'docs/architecture/resilience.md',
-  observability && 'docs/architecture/observability.md',
-  featureFlags && 'docs/architecture/feature-flags.md',
-  hasApi && 'docs/architecture/api-design.md',
-  monorepo && 'docs/architecture/monorepo.md',
-].filter(Boolean)
+export const buildPrompt = (answers) => {
+  const {
+    name, scope, monorepo, apps, pm, db, queues, auth, resilience,
+    observability, featureFlags, apiContract, e2e, docker, ci, sonar, security, targetDir,
+  } = answers
+  const hasApi = apps.includes('nestjs-api')
+  const hasWeb = apps.includes('react-admin') || apps.includes('next-web')
 
-const toolingDocs = [
-  monorepo && 'docs/tooling/pnpm.md',
-  monorepo && 'docs/tooling/turbo.md',
-  'docs/tooling/version-pinning.md',
-  'docs/tooling/husky.md',
-  apiContract && 'docs/tooling/api-contract-sync.md',
-  docker && 'docs/tooling/docker.md',
-  sonar && 'docs/tooling/sonarqube.md',
-  security && 'docs/tooling/security-scanning.md',
-  'docs/tooling/env-management.md',
-].filter(Boolean)
+  const stackDocs = stackDocsForApps(apps, monorepo)
+  const archDocs = [
+    resilience && 'docs/architecture/resilience.md',
+    observability && 'docs/architecture/observability.md',
+    featureFlags && 'docs/architecture/feature-flags.md',
+    hasApi && 'docs/architecture/api-design.md',
+    monorepo && 'docs/architecture/monorepo.md',
+  ].filter(Boolean)
 
-const list = (arr) => arr.map((x) => `  - \`${x}\``).join('\n')
-const yn = (b) => (b ? 'yes' : 'no')
+  const toolingDocs = [
+    monorepo && 'docs/tooling/pnpm.md',
+    monorepo && 'docs/tooling/turbo.md',
+    'docs/tooling/version-pinning.md',
+    'docs/tooling/husky.md',
+    apiContract && 'docs/tooling/api-contract-sync.md',
+    docker && 'docs/tooling/docker.md',
+    sonar && 'docs/tooling/sonarqube.md',
+    security && 'docs/tooling/security-scanning.md',
+    'docs/tooling/env-management.md',
+  ].filter(Boolean)
 
-const prompt = `# Bootstrap prompt — ${name}
+  const list = (arr) => arr.map((x) => `  - \`${x}\``).join('\n')
+  const yn = (b) => (b ? 'yes' : 'no')
+
+  return `# Bootstrap prompt — ${name}
 
 > Generated by agent-compass. Paste this into Claude Code, Codex, or Copilot.
 > Assumes agent-compass is reachable at \`@AC\` (set it to this repo's path, e.g.
@@ -168,7 +152,7 @@ inventing config.
    (${monorepo ? 'turbo.json, pnpm-workspace.yaml, ' : ''}tsconfig.base.json, .prettierrc,
    commitlint.config.js, husky hooks, .nvmrc, .npmrc${security ? ', .osv-scanner.toml' : ''}).
    Use scope \`${scope}\`.
-${apps.map((a, i) => `2.${i + 1} Create app **${a}** from \`@AC/${{ 'nestjs-api': 'stacks/nestjs-api.md', 'react-admin': 'stacks/react-admin.md', 'expo-mobile': 'stacks/expo-mobile.md', 'next-web': 'stacks/react-admin.md' }[a]}\`${a === 'nestjs-api' ? ` (DB: ${db}${queues ? ', BullMQ' : ''}${auth !== 'none' ? `, ${auth} auth` : ''})` : ''}.`).join('\n')}
+${apps.map((a, i) => `2.${i + 1} Create app **${a}** from \`@AC/${STACK_DOC_BY_APP[a]}\`${a === 'nestjs-api' ? ` (DB: ${db}${queues ? ', BullMQ' : ''}${auth !== 'none' ? `, ${auth} auth` : ''})` : ''}.`).join('\n')}
 3. **Shared types** package \`${scope}/shared-types\` for cross-app contracts.
 ${resilience ? '4. Apply **resilience** policies (created once in onModuleInit; shared env-configurable defaults).\n' : ''}${observability ? '5. Wire **OpenTelemetry** tracing + structured logger; span helpers for jobs/payments.\n' : ''}${featureFlags ? '6. Add **feature-flag** scaffolding (env, dormant-by-default) for risky capabilities.\n' : ''}${apiContract ? '7. Set up **API contract** layers: Scalar/OpenAPI decorators, Bruno collection, Gherkin features — kept in sync.\n' : ''}8. **Testing:** ${hasApi ? 'Jest (jest-mock-extended) for API' : ''}${hasApi && hasWeb ? '; ' : ''}${hasWeb ? 'Vitest for web' : ''}${e2e ? '; Playwright e2e for critical flows' : ''}; coverage for Sonar.
 ${docker ? '9. **Docker:** multi-stage images + local/test compose from `@AC/templates/docker/`.\n' : ''}${ci !== 'none' ? `10. **CI (${ci}):** lint + typecheck + test + build; adapt \`@AC/templates/ci/\`.\n` : ''}${sonar ? '11. **SonarQube:** sonar-project.properties per app + sonar:do/sonar:doctor scripts.\n' : ''}${security ? '12. **Security:** OSV config + baseline; Checkmarx packaging script.\n' : ''}13. **Root README:** prerequisites, install, env setup, and how to run locally
@@ -184,12 +168,54 @@ ${pm === 'pnpm' && monorepo ? `${pm} check` : `${pm} run lint && ${pm} run typec
 Report against the completion gate. Then I will wire agent-compass in as a
 submodule and run \`@AC/scripts/install.mjs\`.
 `
+}
 
-const promptPath = resolve(process.cwd(), 'BOOTSTRAP_PROMPT.md')
-const answersPath = resolve(process.cwd(), 'agent-compass.answers.json')
-writeFileSync(promptPath, prompt)
-writeFileSync(answersPath, JSON.stringify(answers, null, 2) + '\n')
+const main = async () => {
+  console.log(`\n agent-compass · project bootstrap`)
+  if (!interactive) console.log(' (non-interactive stdin: using all defaults)\n')
 
-console.log(`\n✓ Wrote ${promptPath}`)
-console.log(`✓ Wrote ${answersPath}`)
-console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
+  const name = slug(await ask('Project name', 'my-app')) || 'my-app'
+  const scope = (await ask('npm scope for internal packages', `@${name}`)) || `@${name}`
+  const monorepo = await askBool('Monorepo (pnpm + turbo)?', true)
+  const apps = await askMulti('Which apps?', ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'], ['nestjs-api'])
+  const pm = await askChoice('Package manager?', ['pnpm', 'npm', 'yarn'], 'pnpm')
+  const hasApi = apps.includes('nestjs-api')
+  const hasWeb = apps.includes('react-admin') || apps.includes('next-web')
+
+  const db = hasApi ? await askChoice('Database / ORM?', ['drizzle+postgres', 'prisma+postgres', 'none'], 'drizzle+postgres') : 'none'
+  const queues = hasApi ? await askBool('Queues/jobs (BullMQ)?', true) : false
+  const auth = await askChoice('Auth provider?', ['keycloak', 'auth0', 'clerk', 'custom', 'none'], hasApi || hasWeb ? 'keycloak' : 'none')
+  const resilience = hasApi ? await askBool('Resilience patterns (circuit breaker + retry)?', true) : false
+  const observability = hasApi ? await askBool('Observability (OpenTelemetry + structured logs)?', true) : false
+  const featureFlags = await askBool('Feature flags (env, dormant-by-default)?', true)
+  const apiContract = hasApi ? await askBool('API contract tooling (Scalar/OpenAPI + Bruno + Gherkin)?', true) : false
+  const e2e = await askBool('E2E tests (Playwright for web)?', hasWeb)
+  const docker = await askBool('Docker (multi-stage images + local compose)?', true)
+  const ci = await askChoice('CI provider?', ['github-actions', 'gitlab-ci', 'none'], 'github-actions')
+  const sonar = await askBool('Local SonarQube (scan + reports)?', true)
+  const security = await askBool('Security scanning (OSV + Checkmarx)?', true)
+  const targetDir = (await ask('Target directory', `./${name}`)) || `./${name}`
+
+  if (rl) rl.close()
+
+  const answers = {
+    name, scope, monorepo, apps, pm, db, queues, auth, resilience,
+    observability, featureFlags, apiContract, e2e, docker, ci, sonar, security, targetDir,
+    generatedFrom: 'agent-compass/scripts/bootstrap.mjs',
+  }
+
+  const prompt = buildPrompt(answers)
+
+  const promptPath = resolve(process.cwd(), 'BOOTSTRAP_PROMPT.md')
+  const answersPath = resolve(process.cwd(), 'agent-compass.answers.json')
+  writeFileSync(promptPath, prompt)
+  writeFileSync(answersPath, JSON.stringify(answers, null, 2) + '\n')
+
+  console.log(`\n✓ Wrote ${promptPath}`)
+  console.log(`✓ Wrote ${answersPath}`)
+  console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main()
+}

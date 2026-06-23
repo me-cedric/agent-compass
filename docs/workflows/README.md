@@ -8,3 +8,5 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [new-module.md](new-module.md)                 | Adding a module/feature to an existing project. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
 | [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |
+| [releasing.md](releasing.md)                   | Tagging a reviewed agent-compass release.       |
+| [upgrading.md](upgrading.md)                   | Bumping an imported agent-compass submodule safely. |

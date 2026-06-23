@@ -8,10 +8,11 @@
 // To forbid a new name, add it to DENY below. Exit code feeds CI (see ci.yml).
 
 import { readdirSync, readFileSync } from 'node:fs'
-import { join, extname, basename, dirname } from 'node:path'
+import { join, extname, basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+const rootArg = process.argv.indexOf('--root')
+const ROOT = rootArg === -1 ? dirname(dirname(fileURLToPath(import.meta.url))) : resolve(process.argv[rootArg + 1] || '')
 const SELF = basename(fileURLToPath(import.meta.url))
 const IGNORE = new Set(['.git', 'node_modules', 'incoming'])
 const TEXT = new Set(['.md', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.json', '.yml', '.yaml', '.toml', '.properties', '.sh', '.tpl', '.txt', ''])
@@ -25,6 +26,17 @@ const DENY = [
 const RE = new RegExp(`(${DENY.join('|')})`, 'i')
 
 const hits = []
+const skillHits = []
+const checkSkillFrontmatter = (full, txt) => {
+  if (basename(full) !== 'SKILL.md') return
+  const fm = txt.match(/^---\n([\s\S]*?)\n---\n/)
+  if (!fm) {
+    skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter`)
+    return
+  }
+  if (!/^name:\s*\S+/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter name`)
+  if (!/^description:\s*(?:\S|[>|])/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter description`)
+}
 const walk = (dir) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     if (IGNORE.has(e.name)) continue
@@ -33,6 +45,7 @@ const walk = (dir) => {
     else if (basename(e.name) !== SELF && TEXT.has(extname(e.name))) {
       let txt
       try { txt = readFileSync(full, 'utf8') } catch { continue }
+      checkSkillFrontmatter(full, txt)
       txt.split('\n').forEach((line, i) => {
         const m = RE.exec(line)
         if (m) hits.push(`${full.replace(ROOT + '/', '')}:${i + 1}: "${m[1]}"  ${line.trim().slice(0, 80)}`)
@@ -42,10 +55,16 @@ const walk = (dir) => {
 }
 walk(ROOT)
 
-if (hits.length) {
-  console.error(`✗ ${hits.length} project/domain-specific name(s) found — replace with generic placeholders:\n`)
-  hits.forEach((h) => console.error('  ' + h))
-  console.error('\nSee CONTRIBUTING.md → "Generic naming". Real tech names (keycloak, postgres, …) are allowed.')
+if (hits.length || skillHits.length) {
+  if (hits.length) {
+    console.error(`✗ ${hits.length} project/domain-specific name(s) found — replace with generic placeholders:\n`)
+    hits.forEach((h) => console.error('  ' + h))
+    console.error('\nSee CONTRIBUTING.md → "Generic naming". Real tech names (keycloak, postgres, …) are allowed.')
+  }
+  if (skillHits.length) {
+    console.error(`\n✗ ${skillHits.length} skill frontmatter issue(s) found:\n`)
+    skillHits.forEach((h) => console.error('  ' + h))
+  }
   process.exit(1)
 }
-console.log('✓ naming check passed — no project/domain-specific names.')
+console.log('✓ naming check passed — no project/domain-specific names; skill frontmatter valid.')

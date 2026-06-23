@@ -14,7 +14,7 @@ Copilot as referenced context.
 | `caveman-commit` | Conventional-commit message generator, terse.                      |
 | `caveman-review` | One-line, actionable PR review comments.                           |
 | `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
-| `ponytail-audit` / `-review` / `-debt` / `-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
+| `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
 
 ### Quality gates
 

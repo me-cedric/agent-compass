@@ -57,11 +57,13 @@ Start with **[AGENTS.md](AGENTS.md)**. Everything else is depth behind it.
 # from your project root
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
 node docs/agent-compass/scripts/install.mjs        # wires guidelines + hooks into the host
+node docs/agent-compass/scripts/install.mjs --doctor # verifies host wiring
 ```
 
 `install.mjs` copies/links a root `AGENTS.md` pointer, the husky hooks, and the
 config templates you select, then prints the next steps. Re-run it after you
-`git submodule update --remote` to pick up new standards.
+`git submodule update --remote` to pick up new standards. For tagged bumps, use
+[`docs/workflows/upgrading.md`](docs/workflows/upgrading.md).
 
 ### B. Bootstrap a brand-new project
 
@@ -94,10 +96,13 @@ It's all Markdown. Read `docs/`, copy from `templates/`, lift a `skills/` file.
 
 | Tool    | Entry file                                   | Notes                                                        |
 | ------- | -------------------------------------------- | ----------------------------------------------------------- |
-| Claude  | `CLAUDE.md` → `AGENTS.md`                     | Skills in `skills/` are usable directly or via skillshare.  |
-| Codex   | `CODEX.md` → `AGENTS.md`                      | Context-layering + repo-understanding notes.                |
-| Copilot | `.github/copilot-instructions.md` → `AGENTS.md` | Per-path rules under `templates/agent/.github/instructions/`. |
-| Others  | point the tool's rules file at `AGENTS.md`   | One contract, many front doors.                             |
+| Claude   | `CLAUDE.md` → `AGENTS.md`                       | Skills in `skills/` are usable directly or via skillshare.  |
+| Codex    | `CODEX.md` → `AGENTS.md`                        | Context-layering + repo-understanding notes.                |
+| Copilot  | `.github/copilot-instructions.md` → `AGENTS.md` | Per-path rules under `templates/agent/.github/instructions/`. |
+| Cursor   | `.cursor/rules/agent-compass.mdc` → `AGENTS.md` | Created by `install.mjs` when missing.                      |
+| Windsurf | `.windsurf/rules/agent-compass.md` → `AGENTS.md` | Created by `install.mjs` when missing.                     |
+| Gemini   | `GEMINI.md` → `AGENTS.md`                       | Created by `install.mjs` when missing.                      |
+| Others   | point the tool's rules file at `AGENTS.md`      | One contract, many front doors.                             |
 
 ---
 
@@ -138,7 +143,18 @@ that you're chatting from inside the repo).
 > Review what landed in `knowledge/incoming/`, and promote the generic instincts
 > into `knowledge/` and `docs/` with a short PR.
 
-More live in [`docs/workflows/`](docs/workflows/).
+More live in [`docs/workflows/`](docs/workflows/), including
+[`releasing.md`](docs/workflows/releasing.md) for tagged releases and
+[`upgrading.md`](docs/workflows/upgrading.md) for safe submodule bumps.
+
+**Release this repo**
+
+```bash
+npm run check
+git tag -a v0.2.0 -m "v0.2.0"
+```
+
+Full steps: [`docs/workflows/releasing.md`](docs/workflows/releasing.md).
 
 ---
 

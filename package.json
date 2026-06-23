@@ -1,6 +1,6 @@
 {
   "name": "agent-compass",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Central agentic standards, guidelines, skills and bootstrap tooling for AI coding agents (Claude, Codex, Copilot).",
@@ -11,7 +11,10 @@
     "bootstrap": "node scripts/bootstrap.mjs",
     "pull-knowledge": "node scripts/pull-knowledge.mjs",
     "install-into": "node scripts/install.mjs",
-    "lint:naming": "node scripts/check-naming.mjs"
+    "test": "node --test",
+    "check": "npm test && npm run lint:naming && npm run lint:indexes",
+    "lint:naming": "node scripts/check-naming.mjs",
+    "lint:indexes": "node scripts/check-indexes.mjs"
   },
   "bin": {
     "agent-compass": "scripts/bootstrap.mjs"
