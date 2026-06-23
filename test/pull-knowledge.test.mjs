@@ -47,3 +47,20 @@ test('pull-knowledge refuses sensitive files before staging', async () => {
     await rm(staged, { recursive: true, force: true })
   }
 })
+
+test('pull-knowledge refuses possible personal data before staging', async () => {
+  const target = join(tmpdir(), `ac-source-${Date.now()}`)
+  const staged = join(root.pathname, 'knowledge', 'incoming', basename(target))
+  try {
+    await mkdir(target, { recursive: true })
+    await writeFile(join(target, 'AGENTS.md'), 'Contact: user@example.com\n')
+
+    const result = await runNode([script.pathname, target], { cwd: root.pathname })
+    assert.equal(result.code, 1)
+    assert.match(result.stderr, /possible personal data/)
+    await assert.rejects(readFile(join(staged, 'INDEX.md'), 'utf8'))
+  } finally {
+    await rm(target, { recursive: true, force: true })
+    await rm(staged, { recursive: true, force: true })
+  }
+})

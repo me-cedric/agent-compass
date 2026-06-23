@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-23
+
 ### Added
 
 - Docs/template guard that checks local Markdown links and catches unknown
@@ -17,6 +19,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 - Project memory support: projectmem tooling/workflow docs, install-created
   `.projectmem/README.md` / `.projectmem/projectmem-policy.md`, and
   `project-memory` skill.
+- Command registry, repo context snapshot script, repo-map/ADR/handoff templates,
+  and lightweight conformance smoke template for faster cross-project starts.
+- MCP setup guidance and examples, including projectmem and Figma design-context
+  flows plus `figma-mcp-frontend` skill.
+- PR creation/review workflows and `pr-workflow` skill covering default
+  `develop` base, self-assignment, real labels, reviewers, GitHub reviews, and
+  implementing submitted review fixes.
+- Copilot `.github/instructions/*.instructions.md` templates and PR template.
+
+### Changed
+
+- Installer now copies optional agent workflow templates and supports
+  `--doctor --deep` advisory checks.
 
 ## [0.2.0] - 2026-06-23
 

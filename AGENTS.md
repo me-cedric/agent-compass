@@ -55,6 +55,8 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
 - **Never invent commands.** Use only scripts that exist in the project's
   `package.json` (or documented equivalents). If none matches, report `not run`
   with the reason.
+- **Use the command registry.** If `agent-compass.commands.json` exists, read it
+  before choosing install, lint, typecheck, test, or build commands.
 - **Spec workflow.** For broad or ambiguous work, keep `specs/`, plans, tasks,
   code, tests, and docs aligned. Do not add implementation details to the spec
   phase; put technical decisions in the plan.
@@ -64,6 +66,13 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   changed files, validation, and remaining risks after work. Never log secrets,
   credentials, tokens, personal data, or temporary brainstorming. See
   [project-memory](docs/workflows/project-memory.md).
+- **Pull requests.** When asked to create a PR, default the base branch to
+  `develop`, assign the PR to yourself, use only labels that exist in the repo,
+  and ask for at least one reviewer if none was specified. See
+  [pull-requests](docs/workflows/pull-requests.md).
+- **PR reviews.** Support local reviews, direct GitHub reviews, inline comments,
+  approve/comment/request-changes, and implementing submitted review fixes after
+  verifying they are still relevant. See [pr-review](docs/workflows/pr-review.md).
 
 ## 3. Validation (mandatory)
 

@@ -1,47 +1,27 @@
-<!-- Pull Request template with label hints for contributors -->
+# Summary
 
-## Short description
+## What Changed
 
-Describe the change in one or two sentences.
+-
 
-## Type of change (check one)
+## Why
 
-- [ ] type/feat
-- [ ] type/fix
-- [ ] type/chore
-- [ ] type/docs
+-
 
-## Area (check one)
+## Validation
 
-- [ ] area/mobile
-- [ ] area/api
-- [ ] area/backoffice
-- [ ] area/keycloak-theme
-- [ ] area/keycloak-theme-backoffice
-- [ ] area/k6
-- [ ] area/shared-types
+| Command | Result |
+| ------- | ------ |
+|  |  |
 
-## Priority (optional)
+## Labels
 
-- [ ] priority/high
-- [ ] priority/low
+-
 
-## Breaking Change (check if applicable)
+## Risks
 
-- [ ] 🚨 This PR contains a breaking change
+-
 
-## Description
+## Reviewer Notes
 
-Provide a more detailed description of the change, including any relevant context and the rationale.
-
-## Checklist
-
-- [ ] I ran the targeted linter and tests for the affected app(s).
-- [ ] I updated documentation where relevant.
-
----
-
-Notes:
-
-- The repository includes an automatic labeler that will add labels based on changed files (`.github/labeler.yml`).
-- To see available labels, run `gh label list` locally.
+-

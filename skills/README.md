@@ -21,7 +21,9 @@ Copilot as referenced context.
 | Skill             | What it does                                              |
 | ----------------- | -------------------------------------------------------- |
 | `gen-docs`        | Scaffolds `README.md` + `DESIGN.md` for a module.        |
+| `figma-mcp-frontend` | Uses Figma MCP context for design-system-driven UI implementation. |
 | `project-memory`  | Reads and writes durable projectmem context safely.      |
+| `pr-workflow`     | Creates PRs, reviews PRs, and implements review fixes.   |
 | `spec-workflow`   | Guides idea → spec → clarify → plan → tasks → docs sync. |
 | `verify-module`   | Checks module structure/doc completeness.                |
 | `verify-quality`  | Complexity, code smells, naming, function length.        |

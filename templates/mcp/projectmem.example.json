@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "projectmem": {
+      "command": "/absolute/path/to/python3",
+      "args": [
+        "-m",
+        "projectmem.mcp_server",
+        "--root",
+        "/absolute/path/to/project"
+      ]
+    }
+  }
+}

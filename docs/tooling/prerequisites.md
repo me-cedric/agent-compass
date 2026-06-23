@@ -38,6 +38,8 @@ ships guidance and templates; it does not install global agent tooling.
 | projectmem | Durable local project memory and pre-action warnings | Python `>=3.10`, `pip`, projectmem package | `python --version`, `pjm --help` |
 | GitHub Spec Kit CLI | Optional upstream spec artifact generator | Python `>=3.11`, `uv` recommended or `pipx`, `git` | `uv --version`, `specify --help` |
 | MCP clients | Let agents read projectmem through MCP | Agent/client that supports MCP, absolute Python path for server config | client shows `projectmem` tools |
+| Figma MCP | Design context for frontend implementation | Figma Desktop or supported MCP setup, Dev/Full seat where required, MCP-capable agent | client shows Figma design context tools |
+| GitHub PR automation | Create/review PRs from agent workflows | `gh` authenticated against the repo | `gh auth status`, `gh label list` |
 
 projectmem quick setup:
 
@@ -66,6 +68,15 @@ python3 -m projectmem.mcp_server --root /absolute/path/to/project
 
 See [projectmem.md](projectmem.md) and
 [spec-driven-development.md](../workflows/spec-driven-development.md).
+
+Figma MCP quick setup:
+
+1. Install the official Figma MCP/plugin path for your agent when available.
+2. Open the target file in Figma Desktop or the supported client flow.
+3. Verify the agent can call Figma design context tools.
+4. Keep tokens in the client secret store, not in repo files.
+
+See [mcp.md](mcp.md).
 
 ## Quality & security (per project need)
 

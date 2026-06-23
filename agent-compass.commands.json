@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "packageManager": "npm",
+  "install": "npm install",
+  "check": "npm run check",
+  "lint": {
+    "naming": "npm run lint:naming",
+    "indexes": "npm run lint:indexes",
+    "docs": "npm run lint:docs",
+    "release": "npm run lint:release"
+  },
+  "test": "npm test",
+  "typecheck": null,
+  "build": null,
+  "notes": [
+    "No typecheck or build script exists in this repo.",
+    "Use scripts listed in package.json; do not invent commands."
+  ]
+}

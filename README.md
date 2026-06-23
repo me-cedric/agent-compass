@@ -29,7 +29,7 @@ agent-compass/
 │   │                        documentation, agent-behavior, performance
 │   ├── architecture/      ← generic principles: monorepo, resilience, observability,
 │   │                        feature-flags, api-design, shared-types
-│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, projectmem, sonarqube, docker,
+│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, mcp, projectmem, sonarqube, docker,
 │   │                        husky, env-management, api-contract-sync,
 │   │                        security-scanning, version-pinning
 │   ├── workflows/         ← playbooks: spec-driven-development, new-project,
@@ -42,7 +42,7 @@ agent-compass/
 │                            commitlint, husky, eslint, docker, sonar, OSV, CI, env)
 ├── knowledge/             ← extracted instincts + example module READMEs; the
 │                            growing knowledge base (and staging for pulled knowledge)
-└── scripts/               ← bootstrap.mjs · pull-knowledge.mjs · install.mjs
+└── scripts/               ← bootstrap.mjs · context.mjs · pull-knowledge.mjs · install.mjs
 ```
 
 Start with **[AGENTS.md](AGENTS.md)**. Everything else is depth behind it.
@@ -62,6 +62,7 @@ needs Python, and optional upstream Spec Kit CLI needs Python plus `uv` or
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
 node docs/agent-compass/scripts/install.mjs        # wires guidelines + hooks into the host
 node docs/agent-compass/scripts/install.mjs --doctor # verifies host wiring
+node docs/agent-compass/scripts/install.mjs --doctor --deep # optional agent workflow checks
 ```
 
 `install.mjs` copies/links a root `AGENTS.md` pointer, the husky hooks, and the
@@ -172,6 +173,10 @@ Full steps: [`docs/workflows/releasing.md`](docs/workflows/releasing.md).
   or high-risk work, create/update `specs/<id-slug>/` before implementation.
 - **Project memory:** when configured, use projectmem summaries, pre-action
   warnings, and factual work logs to avoid repeated mistakes.
+- **Command registry:** use `agent-compass.commands.json` before choosing
+  validation commands.
+- **PR flow:** PRs default to `develop`, assign self, use real labels, and ask
+  for at least one reviewer when missing.
 - **TDD:** test first; ≥ 80% coverage on changed code. → [testing-tdd](docs/guidelines/testing-tdd.md)
 - **Quality gate:** lint + typecheck + relevant tests must pass; honest [Completion Gate](AGENTS.md#4-completion-gate) reporting.
 - **Per-module docs:** every module has an up-to-date `README.md`. → [documentation](docs/guidelines/documentation.md)

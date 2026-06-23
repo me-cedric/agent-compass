@@ -15,6 +15,10 @@ and stages copies under `knowledge/incoming/<project>/`, with an `INDEX.md`
 listing what it found and how each compares to what's already here. **It never
 auto-merges.**
 
+The pull step refuses likely secrets, personal data, and known project/domain
+tokens before staging. Redact at the source, then rerun. Use `--allow-sensitive`
+only for manual quarantine, never for direct promotion.
+
 ## 2. Review
 
 Open `knowledge/incoming/<project>/INDEX.md`. For each item decide: promote,

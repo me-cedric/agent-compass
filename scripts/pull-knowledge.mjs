@@ -64,6 +64,7 @@ const DENY = [
 ]
 const DENY_RE = new RegExp(`(${DENY.join('|')})`, 'i')
 const SECRET_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|(?:api|access|secret|private)[-_ ]?(?:key|token|secret)\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{16,})/i
+const PERSONAL_RE = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+?\d[\d .()-]{8,}\d)/i
 const scanBeforeCopy = () => {
   if (allowSensitive) return
   const warnings = []
@@ -72,8 +73,10 @@ const scanBeforeCopy = () => {
     try { text = readFileSync(item.full, 'utf8') } catch { continue }
     const secret = SECRET_RE.exec(text)
     const denied = DENY_RE.exec(text)
+    const personal = PERSONAL_RE.exec(text)
     if (secret) warnings.push(`${item.rel}: possible secret (${secret[1].slice(0, 40)})`)
     if (denied) warnings.push(`${item.rel}: denied project/domain token (${denied[1]})`)
+    if (personal) warnings.push(`${item.rel}: possible personal data (${personal[1].slice(0, 40)})`)
   }
   if (warnings.length) {
     console.error(`✗ Refusing to stage ${warnings.length} sensitive item(s). Redact first, or rerun with --allow-sensitive for manual quarantine:\n`)

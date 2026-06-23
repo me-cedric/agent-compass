@@ -13,13 +13,14 @@ import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
-const help = `Usage: node scripts/install.mjs [--dry] [--doctor] [host-dir]
+const help = `Usage: node scripts/install.mjs [--dry] [--doctor] [--deep] [host-dir]
 
 Wire agent-compass pointers, hooks, and config templates into a host project.
 
 Options:
   --dry       Preview files that would be created.
   --doctor    Verify host wiring.
+  --deep      Include advisory checks for optional agent workflows.
   --help      Show this help.
 `
 
@@ -30,6 +31,7 @@ if (args.includes('--help')) {
 
 const dry = args.includes('--dry')
 const doctor = args.includes('--doctor')
+const deep = args.includes('--deep')
 const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
 
 if (HOST === AC) {
@@ -91,6 +93,23 @@ const runDoctor = () => {
   ].filter(([, ok]) => !ok)
   if (specAdvisories.length) {
     console.log(`\nAdvisory: ${specAdvisories.map(([label]) => label).join(', ')}.`)
+  }
+  if (deep) {
+    const deepChecks = [
+      ['agent-compass.commands.json exists', existsSync(join(HOST, 'agent-compass.commands.json'))],
+      ['docs/architecture/repo-map.md exists', existsSync(join(HOST, 'docs', 'architecture', 'repo-map.md'))],
+      ['docs/decisions/000-template.md exists', existsSync(join(HOST, 'docs', 'decisions', '000-template.md'))],
+      ['.github/PULL_REQUEST_TEMPLATE.md exists', existsSync(join(HOST, '.github', 'PULL_REQUEST_TEMPLATE.md'))],
+      ['.github/instructions/agent-compass.instructions.md exists', existsSync(join(HOST, '.github', 'instructions', 'agent-compass.instructions.md'))],
+      ['.github/instructions/pr-workflow.instructions.md exists', existsSync(join(HOST, '.github', 'instructions', 'pr-workflow.instructions.md'))],
+      ['.mcp/README.md exists', existsSync(join(HOST, '.mcp', 'README.md'))],
+      ['.mcp/figma.example.json exists', existsSync(join(HOST, '.mcp', 'figma.example.json'))],
+      ['.mcp/projectmem.example.json exists', existsSync(join(HOST, '.mcp', 'projectmem.example.json'))],
+    ]
+    const missing = deepChecks.filter(([, ok]) => !ok)
+    console.log('\nDeep advisory checks:')
+    deepChecks.forEach(([label, ok]) => console.log(`${ok ? '✓' : '·'} ${label}`))
+    if (missing.length) console.log(`\nDeep advisory: ${missing.length} optional setup file(s) missing.`)
   }
 }
 
@@ -186,6 +205,16 @@ const configs = [
   ['templates/monorepo/tsconfig.base.json', 'tsconfig.base.json'],
   ['templates/security/.osv-scanner.toml', '.osv-scanner.toml'],
   ['templates/monorepo/env.example.tpl', '.env.example'],
+  ['templates/commands/agent-compass.commands.json', 'agent-compass.commands.json'],
+  ['templates/context/repo-map.md', 'docs/architecture/repo-map.md'],
+  ['docs/decisions/000-template.md', 'docs/decisions/000-template.md'],
+  ['templates/handoff.md', 'docs/handoff-template.md'],
+  ['templates/agent/.github/PULL_REQUEST_TEMPLATE.md', '.github/PULL_REQUEST_TEMPLATE.md'],
+  ['templates/agent/.github/instructions/agent-compass.instructions.md', '.github/instructions/agent-compass.instructions.md'],
+  ['templates/agent/.github/instructions/pr-workflow.instructions.md', '.github/instructions/pr-workflow.instructions.md'],
+  ['templates/mcp/README.md', '.mcp/README.md'],
+  ['templates/mcp/figma.example.json', '.mcp/figma.example.json'],
+  ['templates/mcp/projectmem.example.json', '.mcp/projectmem.example.json'],
   ['templates/specs/specs-readme.md', 'specs/README.md'],
   ['templates/specs/constitution-template.md', 'specs/constitution.md'],
   ['templates/memory/projectmem-readme.md', '.projectmem/README.md'],

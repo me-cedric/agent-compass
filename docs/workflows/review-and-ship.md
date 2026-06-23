@@ -42,5 +42,6 @@ Never say "done" with a skipped/failed gate — mark `partial`.
 
 Conventional commit(s). PR from the full history (`git diff <base>...HEAD`), using
 the [PR template](../../templates/agent/.github/PULL_REQUEST_TEMPLATE.md), with a
-test plan. Push `-u` for a new branch. No attribution lines unless the project
-asks. See [git-workflow](../guidelines/git-workflow.md).
+test plan. Push `-u` for a new branch. Default PR base is `develop`, assign the
+PR to yourself, use existing labels only, and request at least one reviewer. See
+[pull-requests](pull-requests.md) and [git-workflow](../guidelines/git-workflow.md).
