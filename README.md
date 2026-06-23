@@ -1,9 +1,18 @@
 # agent-compass
 
-Agent Compass is an importable operating manual for AI coding agents. It gives
-Claude Code, Codex, GitHub Copilot, Cursor, Windsurf, Gemini, and similar tools
-the same project contract, quality gates, workflows, templates, and helper
-scripts.
+[![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-v0.3.0-blue)
+![Node](https://img.shields.io/badge/node-24-339933)
+![License](https://img.shields.io/badge/license-internal-lightgrey)
+![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Copilot%20%7C%20Cursor-purple)
+![Specs](https://img.shields.io/badge/specs-enabled-success)
+![Memory](https://img.shields.io/badge/projectmem-supported-success)
+
+Importable operating manual for AI coding agents.
+
+Agent Compass gives Claude Code, Codex, GitHub Copilot, Cursor, Windsurf,
+Gemini, and similar tools the same project contract, quality gates, workflows,
+templates, and helper scripts.
 
 Use it as a submodule in real projects, or clone it standalone to bootstrap a
 new project from proven defaults.
@@ -22,6 +31,9 @@ Agent Compass exists for three jobs:
 ## Table Of Contents
 
 - [Quick Start](#quick-start)
+- [Status](#status)
+- [Safety Model](#safety-model)
+- [Feature Map](#feature-map)
 - [What You Get](#what-you-get)
 - [Repository Layout](#repository-layout)
 - [Core Contract](#core-contract)
@@ -37,6 +49,7 @@ Agent Compass exists for three jobs:
 - [Using In Host Projects](#using-in-host-projects)
 - [Maintaining Agent Compass](#maintaining-agent-compass)
 - [Provenance](#provenance)
+- [Keywords](#keywords)
 
 ---
 
@@ -100,6 +113,53 @@ Agent Compass is mostly Markdown and templates:
 - Pick stack guidance from [`stacks/`](stacks/).
 - Copy runnable config from [`templates/`](templates/).
 - Use reusable skills from [`skills/`](skills/).
+
+---
+
+## Status
+
+Agent Compass is usable across real projects. Current version: `0.3.0`.
+
+| Area | Current state |
+| ---- | ------------- |
+| Agent contract | Tool-agnostic `AGENTS.md` with Claude, Codex, Copilot, Cursor, Windsurf, and Gemini pointers. |
+| Installer | Non-destructive host setup with `--doctor` and `--doctor --deep`. |
+| Bootstrap | Interactive prompt generator for new projects and stack presets. |
+| Specs | Native `specs/` templates and spec workflow; optional upstream Spec Kit path documented. |
+| Memory | projectmem workflow, templates, policy, and MCP examples. |
+| PR workflow | GitHub PR create/review helpers and reviewer/label/base rules. |
+| Figma | MCP guidance, frontend skill, and design-system extraction worksheet. |
+| CI | Node 24, latest tracked action majors, tests, naming/index/docs/action guards. |
+| Release | Changelog/version/tag guard and release helper script. |
+
+## Safety Model
+
+- Installer never overwrites existing host files.
+- Agents must not commit, push, deploy, publish, or open PRs unless explicitly asked.
+- Commands must come from `agent-compass.commands.json`, `package.json`, or documented equivalents.
+- Knowledge capture refuses likely secrets, personal data, and known project/domain tokens.
+- Project memory must not store secrets, credentials, tokens, personal data, or temporary brainstorming.
+- Specs hold product intent; implementation decisions belong in plans.
+- PR helpers use existing labels only and require at least one reviewer.
+- CI guards reject stale action majors and broken local docs/template links.
+
+## Feature Map
+
+| Need | Start here | Helper |
+| ---- | ---------- | ------ |
+| Install into host repo | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/install.mjs` |
+| Start a new project | [`docs/workflows/new-project.md`](docs/workflows/new-project.md) | `scripts/bootstrap.mjs` |
+| Get repo context fast | [`docs/architecture/repo-map.md`](docs/architecture/repo-map.md) | `scripts/context.mjs` |
+| Check host readiness | [`docs/tooling/prerequisites.md`](docs/tooling/prerequisites.md) | `scripts/doctor-report.mjs` |
+| Generate agent runbook | [`AGENTS.md`](AGENTS.md) | `scripts/runbook.mjs` |
+| Create specs | [`docs/workflows/spec-driven-development.md`](docs/workflows/spec-driven-development.md) | `templates/specs/` |
+| Use durable memory | [`docs/workflows/project-memory.md`](docs/workflows/project-memory.md) | `templates/memory/` |
+| Wire MCP tools | [`docs/tooling/mcp.md`](docs/tooling/mcp.md) | `templates/mcp/` |
+| Build from Figma | [`skills/figma-mcp-frontend/SKILL.md`](skills/figma-mcp-frontend/SKILL.md) | `templates/design-system/` |
+| Create a PR | [`docs/workflows/pull-requests.md`](docs/workflows/pull-requests.md) | `scripts/pr.mjs` |
+| Review a PR | [`docs/workflows/pr-review.md`](docs/workflows/pr-review.md) | `scripts/pr-review.mjs` |
+| Capture reusable knowledge | [`docs/workflows/knowledge-capture.md`](docs/workflows/knowledge-capture.md) | `scripts/pull-knowledge.mjs` |
+| Release Agent Compass | [`docs/workflows/releasing.md`](docs/workflows/releasing.md) | `scripts/release.mjs` |
 
 ---
 
@@ -503,3 +563,14 @@ helpers.
 
 Stack-specific skills may carry light illustrative naming. Keep shared guidance
 generic and move host-specific rules into the host project.
+
+## Keywords
+
+AI coding agents, agent instructions, AGENTS.md, Claude Code, Codex, GitHub
+Copilot, Cursor, Windsurf, Gemini, spec-driven development, project memory,
+projectmem, MCP, Figma MCP, PR automation, code review, TDD, documentation,
+quality gates, monorepo, pnpm, turbo, NestJS, React, Expo.
+
+## License
+
+Internal use only. See [`LICENSE`](LICENSE).
