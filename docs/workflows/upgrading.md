@@ -13,12 +13,20 @@ wants newer standards without surprise changes.
 git submodule update --remote docs/agent-compass
 ```
 
+Or use the helper from an agent-compass checkout:
+
+```bash
+node scripts/upgrade-host.mjs /path/to/host docs/agent-compass --dry
+node scripts/upgrade-host.mjs /path/to/host docs/agent-compass
+```
+
 3. Re-run the installer from the host root:
 
 ```bash
 node docs/agent-compass/scripts/install.mjs --dry
 node docs/agent-compass/scripts/install.mjs
 node docs/agent-compass/scripts/install.mjs --doctor
+node docs/agent-compass/scripts/install.mjs --doctor --deep
 ```
 
 4. Review the diff. Keep host-specific rules in the host root `AGENTS.md`; keep

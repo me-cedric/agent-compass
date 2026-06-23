@@ -7,6 +7,12 @@ implement review fixes.
 
 User can say: "local PR review #123".
 
+Helper:
+
+```bash
+node docs/agent-compass/scripts/pr-review.mjs 123
+```
+
 Flow:
 
 ```bash

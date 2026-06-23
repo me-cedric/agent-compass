@@ -3,6 +3,8 @@
   "packageManager": "npm",
   "install": "npm install",
   "check": "npm run check",
+  "context": "npm run context",
+  "doctorReport": "npm run doctor-report",
   "lint": {
     "naming": "npm run lint:naming",
     "indexes": "npm run lint:indexes",
@@ -10,6 +12,7 @@
     "release": "npm run lint:release"
   },
   "test": "npm test",
+  "runbook": "npm run runbook",
   "typecheck": null,
   "build": null,
   "notes": [

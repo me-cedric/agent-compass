@@ -21,6 +21,12 @@ If reviewer is missing, ask for at least one reviewer and show likely choices
 from repo contributors. If labels are missing, inspect `gh label list` and pick
 only labels that exist.
 
+Helper:
+
+```bash
+node docs/agent-compass/scripts/pr.mjs --reviewer <login> --label <existing-label>
+```
+
 ## 2. Prepare PR Body
 
 Use [`../../templates/agent/.github/PULL_REQUEST_TEMPLATE.md`](../../templates/agent/.github/PULL_REQUEST_TEMPLATE.md).

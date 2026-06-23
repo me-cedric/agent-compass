@@ -1,76 +1,81 @@
 # agent-compass
 
-A central, importable repository of **agentic standards, guidelines, skills and
-bootstrap tooling** for AI coding agents — Claude Code, Codex, GitHub Copilot,
-Cursor, and friends. Add it to any project as a git submodule (or clone it
-standalone) to give every agent the same conventions, the same quality gates,
-and a one-command path to bootstrap a new project that comes out consistent
-every time.
+Agent Compass is an importable operating manual for AI coding agents. It gives
+Claude Code, Codex, GitHub Copilot, Cursor, Windsurf, Gemini, and similar tools
+the same project contract, quality gates, workflows, templates, and helper
+scripts.
 
-It answers three needs:
+Use it as a submodule in real projects, or clone it standalone to bootstrap a
+new project from proven defaults.
 
-1. **Teach** agents how to work — one contract, enforced the same way across tools.
-2. **Bootstrap** new projects from proven stack presets, by answering a few questions.
-3. **Grow** — pull knowledge out of real projects back into this repo so the
-   baseline keeps improving.
+Agent Compass exists for three jobs:
 
----
-
-## What's inside
-
-```
-agent-compass/
-├── AGENTS.md              ← the tool-agnostic agent contract (read this first)
-├── CLAUDE.md CODEX.md     ← thin per-tool pointers to AGENTS.md
-├── .github/copilot-instructions.md
-├── docs/
-│   ├── guidelines/        ← enforced rules: coding-style, typescript, testing-tdd,
-│   │                        security, git-workflow, development-workflow,
-│   │                        documentation, agent-behavior, performance
-│   ├── architecture/      ← generic principles: monorepo, resilience, observability,
-│   │                        feature-flags, api-design, shared-types
-│   ├── tooling/           ← prerequisites, rtk, pnpm, turbo, mcp, projectmem, sonarqube, docker,
-│   │                        husky, env-management, api-contract-sync,
-│   │                        security-scanning, version-pinning
-│   ├── workflows/         ← playbooks: spec-driven-development, new-project,
-│   │                        new-module, review-and-ship, knowledge-capture
-│   └── agent-setup.md     ← mapping a global agent config into a project
-├── skills/                ← portable agent skills (caveman, ponytail, gen-docs,
-│                            verify-*, NestJS/Drizzle/BullMQ/React/Expo patterns)
-├── stacks/                ← opinionated presets the bootstrap offers
-├── templates/             ← real, copy-paste config (turbo, pnpm, tsconfig, prettier,
-│                            commitlint, husky, eslint, docker, sonar, OSV, CI, env)
-├── knowledge/             ← extracted instincts + example module READMEs; the
-│                            growing knowledge base (and staging for pulled knowledge)
-└── scripts/               ← bootstrap.mjs · context.mjs · pull-knowledge.mjs · install.mjs
-```
-
-Start with **[AGENTS.md](AGENTS.md)**. Everything else is depth behind it.
-Install optional integration prerequisites from
-[`docs/tooling/prerequisites.md`](docs/tooling/prerequisites.md): projectmem
-needs Python, and optional upstream Spec Kit CLI needs Python plus `uv` or
-`pipx`.
+1. **Teach** agents how to work: context first, spec when needed, plan, implement,
+   validate, report.
+2. **Bootstrap** projects: stack presets, templates, specs, memory, PR workflow,
+   and tool pointers.
+3. **Grow** safely: pull reusable knowledge out of real projects without leaking
+   secrets, personal data, or project-specific facts.
 
 ---
 
-## Quick start
+## Table Of Contents
 
-### A. Add it to an existing project (submodule)
+- [Quick Start](#quick-start)
+- [What You Get](#what-you-get)
+- [Repository Layout](#repository-layout)
+- [Core Contract](#core-contract)
+- [Agent Support](#agent-support)
+- [Workflows](#workflows)
+- [Scripts](#scripts)
+- [Templates](#templates)
+- [Skills](#skills)
+- [MCP, Memory, And Figma](#mcp-memory-and-figma)
+- [PR Workflow](#pr-workflow)
+- [Prompt Examples](#prompt-examples)
+- [Validation And Release](#validation-and-release)
+- [Using In Host Projects](#using-in-host-projects)
+- [Maintaining Agent Compass](#maintaining-agent-compass)
+- [Provenance](#provenance)
+
+---
+
+## Quick Start
+
+### Add To Existing Project
+
+From the host project root:
 
 ```bash
-# from your project root
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
-node docs/agent-compass/scripts/install.mjs        # wires guidelines + hooks into the host
-node docs/agent-compass/scripts/install.mjs --doctor # verifies host wiring
-node docs/agent-compass/scripts/install.mjs --doctor --deep # optional agent workflow checks
+node docs/agent-compass/scripts/install.mjs
+node docs/agent-compass/scripts/install.mjs --doctor
+node docs/agent-compass/scripts/install.mjs --doctor --deep
 ```
 
-`install.mjs` copies/links a root `AGENTS.md` pointer, the husky hooks, and the
-config templates you select, then prints the next steps. Re-run it after you
-`git submodule update --remote` to pick up new standards. For tagged bumps, use
-[`docs/workflows/upgrading.md`](docs/workflows/upgrading.md).
+This creates missing agent pointers, hooks, command registry, specs/memory
+starters, MCP examples, PR templates, and Copilot instructions. It never
+overwrites existing files.
 
-### B. Bootstrap a brand-new project
+Then run:
+
+```bash
+node docs/agent-compass/scripts/context.mjs .
+node docs/agent-compass/scripts/doctor-report.mjs . --write
+node docs/agent-compass/scripts/runbook.mjs . --write
+```
+
+Result:
+
+- `AGENTS.md` tells agents where the shared contract lives.
+- `agent-compass.commands.json` tells agents which commands exist.
+- `.agent/doctor-report.md` shows host readiness gaps.
+- `.agent/RUNBOOK.md` gives agents a compact startup path.
+
+Use [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) when bumping
+the submodule later.
+
+### Bootstrap New Project
 
 ```bash
 git clone git@github.com:<owner>/agent-compass.git
@@ -78,128 +83,422 @@ cd agent-compass
 node scripts/bootstrap.mjs
 ```
 
-The script asks a handful of questions (project name, stack(s), package manager,
-database/ORM, auth, queues, testing, CI, …) and writes:
+The bootstrap writes:
 
-- **`BOOTSTRAP_PROMPT.md`** — a precise, copy-paste prompt that tells an agent
-  exactly what to build, in what order, enforcing TDD, per-module docs, lint /
-  typecheck / test gates, and the chosen stack presets.
-- **`agent-compass.answers.json`** — your answers, so re-runs and `install.mjs`
-  stay consistent.
+- `BOOTSTRAP_PROMPT.md`: a copy-paste build prompt with stack choices, spec-first
+  setup, TDD, docs, validation, and quality gates.
+- `agent-compass.answers.json`: saved answers for repeatable setup.
 
-Paste `BOOTSTRAP_PROMPT.md` into Claude Code / Codex / Copilot, and you get a
-project that matches the guidelines — and matches what a teammate would get from
-the same answers.
+Paste `BOOTSTRAP_PROMPT.md` into your agent. It starts with
+`specs/000-project/` artifacts before scaffolding code.
 
-### C. Just browse it
+### Browse And Copy
 
-It's all Markdown. Read `docs/`, copy from `templates/`, lift a `skills/` file.
+Agent Compass is mostly Markdown and templates:
 
----
-
-## How each agent picks it up
-
-| Tool    | Entry file                                   | Notes                                                        |
-| ------- | -------------------------------------------- | ----------------------------------------------------------- |
-| Claude   | `CLAUDE.md` → `AGENTS.md`                       | Skills in `skills/` are usable directly or via skillshare.  |
-| Codex    | `CODEX.md` → `AGENTS.md`                        | Context-layering + repo-understanding notes.                |
-| Copilot  | `.github/copilot-instructions.md` → `AGENTS.md` | Per-path rules under `templates/agent/.github/instructions/`. |
-| Cursor   | `.cursor/rules/agent-compass.mdc` → `AGENTS.md` | Created by `install.mjs` when missing.                      |
-| Windsurf | `.windsurf/rules/agent-compass.md` → `AGENTS.md` | Created by `install.mjs` when missing.                     |
-| Gemini   | `GEMINI.md` → `AGENTS.md`                       | Created by `install.mjs` when missing.                      |
-| Others   | point the tool's rules file at `AGENTS.md`      | One contract, many front doors.                             |
+- Read [`AGENTS.md`](AGENTS.md).
+- Pick stack guidance from [`stacks/`](stacks/).
+- Copy runnable config from [`templates/`](templates/).
+- Use reusable skills from [`skills/`](skills/).
 
 ---
 
-## Prompt examples
+## What You Get
 
-Copy, adapt, paste. These assume agent-compass is at `docs/agent-compass/` (or
-that you're chatting from inside the repo).
+| Area | What it provides |
+| ---- | ---------------- |
+| Agent contract | One canonical [`AGENTS.md`](AGENTS.md) for all tools. |
+| Spec workflow | Native `specs/<id-slug>/` flow for idea → spec → plan → tasks → implementation. |
+| Project memory | projectmem guidance and templates for durable factual memory. |
+| Command registry | `agent-compass.commands.json` so agents stop inventing commands. |
+| Repo context | `context.mjs`, repo map template, and generated runbook/report helpers. |
+| PR workflow | PR creation/review docs, templates, and `gh` helper scripts. |
+| MCP setup | MCP docs and examples for projectmem and Figma. |
+| Figma frontend flow | Design-system extraction template and Figma MCP skill. |
+| Quality gates | TDD, lint/typecheck/test reporting, docs sync, security discipline. |
+| Knowledge capture | Safe pull/promote workflow for reusable project lessons. |
 
-**Bootstrap a new service**
+---
 
-> Read `docs/agent-compass/AGENTS.md` and `docs/agent-compass/stacks/nestjs-api.md`.
-> Scaffold a NestJS + Drizzle + BullMQ API in a pnpm/turbo monorepo following the
-> templates in `docs/agent-compass/templates/`. Use TDD. Create a module `billing`
-> with a README per the documentation guideline. Stop after the plan for my review.
+## Repository Layout
 
-**Add a feature, enforced**
+```text
+agent-compass/
+├── AGENTS.md
+├── CLAUDE.md
+├── CODEX.md
+├── agent-compass.commands.json
+├── docs/
+│   ├── architecture/
+│   ├── decisions/
+│   ├── guidelines/
+│   ├── tooling/
+│   └── workflows/
+├── knowledge/
+├── scripts/
+├── skills/
+├── stacks/
+├── templates/
+└── test/
+```
 
-> Following `docs/agent-compass/AGENTS.md`, add a `POST /invoices` endpoint.
-> Write the test first. Keep OpenAPI/Scalar, Bruno, and Gherkin in sync per
-> `docs/agent-compass/docs/tooling/api-contract-sync.md`. Report against the
-> Completion Gate.
+Important entry points:
 
-**Harden an existing module**
+| Path | Purpose |
+| ---- | ------- |
+| [`AGENTS.md`](AGENTS.md) | Canonical agent contract. Read first. |
+| [`docs/guidelines/`](docs/guidelines/) | Coding, testing, security, docs, workflow rules. |
+| [`docs/architecture/`](docs/architecture/) | Generic architecture principles and repo-map guidance. |
+| [`docs/tooling/`](docs/tooling/) | Tool setup: prerequisites, MCP, projectmem, pnpm, turbo, Docker, security. |
+| [`docs/workflows/`](docs/workflows/) | Playbooks for project creation, specs, memory, PRs, release, upgrades. |
+| [`skills/`](skills/) | Portable agent skills for work style, review, security, stacks, Figma. |
+| [`templates/`](templates/) | Copyable config, MCP examples, PR template, specs, memory, design system. |
+| [`scripts/`](scripts/) | Bootstrap, install, doctor, PR, review, release, upgrade helpers. |
 
-> Use the `verify-module`, `verify-quality`, and `verify-security` skills in
-> `docs/agent-compass/skills/` on `src/modules/payments/`. Only fix Critical/High
-> findings. Update the module README.
+---
 
-**Apply resilience patterns**
+## Core Contract
 
-> Per `docs/agent-compass/docs/architecture/resilience.md` and the
-> `resilience-observability-patterns` skill, wrap the external Acme client in a
-> circuit breaker + retry created once in `onModuleInit`. Add a focused test.
+The contract in [`AGENTS.md`](AGENTS.md) is tool-agnostic. Host project guidance
+wins when it conflicts:
 
-**Capture knowledge back**
+```text
+host project AGENTS.md > agent-compass AGENTS.md > model defaults
+```
+
+Baseline behavior:
+
+- Gather context before code.
+- Clarify ambiguity before planning.
+- Use specs for new projects, new features, ambiguous behavior, and high-risk
+  work.
+- Plan before implementation.
+- Reuse existing code, then standard library, then existing dependencies.
+- Validate with real commands from `agent-compass.commands.json` or
+  `package.json`.
+- Report with the Completion Gate.
+- Never commit, push, deploy, publish, or open PRs unless explicitly asked.
+
+Completion Gate:
+
+```text
+Goal:
+Mode:            implementation | review-only | docs-only | partial
+Files changed:
+Commands run:
+Validation:      one line per command - passed | failed | partial | not run + reason
+Risks:
+Next step:
+```
+
+---
+
+## Agent Support
+
+| Tool | Entry file | Notes |
+| ---- | ---------- | ----- |
+| Claude | `CLAUDE.md` → `AGENTS.md` | Skills can be referenced directly or synced globally. |
+| Codex | `CODEX.md` → `AGENTS.md` | Uses same contract and repo context helpers. |
+| Copilot | `.github/copilot-instructions.md` → `AGENTS.md` | Extra `.github/instructions/*.instructions.md` templates included. |
+| Cursor | `.cursor/rules/agent-compass.mdc` → `AGENTS.md` | Created by installer when missing. |
+| Windsurf | `.windsurf/rules/agent-compass.md` → `AGENTS.md` | Created by installer when missing. |
+| Gemini | `GEMINI.md` → `AGENTS.md` | Created by installer when missing. |
+| Other tools | Point rule file at `AGENTS.md` | Keep one contract, many front doors. |
+
+---
+
+## Workflows
+
+| Workflow | Use when |
+| -------- | -------- |
+| [`new-project.md`](docs/workflows/new-project.md) | Starting from zero. |
+| [`new-module.md`](docs/workflows/new-module.md) | Adding a feature/module to existing code. |
+| [`spec-driven-development.md`](docs/workflows/spec-driven-development.md) | Turning ideas into specs, plans, tasks, and synced docs. |
+| [`project-memory.md`](docs/workflows/project-memory.md) | Reading/writing durable project memory during work. |
+| [`pull-requests.md`](docs/workflows/pull-requests.md) | Creating GitHub PRs with sane defaults. |
+| [`pr-review.md`](docs/workflows/pr-review.md) | Local/GitHub PR reviews and implementing submitted review fixes. |
+| [`review-and-ship.md`](docs/workflows/review-and-ship.md) | Final self-review, validation, handoff, PR. |
+| [`knowledge-capture.md`](docs/workflows/knowledge-capture.md) | Pulling reusable lessons into Agent Compass. |
+| [`releasing.md`](docs/workflows/releasing.md) | Releasing this repo. |
+| [`upgrading.md`](docs/workflows/upgrading.md) | Bumping a host project submodule. |
+
+---
+
+## Scripts
+
+All scripts are dependency-free Node scripts.
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run bootstrap` | Interactive new-project prompt generator. |
+| `npm run context` | Print compact repo snapshot for agents. |
+| `npm run doctor-report` | Print host readiness report. |
+| `npm run runbook` | Print compact agent runbook. |
+| `npm run install-into` | Install pointers/templates into a host. |
+| `npm run pull-knowledge` | Stage reusable knowledge from another project. |
+| `npm run pr` | Create PR through `gh` with Agent Compass defaults. |
+| `npm run pr-review` | Build local PR review packet or submit review. |
+| `npm run release` | Prepare version/changelog release metadata. |
+| `npm run upgrade-host` | Update host submodule and run deep doctor. |
+| `npm run check` | Run tests + naming/index/docs guards. |
+
+Examples:
+
+```bash
+node scripts/doctor-report.mjs /path/to/host --write
+node scripts/runbook.mjs /path/to/host --write
+node scripts/pr.mjs --reviewer alice --label enhancement --dry
+node scripts/pr-review.mjs 123 --out .agent/pr-123-review.md
+node scripts/release.mjs 0.4.0 --dry
+node scripts/upgrade-host.mjs /path/to/host docs/agent-compass --dry
+```
+
+---
+
+## Templates
+
+Templates are copyable starters, not generated framework magic.
+
+| Group | Includes |
+| ----- | -------- |
+| [`agent/`](templates/agent/) | PR template and GitHub Copilot instruction templates. |
+| [`commands/`](templates/commands/) | `agent-compass.commands.json` starter. |
+| [`context/`](templates/context/) | Repo map template. |
+| [`conformance/`](templates/conformance/) | Lightweight agent smoke test. |
+| [`design-system/`](templates/design-system/) | Figma/design-token extraction worksheet. |
+| [`memory/`](templates/memory/) | projectmem README and policy. |
+| [`mcp/`](templates/mcp/) | MCP examples for projectmem and Figma. |
+| [`specs/`](templates/specs/) | Constitution, spec, plan, tasks, checklist templates. |
+| [`monorepo/`](templates/monorepo/) | pnpm/turbo/tsconfig/prettier/husky/env starters. |
+| [`ci/`](templates/ci/) | GitHub Actions examples. |
+| [`docker/`](templates/docker/) | Dockerfiles and local compose. |
+| [`eslint/`](templates/eslint/) | Stack-specific ESLint configs. |
+| [`security/`](templates/security/) | OSV scanner config. |
+| [`sonar/`](templates/sonar/) | SonarQube project configs. |
+
+Full index: [`templates/README.md`](templates/README.md).
+
+---
+
+## Skills
+
+Skills are portable `SKILL.md` folders. Agents can load them directly or use them
+as referenced context.
+
+Useful groups:
+
+- Working style: `caveman`, `ponytail`, `caveman-review`, `ponytail-review`.
+- Quality: `gen-docs`, `verify-module`, `verify-quality`, `verify-change`,
+  `verify-security`.
+- Workflow: `spec-workflow`, `project-memory`, `pr-workflow`.
+- Frontend/design: `figma-mcp-frontend`, `react-admin-dashboard-patterns`,
+  `expo-react-native-patterns`.
+- Backend: `nestjs-patterns`, `drizzle-postgres-patterns`, `bullmq-patterns`,
+  `resilience-observability-patterns`, `external-service-patterns`.
+
+Full index: [`skills/README.md`](skills/README.md).
+
+---
+
+## MCP, Memory, And Figma
+
+Agent Compass supports MCP as optional tooling, not a hard dependency.
+
+Start here:
+
+- [`docs/tooling/prerequisites.md`](docs/tooling/prerequisites.md)
+- [`docs/tooling/mcp.md`](docs/tooling/mcp.md)
+- [`docs/tooling/projectmem.md`](docs/tooling/projectmem.md)
+- [`docs/workflows/project-memory.md`](docs/workflows/project-memory.md)
+
+projectmem flow:
+
+```text
+Before work: read summaries and pre-action warnings.
+During work: log failed attempts and important findings.
+After work: log decisions, fixes, files changed, validation, remaining risks.
+Never log secrets, credentials, tokens, personal data, or temporary brainstorming.
+```
+
+Figma flow:
+
+```text
+Verify Figma MCP tools → pull selected frame/file context → extract tokens,
+components, variants, states, layout rules → map to existing code components →
+implement → validate visually.
+```
+
+Use [`skills/figma-mcp-frontend/SKILL.md`](skills/figma-mcp-frontend/SKILL.md)
+and [`templates/design-system/README.md`](templates/design-system/README.md)
+for design-system work.
+
+---
+
+## PR Workflow
+
+Agent Compass assumes GitHub PRs even if product issues live elsewhere, such as
+Jira.
+
+Defaults:
+
+- base branch: `develop`
+- assign PR to self: `--assignee @me`
+- require at least one reviewer
+- use only labels that exist in the repo
+- include what changed, why, validation, risks, and reviewer notes
+
+Create PR:
+
+```bash
+node docs/agent-compass/scripts/pr.mjs --reviewer <login> --label <existing-label>
+```
+
+Local review packet:
+
+```bash
+node docs/agent-compass/scripts/pr-review.mjs 123
+```
+
+Submit prepared review:
+
+```bash
+node docs/agent-compass/scripts/pr-review.mjs 123 --submit request-changes --body /tmp/review.md
+```
+
+Read:
+
+- [`docs/workflows/pull-requests.md`](docs/workflows/pull-requests.md)
+- [`docs/workflows/pr-review.md`](docs/workflows/pr-review.md)
+- [`skills/pr-workflow/SKILL.md`](skills/pr-workflow/SKILL.md)
+
+---
+
+## Prompt Examples
+
+These assume Agent Compass is installed at `docs/agent-compass/`.
+
+### Bootstrap A Service
+
+> Read `docs/agent-compass/AGENTS.md` and
+> `docs/agent-compass/stacks/nestjs-api.md`. Scaffold a NestJS + Drizzle + BullMQ
+> API in a pnpm/turbo monorepo. Use TDD. Create `specs/000-project/` first.
+> Stop after the plan.
+
+### Add A Feature
+
+> Following `docs/agent-compass/AGENTS.md`, add `POST /invoices`. Update or
+> create the feature spec first. Write the test first. Keep OpenAPI/Scalar,
+> Bruno, and Gherkin in sync. Report against the Completion Gate.
+
+### Build From Figma
+
+> Use Figma MCP and `docs/agent-compass/skills/figma-mcp-frontend/SKILL.md`.
+> Pull the selected checkout frame, extract tokens/components/states, map them
+> to existing UI components, implement the screen, and validate visually.
+
+### Review A PR Locally
+
+> Use `docs/agent-compass/docs/workflows/pr-review.md` for local PR review #123.
+> Findings first. No GitHub review submission unless I ask.
+
+### Implement Submitted Review Fixes
+
+> Implement review fixes for PR #123. Verify every review item against current
+> code first, skip outdated comments with reason, patch relevant issues, run
+> validation, and report.
+
+### Capture Knowledge Back
 
 > Run `node docs/agent-compass/scripts/pull-knowledge.mjs ../other-project`.
-> Review what landed in `knowledge/incoming/`, and promote the generic instincts
-> into `knowledge/` and `docs/` with a short PR.
+> Review `knowledge/incoming/`, promote only generic patterns, and redact any
+> project-specific facts.
 
-More live in [`docs/workflows/`](docs/workflows/), including
-[`spec-driven-development.md`](docs/workflows/spec-driven-development.md) for
-idea/spec/plan/task flow,
-[`project-memory.md`](docs/workflows/project-memory.md) for durable agent memory,
-[`releasing.md`](docs/workflows/releasing.md) for tagged releases and
-[`upgrading.md`](docs/workflows/upgrading.md) for safe submodule bumps.
+---
 
-**Release this repo**
+## Validation And Release
+
+Repo validation:
 
 ```bash
 npm run check
-git tag -a v0.2.0 -m "v0.2.0"
+for f in scripts/*.mjs; do node --check "$f"; done
+git diff --check
 ```
 
-Full steps: [`docs/workflows/releasing.md`](docs/workflows/releasing.md).
+Release prep:
+
+```bash
+node scripts/release.mjs 0.4.0 --dry
+node scripts/release.mjs 0.4.0
+npm run check
+git add package.json CHANGELOG.md
+git commit -m "chore: release v0.4.0"
+git tag -a v0.4.0 -m "v0.4.0"
+npm run lint:release
+```
+
+Full guide: [`docs/workflows/releasing.md`](docs/workflows/releasing.md).
 
 ---
 
-## What it enforces (the short list)
+## Using In Host Projects
 
-- **The workflow:** gather → clarify → plan → implement → review → validate. No code before a plan.
-- **Spec-driven flow:** for project creation, new features, ambiguous changes,
-  or high-risk work, create/update `specs/<id-slug>/` before implementation.
-- **Project memory:** when configured, use projectmem summaries, pre-action
-  warnings, and factual work logs to avoid repeated mistakes.
-- **Command registry:** use `agent-compass.commands.json` before choosing
-  validation commands.
-- **PR flow:** PRs default to `develop`, assign self, use real labels, and ask
-  for at least one reviewer when missing.
-- **TDD:** test first; ≥ 80% coverage on changed code. → [testing-tdd](docs/guidelines/testing-tdd.md)
-- **Quality gate:** lint + typecheck + relevant tests must pass; honest [Completion Gate](AGENTS.md#4-completion-gate) reporting.
-- **Per-module docs:** every module has an up-to-date `README.md`. → [documentation](docs/guidelines/documentation.md)
-- **API contract sync:** OpenAPI/Scalar + Bruno + Gherkin move together. → [api-contract-sync](docs/tooling/api-contract-sync.md)
-- **Conventional commits + branch naming**, husky `pre-commit`/`pre-push`/`commit-msg` hooks.
-- **Pinned versions:** `.nvmrc`, `.npmrc`, `packageManager`. → [version-pinning](docs/tooling/version-pinning.md)
-- **Security:** OSV scan, Checkmarx packaging, no hardcoded secrets, env discipline. → [security](docs/guidelines/security.md)
-- **Safety:** agents never commit/push/deploy/PR unless explicitly asked.
+Recommended host files after install:
+
+```text
+AGENTS.md
+agent-compass.commands.json
+docs/architecture/repo-map.md
+docs/decisions/000-template.md
+specs/README.md
+specs/constitution.md
+.projectmem/README.md
+.projectmem/projectmem-policy.md
+.mcp/README.md
+.github/PULL_REQUEST_TEMPLATE.md
+.github/instructions/*.instructions.md
+```
+
+Minimal host startup prompt:
+
+> Read `AGENTS.md`, `agent-compass.commands.json`, relevant specs, project memory
+> summaries, and `docs/architecture/repo-map.md`. Then plan the requested change
+> and list validation commands before editing.
 
 ---
 
-## Extending & maintaining it
+## Maintaining Agent Compass
 
-It's modular on purpose — add a guideline, a skill, a template, or a stack
-without touching the rest. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** before you
-or an agent edits it; it explains where each kind of thing goes and the rules
-that keep changes from breaking consumers. Use
-[`docs/workflows/knowledge-capture.md`](docs/workflows/knowledge-capture.md) to
-feed lessons from real projects back in.
+Before changing this repo:
+
+1. Read [`CONTRIBUTING.md`](CONTRIBUTING.md).
+2. Put new rules in the narrowest useful place: guideline, workflow, tooling doc,
+   skill, template, or script.
+3. Update indexes: [`docs/workflows/README.md`](docs/workflows/README.md),
+   [`docs/tooling/README.md`](docs/tooling/README.md),
+   [`skills/README.md`](skills/README.md), or
+   [`templates/README.md`](templates/README.md).
+4. Add or update focused tests.
+5. Run validation.
+
+Knowledge capture:
+
+```bash
+node scripts/pull-knowledge.mjs /path/to/project
+```
+
+The pull step refuses likely secrets, personal data, and known project/domain
+tokens before staging. Promote only generic material. See
+[`docs/workflows/knowledge-capture.md`](docs/workflows/knowledge-capture.md).
+
+---
 
 ## Provenance
 
-v0.1 was distilled from a production pnpm/turbo monorepo (NestJS API, React
-admin, Expo mobile) and a mature global agent configuration. Stack-specific
-skills under `skills/` were extracted from that project and may need light
-de-scoping for your context — `pull-knowledge.mjs` helps keep them current.
+v0.1 was distilled from a production pnpm/turbo monorepo and mature global agent
+configuration. The repo now layers in spec-driven work, durable project memory,
+MCP/Figma design context, PR automation, agent runbooks, and release/upgrade
+helpers.
+
+Stack-specific skills may carry light illustrative naming. Keep shared guidance
+generic and move host-specific rules into the host project.

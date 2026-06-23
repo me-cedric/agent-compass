@@ -5,6 +5,47 @@ pin by tag.
 
 ## Steps
 
+1. Prepare the version:
+
+```bash
+node scripts/release.mjs 0.3.0
+```
+
+2. Run local validation:
+
+```bash
+npm run check
+```
+
+3. Commit the release changes with a conventional commit.
+4. Create an annotated tag:
+
+```bash
+git tag -a v0.3.0 -m "v0.3.0"
+npm run lint:release
+```
+
+5. Push the commit and tag:
+
+```bash
+git push origin HEAD
+git push origin v0.3.0
+```
+
+6. Tell host projects to bump their submodule using
+   [`upgrading.md`](upgrading.md).
+
+Shortcut after review, if you want the script to commit and tag the release
+metadata:
+
+```bash
+node scripts/release.mjs 0.3.0 --commit --tag
+```
+
+Do not tag an unvalidated tree.
+
+## Manual fallback
+
 1. Ensure `CHANGELOG.md` has a dated section for the release.
 2. Run local validation:
 
@@ -16,7 +57,7 @@ npm run check
 4. Create an annotated tag:
 
 ```bash
-git tag -a v0.2.0 -m "v0.2.0"
+git tag -a v0.3.0 -m "v0.3.0"
 npm run lint:release
 ```
 
@@ -24,10 +65,5 @@ npm run lint:release
 
 ```bash
 git push origin HEAD
-git push origin v0.2.0
+git push origin v0.3.0
 ```
-
-6. Tell host projects to bump their submodule using
-   [`upgrading.md`](upgrading.md).
-
-Do not tag an unvalidated or uncommitted tree.

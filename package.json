@@ -10,7 +10,13 @@
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
     "context": "node scripts/context.mjs",
+    "doctor-report": "node scripts/doctor-report.mjs",
     "pull-knowledge": "node scripts/pull-knowledge.mjs",
+    "pr": "node scripts/pr.mjs",
+    "pr-review": "node scripts/pr-review.mjs",
+    "release": "node scripts/release.mjs",
+    "runbook": "node scripts/runbook.mjs",
+    "upgrade-host": "node scripts/upgrade-host.mjs",
     "install-into": "node scripts/install.mjs",
     "test": "node --test",
     "check": "npm test && npm run lint:naming && npm run lint:indexes && npm run lint:docs",

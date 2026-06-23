@@ -30,6 +30,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `commands/`       | `agent-compass.commands.json`                                                    | command registry for agents                          |
 | `context/`        | `repo-map.md`                                                                    | active repo surface map                              |
 | `conformance/`    | `agent-smoke-test.md`                                                            | lightweight agent behavior smoke test                |
+| `design-system/`  | `README.md`                                                                      | Figma/design-system extraction worksheet            |
 | `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`     | per-path agent rules + PR template                   |
 | `mcp/`            | `README.md`, `figma.example.json`, `projectmem.example.json`                     | MCP setup examples                                   |
 | `specs/`          | `constitution-template.md`, `spec-template.md`, `plan-template.md`, `tasks-template.md`, `checklist-template.md`, `specs-readme.md` | [spec-driven-development](../docs/workflows/spec-driven-development.md) |

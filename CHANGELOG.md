@@ -5,6 +5,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Helper scripts for PR creation/review packets, host readiness reports, agent
+  runbooks, release prep, and host submodule upgrades.
+- Design-system extraction template for Figma/design-token workflows.
+
 ## [0.3.0] - 2026-06-23
 
 ### Added

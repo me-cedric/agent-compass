@@ -3,10 +3,13 @@
   "packageManager": "<PM>",
   "install": "<PM> install",
   "check": "<PM> check",
+  "context": null,
+  "doctorReport": null,
   "lint": null,
   "typecheck": null,
   "test": null,
   "build": null,
+  "runbook": null,
   "notes": [
     "Replace nulls with real package.json commands.",
     "Agents must use this file before inventing validation commands."
