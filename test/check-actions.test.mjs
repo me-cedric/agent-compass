@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,6 +14,11 @@ test('check-actions validates live workflow action versions', async () => {
   const result = await runNode([script.pathname], { cwd: root.pathname })
   assert.equal(result.code, 0, result.stderr)
   assert.match(result.stdout, /GitHub Action versions/)
+})
+
+test('ci checkout fetches tags for release guard', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
+  assert.match(workflow, /uses: actions\/checkout@v7[\s\S]*fetch-depth: 0/)
 })
 
 test('check-actions rejects stale action majors', async () => {
