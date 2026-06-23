@@ -3,6 +3,17 @@
 All notable changes to agent-compass are documented here. Keep entries short.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Changed
+
+- SonarQube tooling overhauled to the consolidated `sonar:do` runner (scan +
+  bulk-close stale issues + patched HTML report), gated by a read-only
+  `sonar:doctor` preflight. Added `sonar-do.sh`, `sonar-doctor.sh`,
+  `bulk-close-stale-issues.mjs`, `patch-sonar-summary.mjs`; `sonar-setup.sh` now
+  mints a scoped USER_TOKEN and sets per-project `sonar.scm.provider=git`.
+  Replaces the old `sonar:scan` / `sonar:report` scripts.
+
 ## [0.1.0] - 2026-06-23
 
 ### Added

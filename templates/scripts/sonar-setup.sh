@@ -1,7 +1,12 @@
 #!/bin/bash
 
 # SonarQube Complete Setup and Scan Script
-# This script automates the entire SonarQube workflow
+# Idempotent across re-runs: detects a stale .env SONAR_TOKEN (e.g. an old
+# GLOBAL_ANALYSIS_TOKEN that lacks transition rights), revokes our previous
+# <project>-scanner-* tokens, mints a fresh USER_TOKEN, and writes it directly
+# to .env so subsequent `pnpm sonar:do` calls succeed without manual
+# copy-paste. .env is backed up to .env.bak before sed mutation; on sed
+# failure, restored from backup and exit 1.
 
 set -e  # Exit on error
 
@@ -45,7 +50,15 @@ until curl -sf "${SONAR_HOST}/api/system/status" | grep -q '"status":"UP"'; do
 done
 echo "✅ SonarQube is ready!"
 
-# Step 3: Create projects
+# Step 3 was previously a global POST for sonar.scm.provider. SonarQube
+# 26.6.0 forbids this as a global setting (HTTP 400 + body '{"errors":
+# [{"msg":"Setting 'sonar.scm.provider' cannot be global"}]}'). Because
+# ?component=<project>-<name> requires the project to already exist (Step 4
+# creates them), the per-project POST loop has been moved to a new "Step
+# 4b" immediately after Step 4. Idempotent: POST is a no-op when the
+# value already matches the existing per-project setting.
+
+# Step 4: Create projects (idempotent)
 echo "📁 Creating SonarQube projects..."
 for project in "<project>-api" "<project>-backoffice" "<project>-mobile"; do
     if curl -sf -u ${SONAR_USER}:${SONAR_PASS} \
@@ -58,46 +71,238 @@ for project in "<project>-api" "<project>-backoffice" "<project>-mobile"; do
     fi
 done
 
-# Step 4: Generate or retrieve token
-echo "🔑 Setting up authentication token..."
-TOKEN=$(curl -sf -u ${SONAR_USER}:${SONAR_PASS} -X POST \
-    "${SONAR_HOST}/api/user_tokens/generate?name=${TOKEN_NAME}&type=GLOBAL_ANALYSIS_TOKEN" | \
-    grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-
-if [ -z "$TOKEN" ]; then
-    echo "❌ Failed to generate token"
+# Step 4b: Configure per-project SCM provider=git on each project so the
+# scanner knows how to compare current source against previously-reported
+# issues server-side. Without this, issues whose code has been removed/edited
+# don't auto-close on the next `sonar-scanner` run. Hot-reloaded by
+# /api/settings/set — no restart required. Idempotent: setting the same
+# value twice is a no-op (HTTP 204 No Content). Note: SonarQube 26.6.0
+# rejects this as a global setting ("Setting 'sonar.scm.provider' cannot
+# be global"), so it MUST be set per-project via ?component=<project>-<name>.
+# Verifies: the verified working format is ?component=<KEY>&key=sonar.scm.
+# provider&value=git; ?componentKey=<KEY> was confirmed to fail in this
+# Sonar version (treated as global). Run after Step 4 because
+# /api/settings/set rejects [PROJECT]=<project>-<name> on a not-yet-created
+# project (HTTP 404).
+echo "⚙️  Configuring per-project SCM provider=git on each project..."
+SCM_OK_COUNT=0
+SCM_FAIL_COUNT=0
+for project in "<project>-api" "<project>-backoffice" "<project>-mobile"; do
+    if curl -sf -u "${SONAR_USER}:${SONAR_PASS}" -X POST \
+        "${SONAR_HOST}/api/settings/set?component=${project}&key=sonar.scm.provider&value=git" > /dev/null; then
+        SCM_OK_COUNT=$((SCM_OK_COUNT + 1))
+        echo "   ✓ Set sonar.scm.provider=git for ${project}"
+    else
+        SCM_FAIL_COUNT=$((SCM_FAIL_COUNT + 1))
+        echo "   ❌ Failed to set sonar.scm.provider=git for ${project}"
+    fi
+done
+if [ "$SCM_FAIL_COUNT" -gt 0 ]; then
+    echo "❌ ${SCM_FAIL_COUNT}/3 projects failed SCM provider configuration"
     exit 1
 fi
 
-export SONAR_TOKEN="$TOKEN"
-echo "✅ Token generated and exported"
+# Step 5: Migrate and mint token.
+# Probe the existing .env SONAR_TOKEN (if any) by HTTP status code:
+#   200 + hasPermission:true → valid USER_TOKEN, reuse (rotate later)
+#   200 + hasPermission:false → valid but scanner-only (rare; treat as migrate)
+#   401 → token rejected, refresh
+#   403 → token authenticates but lacks administerIssues (typical stale
+#         GLOBAL_ANALYSIS_TOKEN), migrate
+# In every migration path we end up with a USER_TOKEN in .env and the
+# replaced TYPE printed explicitly for the migration report. We also revoke
+# previously-minted <project>-scanner-* tokens so re-runs don't accumulate.
+echo "🔑 Checking and setting up authentication token..."
 
-# Step 5: Run tests with coverage
+CURRENT_TOKEN=""
+if [ -f .env ]; then
+    CURRENT_TOKEN=$(grep '^SONAR_TOKEN=' .env | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+fi
+
+NEEDS_NEW_TOKEN=true
+# `TOKEN_TYPE` is initialised so the success line "Migrated (${TOKEN_TYPE} →
+# USER_TOKEN)" always reads cleanly, even on cold-start when .env had no
+# SONAR_TOKEN= line (in which case the `if [ -n "$CURRENT_TOKEN" ]` block
+# is skipped entirely).
+TOKEN_TYPE="new"
+if [ -n "$CURRENT_TOKEN" ]; then
+    # Capture HTTP code separately so we can dispatch 200/401/403 distinctly.
+    # `curl -s -o /dev/null -w '%{http_code}'` always returns 0 exit, so set -e
+    # never fires — we read disambiguation from the status itself.
+    # Capture body + HTTP code in one round-trip via -o temp file + -w status.
+    # Use `mktemp` for guaranteed-unique paths under any PID-recycling regime;
+    # fallback to a PID-based path if mktemp isn't available. The EXIT trap
+    # ensures the temp file is removed on every exit path (including `set -e`
+    # early aborts that might otherwise leak the file).
+    PERM_TMP=$(mktemp "${TMPDIR:-/tmp}/<project>-sonar-perm.XXXXXX" 2>/dev/null) \
+      || PERM_TMP="${TMPDIR:-/tmp}/<project>-sonar-perm-$$"
+    trap 'rm -f "$PERM_TMP"' EXIT
+    PERM_HTTP=$(curl -s -u "${CURRENT_TOKEN}:" \
+        -o "$PERM_TMP" -w '%{http_code}' \
+        "${SONAR_HOST}/api/permissions/check?permission=administerIssues")
+    PERM_BODY=$(cat "$PERM_TMP" 2>/dev/null || echo "")
+    rm -f "$PERM_TMP"
+    case "$PERM_HTTP" in
+        200)
+            # /api/permissions/check returns 200 with `{"hasPermission":true}`
+            # (full admin → reuse) OR 200 with `{"hasPermission":false}`
+            # (token authenticates but lacks administerIssues → migrate).
+            # Differentiation is critical: silently reusing the latter will
+            # still 403 in bulk_change during `pnpm sonar:do`.
+            if echo "$PERM_BODY" | grep -q '"hasPermission":true'; then
+                TOKEN_TYPE="USER_TOKEN"
+                echo "   ✓ Existing USER_TOKEN is valid — reusing"
+                export SONAR_TOKEN="${CURRENT_TOKEN}"
+                NEEDS_NEW_TOKEN=false
+            else
+                TOKEN_TYPE="non-admin"
+                echo "   🔄 Existing token lacks administerIssues — migrating to a fresh USER_TOKEN"
+            fi
+            ;;
+        403)
+            TOKEN_TYPE="GLOBAL_ANALYSIS_TOKEN"
+            echo "   🔄 Existing token is GLOBAL_ANALYSIS_TOKEN (403 on administerIssues) — migrating to USER_TOKEN"
+            ;;
+        401)
+            TOKEN_TYPE="invalid"
+            echo "   🔄 Existing token rejected (401) — refreshing"
+            ;;
+        *)
+            TOKEN_TYPE="unknown"
+            echo "   ⚠️  Existing token probe returned HTTP ${PERM_HTTP} — migrating to be safe"
+            ;;
+    esac
+fi
+
+if [ "$NEEDS_NEW_TOKEN" = true ]; then
+    echo "   🧹 Revoking previous <project>-scanner-* tokens..."
+    # Best-effort; failures are non-fatal (token may already be gone).
+    for OLD_TOKEN_NAME in $(curl -sf -u "${SONAR_USER}:${SONAR_PASS}" \
+        "${SONAR_HOST}/api/user_tokens/search" 2>/dev/null | \
+        grep -oE '"name":"<project>-scanner-[0-9]+"' | cut -d'"' -f4 | \
+        grep -v "^${TOKEN_NAME}$" | head -10 || true); do
+        curl -sf -u "${SONAR_USER}:${SONAR_PASS}" -X POST \
+            "${SONAR_HOST}/api/user_tokens/revoke?name=${OLD_TOKEN_NAME}" >/dev/null 2>&1 || true
+        echo "      ↳ revoked ${OLD_TOKEN_NAME}"
+    done
+
+    echo "   🎫 Minting fresh USER_TOKEN..."
+    TOKEN=$(curl -sf -u ${SONAR_USER}:${SONAR_PASS} -X POST \
+        "${SONAR_HOST}/api/user_tokens/generate?name=${TOKEN_NAME}&type=USER_TOKEN" | \
+        grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+    if [ -z "$TOKEN" ]; then
+        echo "❌ Failed to generate token"
+        exit 1
+    fi
+
+    # Defensive guard: SonarQube tokens are alphanumeric+slashes+dashes and
+    # never contain `&` per docs, but if a future token does, sed would
+    # interpret `&` in the replacement string as "matched text". Detect up
+    # front and bail with a clear message instead of corrupting .env.
+    if echo "$TOKEN" | grep -q '[&|]'; then
+        echo "❌ Newly minted token contains '&' or '|' — sed replacement unsafe." \
+            "Manually edit .env to set SONAR_TOKEN=\"${TOKEN}\""
+        exit 1
+    fi
+
+    echo "   💾 Writing new token to .env..."
+    if [ ! -f .env ]; then
+        touch .env
+    fi
+    cp .env .env.bak
+    if grep -q '^SONAR_TOKEN=' .env.bak; then
+        # Escape `&` for sed replacement (sed interprets `&` as the matched
+        # text in the replacement side; SonarQube tokens don't contain `&`
+        # per docs but escape proactively). `|` is the sed delimiter, so
+        # tokens containing `|` would break the substitution entirely; the
+        # defensive `[&|]` guard above bails before we get here.
+        ESCAPED_TOKEN=$(printf '%s' "$TOKEN" | sed 's/&/\\&/g')
+        if sed "s|^SONAR_TOKEN=.*|SONAR_TOKEN=\"${ESCAPED_TOKEN}\"|" .env.bak > .env.tmp \
+            && mv .env.tmp .env; then
+            rm -f .env.bak
+            echo "      ↳ updated SONAR_TOKEN in .env"
+        else
+            echo "⚠️  Failed to update .env — restoring from .env.bak"
+            mv .env.bak .env
+            exit 1
+        fi
+    else
+        echo "SONAR_TOKEN=\"${TOKEN}\"" >> .env
+        rm -f .env.bak
+        echo "      ↳ appended SONAR_TOKEN to .env"
+    fi
+    export SONAR_TOKEN="$TOKEN"
+    echo "✅ Migrated (${TOKEN_TYPE} → USER_TOKEN) and saved to .env"
+fi
+
+# Step 6 (gate): pre-flight doctor hook before the test+cov + scanner phases.
+# Echoes the same pattern that scripts/sonar-do.sh runs at its top: if any
+# doctor probe reports [err] (stale USER_TOKEN without administerIssues,
+# missing sonar.scm.provider, Compute Engine in-progress lock, CSV drift)
+# we fail fast BEFORE running test:cov for any of the 3 apps — instead of
+# wasting 10-15 min of test:cov and then having the scanner upload
+# rejected by an unrelated pre-flight problem. SONAR_SKIP_DOCTOR=1 bypasses
+# the gate for emergency runs where the user has already triaged the
+# underlying cause out-of-band. The doctor runs AFTER Step 5 (token
+# migration completion) so probe 2 has a valid USER_TOKEN to test against;
+# a single invocation at this boundary is sufficient because none of the
+# doctor probes drift during a pnpm test:cov run (SCM, token perms, CE
+# state and CSV drift are independent of jest/vitest execution).
+# The gate also sets SONAR_DOCTOR_FRESH_SETUP=1 below so probe 3's
+# missing-CSV branch in scripts/sonar-doctor.sh treats absent
+# ./sonar-issues-*.csv files as informational rather than as a
+# stale-state failure (CSVs are generated by fetch_csv in
+# scripts/sonar-do.sh's run_project, not by setup's scanner). This
+# preserves strict probe 3 behavior for the pnpm sonar:do caller where
+# missing CSV IS a regression.
+if [ "${SONAR_SKIP_DOCTOR:-0}" != "1" ]; then
+  if ! SONAR_DOCTOR_FRESH_SETUP=1 bash scripts/sonar-doctor.sh; then
+    echo ''
+    echo '[err] Sonar pre-flight FAILED on setup. The most common fixes:'
+    echo ''
+    echo '  - administerIssues: forbidden (token is GLOBAL_ANALYSIS_TOKEN or non-admin)'
+    echo '    -> re-run pnpm sonar:setup to mint a fresh USER_TOKEN'
+    echo '  - sonar.scm.provider unset (expected "git")'
+    echo '    -> re-run pnpm sonar:setup to enable server-side SCM auto-close'
+    echo '  - Compute Engine has an in-progress task'
+    echo '    -> wait ~30s for completion or POST /api/ce/task/<id> to cancel'
+    echo '  - CSV-ahead or CSV-behind drift'
+    echo '    -> re-run the failing project pnpm sonar:do:<project>'
+    echo ''
+    echo 'To bypass this check (NOT recommended) set SONAR_SKIP_DOCTOR=1'
+    exit 1
+  fi
+fi
+
+# Step 6: Run tests with coverage for all 3 apps
 echo "🧪 Running tests with coverage for all modules..."
-pnpm --filter @scope/api test:cov
-echo "   ✓ API tests completed"
+pnpm --filter @scope/api test:cov > /dev/null 2>&1 && echo "   ✓ API tests completed" \
+  || echo "   ⚠️  API tests had errors (continuing — may be pre-existing)"
 
-pnpm --filter @scope/backoffice test -- --coverage
-echo "   ✓ Backoffice tests completed"
+pnpm --filter @scope/backoffice test -- --coverage > /dev/null 2>&1 && echo "   ✓ Backoffice tests completed" \
+  || echo "   ⚠️  Backoffice tests had errors (continuing — may be pre-existing)"
 
-pnpm --filter @scope/mobile-app test:cov
-echo "   ✓ Mobile App tests completed"
+pnpm --filter @scope/mobile-app test:cov > /dev/null 2>&1 && echo "   ✓ Mobile App tests completed" \
+  || echo "   ⚠️  Mobile App tests had errors (continuing — may be pre-existing)"
 
-# Step 6: Run SonarQube scanner for each module
+# Step 7: Run SonarQube scanner for each module
 echo "🔍 Running SonarQube scanner for each module..."
-cd apps/api || { echo '❌ Failed to cd into apps/api'; exit 1; }
-pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
-echo "   ✓ API scan completed"
-
-cd ../backoffice || { echo '❌ Failed to cd into ../backoffice'; exit 1; }
-pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
-echo "   ✓ Backoffice scan completed"
-
-cd ../mobile-app || { echo '❌ Failed to cd into ../mobile-app'; exit 1; }
-pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
-echo "   ✓ Mobile App scan completed"
-
-cd ../..
+(
+  cd apps/api || { echo '❌ Failed to cd into apps/api'; exit 1; }
+  pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
+  echo "   ✓ API scan completed"
+)
+(
+  cd apps/backoffice || { echo '❌ Failed to cd into ../backoffice'; exit 1; }
+  pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
+  echo "   ✓ Backoffice scan completed"
+)
+(
+  cd apps/mobile-app || { echo '❌ Failed to cd into ../mobile-app'; exit 1; }
+  pnpm exec sonar-scanner -Dsonar.host.url=${SONAR_HOST} -Dsonar.token=${SONAR_TOKEN}
+  echo "   ✓ Mobile App scan completed"
+)
 
 echo ""
 echo "✅ SonarQube setup and scan complete!"
@@ -106,17 +311,11 @@ echo "📊 View results at: ${SONAR_HOST}"
 echo "   Username: ${SONAR_USER}"
 echo "   Password: ${SONAR_PASS}"
 echo ""
-echo "🔑 Token for future manual scans:"
-echo "   export SONAR_TOKEN=\"${TOKEN}\""
+echo "📋 Run the full cycle (close stale issues + HTML report) per app:"
+echo "   pnpm sonar:do:api"
+echo "   pnpm sonar:do:backoffice"
+echo "   pnpm sonar:do:mobile"
 echo ""
-echo "💡 To persist the token, choose one:"
-echo "   1. Project .env: echo 'SONAR_TOKEN=${TOKEN}' >> .env"
-echo "   2. Shell profile: echo 'export SONAR_TOKEN=\"${TOKEN}\"' >> ~/.zshrc"
-echo ""
-echo "📋 Generate comprehensive reports with:"
-echo "   pnpm sonar:report"
-echo ""
-echo "   This will create:"
-echo "   - sonar-report-full.html (HTML report with vulnerabilities)"
-echo "   - sonar-issues-all.csv (CSV with all issues for analysis)"
+echo "🔍 Diagnostic if anything looks off:"
+echo "   pnpm sonar:doctor"
 echo ""

@@ -11,7 +11,7 @@ Concrete setup guides. Each points at runnable files in
 | [turbo.md](turbo.md)                           | Task pipeline, caching, the `check` verb.               |
 | [version-pinning.md](version-pinning.md)       | `.nvmrc`, `.npmrc`, `packageManager`, engines.          |
 | [husky.md](husky.md)                           | `pre-commit`, `pre-push`, `commit-msg` hooks.           |
-| [sonarqube.md](sonarqube.md)                   | Local SonarQube, scan + HTML/CSV reports.               |
+| [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |
 | [docker.md](docker.md)                         | Multi-stage images, local/test compose.                 |
 | [env-management.md](env-management.md)         | `.env.example` discipline, startup validation.          |
