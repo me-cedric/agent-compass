@@ -59,22 +59,22 @@ When changing API behaviour, update all three specification layers in the same t
 
 See `.claude/instincts/scalar-bruno-gherkin-sync.md` for the full enforcement rules.
 
-## Monetico Payment Parameters (Critical)
+## Paygate Payment Parameters (Critical)
 
-When modifying deferred MIT (pay-per-use) payment flows in `modules/payment/` or `modules/external/payment/monetico/`:
+When modifying deferred MIT (pay-per-use) payment flows in `modules/payment/` or `modules/external/payment/paygate/`:
 
-**Three payload parameters are strictly enforced by Monetico spec and MUST match exactly:**
+**Three payload parameters are strictly enforced by Paygate spec and MUST match exactly:**
 
 1. **`payment_use_case.acceptance_channel`** → `"browser"` (not `"in-app"`)
    - Signals server-initiated auth, no SDK challenge
-   - Wrong value prevents Monetico from granting authorization
+   - Wrong value prevents Paygate from granting authorization
 
 2. **`payment.transaction_initiator`** → `"merchant"`
    - Matches the current API code path for stored-card deferred parking auth
-   - Do not change this without validating the full Monetico parking flow end to end
+   - Do not change this without validating the full Paygate parking flow end to end
 
 3. **`authentication.merchant_preference`** → `"no_challenge_requested"`
    - Controls 3DS challenge behavior (MIT should skip)
    - Omitting this can cause capture to fail with `cdr=-1 lib=verification echouee`
 
-**Reference:** See `/memories/repo/monetico-payperuse-payload-gotcha.md` for details, expected payload in `docs/monetico/<project>-workflows.md` § 2, and tests in `<project>-payment.service.spec.ts`.
+**Reference:** See `/memories/repo/paygate-payperuse-payload-gotcha.md` for details, expected payload in `docs/paygate/<project>-workflows.md` § 2, and tests in `<project>-payment.service.spec.ts`.

@@ -1,5 +1,5 @@
 ---
-id: parcus-mapper-pattern
+id: <project>-mapper-pattern
 trigger: 'when converting between database entities and API DTOs'
 confidence: 0.9
 domain: nestjs

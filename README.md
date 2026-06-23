@@ -129,7 +129,7 @@ that you're chatting from inside the repo).
 **Apply resilience patterns**
 
 > Per `docs/agent-compass/docs/architecture/resilience.md` and the
-> `resilience-observability-patterns` skill, wrap the external CTS client in a
+> `resilience-observability-patterns` skill, wrap the external Acme client in a
 > circuit breaker + retry created once in `onModuleInit`. Add a focused test.
 
 **Capture knowledge back**

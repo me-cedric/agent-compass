@@ -1,5 +1,5 @@
 ---
-id: parcus-otel-logger
+id: <project>-otel-logger
 trigger: 'when adding logging to a NestJS service'
 confidence: 0.85
 domain: observability

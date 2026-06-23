@@ -1,5 +1,5 @@
 ---
-id: parcus-commit-convention
+id: <project>-commit-convention
 trigger: 'when writing a commit message'
 confidence: 0.85
 domain: git

@@ -1,5 +1,5 @@
 ---
-id: parcus-resilience-policy
+id: <project>-resilience-policy
 trigger: 'when adding circuit-breaker, retry, or resilience to external calls'
 confidence: 0.9
 domain: resilience
@@ -44,5 +44,5 @@ The resilience library is `cockatiel`. `ResilienceService` wraps it with metrics
 
 ## Evidence
 
-- `OrbilityService` uses this pattern for SFTP calls
+- `GlobexService` uses this pattern for SFTP calls
 - Known bug: creating policy per-call resets circuit-breaker state every invocation

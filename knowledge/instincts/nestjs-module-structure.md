@@ -1,5 +1,5 @@
 ---
-id: parcus-nestjs-module-structure
+id: <project>-nestjs-module-structure
 trigger: 'when creating a new NestJS module or feature'
 confidence: 0.95
 domain: nestjs

@@ -3,7 +3,7 @@ name: external-service-patterns
 description: External service integration patterns — SFTP connections, payment gateways, Keycloak auth, HTTP clients with resilience, and provider isolation
 version: 1.0.0
 filePattern: "**/external/**,**/sftp/**,**/keycloak/**,**/payment/**,**/*provider*"
-bashPattern: "sftp|keycloak|monetico|payment|webhook"
+bashPattern: "sftp|keycloak|paygate|payment|webhook"
 ---
 
 # External Service Integration Patterns
@@ -15,10 +15,10 @@ External services live under `modules/external/<provider>/`:
 ```
 modules/external/
   payment/
-    monetico/
-      monetico-payment.service.ts     # Payment initialization (Phase 1a)
-      monetico-capture.service.ts     # Capture/cancel/refund
-      monetico-callback.service.ts    # Webhook handling
+    paygate/
+      paygate-payment.service.ts     # Payment initialization (Phase 1a)
+      paygate-capture.service.ts     # Capture/cancel/refund
+      paygate-callback.service.ts    # Webhook handling
       dto/
         enrol.dto.ts
         capture.dto.ts
@@ -177,7 +177,7 @@ export class PaymentService {
 
 ### Capture/Refund Amount Arithmetic
 
-For gateways with multi-amount validation (e.g., Monetico):
+For gateways with multi-amount validation (e.g., Paygate):
 
 ```ts
 // Four amounts must sum correctly: montant = a_capturer + deja_capture + restant

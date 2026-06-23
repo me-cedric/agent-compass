@@ -57,7 +57,7 @@ bashPattern: "turbo|pnpm.*workspace|docker.compose"
       src/types/
         user.ts
         payment.ts
-        parking-lot.ts
+        resource.ts
         ...
       package.json                # "@your/shared-types"
   turbo.json

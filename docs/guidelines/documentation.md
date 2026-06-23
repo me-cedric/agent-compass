@@ -22,7 +22,7 @@ contents:
 Larger or non-obvious modules add a **`DESIGN.md`** (rationale, trade-offs,
 alternatives considered). Examples:
 [`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md),
-[`module-readme.velhop.example.md`](../../knowledge/examples/module-readme.velhop.example.md).
+[`module-readme.external-service.example.md`](../../knowledge/examples/module-readme.external-service.example.md).
 
 ## Project README
 

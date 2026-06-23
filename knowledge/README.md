@@ -8,8 +8,8 @@ material humans and agents *read* and *promote from*.
 
 | Path                     | What                                                                 |
 | ------------------------ | ------------------------------------------------------------------- |
-| `instincts-parcus/`      | Seed "instincts" — short, concrete patterns extracted from a real project (module structure, repository, mapper, BullMQ processor, OTel logger, resilience policy, shared types, commit convention, Scalar/Bruno/Gherkin sync, payment module). Project-flavored; generalize before promoting. |
-| `examples/`              | Worked artifacts: real module `README`s (resilience, velhop) and a per-path Copilot instructions example. Use as the bar for [documentation](../docs/guidelines/documentation.md). |
+| `instincts/`      | Seed "instincts" — short, concrete patterns extracted from a real project (module structure, repository, mapper, BullMQ processor, OTel logger, resilience policy, shared types, commit convention, Scalar/Bruno/Gherkin sync, payment module). Project-flavored; generalize before promoting. |
+| `examples/`              | Worked artifacts: real module `README`s (resilience, acme) and a per-path Copilot instructions example. Use as the bar for [documentation](../docs/guidelines/documentation.md). |
 | `incoming/`              | *Gitignored.* Staging for `pull-knowledge.mjs` output, awaiting review. |
 
 ## What an "instinct" is

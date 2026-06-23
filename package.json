@@ -10,7 +10,8 @@
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
     "pull-knowledge": "node scripts/pull-knowledge.mjs",
-    "install-into": "node scripts/install.mjs"
+    "install-into": "node scripts/install.mjs",
+    "lint:naming": "node scripts/check-naming.mjs"
   },
   "bin": {
     "agent-compass": "scripts/bootstrap.mjs"

@@ -1,7 +1,7 @@
 # Shared Resilience Module
 
 Provides circuit-breaker + retry policies via `cockatiel` with OpenTelemetry
-metrics emission. All external API modules (CTS, Velhop, Nexterite, Eovia, etc.)
+metrics emission. All external API modules (TRANSITCO, Acme, Umbrella, Initech, etc.)
 use this module.
 
 ## Files
@@ -85,9 +85,9 @@ Some modules need different thresholds. Add a module-specific constant that
 only overrides what differs:
 
 ```typescript
-// eovia.constants.ts
-export const EOVIA_RESILIENCE: UseResilienceOptions = {
-  serviceName: 'Eovia',
+// initech.constants.ts
+export const INITECH_RESILIENCE: UseResilienceOptions = {
+  serviceName: 'Initech',
   circuitBreaker: {
     failureThreshold: 5, // override
     openDuration: DEFAULT_CIRCUIT_BREAKER.openDuration, // shared
@@ -107,4 +107,4 @@ export const EOVIA_RESILIENCE: UseResilienceOptions = {
 2. **Use shared defaults** unless the external service explicitly requires
    different thresholds.
 3. **`@UseResilience()` decorator** for method-level policies on services
-   that don't use `ResilienceService` directly (e.g. Nexterite, Eovia).
+   that don't use `ResilienceService` directly (e.g. Umbrella, Initech).

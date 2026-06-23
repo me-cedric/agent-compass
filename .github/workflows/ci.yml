@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Syntax-check scripts
+        run: for f in scripts/*.mjs; do node --check "$f"; done
+      - name: Enforce generic naming
+        run: node scripts/check-naming.mjs

@@ -8,8 +8,8 @@ consistent.
 
 | Placeholder   | Means                          | Example                |
 | ------------- | ------------------------------ | ---------------------- |
-| `<project>`   | project / repo name            | `parcus-plus`          |
-| `@scope`      | npm scope for internal pkgs    | `@parcus`              |
+| `<project>`   | project / repo name            | `<project>`          |
+| `@scope`      | npm scope for internal pkgs    | `@scope`              |
 | `<app>`       | an app/package name            | `api`, `backoffice`    |
 | `<PM>`        | package manager                | `pnpm`                 |
 
@@ -32,7 +32,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 ## Notes
 
 - These come from a real monorepo; scan for project-specific names before reuse
-  (`grep -ri parcus templates/`). `install.mjs` does the common substitutions for
+  (`grep -ri <project> templates/`). `install.mjs` does the common substitutions for
   you when wiring into a host project.
 - CI files are `.example.yml` so they don't run if copied verbatim — adapt and
   rename to activate.

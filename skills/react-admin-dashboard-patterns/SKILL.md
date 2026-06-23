@@ -20,7 +20,7 @@ apps/backoffice/
       auth/                        # Keycloak OIDC auth
       bo-user/                     # Backoffice user management
       role/                        # Role & permission management
-      parking/                     # Parking lot CRUD
+      parking/                     # Resource CRUD
       news/                        # News/announcements CRUD
       alerts/                      # Global alert management
       analytics/                   # Dashboard metrics
@@ -87,10 +87,10 @@ import { createFileRoute } from '@tanstack/react-router';
 export const Route = createFileRoute('/_authenticated/parking/')({
   beforeLoad: async () => {
     const { user } = await requirePermissions({
-      permissions: ['parking-lots:read'],
+      permissions: ['resources:read'],
     });
     return {
-      canCreate: user.permissions.includes('parking-lots:write'),
+      canCreate: user.permissions.includes('resources:write'),
     };
   },
   component: ParkingsIndexScreen,
@@ -215,7 +215,7 @@ export const requirePermissions = async ({
 };
 ```
 
-**Pattern:** Permissions are `resource:action` strings (e.g., `parking-lots:read`, `parking-lots:write`). Types from `@parcus/shared-types`.
+**Pattern:** Permissions are `resource:action` strings (e.g., `resources:read`, `resources:write`). Types from `@scope/shared-types`.
 
 ### Route-Level Permission Check
 
@@ -246,7 +246,7 @@ Auth token injection via interceptors (added during OIDC init).
 
 ```ts
 // features/bo-user/services/boUsersService.ts
-import type { BoUser } from '@parcus/shared-types';
+import type { BoUser } from '@scope/shared-types';
 import { apiClient } from '@/core/api/apiClient';
 
 export const getBoUsers = async () => {
@@ -299,7 +299,7 @@ export const useGetRoles = () => {
 export const useCreateParking = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<ParkingLot>) => createParking(data),
+    mutationFn: (data: Partial<Resource>) => createParking(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['parkings'] });
     },
@@ -440,7 +440,7 @@ const theme = createTheme({
 
 ```
 @/ → src/
-@parcus/shared-types → ../../packages/shared-types/src
+@scope/shared-types → ../../packages/shared-types/src
 ```
 
 Configured in `vite.config.ts` `resolve.alias` and `tsconfig.json`.
@@ -483,6 +483,6 @@ Both apps share these identical patterns:
 - React Query hooks in `queries/` (same naming: `useGetXxx`, `useCreateXxx`, `useUpdateXxx`, `useDeleteXxx`)
 - Zustand auth store with `AUTH_STATUS` enum
 - Axios API client with interceptor-based auth
-- Types from `@parcus/shared-types`
+- Types from `@scope/shared-types`
 - i18next translations with `page.<feature>.<key>` convention
 - `@/` path alias → `src/`

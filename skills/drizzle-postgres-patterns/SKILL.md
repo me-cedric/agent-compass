@@ -241,7 +241,7 @@ await this.txHost.tx
   .onConflictDoUpdate({
     target: availabilities.featureId,
     set: {
-      freeSpots: sql`excluded.free_spots`,
+      availability: sql`excluded.availability`,
       lastUpdated: new Date(),
     },
   });

@@ -32,4 +32,4 @@ Bruno and Gherkin live in the repo, so the contract is reviewed in the PR, diffs
 with the code, and can't rot in a separate Postman workspace. Treat them as code.
 
 Detailed rules: the `scalar-bruno-gherkin-sync` instinct in
-[`knowledge/instincts-parcus/`](../../knowledge/instincts-parcus/).
+[`knowledge/instincts/`](../../knowledge/instincts/).

@@ -1,5 +1,5 @@
 ---
-id: parcus-scalar-bruno-gherkin-sync
+id: <project>-scalar-bruno-gherkin-sync
 trigger: 'when modifying API endpoints, DTO fields, payloads, query params, status codes, error responses, or business logic'
 confidence: 0.95
 domain: api-documentation
@@ -28,7 +28,7 @@ and `@nestjs/swagger`. Every controller endpoint is documented with decorators.
 - `@ApiExcludeEndpoint()` — if removing from public docs
 
 **After decorator changes, verify the app bootstraps without Swagger errors**
-(run `pnpm --filter @parcus/api typecheck` at minimum).
+(run `pnpm --filter @scope/api typecheck` at minimum).
 
 **New endpoints**: always add the full decorator set. New DTOs: always add `@ApiProperty`
 on every field.
@@ -44,7 +44,7 @@ Bruno requests live under `tools/bruno/`, organised by audience:
 
 - `📱 Application/` — mobile app endpoints
 - `👤 Backoffice/` — admin panel endpoints
-- `🌐 External/` — external service endpoints (Monetico, Orbility, Nexterite)
+- `🌐 External/` — external service endpoints (Paygate, Globex, Umbrella)
 - `🔧 General/` — health, diagnostics
 
 **When you change an endpoint, update the corresponding `.bru` file:**
@@ -75,13 +75,13 @@ Cucumber/Gherkin format for BDD testing.
 
 **Key modules with existing feature files:**
 
-- `monetico-payments.feature` — capture, callback, deferred auth flows
+- `paygate-payments.feature` — capture, callback, deferred auth flows
 - `promo-application.feature` — voucher/promo code logic
 - `alerts.feature` — alert creation and delivery
 - `billing.feature` — invoice and receipt generation
 - `street-parking.feature` — session lifecycle
-- `active-parking.feature` — parking lot entry/exit flows
-- `parking-lot.service.feature` — parking lot business logic
+- `active-parking.feature` — resource entry/exit flows
+- `resource.service.feature` — resource business logic
 - `points-integrity.feature` / `points-admin-adjustment.feature` — loyalty points
 - `backoffice-*.feature` — admin operations
 

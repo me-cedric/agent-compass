@@ -1,5 +1,5 @@
 ---
-id: parcus-drizzle-repository
+id: <project>-drizzle-repository
 trigger: 'when writing a repository class or data access layer'
 confidence: 0.9
 domain: database

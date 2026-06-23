@@ -31,4 +31,4 @@ brokers — is wrapped in resilience policies. Implementation:
 
 Reference example: [`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md)
 and the `resilience-policy-pattern` instinct in
-[`knowledge/instincts-parcus/`](../../knowledge/instincts-parcus/).
+[`knowledge/instincts/`](../../knowledge/instincts/).

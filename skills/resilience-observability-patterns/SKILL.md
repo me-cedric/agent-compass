@@ -300,7 +300,7 @@ This creates a continuous trace: `HTTP request` -> `queue.add` -> `processor.pro
 | HTTP histogram | `http.request.duration` | Duration in ms |
 | Business counter | `{domain}.{action}` | `payments.processed`, `users.registered` |
 | Job histogram | `bullmq.job.duration` | `{queue=feature, job=process}` |
-| Span name | `{module}.{operation}` | `parking-lots.update-free-spots` |
+| Span name | `{module}.{operation}` | `resources.update-availability` |
 | Circuit breaker | `resilience.circuit_breaker.state` | `{name=external-api, state=OPEN}` |
 
 ## TracingModule Registration

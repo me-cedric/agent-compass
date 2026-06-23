@@ -40,7 +40,7 @@ apps/mobile-app/
     features/                  # Feature modules (self-contained)
       auth/                    # Auth state, Keycloak OIDC
       account/                 # Registration, OTP, password reset
-      parking/                 # Parking lot cards, search, occupancy
+      parking/                 # Resource cards, search, occupancy
       search/                  # Filters, search results
       profile/                 # User settings, vehicles, vouchers
       money/                   # Cards, payments
@@ -142,11 +142,11 @@ Auth token injection happens via Axios interceptors (added during auth init).
 
 ## Service Layer (Pure Functions)
 
-Services are stateless functions that call the API. Types come from `@parcus/shared-types`:
+Services are stateless functions that call the API. Types come from `@scope/shared-types`:
 
 ```ts
 // features/account/services/accountService.ts
-import { RegisterUser, User } from '@parcus/shared-types';
+import { RegisterUser, User } from '@scope/shared-types';
 import { apiClient } from '@/core/api/apiClient';
 
 export const register = async (data: RegisterUser) => {
@@ -162,7 +162,7 @@ export const confirmOtp = async (data: ConfirmUserOtpDto) => {
 **Rules:**
 - One file per feature domain
 - Functions are `async`, return typed responses
-- Import types from `@parcus/shared-types`
+- Import types from `@scope/shared-types`
 - No hooks, no state — pure request/response
 
 ## React Query Hooks
@@ -418,7 +418,7 @@ module.exports = {
   preset: 'jest-expo',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@parcus/shared-types$': '<rootDir>/../../packages/shared-types/src',
+    '^@scope/shared-types$': '<rootDir>/../../packages/shared-types/src',
     '\\.svg$': '<rootDir>/__tests__/mocks/svgMock.tsx',
     '^expo-router$': '<rootDir>/__tests__/mocks/expoRouter.ts',
     '^expo-secure-store$': '<rootDir>/__tests__/mocks/expoSecureStore.ts',

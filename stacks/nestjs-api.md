@@ -24,7 +24,7 @@ Production backend API.
   [resilience](../docs/architecture/resilience.md),
   [observability](../docs/architecture/observability.md),
   [api-contract-sync](../docs/tooling/api-contract-sync.md).
-- Instincts: [`knowledge/instincts-parcus/`](../knowledge/instincts-parcus/)
+- Instincts: [`knowledge/instincts/`](../knowledge/instincts/)
   (module structure, repository, mapper, processor, resilience, otel, spec-sync).
 
 ## Module layout

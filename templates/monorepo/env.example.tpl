@@ -7,7 +7,7 @@
 # Or manually: User → My Account → Security → Generate Token in SonarQube UI
 SONAR_TOKEN=your_sonar_token_here
 
-# EV Charging / Freshmile / OCPI Feature Flag
-# When disabled (default), all EV charging endpoints, webhooks, processors,
+# feature-x / Hooli / OCPI Feature Flag
+# When disabled (default), all feature-x endpoints, webhooks, processors,
 # and side effects are dormant. Set to 'true', '1', or 'yes' to enable.
-EV_CHARGING_ENABLED=false
+FEATURE_X_ENABLED=false

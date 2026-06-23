@@ -1,5 +1,5 @@
 ---
-id: parcus-bullmq-processor
+id: <project>-bullmq-processor
 trigger: 'when creating a BullMQ processor or background job'
 confidence: 0.95
 domain: queue

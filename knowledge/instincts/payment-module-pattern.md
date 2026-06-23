@@ -1,5 +1,5 @@
 ---
-id: parcus-payment-module
+id: <project>-payment-module
 trigger: 'when adding payment logic, a new payment provider, or a financial service'
 confidence: 0.9
 domain: payment
@@ -20,7 +20,7 @@ Payment services follow three rules:
 function generateReference(): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const rand = crypto.randomUUID().substring(0, 8).toUpperCase();
-  return `PARCUS-${date}-${rand}`;
+  return `<project>-${date}-${rand}`;
 }
 
 function formatAmount(cents: number, currency = 'EUR'): string {
@@ -29,13 +29,13 @@ function formatAmount(cents: number, currency = 'EUR'): string {
 
 // ── Service ────────────────────────────────────────────────────────────
 @Injectable()
-export class ParcusPaymentService { ... }
+export class <project>PaymentService { ... }
 ```
 
 2. **External providers isolated** under `modules/external/payment/<provider>/`:
-   - `monetico/monetico-payment.service.ts` — initiation
-   - `monetico/monetico-capture.service.ts` — capture
-   - `monetico/monetico.module.ts`
+   - `paygate/paygate-payment.service.ts` — initiation
+   - `paygate/paygate-capture.service.ts` — capture
+   - `paygate/paygate.module.ts`
 
 3. **Tracing via `withPaymentSpan()`** — wraps each operation for OTel, same pattern as `withJobSpan()`.
 
@@ -43,6 +43,6 @@ export class ParcusPaymentService { ... }
 
 ## Evidence
 
-- `parcus-payment.service.ts` changed 7 times in 200 commits
-- Monetico provider split across `monetico-payment.service.ts` + `monetico-capture.service.ts`
-- Pure helpers pattern visible in current `parcus-payment.service.ts`
+- `<project>-payment.service.ts` changed 7 times in 200 commits
+- Paygate provider split across `paygate-payment.service.ts` + `paygate-capture.service.ts`
+- Pure helpers pattern visible in current `<project>-payment.service.ts`

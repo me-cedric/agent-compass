@@ -1,5 +1,5 @@
 ---
-id: parcus-testing-pattern
+id: <project>-testing-pattern
 trigger: 'when writing unit tests for NestJS services'
 confidence: 0.9
 domain: testing

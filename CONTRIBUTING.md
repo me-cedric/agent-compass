@@ -35,6 +35,13 @@ piece lives in exactly one place and is referenced, not duplicated.
 6. **Stay lazy.** Smallest useful addition. No speculative structure. If a doc
    would just restate `AGENTS.md`, link instead.
 7. **No secrets, ever.** Templates ship `.example` env files only.
+8. **Generic naming (enforced).** No real project, client, company, or provider
+   names anywhere in the repo. Use placeholders (`<project>`, `@scope`, `<app>`,
+   `<provider>`) and neutral example names (`acme`, `globex`, `paygate`,
+   `resource`). Real technology names (Keycloak, Postgres, Docker, Turbo, …) are
+   fine. `scripts/check-naming.mjs` enforces this in CI — run `pnpm lint:naming`
+   locally, and add any new forbidden token to its `DENY` list when you mine a
+   new project.
 
 ## Editing as an agent
 

@@ -24,7 +24,7 @@ reusable things belong in the baseline.
 ## 3. Promote
 
 Move the keepers into their home and **rewrite away project-specific names**
-(`@parcus` → `@scope`, real module names → placeholders):
+(your old scope → `@scope`, real module/provider names → generic placeholders):
 
 | Item                          | Promote to                          |
 | ----------------------------- | ----------------------------------- |

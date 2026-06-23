@@ -7,7 +7,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- Initial extraction from `parcus-plus` and global `~/.claude` config.
+- Initial extraction from a production monorepo and global agent config.
 - Tool-agnostic agent contract (`AGENTS.md`) with thin pointers for Claude, Codex, Copilot.
 - Guidelines (`docs/guidelines/`): coding style, TypeScript, TDD/testing, security,
   git workflow, development workflow, documentation, agent behavior.
