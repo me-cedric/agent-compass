@@ -28,7 +28,19 @@ When working inside an app or package, also consult any matching instruction fil
 under `.github/instructions/` (examples shipped in
 `templates/agent/.github/instructions/`).
 
-## 5. Self-improvement
+## 5. Copilot-native leverage
+
+Use `.github/prompts/*.prompt.md` for repeated tasks, `.github/agents/*.agent.md`
+for named roles, path-specific instructions for folder rules, and MCP with
+allowlisted tools for external context. See
+`docs/tooling/agent-provider-capabilities.md`.
+
+## 6. Teaching
+
+For explanation, onboarding, or prompt/tool coaching, follow
+`docs/workflows/agent-teaching.md`. Teach selectively; do not coach every turn.
+
+## 7. Self-improvement
 
 When a mistake is corrected, extract the general rule and record it (project
 `tasks/lessons.md` or feed it back via `scripts/pull-knowledge.mjs`).

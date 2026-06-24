@@ -71,8 +71,9 @@ const sharedConfigFiles = (root) => {
     '.projectmem/README.md',
     '.projectmem/projectmem-policy.md',
     '.projectmem/summary.md',
+    '.claude/settings.example.json',
   ].map((path) => join(root, path))
-  const dirs = ['.mcp', '.github/instructions', '.cursor/rules', '.windsurf/rules']
+  const dirs = ['.mcp', '.github/instructions', '.github/prompts', '.github/agents', '.cursor/rules', '.windsurf/rules', '.codex', '.claude/agents', '.claude/hooks']
     .flatMap((path) => walk(join(root, path), 3))
   return [...direct, ...dirs].filter((file) => existsSync(file))
 }
@@ -131,8 +132,22 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.github/PULL_REQUEST_TEMPLATE.md exists', existsSync(join(root, '.github', 'PULL_REQUEST_TEMPLATE.md'))],
     ['.github/instructions/agent-compass.instructions.md exists', existsSync(join(root, '.github', 'instructions', 'agent-compass.instructions.md'))],
     ['.github/instructions/pr-workflow.instructions.md exists', existsSync(join(root, '.github', 'instructions', 'pr-workflow.instructions.md'))],
+    ['.github/prompts/explain-project.prompt.md exists', existsSync(join(root, '.github', 'prompts', 'explain-project.prompt.md'))],
+    ['.github/prompts/prompt-upgrade.prompt.md exists', existsSync(join(root, '.github', 'prompts', 'prompt-upgrade.prompt.md'))],
+    ['.github/agents/agent-compass-teacher.agent.md exists', existsSync(join(root, '.github', 'agents', 'agent-compass-teacher.agent.md'))],
+    ['.codex/config.toml exists', existsSync(join(root, '.codex', 'config.toml'))],
+    ['.codex/hooks.json exists', existsSync(join(root, '.codex', 'hooks.json'))],
+    ['.claude/agents/reviewer.md exists', existsSync(join(root, '.claude', 'agents', 'reviewer.md'))],
+    ['.claude/agents/security.md exists', existsSync(join(root, '.claude', 'agents', 'security.md'))],
+    ['.claude/agents/docs-teacher.md exists', existsSync(join(root, '.claude', 'agents', 'docs-teacher.md'))],
+    ['.claude/settings.example.json exists', existsSync(join(root, '.claude', 'settings.example.json'))],
+    ['.agent/provider-discovery-smoke.md exists', existsSync(join(root, '.agent', 'provider-discovery-smoke.md'))],
     ['.mcp/README.md exists', existsSync(join(root, '.mcp', 'README.md'))],
     ['.mcp/figma.example.json exists', existsSync(join(root, '.mcp', 'figma.example.json'))],
+    ['.mcp/copilot-cloud.example.json exists', existsSync(join(root, '.mcp', 'copilot-cloud.example.json'))],
+    ['.mcp/codex.example.toml exists', existsSync(join(root, '.mcp', 'codex.example.toml'))],
+    ['.mcp/cursor.example.json exists', existsSync(join(root, '.mcp', 'cursor.example.json'))],
+    ['.mcp/gemini.example.json exists', existsSync(join(root, '.mcp', 'gemini.example.json'))],
   ] : []
   return { required, advisory, deepChecks }
 }

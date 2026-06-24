@@ -13,6 +13,7 @@ Copilot as referenced context.
 | `caveman`        | Ultra-compressed communication (~75% fewer tokens, full accuracy). |
 | `caveman-commit` | Conventional-commit message generator, terse.                      |
 | `caveman-review` | One-line, actionable PR review comments.                           |
+| `agent-teacher`  | Level-aware explanations and selective prompt/tool coaching.        |
 | `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
 | `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
 

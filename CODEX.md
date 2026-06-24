@@ -22,4 +22,10 @@ broad exploration.
 
 - Don't do broad/recursive exploration when a targeted read answers the question.
 - Use only scripts that exist in the project; never invent commands.
+- Use Codex-native features when they reduce risk: `/plan` for ambiguous work,
+  `/goal` for long bounded loops, subagents for independent review/exploration,
+  `/review` for diff review, MCP for external tools, and skills for repeated
+  procedures. See `docs/tooling/agent-provider-capabilities.md`.
+- Use `skills/agent-teacher/SKILL.md` only for explanation, onboarding, or
+  valuable prompt/tool coaching moments.
 - Do **not** commit or push. See `AGENTS.md §10` for full safety rules.

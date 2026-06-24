@@ -5,6 +5,10 @@ import { runNode } from './helpers.mjs'
 
 const root = new URL('..', import.meta.url)
 const scripts = [
+  'agent-conformance.mjs',
+  'agent-evals.mjs',
+  'agent-drift.mjs',
+  'agent-trace.mjs',
   'bootstrap.mjs',
   'check-actions.mjs',
   'context.mjs',

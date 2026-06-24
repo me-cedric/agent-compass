@@ -112,7 +112,7 @@ const place = (srcRel, destRel, transform = true) => {
   } else {
     copyFileSync(src, dest)
   }
-  if (srcRel.includes('husky/')) chmodSync(dest, 0o755)
+  if (srcRel.includes('husky/') || srcRel.includes('.claude/hooks/')) chmodSync(dest, 0o755)
   created.push(destRel)
 }
 
@@ -191,12 +191,32 @@ const configs = [
   ['templates/context/repo-map.md', 'docs/architecture/repo-map.md'],
   ['docs/decisions/000-template.md', 'docs/decisions/000-template.md'],
   ['templates/handoff.md', 'docs/handoff-template.md'],
+  ['templates/intake/work-intake.md', 'docs/work-intake-template.md'],
+  ['templates/trace/README.md', '.agent/trace/README.md'],
+  ['templates/agent/.github/ISSUE_TEMPLATE/agent-ready-task.yml', '.github/ISSUE_TEMPLATE/agent-ready-task.yml'],
   ['templates/agent/.github/PULL_REQUEST_TEMPLATE.md', '.github/PULL_REQUEST_TEMPLATE.md'],
   ['templates/agent/.github/instructions/agent-compass.instructions.md', '.github/instructions/agent-compass.instructions.md'],
   ['templates/agent/.github/instructions/pr-workflow.instructions.md', '.github/instructions/pr-workflow.instructions.md'],
+  ['templates/agent/.github/prompts/explain-project.prompt.md', '.github/prompts/explain-project.prompt.md'],
+  ['templates/agent/.github/prompts/prompt-upgrade.prompt.md', '.github/prompts/prompt-upgrade.prompt.md'],
+  ['templates/agent/.github/agents/agent-compass-teacher.agent.md', '.github/agents/agent-compass-teacher.agent.md'],
+  ['templates/codex/.codex/config.toml', '.codex/config.toml'],
+  ['templates/codex/.codex/hooks.json', '.codex/hooks.json'],
+  ['templates/claude/.claude/agents/reviewer.md', '.claude/agents/reviewer.md'],
+  ['templates/claude/.claude/agents/security.md', '.claude/agents/security.md'],
+  ['templates/claude/.claude/agents/docs-teacher.md', '.claude/agents/docs-teacher.md'],
+  ['templates/claude/.claude/hooks/protect-agent-files.sh', '.claude/hooks/protect-agent-files.sh'],
+  ['templates/claude/.claude/hooks/remind-completion-gate.sh', '.claude/hooks/remind-completion-gate.sh'],
+  ['templates/claude/.claude/settings.example.json', '.claude/settings.example.json'],
+  ['templates/conformance/provider-discovery-smoke.md', '.agent/provider-discovery-smoke.md'],
   ['templates/mcp/README.md', '.mcp/README.md'],
+  ['templates/mcp/tool-contract.md', '.mcp/tool-contract.md'],
   ['templates/mcp/figma.example.json', '.mcp/figma.example.json'],
   ['templates/mcp/projectmem.example.json', '.mcp/projectmem.example.json'],
+  ['templates/mcp/copilot-cloud.example.json', '.mcp/copilot-cloud.example.json'],
+  ['templates/mcp/codex.example.toml', '.mcp/codex.example.toml'],
+  ['templates/mcp/cursor.example.json', '.mcp/cursor.example.json'],
+  ['templates/mcp/gemini.example.json', '.mcp/gemini.example.json'],
   ['templates/specs/specs-readme.md', 'specs/README.md'],
   ['templates/specs/constitution-template.md', 'specs/constitution.md'],
   ['templates/memory/projectmem-readme.md', '.projectmem/README.md'],

@@ -1,0 +1,23 @@
+name: agent-drift
+
+# Read-only scheduled check that the agent-guidance artifacts stay consistent
+# (provider wiring, evals, indexes, docs, action versions, naming). Mutates
+# nothing; surfaces drift before a real task hits it.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      - name: Agent guidance drift report
+        run: node scripts/agent-drift.mjs --strict

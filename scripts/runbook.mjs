@@ -27,7 +27,12 @@ const runbook = `# Agent Runbook
 2. Read \`agent-compass.commands.json\` before choosing commands.
 3. Read relevant specs under \`specs/\`.
 4. Read project memory summaries and pre-action warnings when configured.
-5. Use \`docs/architecture/repo-map.md\` to find active surfaces.
+5. Use \`docs/architecture/repo-map.md\` — match your task type to its Task
+   Routing table before broad search, to avoid wrong-layer edits.
+6. Use provider-native tools when useful: skills/prompts, MCP, hooks, subagents,
+   goals/plans, or review modes. See \`docs/tooling/agent-provider-capabilities.md\`.
+7. Run \`node docs/agent-compass/scripts/agent-conformance.mjs --root . --write\`
+   after changing agent guidance.
 
 ## Commands
 
@@ -42,6 +47,16 @@ ${commands || '{}'}
 - validation result per command
 - failures pre-existing or introduced
 - remaining risks
+
+## Teaching
+
+Use \`docs/workflows/agent-teaching.md\` only for explanations, onboarding, or
+valuable prompt/tool coaching. Do not coach every turn.
+
+## Provider Smoke Test
+
+Use \`.agent/provider-discovery-smoke.md\` or generated \`.agent/agent-conformance.md\`
+to ask Claude, Codex, and Copilot which guidance/tools they loaded.
 `
 
 if (args.includes('--write')) {

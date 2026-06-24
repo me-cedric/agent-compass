@@ -12,6 +12,34 @@ repo files.
   `/absolute/path/to/repo`, and never commit local MCP client config.
 - Document every configured server in `.mcp/README.md`.
 - Before using a server, verify the client can list the expected tools.
+- For Copilot cloud agent/code review, allowlist specific read-only tools where
+  possible; configured MCP tools may be used autonomously without per-call
+  approval.
+- For Codex, put durable MCP setup in `config.toml` and keep server instructions
+  concise enough to guide tool selection.
+- For Claude, package repeatable MCP + skills + hooks as a plugin when the setup
+  should travel across repos.
+
+## Tool Contracts
+
+Connecting a server is not the same as approving its tools. Keep a per-tool
+contract — access (read/write), data sensitivity, approval mode, expected
+failure, validation — in `.mcp/tool-contract.md`. A tool absent from the
+contract is not approved. Codex enforces it with `enabled_tools` +
+`default_tools_approval_mode`; Copilot cloud allowlists in repo settings; Cursor
+and Gemini have no per-tool allowlist, so their contract is the document plus
+client approval prompts. Template:
+[`../../templates/mcp/tool-contract.md`](../../templates/mcp/tool-contract.md).
+
+## Provider Templates
+
+| Provider | Template |
+| -------- | -------- |
+| Tool contract (all) | [`../../templates/mcp/tool-contract.md`](../../templates/mcp/tool-contract.md) |
+| Copilot cloud/code review | [`../../templates/mcp/copilot-cloud.example.json`](../../templates/mcp/copilot-cloud.example.json) |
+| Codex | [`../../templates/mcp/codex.example.toml`](../../templates/mcp/codex.example.toml) |
+| Cursor | [`../../templates/mcp/cursor.example.json`](../../templates/mcp/cursor.example.json) |
+| Gemini CLI | [`../../templates/mcp/gemini.example.json`](../../templates/mcp/gemini.example.json) |
 
 ## Project Memory
 

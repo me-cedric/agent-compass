@@ -41,9 +41,23 @@ test('install creates substituted pointer and executable husky hooks', async () 
     assert.match(await readFile(join(host, '.github', 'PULL_REQUEST_TEMPLATE.md'), 'utf8'), /What Changed/)
     assert.match(await readFile(join(host, '.github', 'instructions', 'agent-compass.instructions.md'), 'utf8'), /AGENTS\.md/)
     assert.match(await readFile(join(host, '.github', 'instructions', 'pr-workflow.instructions.md'), 'utf8'), /develop/)
+    assert.match(await readFile(join(host, '.github', 'prompts', 'explain-project.prompt.md'), 'utf8'), /Agent lesson/)
+    assert.match(await readFile(join(host, '.github', 'prompts', 'prompt-upgrade.prompt.md'), 'utf8'), /Done when/)
+    assert.match(await readFile(join(host, '.github', 'agents', 'agent-compass-teacher.agent.md'), 'utf8'), /Agent Compass Teacher/)
+    assert.match(await readFile(join(host, '.codex', 'config.toml'), 'utf8'), /goals = true/)
+    assert.match(await readFile(join(host, '.codex', 'hooks.json'), 'utf8'), /Completion gate/)
+    assert.match(await readFile(join(host, '.claude', 'agents', 'reviewer.md'), 'utf8'), /Findings/)
+    assert.match(await readFile(join(host, '.claude', 'agents', 'security.md'), 'utf8'), /trust boundaries/)
+    assert.match(await readFile(join(host, '.claude', 'agents', 'docs-teacher.md'), 'utf8'), /Agent lesson/)
+    assert.match(await readFile(join(host, '.claude', 'settings.example.json'), 'utf8'), /PreToolUse/)
+    assert.match(await readFile(join(host, '.agent', 'provider-discovery-smoke.md'), 'utf8'), /Provider Discovery/)
     assert.match(await readFile(join(host, '.mcp', 'README.md'), 'utf8'), /MCP Setup/)
     assert.match(await readFile(join(host, '.mcp', 'figma.example.json'), 'utf8'), /figma/)
     assert.match(await readFile(join(host, '.mcp', 'projectmem.example.json'), 'utf8'), /\/absolute\/path\/to\/repo/)
+    assert.match(await readFile(join(host, '.mcp', 'copilot-cloud.example.json'), 'utf8'), /projectmem/)
+    assert.match(await readFile(join(host, '.mcp', 'codex.example.toml'), 'utf8'), /enabled_tools/)
+    assert.match(await readFile(join(host, '.mcp', 'cursor.example.json'), 'utf8'), /mcpServers/)
+    assert.match(await readFile(join(host, '.mcp', 'gemini.example.json'), 'utf8'), /httpUrl/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/events\.jsonl/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/issues\//)
     assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\/summary\.md/)
@@ -54,6 +68,10 @@ test('install creates substituted pointer and executable husky hooks', async () 
 
     for (const hook of ['pre-commit', 'pre-push', 'commit-msg']) {
       const mode = (await stat(join(host, '.husky', hook))).mode
+      assert.ok(mode & 0o111, `${hook} should be executable`)
+    }
+    for (const hook of ['protect-agent-files.sh', 'remind-completion-gate.sh']) {
+      const mode = (await stat(join(host, '.claude', 'hooks', hook))).mode
       assert.ok(mode & 0o111, `${hook} should be executable`)
     }
 

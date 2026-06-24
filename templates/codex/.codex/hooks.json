@@ -1,0 +1,24 @@
+{
+  "SessionStart": [
+    {
+      "matcher": "startup|resume|compact",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "test -f AGENTS.md && printf 'Reminder: read AGENTS.md and agent-compass.commands.json before work.\\n' || true"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "test -f agent-compass.commands.json && printf 'Completion gate: files changed, commands run, validation, risks.\\n' || true"
+        }
+      ]
+    }
+  ]
+}

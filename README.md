@@ -254,6 +254,10 @@ Baseline behavior:
 - Reuse existing code, then standard library, then existing dependencies.
 - Validate with real commands from `agent-compass.commands.json` or
   `package.json`.
+- Use provider-native capabilities when they reduce risk: skills/prompts, MCP,
+  hooks, subagents/custom agents, goal/plan/review modes.
+- Teach selectively when users ask for explanations or repeat a costly
+  prompting/tool-use pattern.
 - Report with the Completion Gate.
 - Never commit, push, deploy, publish, or open PRs unless explicitly asked.
 
@@ -295,6 +299,9 @@ Next step:
 | [`project-memory.md`](docs/workflows/project-memory.md) | Reading/writing durable project memory during work. |
 | [`pull-requests.md`](docs/workflows/pull-requests.md) | Creating GitHub PRs with sane defaults. |
 | [`pr-review.md`](docs/workflows/pr-review.md) | Local/GitHub PR reviews and implementing submitted review fixes. |
+| [`agent-teaching.md`](docs/workflows/agent-teaching.md) | Teaching users without coaching every prompt. |
+| [`agent-improvement-loop.md`](docs/workflows/agent-improvement-loop.md) | Turning repeated friction into reusable agent artifacts. |
+| [`agent-value-expansion.md`](docs/workflows/agent-value-expansion.md) | Further ways to automate and guide developer work. |
 | [`review-and-ship.md`](docs/workflows/review-and-ship.md) | Final self-review, validation, handoff, PR. |
 | [`knowledge-capture.md`](docs/workflows/knowledge-capture.md) | Pulling reusable lessons into Agent Compass. |
 | [`releasing.md`](docs/workflows/releasing.md) | Releasing this repo. |
@@ -310,6 +317,10 @@ All scripts are dependency-free Node scripts.
 | ------- | ------- |
 | `npm run bootstrap` | Interactive new-project prompt generator. |
 | `npm run context` | Print compact repo snapshot for agents. |
+| `npm run agent-conformance` | Check provider customization artifacts and print smoke prompts. |
+| `npm run agent-evals` | Validate teaching/tool-offer eval fixtures. |
+| `npm run agent-drift` | Read-only drift dashboard across all guidance validators. |
+| `npm run agent-trace` | Validate an agent trace/outcome log (no secrets/PII). |
 | `npm run doctor-report` | Print host readiness report. |
 | `npm run runbook` | Print compact agent runbook. |
 | `npm run install-into` | Install pointers/templates into a host. |
@@ -318,7 +329,7 @@ All scripts are dependency-free Node scripts.
 | `npm run pr-review` | Build local PR review packet or submit review. |
 | `npm run release` | Prepare version/changelog release metadata. |
 | `npm run upgrade-host` | Update host submodule and run deep doctor. |
-| `npm run check` | Run tests + naming/index/docs guards. |
+| `npm run check` | Run tests + conformance + evals + naming/index/docs guards. |
 | `npm run lint:actions` | Enforce supported GitHub Action majors. |
 
 Examples:
@@ -340,13 +351,15 @@ Templates are copyable starters, not generated framework magic.
 
 | Group | Includes |
 | ----- | -------- |
-| [`agent/`](templates/agent/) | PR template and GitHub Copilot instruction templates. |
+| [`agent/`](templates/agent/) | PR template, Copilot instructions, prompt files, custom agents, agent-ready issue form. |
 | [`commands/`](templates/commands/) | `agent-compass.commands.json` starter. |
-| [`context/`](templates/context/) | Repo map template. |
+| [`intake/`](templates/intake/) | Agent-ready work intake (Goal/Context/Constraints/Done/Validation). |
+| [`context/`](templates/context/) | Repo map + task routing template. |
 | [`conformance/`](templates/conformance/) | Lightweight agent smoke test. |
 | [`design-system/`](templates/design-system/) | Figma/design-token extraction worksheet. |
 | [`memory/`](templates/memory/) | projectmem README and policy. |
-| [`mcp/`](templates/mcp/) | MCP examples for projectmem and Figma. |
+| [`mcp/`](templates/mcp/) | MCP examples + per-tool contract for projectmem and Figma. |
+| [`trace/`](templates/trace/) | Agent trace/outcome log schema. |
 | [`specs/`](templates/specs/) | Constitution, spec, plan, tasks, checklist templates. |
 | [`monorepo/`](templates/monorepo/) | pnpm/turbo/tsconfig/prettier/husky/env starters. |
 | [`ci/`](templates/ci/) | GitHub Actions examples. |
@@ -367,6 +380,7 @@ as referenced context.
 Useful groups:
 
 - Working style: `caveman`, `ponytail`, `caveman-review`, `ponytail-review`.
+- Teaching: `agent-teacher`.
 - Quality: `gen-docs`, `verify-module`, `verify-quality`, `verify-change`,
   `verify-security`.
 - Workflow: `spec-workflow`, `project-memory`, `pr-workflow`.

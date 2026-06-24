@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "projectmem": {
+      "command": "/absolute/path/to/repo/.venv/bin/python",
+      "args": ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/repo"]
+    },
+    "figma": {
+      "url": "http://127.0.0.1:3845/mcp"
+    }
+  }
+}

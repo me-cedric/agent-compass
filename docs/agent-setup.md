@@ -26,6 +26,8 @@ anything that should bind everyone in the repo; keep personal ergonomics global.
 | Rules / conventions    | `docs/guidelines/*` (referenced by `AGENTS.md`)            |
 | Reusable skills        | `skills/*` — synced into each tool via `skillshare`        |
 | Per-path agent rules   | `.github/instructions/*.instructions.md` (templates here) |
+| Reusable prompt tasks  | `.github/prompts/*.prompt.md` or provider equivalent       |
+| Named agent roles      | `.github/agents/*.agent.md`, `.claude/agents/*`, or provider equivalent |
 | Enforced gates         | husky hooks + CI running `lint`/`typecheck`/`test`         |
 
 ## Skills across tools
@@ -42,6 +44,8 @@ into each tool's skills directory. That's how one definition reaches every agent
 - **quality gates** — `gen-docs`, `verify-module`, `verify-quality`,
   `verify-change`, `verify-security` at the right moments (see
   [workflows](workflows/new-module.md)).
+- **`agent-teacher`** — level-aware explanations and selective prompt/tool
+  coaching when the user asks how/why or repeats a costly pattern.
 
 These encode the same judgment your global config applies, but travel with the repo.
 
@@ -50,6 +54,16 @@ These encode the same judgment your global config applies, but travel with the r
 Automatic behaviors ("always run X after Y") must be **hooks** (husky locally, CI
 in the pipeline) — an agent's memory or preferences can't guarantee they run for
 everyone. Encode enforcement as hooks/CI; use guidelines for judgment.
+
+## Provider-native tools
+
+Use provider-native commands only when they reduce risk or repeated work:
+
+- Claude: skills, hooks, subagents/agent teams, plugins, MCP.
+- Codex: `/plan`, `/goal`, `/review`, subagents, skills, hooks, MCP.
+- Copilot: repository/path instructions, prompt files, custom agents, MCP.
+
+See [agent-provider-capabilities](tooling/agent-provider-capabilities.md).
 
 ## Replicating your global setup on a new machine
 

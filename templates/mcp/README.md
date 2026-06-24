@@ -18,3 +18,6 @@ This project may use MCP servers for agent tools and context.
   `/absolute/path/to/repo`, and keep local MCP config out of git.
 - Verify tool availability before using a server.
 - Log only durable facts, never secrets or personal data.
+- Record every enabled tool in [`tool-contract.md`](tool-contract.md) with its
+  access (read/write), sensitivity, and approval mode. A tool absent from the
+  contract is not approved.

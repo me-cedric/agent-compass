@@ -3,6 +3,8 @@
   "packageManager": "npm",
   "install": "npm install",
   "check": "npm run check",
+  "agentConformance": "npm run agent-conformance -- --strict",
+  "agentEvals": "npm run agent-evals",
   "context": "npm run context",
   "doctorReport": "npm run doctor-report",
   "lint": {

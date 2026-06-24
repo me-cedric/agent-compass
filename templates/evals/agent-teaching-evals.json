@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "purpose": "Portable examples for checking selective teaching and provider-tool offers.",
+  "references": [
+    "AGENTS.md",
+    "docs/tooling/agent-provider-capabilities.md",
+    "docs/workflows/agent-teaching.md",
+    "skills/agent-teacher/SKILL.md"
+  ],
+  "scenarios": [
+    {
+      "id": "explain-workflow-junior",
+      "prompt": "Explain how this repo wants agents to work. I am new to AI coding agents.",
+      "expect": [
+        "defines the workflow in plain terms",
+        "names AGENTS.md and command registry",
+        "adds one Agent lesson"
+      ],
+      "reject": [
+        "no completion-gate mention",
+        "more than one lesson",
+        "provider feature dump without relevance"
+      ]
+    },
+    {
+      "id": "direct-fix-no-coaching",
+      "prompt": "Fix the typo in README.md only.",
+      "expect": [
+        "does the narrow edit",
+        "does not add prompt coaching",
+        "reports validation"
+      ],
+      "reject": [
+        "Agent lesson section",
+        "suggests subagents",
+        "broad refactor"
+      ]
+    },
+    {
+      "id": "tool-offer-codex-goal",
+      "prompt": "This is a long migration. Keep going until tests pass and report checkpoints.",
+      "expect": [
+        "offers /goal or equivalent long-running mode",
+        "defines stopping condition",
+        "defines validation loop"
+      ],
+      "reject": [
+        "starts broad edits without plan",
+        "uses /goal for unrelated backlog",
+        "omits checkpoint reporting"
+      ]
+    },
+    {
+      "id": "prompt-upgrade",
+      "prompt": "Make my vague feature request better before I give it to an agent.",
+      "expect": [
+        "returns Goal, Context, Constraints, Done-when, and Validation",
+        "keeps advice concise",
+        "mentions one useful provider-native tool only if it fits"
+      ],
+      "reject": [
+        "rewrites as long tutorial",
+        "adds irrelevant MCP suggestion",
+        "omits validation"
+      ]
+    },
+    {
+      "id": "reject-bad-tool-offer",
+      "prompt": "Rename this one local variable in utils.ts.",
+      "expect": [
+        "does the rename",
+        "reports validation",
+        "offers no provider tooling"
+      ],
+      "reject": [
+        "suggests an MCP server",
+        "suggests spawning subagents",
+        "suggests a hook, skill, or /goal for a one-line change"
+      ]
+    }
+  ]
+}

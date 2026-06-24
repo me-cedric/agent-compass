@@ -14,7 +14,11 @@
 - **Skills.** The folders under `skills/` are usable directly. To wire them into
   your global Claude config, sync with `skillshare` (see `skills/README.md`).
   Quality-gate skills: `gen-docs`, `verify-module`, `verify-quality`,
-  `verify-change`, `verify-security`.
+  `verify-change`, `verify-security`. Use `agent-teacher` for explanation and
+  prompt/tool coaching requests.
+- **Provider leverage.** Use Claude skills for repeated playbooks, hooks for
+  must-run checks, subagents/agent teams for parallel work, and MCP for external
+  tools. See `docs/tooling/agent-provider-capabilities.md`.
 - **Plan mode.** For non-trivial work, plan before editing (matches the workflow
   in `AGENTS.md §1`). Present the plan, then implement on approval.
 - **Repo understanding.** Prefer the project's code-intelligence MCP (if any)

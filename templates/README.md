@@ -20,19 +20,25 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 
 | Group             | Files                                                                          | Guide                                                |
 | ----------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `agent-tools/`    | Index for provider-specific Codex, Claude, MCP, conformance, and eval templates | [agent-provider-capabilities](../docs/tooling/agent-provider-capabilities.md) |
 | `monorepo/`       | `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.prettierrc`, `.prettierignore`, `commitlint.config.js`, `.nvmrc`, `.npmrc`, `env.example.tpl`, `gitignore.tpl`, `husky/{pre-commit,pre-push,commit-msg}` | [pnpm](../docs/tooling/pnpm.md), [turbo](../docs/tooling/turbo.md), [husky](../docs/tooling/husky.md), [version-pinning](../docs/tooling/version-pinning.md) |
 | `eslint/`         | `eslint.config.{nestjs,react,expo}.mjs`                                         | per-stack lint                                       |
 | `docker/`         | `Dockerfile.{nestjs,web}`, `.dockerignore`, `docker-compose.local.example.yml`  | [docker](../docs/tooling/docker.md)                  |
 | `sonar/`          | `sonar-project.{api,web}.properties`                                            | [sonarqube](../docs/tooling/sonarqube.md)            |
 | `security/`       | `.osv-scanner.toml`                                                              | [security-scanning](../docs/tooling/security-scanning.md) |
 | `scripts/`        | `checkmarx-package.sh`, `sonar-setup.sh`                                         | [security-scanning](../docs/tooling/security-scanning.md), [sonarqube](../docs/tooling/sonarqube.md) |
-| `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`                            | CI starting points (GitHub Actions)                  |
+| `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`, `agent-drift.example.yml` | CI starting points (GitHub Actions)                  |
 | `commands/`       | `agent-compass.commands.json`                                                    | command registry for agents                          |
-| `context/`        | `repo-map.md`                                                                    | active repo surface map                              |
+| `intake/`         | `work-intake.md`, `README.md`                                                    | force agent-ready Goal/Context/Constraints/Done/Validation |
+| `context/`        | `repo-map.md`                                                                    | active repo surface map + task routing               |
 | `conformance/`    | `agent-smoke-test.md`                                                            | lightweight agent behavior smoke test                |
+| `codex/`          | `.codex/config.toml`, `.codex/hooks.json`                                        | Codex repo config, goals, hooks, MCP, sandbox profile |
+| `claude/`         | `.claude/agents/*`, `.claude/hooks/*`, `.claude/settings.example.json`           | Claude subagents and hook templates                  |
 | `design-system/`  | `README.md`                                                                      | Figma/design-system extraction worksheet            |
-| `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`     | per-path agent rules + PR template                   |
-| `mcp/`            | `README.md`, `figma.example.json`, `projectmem.example.json`                     | MCP setup examples                                   |
+| `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.agent.md`, `.github/ISSUE_TEMPLATE/agent-ready-task.yml` | agent rules, prompts, custom agents, intake form, PR template |
+| `mcp/`            | `README.md`, `tool-contract.md`, `figma.example.json`, `projectmem.example.json`, provider allowlist examples | MCP setup + per-tool contracts                       |
+| `evals/`          | `agent-teaching-evals.json`                                                      | teaching and provider-tool offer eval fixtures       |
+| `trace/`          | `README.md`, `agent-trace.example.jsonl`                                         | agent trace/outcome log schema (no secrets)          |
 | `specs/`          | `constitution-template.md`, `spec-template.md`, `plan-template.md`, `tasks-template.md`, `checklist-template.md`, `specs-readme.md` | [spec-driven-development](../docs/workflows/spec-driven-development.md) |
 | `memory/`         | `projectmem-readme.md`, `projectmem-policy.md`                                  | [projectmem](../docs/tooling/projectmem.md), [project-memory](../docs/workflows/project-memory.md) |
 

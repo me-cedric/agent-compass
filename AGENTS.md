@@ -14,11 +14,26 @@ to this file plus tool-specific notes.
 
 ## 1. The coding workflow (always)
 
+**Intake gate (before the loop).** For non-trivial or irreversible work, confirm
+the request has **Goal, Context, Constraints, Done-when, and Validation** before
+planning. If a field is missing and no sensible default exists, ask (one decision
+per question) or fill it from the code — do not start broad work on a vague
+brief. For long-running/autonomous work also fix a stopping condition, checkpoint
+cadence, and out-of-scope list. Use
+[`templates/intake/work-intake.md`](templates/intake/work-intake.md) or the
+`prompt-upgrade` prompt to shape a rough request. Small mechanical edits may
+inline a one-line brief.
+
 Do not jump straight to code. For any non-trivial task, run this loop:
 
 1. **Gather context.** Read the relevant code, `README`s, and the host
    `AGENTS.md`. Use repo-understanding tooling before broad grep. Identify
    existing conventions, utilities, and patterns to reuse.
+   If the active provider exposes useful native commands, tools, MCP servers,
+   skills, subagents, hooks, goals, plans, or review modes, use them when they
+   reduce risk or manual work. Offer the user a provider-specific tool when it
+   would materially help and is not already obvious. See
+   [agent-provider-capabilities](docs/tooling/agent-provider-capabilities.md).
 2. **Clarify.** If the request is ambiguous or under-specified, ask focused
    questions *before* planning. One decision per question. Don't ask what the
    code or a sensible default already answers.
@@ -73,6 +88,12 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
 - **PR reviews.** Support local reviews, direct GitHub reviews, inline comments,
   approve/comment/request-changes, and implementing submitted review fixes after
   verifying they are still relevant. See [pr-review](docs/workflows/pr-review.md).
+- **Teach selectively.** When the user asks for explanations, onboarding,
+  workflow guidance, or repeats a weak prompt/tool pattern, add one compact
+  teaching note. Do not coach every turn. Match depth to the user's signal:
+  junior-friendly for broad questions, terse for senior or targeted questions.
+  See [agent-teaching](docs/workflows/agent-teaching.md) and the
+  [`agent-teacher`](skills/agent-teacher/SKILL.md) skill.
 
 ## 3. Validation (mandatory)
 

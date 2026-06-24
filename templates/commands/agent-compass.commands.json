@@ -3,6 +3,8 @@
   "packageManager": "<PM>",
   "install": "<PM> install",
   "check": "<PM> check",
+  "agentConformance": "node docs/agent-compass/scripts/agent-conformance.mjs --root . --write",
+  "agentEvals": "node docs/agent-compass/scripts/agent-evals.mjs --root docs/agent-compass",
   "context": null,
   "doctorReport": null,
   "lint": null,

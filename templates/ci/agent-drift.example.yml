@@ -1,0 +1,27 @@
+# Scheduled agent-guidance drift report for a host project that vendored
+# agent-compass (e.g. at docs/agent-compass/). Read-only. Copy to
+# .github/workflows/agent-drift.yml and adjust the path/cadence.
+
+name: agent-drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+      # Validate the vendored standards, then report host adoption drift.
+      - name: Guidance drift
+        run: node docs/agent-compass/scripts/agent-drift.mjs --strict
+      - name: Host adoption drift
+        run: node docs/agent-compass/scripts/install.mjs --doctor --deep .

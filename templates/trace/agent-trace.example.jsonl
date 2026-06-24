@@ -1,0 +1,3 @@
+{"ts":"2026-06-20","task":"fix login redirect loop","type":"bugfix","tools":["read","edit","bash"],"validation":"passed","outcome":"fixed","corrections":1,"lesson":"guard order matters before redirect"}
+{"ts":"2026-06-21","task":"add pagination to list endpoint","type":"feature","tools":["edit","bash"],"validation":"passed","outcome":"shipped","corrections":0}
+{"ts":"2026-06-22","task":"migrate config loader","type":"refactor","tools":["edit"],"validation":"partial","outcome":"reverted","corrections":2,"lesson":"needs integration test before swap"}

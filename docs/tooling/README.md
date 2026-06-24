@@ -13,6 +13,8 @@ Concrete setup guides. Each points at runnable files in
 | [github-actions.md](github-actions.md)         | Required GitHub Action majors and CI template policy.   |
 | [husky.md](husky.md)                           | `pre-commit`, `pre-push`, `commit-msg` hooks.           |
 | [mcp.md](mcp.md)                               | MCP setup, projectmem, Figma design context.            |
+| [agent-provider-capabilities.md](agent-provider-capabilities.md) | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
+| [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |
 | [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |
