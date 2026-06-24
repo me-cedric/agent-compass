@@ -3,6 +3,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { doctorChecks } from './doctor-checks.mjs'
 
 const help = `Usage: node scripts/doctor-report.mjs [root] [--write]
 
@@ -17,8 +18,10 @@ if (args.includes('--help')) {
 
 const root = resolve(args.find((arg) => !arg.startsWith('--')) || process.cwd())
 const check = (label, path) => `| ${label} | ${existsSync(join(root, path)) ? 'ok' : 'missing'} | \`${path}\` |`
+const checkRow = ([label, ok, detail]) => `| ${label} | ${ok ? 'ok' : 'issue'} | ${detail?.length ? detail.join(', ') : ''} |`
 let scripts = []
 try { scripts = Object.keys(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts || {}).sort() } catch {}
+const { required, advisory, deepChecks } = doctorChecks(root, { deep: true })
 
 const report = `# Agent Readiness Report
 
@@ -26,13 +29,9 @@ Root: \`${root}\`
 
 ## Required
 
-| Check | Status | Path |
-| ----- | ------ | ---- |
-${[
-  check('Agent guide', 'AGENTS.md'),
-  check('Command registry', 'agent-compass.commands.json'),
-  check('PR template', '.github/PULL_REQUEST_TEMPLATE.md'),
-].join('\n')}
+| Check | Status | Detail |
+| ----- | ------ | ------ |
+${required.map(checkRow).join('\n')}
 
 ## Optional Workflows
 
@@ -46,6 +45,12 @@ ${[
   check('Repo map', 'docs/architecture/repo-map.md'),
   check('ADR template', 'docs/decisions/000-template.md'),
 ].join('\n')}
+
+## Advisory
+
+| Check | Status | Detail |
+| ----- | ------ | ------ |
+${[...advisory, ...deepChecks].map(checkRow).join('\n')}
 
 ## Package Scripts
 

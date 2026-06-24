@@ -9,7 +9,9 @@ test('doctor-report prints readiness markdown', async () => {
   const result = await runNode([new URL('../scripts/doctor-report.mjs', import.meta.url).pathname, root.pathname], { cwd: root.pathname })
   assert.equal(result.code, 0, result.stderr)
   assert.match(result.stdout, /Agent Readiness Report/)
-  assert.match(result.stdout, /Command registry/)
+  assert.match(result.stdout, /agent-compass\.commands\.json exists/)
+  assert.match(result.stdout, /projectmem MCP example keeps repo placeholder/)
+  assert.match(result.stdout, /\.husky\/pre-commit executable/)
 })
 
 test('runbook prints agent startup steps', async () => {

@@ -8,6 +8,8 @@ repo files.
 - Prefer official servers and marketplace plugins over random wrappers.
 - Keep tokens in the client secret store or local env, never in committed files.
 - Use absolute paths for local servers in GUI clients.
+- Copy repo `.mcp/*.example.json` into your local MCP client config, replace
+  `/absolute/path/to/repo`, and never commit local MCP client config.
 - Document every configured server in `.mcp/README.md`.
 - Before using a server, verify the client can list the expected tools.
 

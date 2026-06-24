@@ -20,10 +20,24 @@ Typical setup:
 python3 --version      # projectmem currently requires Python >= 3.10
 python3 -m pip install projectmem
 pjm init
+pjm --help
+```
+
+Prefer a project-local install when the host project already has a Python
+virtualenv:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install projectmem
+.venv/bin/pjm init
 ```
 
 `pjm init` creates `.projectmem/` and installs local hooks for warnings and
 classification. The canonical command is `projectmem`; `pjm` is the short alias.
+Command names can drift between projectmem releases; verify the command registry
+entries with `pjm --help` after install.
+Backfill/import commands are opt-in because they can create many legacy
+`.projectmem/issues/*` files.
 
 ## Prerequisites
 
@@ -68,7 +82,7 @@ brainstorming.
 Use the upstream docs for exact client config. The common server command is:
 
 ```bash
-python -m projectmem.mcp_server --root /absolute/path/to/project
+python -m projectmem.mcp_server --root /absolute/path/to/repo
 ```
 
 For Codex, upstream currently documents TOML like:
@@ -76,11 +90,22 @@ For Codex, upstream currently documents TOML like:
 ```toml
 [mcp_servers.projectmem]
 command = "/absolute/path/to/python"
-args = ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/project"]
-cwd = "/absolute/path/to/project"
+args = ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/repo"]
+cwd = "/absolute/path/to/repo"
 ```
 
-Use an absolute Python path when the client does not inherit shell `PATH`.
+Copy `.mcp/projectmem.example.json` into your local MCP client config, replace
+`/absolute/path/to/repo`, and never commit that local client config. Use an
+absolute Python path when the client does not inherit shell `PATH`.
+
+## Generated files
+
+- `.projectmem/summary.md` is generated shared context. It may be committed after
+  review for secrets, personal data, and local absolute paths.
+- `.projectmem/events.jsonl`, `.projectmem/issues/`, `.projectmem/watch.*`,
+  `.projectmem/data/`, and DB files stay ignored by default.
+- Keep `.projectmem/summary.md` in `.prettierignore`; agents can read it without
+  formatter churn.
 
 ## Export mode
 

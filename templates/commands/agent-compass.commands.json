@@ -10,9 +10,17 @@
   "typecheck": null,
   "test": null,
   "build": null,
+  "projectMemory": {
+    "brief": "test -x .venv/bin/pjm && .venv/bin/pjm brief || pjm brief",
+    "precheck": "test -x .venv/bin/pjm && .venv/bin/pjm precheck || pjm precheck",
+    "show": "test -x .venv/bin/pjm && .venv/bin/pjm show || pjm show",
+    "regenerateSummary": "test -x .venv/bin/pjm && .venv/bin/pjm regenerate || pjm regenerate",
+    "backfillOptIn": "test -x .venv/bin/pjm && .venv/bin/pjm backfill || pjm backfill"
+  },
   "runbook": null,
   "notes": [
     "Replace nulls with real package.json commands.",
-    "Agents must use this file before inventing validation commands."
+    "Agents must use this file before inventing validation commands.",
+    "After installing projectmem, verify projectMemory commands with pjm --help."
   ]
 }

@@ -2,6 +2,14 @@
 
 Use `projectmem` for durable project memory when available.
 
+## Shared Vs Local
+
+- `.projectmem/summary.md` is generated shared context. It may be committed after
+  review for secrets, personal data, and local absolute paths.
+- Raw runtime data stays local by default: `events.jsonl`, `issues/`, watch
+  files, data directories, and DB files.
+- Backfill is opt-in. It can create many legacy issue files.
+
 ## Before Starting
 
 - Read relevant projectmem summaries.

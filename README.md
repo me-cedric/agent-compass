@@ -63,6 +63,7 @@ From the host project root:
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
 node docs/agent-compass/scripts/install.mjs
 node docs/agent-compass/scripts/install.mjs --doctor
+node docs/agent-compass/scripts/install.mjs --doctor --fix
 node docs/agent-compass/scripts/install.mjs --doctor --deep
 ```
 
@@ -87,6 +88,23 @@ Result:
 
 Use [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) when bumping
 the submodule later.
+
+### Adopt Without Submodule
+
+Use a standalone clone when the host should copy standards but not vendor this
+repo:
+
+```bash
+git clone git@github.com:<owner>/agent-compass.git /tmp/agent-compass
+node /tmp/agent-compass/scripts/install.mjs --dry /path/to/host
+node /tmp/agent-compass/scripts/install.mjs /path/to/host
+node /tmp/agent-compass/scripts/install.mjs --doctor --fix /path/to/host
+node /tmp/agent-compass/scripts/install.mjs --doctor --deep /path/to/host
+```
+
+Review and commit only host-local files. Copy `.mcp/*.example.json` into local
+MCP client config, replace `/absolute/path/to/repo`, and never commit that local
+client config.
 
 ### Bootstrap New Project
 

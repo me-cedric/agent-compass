@@ -1,54 +1,48 @@
 node_modules/
+.venv/
 .DS_Store
 .turbo/
 .idea/
-/coverage
-.postinstall-lock
-apps/mobile-app/fastlane/service-account.json
-apps/mobile-app/.vscode/
 .vscode/settings.json
-apps/backoffice/.vscode/settings.json
+coverage/
+**/coverage/
 **/.eslintcache
-apps/mobile-app/GoogleService-Info.plist
-apps/backoffice/coverage
+*.log
 
-# SonarQube
-sonar-project.local.properties
+# Environment variables may contain secrets.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Local MCP/client config.
+.vscode/mcp.json
+.mcp.json
+
+# Agent-local work dirs.
+.claude/worktrees/
+.auto-claude/
+tasks/lessons.md
+tasks/todo.md
+
+# Scanner/build outputs.
 .scannerwork/
-apps/**/.scannerwork/
+**/.scannerwork/
 sonar-report/
 sonar-report*.html
 sonar-issues*.csv
 test-report.xml
 test-report-e2e.xml
-
-# Checkmarx packages
 checkmarx-*.zip
 
-# Environment variables (may contain sensitive tokens)
-.env
-.env.local
-.env.*.local
-apps/mobile-app/GoogleService-Info.plist
-
-firebase-debug.log.dual-graph/
-.dual-graph/
-.dual-graph-context/
-
-# Aperant data directory
-.auto-claude/
-.github/copilot-instructions.md
-.github/agents/debug.agent.md
-.github/agents/full.agent.md
-.github/agents/lesson.agent.md
-.github/agents/plan.agent.md
-.github/agents/README.md
-.github/agents/refactor.agent.md
-.github/agents/review-plan.agent.md
-.github/agents/step.agent.md
-.github/agents/verify.agent.md
-tasks/lessons.md
-tasks/todo.md
-.vscode/mcp.json
-.mcp.json
-.claude/worktrees/
+# projectmem local runtime
+.projectmem/events.jsonl
+.projectmem/issues/
+.projectmem/watch.*
+.projectmem/data/
+.projectmem/*.db
+.projectmem/*.db-*
+.projectmem/*.sqlite
+.projectmem/*.sqlite-*
+.projectmem/*.sqlite3
+.projectmem/*.sqlite3-*

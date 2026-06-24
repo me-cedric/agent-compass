@@ -37,6 +37,11 @@ Include:
 - why it changed
 - spec/issue links
 - validation commands and results
+- lint, typecheck, and relevant test status
+- docs/spec/module README/env docs sync
+- API contract sync for OpenAPI/Scalar, Bruno, and Gherkin when endpoints or
+  behavior changed
+- shared-types consumer validation when shared packages changed
 - risks
 - labels selected and why
 

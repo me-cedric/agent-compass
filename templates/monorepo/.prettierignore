@@ -1,8 +1,13 @@
-# CocoaPods vendor dependencies (third-party, not maintained in this repo)
-apps/mobile-app/ios/Pods/
+node_modules/
+coverage/
+**/coverage/
+dist/
+build/
 
-# Expo generated files
-apps/mobile-app/.expo/
+# Generated/project-local files.
+.turbo/
+.scannerwork/
+sonar-report/
 
-# External package vendored in packages/ (not maintained in this repo)
-packages/nest-keycloak-connect/
+# projectmem generated summary
+.projectmem/summary.md

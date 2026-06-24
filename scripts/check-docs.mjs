@@ -25,6 +25,7 @@ const IGNORE = new Set(['.git', 'node_modules', 'incoming'])
 const TEXT_EXT = new Set(['.md', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.json', '.yml', '.yaml', '.toml', '.properties', '.sh', '.tpl', '.txt', ''])
 const ALLOWED_TEMPLATE_PLACEHOLDERS = new Set(['project', 'app', 'PM', 'provider', 'key', 'keys', 'projectKey', 'path', 'csvPath', 'htmlPath', 'line', 'prefix', 'KEY', 'unset', 'name', 'id', 'id-slug'])
 const HTML_TAGS = new Set(['a', 'b', 'br', 'code', 'dd', 'div', 'dt', 'h1', 'h2', 'h3', 'h4', 'li', 'p', 'script', 'span', 'strong', 'table', 'tbody', 'td', 'th', 'thead', 'tr', 'ul'])
+const LOCAL_PATH_RE = /(?:\/Users\/(?!runner\b)|\/home\/(?!runner\b)|[A-Za-z]:\\Users\\)[^"'\s)]+/
 const hits = []
 
 const walk = (dir, onFile) => {
@@ -85,6 +86,8 @@ walk(join(ROOT, 'templates'), (file) => {
   if (!TEXT_EXT.has(extname(file))) return
   let text
   try { text = readFileSync(file, 'utf8') } catch { return }
+  const localPath = LOCAL_PATH_RE.exec(text)
+  if (localPath) hits.push(`${file.replace(ROOT + '/', '')}: local path in template: ${localPath[0]}`)
   for (const match of text.matchAll(/<([A-Za-z][A-Za-z0-9_-]*)>/g)) {
     const token = match[1]
     if (!ALLOWED_TEMPLATE_PLACEHOLDERS.has(token) && !HTML_TAGS.has(token.toLowerCase())) {

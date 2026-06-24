@@ -6,8 +6,9 @@
         "-m",
         "projectmem.mcp_server",
         "--root",
-        "/absolute/path/to/project"
-      ]
+        "/absolute/path/to/repo"
+      ],
+      "cwd": "/absolute/path/to/repo"
     }
   }
 }
