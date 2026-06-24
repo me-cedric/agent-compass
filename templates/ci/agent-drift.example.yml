@@ -23,5 +23,7 @@ jobs:
       # Validate the vendored standards, then report host adoption drift.
       - name: Guidance drift
         run: node docs/agent-compass/scripts/agent-drift.mjs --strict
+      - name: Managed-file drift (host fell behind the submodule)
+        run: node docs/agent-compass/scripts/sync.mjs . --check
       - name: Host adoption drift
         run: node docs/agent-compass/scripts/install.mjs --doctor --deep .

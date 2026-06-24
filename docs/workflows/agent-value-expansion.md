@@ -166,3 +166,14 @@ interaction.
 
 Do not add everything at once to a host repo. Install the baseline, run doctor,
 then add the first missing item that removes repeated user steering.
+
+## Deferred (relevant, not yet built)
+
+- **PR-review automation in CI.** A GitHub Action that runs the `reviewer` and
+  `security` role agents on a PR diff and posts findings as a check/comment. The
+  roles already exist as `.claude/agents/*` and the Copilot teacher agent; this
+  would wire them to run with no human trigger. Deferred because it needs a
+  provider CLI authenticated in CI (a stored token) and a severity gate policy,
+  which should be decided per host. Sketch: `templates/ci/agent-review.example.yml`
+  invoking the provider headless over `git diff`, gated on findings severity.
+

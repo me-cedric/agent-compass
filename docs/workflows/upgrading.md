@@ -1,42 +1,66 @@
 # Upgrading Agent Compass
 
-Use this when a host project already imports agent-compass as a submodule and
-wants newer standards without surprise changes.
+When agent-compass updates, a host gets the new rules and tools **without
+re-running setup or asking an agent to merge**. Two things make this work:
 
-For one-time adoption without a submodule, use a standalone clone as the source
-and copy/install only the shared files the host needs.
+- **Pointers reference the submodule** (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`,
+  the `docs/agent-compass/` guides, skills, and all `scripts/`). Bumping the
+  submodule updates them for free — nothing to copy.
+- **Forked files are reconciled by `sync`** ([`sync.mjs`](../../scripts/sync.mjs)),
+  which knows which files agent-compass owns vs. which the host owns.
 
-## Steps
+## One command
 
-1. Read [`CHANGELOG.md`](../../CHANGELOG.md) from the current pinned SHA to the
-   target SHA or tag.
-2. Update the submodule:
+From the host root, after the submodule moved:
 
 ```bash
-git submodule update --remote docs/agent-compass
+node docs/agent-compass/scripts/sync.mjs .
 ```
 
-Or use the helper from an agent-compass checkout:
+Or do the whole upgrade (bump submodule → install new files → sync → doctor) from
+an agent-compass checkout:
 
 ```bash
 node scripts/upgrade-host.mjs /path/to/host docs/agent-compass --dry
 node scripts/upgrade-host.mjs /path/to/host docs/agent-compass
 ```
 
-3. Re-run the installer from the host root:
+## What sync does
+
+Each installed file is classified in [`manifest.mjs`](../../scripts/manifest.mjs):
+
+| Class | Examples | On sync |
+| ----- | -------- | ------- |
+| **managed** (agent-compass owns) | role agents, hooks, `tool-contract.md`, prompts, smoke test, MCP examples, settings example | Fast-forwarded if you didn't edit it. If you did, sync writes `<file>.acnew` next to it and leaves yours untouched. |
+| **seed** (host owns) | `agent-compass.commands.json`, `repo-map.md`, specs, projectmem policy, monorepo configs | Created once; never auto-updated. Only added if missing. |
+
+A version lock at `.agent/agent-compass.lock` records what you last synced, so sync
+can tell "you didn't touch this" from "you customized this."
+
+## Conflicts
+
+When a managed file you edited also changed upstream, sync writes `<file>.acnew`.
+Review it, merge anything you want, then delete the `.acnew`. (The `0.4.0`
+migration adds `*.acnew` to `.gitignore`.) An agent can do this merge — point it
+at the `.acnew` pairs and the diff.
+
+## Migrations
+
+Structural changes (renames, moved files, config keys) ship as ordered scripts in
+[`migrations/`](../../migrations/). Sync runs every migration in
+`(your lock version, current]`. They are idempotent and never touch secrets.
+
+## CI drift check
+
+Fail CI when a host falls behind (read-only, writes nothing):
 
 ```bash
-node docs/agent-compass/scripts/install.mjs --dry
-node docs/agent-compass/scripts/install.mjs
-node docs/agent-compass/scripts/install.mjs --doctor
-node docs/agent-compass/scripts/install.mjs --doctor --fix
-node docs/agent-compass/scripts/install.mjs --doctor --deep
+node docs/agent-compass/scripts/sync.mjs . --check
 ```
 
-4. Review the diff. Keep host-specific rules in the host root `AGENTS.md`; keep
-   shared rules in `docs/agent-compass/`.
-5. Run the host project's normal validation gate before committing the submodule
-   SHA bump.
+After upgrading, run the host project's normal validation gate before committing
+the submodule SHA bump. Keep host-specific rules in the host root `AGENTS.md`;
+shared rules stay in `docs/agent-compass/`.
 
 ## No-submodule adoption
 

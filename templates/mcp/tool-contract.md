@@ -25,6 +25,9 @@ and update it whenever a server's allowlist changes.
 | projectmem | log | write | local | prompt | write denied if read-only mount | new entry appears in `show` |
 | figma | get_file | read | local | prompt | file not open / no auth | returns frames |
 | figma | get_selection | read | local | prompt | nothing selected | returns nodes |
+| headroom | headroom_compress | read | local | auto | input too small to compress | returns compressed payload |
+| headroom | headroom_retrieve | read | local | auto | id not cached | returns original chunk |
+| headroom | headroom_stats | read | none | auto | no session yet | returns token savings |
 
 ## Rules
 

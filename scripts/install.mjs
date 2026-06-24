@@ -8,9 +8,10 @@
 //   node docs/agent-compass/scripts/install.mjs <host-dir> # explicit host root
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
-import { dirname, resolve, relative, join, basename } from 'node:path'
+import { dirname, resolve, relative, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { doctorChecks, ensureProjectmemIgnores, fixHuskyHookModes } from './doctor-checks.mjs'
+import { FILE_MANIFEST, LOCK_REL, TEXT_RE, isHook, sha, loadSubst, renderSource, acVersion } from './manifest.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
@@ -42,22 +43,11 @@ if (HOST === AC) {
   process.exit(1)
 }
 
-// Optional substitutions from a prior bootstrap run.
-let scope = '@scope'
-let name = basename(HOST)
-const answersPath = join(HOST, 'agent-compass.answers.json')
-if (existsSync(answersPath)) {
-  try {
-    const a = JSON.parse(readFileSync(answersPath, 'utf8'))
-    scope = a.scope || scope
-    name = a.name || name
-  } catch {}
-}
-const subst = (text) => text.replace(/@scope\b/g, scope).replace(/<project>/g, name)
+// Substitutions from a prior bootstrap run (shared with sync.mjs).
+const { scope, name, subst } = loadSubst(HOST)
 
 const created = []
 const skipped = []
-const TEXT = /\.(md|json|ya?ml|mjs|cjs|js|ts|toml|properties|txt|sh|tpl)$|^\.|husky\//
 
 const runFix = () => {
   const ignored = ensureProjectmemIgnores(HOST, dry)
@@ -107,12 +97,12 @@ const place = (srcRel, destRel, transform = true) => {
   if (existsSync(dest)) { skipped.push(destRel); return }
   if (dry) { created.push(destRel + ' (dry)'); return }
   mkdirSync(dirname(dest), { recursive: true })
-  if (transform && TEXT.test(srcRel)) {
+  if (transform && TEXT_RE.test(srcRel)) {
     writeFileSync(dest, subst(readFileSync(src, 'utf8')))
   } else {
     copyFileSync(src, dest)
   }
-  if (srcRel.includes('husky/') || srcRel.includes('.claude/hooks/')) chmodSync(dest, 0o755)
+  if (isHook(srcRel)) chmodSync(dest, 0o755)
   created.push(destRel)
 }
 
@@ -176,53 +166,23 @@ if (!existsSync(join(HOST, '.husky'))) {
   skipped.push('.husky/ (exists)')
 }
 
-// 3) Common config templates — created only if missing.
-const configs = [
-  ['templates/monorepo/.editorconfig', '.editorconfig'],
-  ['templates/monorepo/.prettierrc', '.prettierrc'],
-  ['templates/monorepo/.prettierignore', '.prettierignore'],
-  ['templates/monorepo/commitlint.config.js', 'commitlint.config.js'],
-  ['templates/monorepo/.nvmrc', '.nvmrc'],
-  ['templates/monorepo/.npmrc', '.npmrc'],
-  ['templates/monorepo/tsconfig.base.json', 'tsconfig.base.json'],
-  ['templates/security/.osv-scanner.toml', '.osv-scanner.toml'],
-  ['templates/monorepo/env.example.tpl', '.env.example'],
-  ['templates/commands/agent-compass.commands.json', 'agent-compass.commands.json'],
-  ['templates/context/repo-map.md', 'docs/architecture/repo-map.md'],
-  ['docs/decisions/000-template.md', 'docs/decisions/000-template.md'],
-  ['templates/handoff.md', 'docs/handoff-template.md'],
-  ['templates/intake/work-intake.md', 'docs/work-intake-template.md'],
-  ['templates/trace/README.md', '.agent/trace/README.md'],
-  ['templates/agent/.github/ISSUE_TEMPLATE/agent-ready-task.yml', '.github/ISSUE_TEMPLATE/agent-ready-task.yml'],
-  ['templates/agent/.github/PULL_REQUEST_TEMPLATE.md', '.github/PULL_REQUEST_TEMPLATE.md'],
-  ['templates/agent/.github/instructions/agent-compass.instructions.md', '.github/instructions/agent-compass.instructions.md'],
-  ['templates/agent/.github/instructions/pr-workflow.instructions.md', '.github/instructions/pr-workflow.instructions.md'],
-  ['templates/agent/.github/prompts/explain-project.prompt.md', '.github/prompts/explain-project.prompt.md'],
-  ['templates/agent/.github/prompts/prompt-upgrade.prompt.md', '.github/prompts/prompt-upgrade.prompt.md'],
-  ['templates/agent/.github/agents/agent-compass-teacher.agent.md', '.github/agents/agent-compass-teacher.agent.md'],
-  ['templates/codex/.codex/config.toml', '.codex/config.toml'],
-  ['templates/codex/.codex/hooks.json', '.codex/hooks.json'],
-  ['templates/claude/.claude/agents/reviewer.md', '.claude/agents/reviewer.md'],
-  ['templates/claude/.claude/agents/security.md', '.claude/agents/security.md'],
-  ['templates/claude/.claude/agents/docs-teacher.md', '.claude/agents/docs-teacher.md'],
-  ['templates/claude/.claude/hooks/protect-agent-files.sh', '.claude/hooks/protect-agent-files.sh'],
-  ['templates/claude/.claude/hooks/remind-completion-gate.sh', '.claude/hooks/remind-completion-gate.sh'],
-  ['templates/claude/.claude/settings.example.json', '.claude/settings.example.json'],
-  ['templates/conformance/provider-discovery-smoke.md', '.agent/provider-discovery-smoke.md'],
-  ['templates/mcp/README.md', '.mcp/README.md'],
-  ['templates/mcp/tool-contract.md', '.mcp/tool-contract.md'],
-  ['templates/mcp/figma.example.json', '.mcp/figma.example.json'],
-  ['templates/mcp/projectmem.example.json', '.mcp/projectmem.example.json'],
-  ['templates/mcp/copilot-cloud.example.json', '.mcp/copilot-cloud.example.json'],
-  ['templates/mcp/codex.example.toml', '.mcp/codex.example.toml'],
-  ['templates/mcp/cursor.example.json', '.mcp/cursor.example.json'],
-  ['templates/mcp/gemini.example.json', '.mcp/gemini.example.json'],
-  ['templates/specs/specs-readme.md', 'specs/README.md'],
-  ['templates/specs/constitution-template.md', 'specs/constitution.md'],
-  ['templates/memory/projectmem-readme.md', '.projectmem/README.md'],
-  ['templates/memory/projectmem-policy.md', '.projectmem/projectmem-policy.md'],
-]
-for (const [s, d] of configs) place(s, d)
+// 3) Common config + agent templates — created only if missing (see manifest.mjs).
+for (const { src, dest } of FILE_MANIFEST) place(src, dest)
+
+// Record a version lock so `sync.mjs` knows the baseline for managed files.
+if (!dry) {
+  const lock = { version: acVersion(AC), syncedAt: new Date().toISOString(), managed: {} }
+  for (const { src, dest, mode } of FILE_MANIFEST) {
+    if (mode !== 'managed') continue
+    const dpath = join(HOST, dest)
+    if (!existsSync(dpath)) continue
+    // Only claim "in sync" when the host file matches what we ship.
+    if (sha(readFileSync(dpath, 'utf8')) === sha(renderSource(AC, src, subst))) lock.managed[dest] = sha(renderSource(AC, src, subst))
+  }
+  mkdirSync(join(HOST, '.agent'), { recursive: true })
+  writeFileSync(join(HOST, LOCK_REL), JSON.stringify(lock, null, 2) + '\n')
+  created.push(LOCK_REL)
+}
 
 const ignored = ensureProjectmemIgnores(HOST, dry)
 if (ignored.gitignore.length) created.push(`.gitignore projectmem ignores${dry ? ' (dry)' : ''}`)

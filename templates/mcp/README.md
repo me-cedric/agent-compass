@@ -8,6 +8,7 @@ This project may use MCP servers for agent tools and context.
 | ---- | ------- | ----- | --------------- |
 | projectmem | Durable project memory | See `.mcp/projectmem.example.json` | none or local only |
 | figma | Design context | See `.mcp/figma.example.json` | client secret store |
+| headroom | Context compression (compress/retrieve/stats) | See `.mcp/headroom.example.json` | none or local only |
 
 ## Rules
 

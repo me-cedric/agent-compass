@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { SECRET_RE, EMAIL_RE } from './lib/redact.mjs'
 
 const help = `Usage: node scripts/agent-trace.mjs [--root <dir>] [--file <path>]
 
@@ -33,10 +34,7 @@ const file = resolve(ROOT, arg('--file') || 'templates/trace/agent-trace.example
 
 const REQUIRED = ['task', 'type', 'validation', 'outcome']
 const VALIDATION = new Set(['passed', 'failed', 'partial', 'not run'])
-// ponytail: heuristic secret/PII screen. Catches the common shapes (PEM, key:val
-// secrets, provider tokens, long base64, emails); not a full DLP scanner.
-const SECRET_RE = /(-----BEGIN |(?:password|secret|api[_-]?key|token)\s*[:=]\s*\S|bearer\s+[a-z0-9._-]{12,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|[A-Za-z0-9+/]{40,}={0,2})/i
-const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i
+// Secret/PII screen is shared with scripts/redact.mjs (see scripts/lib/redact.mjs).
 
 let raw
 try {

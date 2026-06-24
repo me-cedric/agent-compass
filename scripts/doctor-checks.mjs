@@ -148,6 +148,9 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.mcp/codex.example.toml exists', existsSync(join(root, '.mcp', 'codex.example.toml'))],
     ['.mcp/cursor.example.json exists', existsSync(join(root, '.mcp', 'cursor.example.json'))],
     ['.mcp/gemini.example.json exists', existsSync(join(root, '.mcp', 'gemini.example.json'))],
+    ['.mcp/headroom.example.json exists', existsSync(join(root, '.mcp', 'headroom.example.json'))],
+    ['.mcp/tool-contract.md exists', existsSync(join(root, '.mcp', 'tool-contract.md'))],
+    ['.agent/agent-compass.lock exists (run sync to update)', existsSync(join(root, '.agent', 'agent-compass.lock'))],
   ] : []
   return { required, advisory, deepChecks }
 }

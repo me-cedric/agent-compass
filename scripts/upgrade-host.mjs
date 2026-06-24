@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path'
 
 const help = `Usage: node scripts/upgrade-host.mjs <host-root> [submodule-path] [--dry]
 
-Update an agent-compass submodule, then run install --doctor --deep.
+Update an agent-compass submodule, sync managed files, then run doctor.
 `
 
 const args = process.argv.slice(2)
@@ -34,6 +34,8 @@ if (!existsSync(ac)) {
 
 const commands = [
   ['git', ['submodule', 'update', '--remote', '--merge', submodule]],
+  ['node', [join(ac, 'scripts', 'install.mjs'), host]],
+  ['node', [join(ac, 'scripts', 'sync.mjs'), host]],
   ['node', [join(ac, 'scripts', 'install.mjs'), '--doctor', '--deep', host]],
 ]
 

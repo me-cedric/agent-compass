@@ -57,6 +57,11 @@ const checks = [
   ['model/permission profiles guide', any('docs/tooling/agent-permissions.md')],
   ['trace/outcome log template', any('.agent/trace/README.md', 'templates/trace/README.md')],
   ['drift report script', any('scripts/agent-drift.mjs')],
+  ['headroom context-compression guide', any('docs/tooling/headroom.md')],
+  ['sync engine + file manifest', any('scripts/sync.mjs') && any('scripts/manifest.mjs')],
+  ['context pack generator', any('scripts/context-pack.mjs')],
+  ['typed command runner', any('scripts/run-command.mjs')],
+  ['model routing guide', any('docs/tooling/model-routing.md')],
 ]
 
 const providerPrompts = [

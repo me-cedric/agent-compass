@@ -22,6 +22,7 @@ Node is pinned by `.nvmrc`; pnpm by `packageManager` in `package.json`
 | Tool         | Purpose                                  | Install                                                        |
 | ------------ | ---------------------------------------- | ------------------------------------------------------------- |
 | `rtk`        | Compact wrappers for noisy shell output  | Install the `rtk` binary from its distribution (Homebrew tap / cargo / release archive), then `rtk --version`. Reference: [rtk.md](rtk.md). |
+| `headroom`   | Session-level context compression layer  | `pip install "headroom-ai[all]"`, then `headroom --version`. Reference: [headroom.md](headroom.md). |
 | `skillshare` | Sync skills/agents across AI CLIs        | `npm i -g skillshare` (or per its README); `skillshare --help` |
 
 > `rtk` is a standalone binary, not an npm package — grab it from wherever you
@@ -101,7 +102,7 @@ See [api-contract-sync.md](api-contract-sync.md).
 ## One-shot check
 
 ```bash
-for t in node pnpm git gh rtk docker python3 uv pjm specify; do printf '%-10s ' "$t"; command -v "$t" >/dev/null && "$t" --version 2>/dev/null | head -1 || echo MISSING; done
+for t in node pnpm git gh rtk headroom docker python3 uv pjm specify; do printf '%-10s ' "$t"; command -v "$t" >/dev/null && "$t" --version 2>/dev/null | head -1 || echo MISSING; done
 ```
 
 Missing tools degrade gracefully — e.g. without `rtk`, commands just run

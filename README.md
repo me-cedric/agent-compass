@@ -321,9 +321,18 @@ All scripts are dependency-free Node scripts.
 | `npm run agent-evals` | Validate teaching/tool-offer eval fixtures. |
 | `npm run agent-drift` | Read-only drift dashboard across all guidance validators. |
 | `npm run agent-trace` | Validate an agent trace/outcome log (no secrets/PII). |
+| `npm run agent-onboard` | One-command readiness check (doctor + drift + sync) for a host. |
+| `npm run context-pack` | Generate `.agent/context.json` machine-readable repo index. |
+| `npm run run-command` | Run a command from the registry (refuses unknown/destructive). |
+| `npm run new` | Scaffold a skill, ADR, or spec stub. |
+| `npm run redact` | Scan files/staged diff for secret/PII leaks. |
+| `npm run trace-to-evals` | Turn failed trace rows into regression eval scenarios. |
+| `npm run gen-depgraph` | Generate a Mermaid dependency graph from local imports. |
+| `npm run check-companions` | Fail when source changes ship without a test. |
 | `npm run doctor-report` | Print host readiness report. |
 | `npm run runbook` | Print compact agent runbook. |
 | `npm run install-into` | Install pointers/templates into a host. |
+| `npm run sync-into` | Update a host's managed files from the submodule (safe, no clobber). |
 | `npm run pull-knowledge` | Stage reusable knowledge from another project. |
 | `npm run pr` | Create PR through `gh` with Agent Compass defaults. |
 | `npm run pr-review` | Build local PR review packet or submit review. |

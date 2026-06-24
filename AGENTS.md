@@ -65,8 +65,11 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   what the task needs.
 - **Reuse first.** Prefer the standard library, then an already-installed
   dependency, then a few lines of code — before adding anything new.
-- **Use `rtk`** to wrap noisy shell commands (build, test, git, search) when it
-  is available. See [tooling/rtk](docs/tooling/rtk.md).
+- **Token & context efficiency.** Prefer the project's configured session-level
+  context layer when wired ([headroom](docs/tooling/headroom.md): `headroom wrap`,
+  proxy, or MCP) for whole-session token reduction. Use `rtk` to compact
+  individual noisy commands (build, test, git, search). Both are optional and
+  degrade gracefully. See [tooling/rtk](docs/tooling/rtk.md).
 - **Never invent commands.** Use only scripts that exist in the project's
   `package.json` (or documented equivalents). If none matches, report `not run`
   with the reason.
