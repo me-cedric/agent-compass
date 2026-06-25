@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "cli": "node scripts/cli.mjs",
     "bootstrap": "node scripts/bootstrap.mjs",
     "context": "node scripts/context.mjs",
     "agent-conformance": "node scripts/agent-conformance.mjs",
@@ -41,7 +42,7 @@
     "lint:release": "node scripts/check-release.mjs"
   },
   "bin": {
-    "agent-compass": "scripts/bootstrap.mjs"
+    "agent-compass": "scripts/cli.mjs"
   },
   "license": "SEE LICENSE IN LICENSE"
 }

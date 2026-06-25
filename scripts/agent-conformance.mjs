@@ -63,6 +63,7 @@ const checks = [
   ['typed command runner', any('scripts/run-command.mjs')],
   ['model routing guide', any('docs/tooling/model-routing.md')],
   ['cached update check', any('scripts/check-update.mjs')],
+  ['unified CLI dispatcher', any('scripts/cli.mjs')],
 ]
 
 const providerPrompts = [

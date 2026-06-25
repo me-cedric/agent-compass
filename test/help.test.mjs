@@ -14,6 +14,7 @@ const scripts = [
   'check-actions.mjs',
   'check-change-companions.mjs',
   'check-update.mjs',
+  'cli.mjs',
   'context.mjs',
   'context-pack.mjs',
   'doctor-report.mjs',

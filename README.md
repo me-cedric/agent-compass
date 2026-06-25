@@ -309,12 +309,28 @@ Next step:
 
 ---
 
+## CLI
+
+All scripts below are reachable through one entrypoint,
+[`agent-compass`](docs/tooling/cli.md) ([`scripts/cli.mjs`](scripts/cli.mjs)),
+which dispatches `agent-compass <command> [...args]` and passes flags through.
+From a host that vendors the submodule:
+
+```bash
+alias ac="node docs/agent-compass/scripts/cli.mjs"
+ac install && ac doctor . --deep && ac onboard .
+ac help            # grouped command list
+```
+
+Full install paths and command reference: [docs/tooling/cli.md](docs/tooling/cli.md).
+
 ## Scripts
 
-All scripts are dependency-free Node scripts.
+All scripts are dependency-free Node scripts (also reachable via the CLI above).
 
 | Command | Purpose |
 | ------- | ------- |
+| `npm run cli` | Unified dispatcher (`agent-compass <command>`). |
 | `npm run bootstrap` | Interactive new-project prompt generator. |
 | `npm run context` | Print compact repo snapshot for agents. |
 | `npm run agent-conformance` | Check provider customization artifacts and print smoke prompts. |

@@ -5,6 +5,7 @@ Concrete setup guides. Each points at runnable files in
 
 | Guide                                          | Tool / concern                                          |
 | ---------------------------------------------- | ------------------------------------------------------- |
+| [cli.md](cli.md)                               | The `agent-compass` CLI: install, usage, every command. |
 | [prerequisites.md](prerequisites.md)           | Install the toolchain (node, pnpm, rtk, docker, scanners…). |
 | [rtk.md](rtk.md)                               | Compact, token-cheap wrappers for noisy shell commands. |
 | [headroom.md](headroom.md)                     | Session-level context compression (wrap/proxy/MCP); layers over rtk. |
