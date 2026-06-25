@@ -149,6 +149,13 @@ state without reducing risk.
 - If memory or instructions grow large, move procedures into skills/prompts and
   leave routing pointers in `AGENTS.md`.
 
+## Ready-to-use servers
+
+For high-value MCP servers the research workflows assume — context7 (live docs),
+exa (web research), fetch (pages), playwright (live apps), sequential-thinking —
+see [`mcp-servers.md`](mcp-servers.md) and `templates/mcp/recommended.example.json`.
+Keyless ones can be enabled immediately; keep keys out of git.
+
 ## References
 
 - Claude Code skills, subagents, hooks, plugins, and commands:

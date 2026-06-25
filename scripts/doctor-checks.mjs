@@ -140,6 +140,9 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.claude/agents/reviewer.md exists', existsSync(join(root, '.claude', 'agents', 'reviewer.md'))],
     ['.claude/agents/security.md exists', existsSync(join(root, '.claude', 'agents', 'security.md'))],
     ['.claude/agents/docs-teacher.md exists', existsSync(join(root, '.claude', 'agents', 'docs-teacher.md'))],
+    ['.claude/agents/architecture-advisor.md exists', existsSync(join(root, '.claude', 'agents', 'architecture-advisor.md'))],
+    ['.github/agents/architecture-advisor.agent.md exists', existsSync(join(root, '.github', 'agents', 'architecture-advisor.agent.md'))],
+    ['.github/prompts/choose-architecture.prompt.md exists', existsSync(join(root, '.github', 'prompts', 'choose-architecture.prompt.md'))],
     ['.claude/settings.example.json exists', existsSync(join(root, '.claude', 'settings.example.json'))],
     ['.agent/provider-discovery-smoke.md exists', existsSync(join(root, '.agent', 'provider-discovery-smoke.md'))],
     ['.mcp/README.md exists', existsSync(join(root, '.mcp', 'README.md'))],
@@ -149,6 +152,7 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.mcp/cursor.example.json exists', existsSync(join(root, '.mcp', 'cursor.example.json'))],
     ['.mcp/gemini.example.json exists', existsSync(join(root, '.mcp', 'gemini.example.json'))],
     ['.mcp/headroom.example.json exists', existsSync(join(root, '.mcp', 'headroom.example.json'))],
+    ['.mcp/recommended.example.json exists', existsSync(join(root, '.mcp', 'recommended.example.json'))],
     ['.mcp/tool-contract.md exists', existsSync(join(root, '.mcp', 'tool-contract.md'))],
     ['.agent/agent-compass.lock exists (run sync to update)', existsSync(join(root, '.agent', 'agent-compass.lock'))],
   ] : []

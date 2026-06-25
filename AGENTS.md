@@ -97,6 +97,14 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   junior-friendly for broad questions, terse for senior or targeted questions.
   See [agent-teaching](docs/workflows/agent-teaching.md) and the
   [`agent-teacher`](skills/agent-teacher/SKILL.md) skill.
+- **Architecture decisions.** For a new project or a significant technology
+  choice, use the [`architecture-advisor`](skills/architecture-advisor/SKILL.md)
+  skill: research-first, technology-neutral (not limited to the house stacks),
+  with **no unlabeled guesses** (tag Known/Assumed/Unknown, ask before guessing
+  on blocking unknowns). It produces an ADR, mermaid diagrams, risks, an
+  assumptions register, open questions, and on request a backlog and the
+  technical meetings to request. See
+  [architecture-decision](docs/workflows/architecture-decision.md).
 
 ## 3. Validation (mandatory)
 

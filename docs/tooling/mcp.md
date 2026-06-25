@@ -6,6 +6,9 @@ repo files.
 ## Rules
 
 - Prefer official servers and marketplace plugins over random wrappers.
+- For ready-to-use research servers (context7, exa, fetch, playwright,
+  sequential-thinking), see [mcp-servers.md](mcp-servers.md) and
+  `templates/mcp/recommended.example.json`.
 - Keep tokens in the client secret store or local env, never in committed files.
 - Use absolute paths for local servers in GUI clients.
 - Copy repo `.mcp/*.example.json` into your local MCP client config, replace

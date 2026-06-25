@@ -9,6 +9,7 @@ This project may use MCP servers for agent tools and context.
 | projectmem | Durable project memory | See `.mcp/projectmem.example.json` | none or local only |
 | figma | Design context | See `.mcp/figma.example.json` | client secret store |
 | headroom | Context compression (compress/retrieve/stats) | See `.mcp/headroom.example.json` | none or local only |
+| research (context7, sequential-thinking, fetch, exa, playwright) | Live docs, reasoning, web research, browser | See `.mcp/recommended.example.json` + `docs/tooling/mcp-servers.md` | keyless except exa (`EXA_API_KEY`) |
 
 ## Rules
 

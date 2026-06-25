@@ -33,7 +33,10 @@ under `.github/instructions/` (examples shipped in
 Use `.github/prompts/*.prompt.md` for repeated tasks, `.github/agents/*.agent.md`
 for named roles, path-specific instructions for folder rules, and MCP with
 allowlisted tools for external context. See
-`docs/tooling/agent-provider-capabilities.md`.
+`docs/tooling/agent-provider-capabilities.md`. For a new project's architecture,
+use the `choose-architecture` prompt or the `Architecture Advisor` agent —
+research-first, technology-neutral, no unlabeled guesses
+(`docs/workflows/architecture-decision.md`).
 
 ## 6. Teaching
 

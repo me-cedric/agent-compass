@@ -227,7 +227,7 @@ Important entry points:
 | [`AGENTS.md`](AGENTS.md) | Canonical agent contract. Read first. |
 | [`docs/guidelines/`](docs/guidelines/) | Coding, testing, security, docs, workflow rules. |
 | [`docs/architecture/`](docs/architecture/) | Generic architecture principles and repo-map guidance. |
-| [`docs/tooling/`](docs/tooling/) | Tool setup: prerequisites, MCP, projectmem, pnpm, turbo, Docker, security. |
+| [`docs/tooling/`](docs/tooling/) | Tool setup: prerequisites, CLI, MCP + [recommended servers](docs/tooling/mcp-servers.md), headroom, projectmem, pnpm, turbo, Docker, security. |
 | [`docs/workflows/`](docs/workflows/) | Playbooks for project creation, specs, memory, PRs, release, upgrades. |
 | [`skills/`](skills/) | Portable agent skills for work style, review, security, stacks, Figma. |
 | [`templates/`](templates/) | Copyable config, MCP examples, PR template, specs, memory, design system. |
@@ -294,6 +294,7 @@ Next step:
 | Workflow | Use when |
 | -------- | -------- |
 | [`new-project.md`](docs/workflows/new-project.md) | Starting from zero. |
+| [`architecture-decision.md`](docs/workflows/architecture-decision.md) | Choosing & justifying a new project's architecture (research-first, tech-neutral). |
 | [`new-module.md`](docs/workflows/new-module.md) | Adding a feature/module to existing code. |
 | [`spec-driven-development.md`](docs/workflows/spec-driven-development.md) | Turning ideas into specs, plans, tasks, and synced docs. |
 | [`project-memory.md`](docs/workflows/project-memory.md) | Reading/writing durable project memory during work. |
@@ -380,6 +381,7 @@ Templates are copyable starters, not generated framework magic.
 | [`agent/`](templates/agent/) | PR template, Copilot instructions, prompt files, custom agents, agent-ready issue form. |
 | [`commands/`](templates/commands/) | `agent-compass.commands.json` starter. |
 | [`intake/`](templates/intake/) | Agent-ready work intake (Goal/Context/Constraints/Done/Validation). |
+| [`architecture/`](templates/architecture/) | New-project architecture decision scaffolds (intake, decision, matrix, diagrams, backlog, meetings). |
 | [`context/`](templates/context/) | Repo map + task routing template. |
 | [`conformance/`](templates/conformance/) | Lightweight agent smoke test. |
 | [`design-system/`](templates/design-system/) | Figma/design-token extraction worksheet. |
@@ -407,6 +409,7 @@ Useful groups:
 
 - Working style: `caveman`, `ponytail`, `caveman-review`, `ponytail-review`.
 - Teaching: `agent-teacher`.
+- Architecture: `architecture-advisor` (new-project architecture decisions).
 - Quality: `gen-docs`, `verify-module`, `verify-quality`, `verify-change`,
   `verify-security`.
 - Workflow: `spec-workflow`, `project-memory`, `pr-workflow`.

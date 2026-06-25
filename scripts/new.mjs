@@ -14,6 +14,7 @@ Kinds:
   skill <name>   skills/<name>/SKILL.md with valid frontmatter
   adr <name>     docs/decisions/<name>.md from the ADR template
   spec <name>    specs/<name>/spec.md from the spec template
+  arch <name>    docs/architecture/decisions/<name>.md from the decision template
 
 Options:
   --dry   Print what would be created.
@@ -79,7 +80,9 @@ description: One-line summary of when an agent should use this skill.
   copyTemplate('docs/decisions/000-template.md', `docs/decisions/${name}.md`)
 } else if (kind === 'spec') {
   copyTemplate('templates/specs/spec-template.md', `specs/${name}/spec.md`)
+} else if (kind === 'arch') {
+  copyTemplate('templates/architecture/architecture-decision.md', `docs/architecture/decisions/${name}.md`)
 } else {
-  console.error(`Unknown kind "${kind}". Use: skill | adr | spec.`)
+  console.error(`Unknown kind "${kind}". Use: skill | adr | spec | arch.`)
   process.exit(1)
 }

@@ -19,6 +19,10 @@ test('new scaffolds a valid skill and an ADR', async () => {
     const adr = await runNode([script, 'adr', 'my-choice', host], { cwd: root.pathname })
     assert.equal(adr.code, 0, adr.stderr)
     await readFile(join(host, 'docs', 'decisions', 'my-choice.md'), 'utf8')
+
+    const arch = await runNode([script, 'arch', 'payments-platform', host], { cwd: root.pathname })
+    assert.equal(arch.code, 0, arch.stderr)
+    assert.match(await readFile(join(host, 'docs', 'architecture', 'decisions', 'payments-platform.md'), 'utf8'), /Architecture Decision/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }

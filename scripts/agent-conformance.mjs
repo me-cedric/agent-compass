@@ -64,6 +64,12 @@ const checks = [
   ['model routing guide', any('docs/tooling/model-routing.md')],
   ['cached update check', any('scripts/check-update.mjs')],
   ['unified CLI dispatcher', any('scripts/cli.mjs')],
+  ['architecture-advisor skill', any('skills/architecture-advisor/SKILL.md')],
+  ['architecture decision workflow', any('docs/workflows/architecture-decision.md')],
+  ['architecture templates', any('templates/architecture/architecture-decision.md')],
+  ['architecture advisor agent', any('.claude/agents/architecture-advisor.md', 'templates/claude/.claude/agents/architecture-advisor.md')],
+  ['recommended MCP servers catalog', any('.mcp/recommended.example.json', 'templates/mcp/recommended.example.json')],
+  ['recommended MCP servers guide', any('docs/tooling/mcp-servers.md')],
 ]
 
 const providerPrompts = [

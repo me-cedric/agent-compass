@@ -43,12 +43,15 @@ export const FILE_MANIFEST = [
   ['templates/agent/.github/instructions/pr-workflow.instructions.md', '.github/instructions/pr-workflow.instructions.md', 'managed'],
   ['templates/agent/.github/prompts/explain-project.prompt.md', '.github/prompts/explain-project.prompt.md', 'managed'],
   ['templates/agent/.github/prompts/prompt-upgrade.prompt.md', '.github/prompts/prompt-upgrade.prompt.md', 'managed'],
+  ['templates/agent/.github/prompts/choose-architecture.prompt.md', '.github/prompts/choose-architecture.prompt.md', 'managed'],
   ['templates/agent/.github/agents/agent-compass-teacher.agent.md', '.github/agents/agent-compass-teacher.agent.md', 'managed'],
+  ['templates/agent/.github/agents/architecture-advisor.agent.md', '.github/agents/architecture-advisor.agent.md', 'managed'],
   ['templates/codex/.codex/config.toml', '.codex/config.toml', 'managed'],
   ['templates/codex/.codex/hooks.json', '.codex/hooks.json', 'managed'],
   ['templates/claude/.claude/agents/reviewer.md', '.claude/agents/reviewer.md', 'managed'],
   ['templates/claude/.claude/agents/security.md', '.claude/agents/security.md', 'managed'],
   ['templates/claude/.claude/agents/docs-teacher.md', '.claude/agents/docs-teacher.md', 'managed'],
+  ['templates/claude/.claude/agents/architecture-advisor.md', '.claude/agents/architecture-advisor.md', 'managed'],
   ['templates/claude/.claude/hooks/protect-agent-files.sh', '.claude/hooks/protect-agent-files.sh', 'managed'],
   ['templates/claude/.claude/hooks/remind-completion-gate.sh', '.claude/hooks/remind-completion-gate.sh', 'managed'],
   ['templates/claude/.claude/settings.example.json', '.claude/settings.example.json', 'managed'],
@@ -62,6 +65,7 @@ export const FILE_MANIFEST = [
   ['templates/mcp/cursor.example.json', '.mcp/cursor.example.json', 'managed'],
   ['templates/mcp/gemini.example.json', '.mcp/gemini.example.json', 'managed'],
   ['templates/mcp/headroom.example.json', '.mcp/headroom.example.json', 'managed'],
+  ['templates/mcp/recommended.example.json', '.mcp/recommended.example.json', 'managed'],
 ].map(([src, dest, mode]) => ({ src, dest, mode }))
 
 export const LOCK_REL = '.agent/agent-compass.lock'

@@ -46,6 +46,10 @@ into each tool's skills directory. That's how one definition reaches every agent
   [workflows](workflows/new-module.md)).
 - **`agent-teacher`** — level-aware explanations and selective prompt/tool
   coaching when the user asks how/why or repeats a costly pattern.
+- **`architecture-advisor`** — choose & justify a new project's architecture from
+  client needs: research-first, technology-neutral, no unlabeled guesses; emits
+  an ADR, mermaid diagrams, risks, open questions, and optionally a backlog and
+  meeting list (see [architecture-decision](workflows/architecture-decision.md)).
 
 These encode the same judgment your global config applies, but travel with the repo.
 

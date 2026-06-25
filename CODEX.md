@@ -28,4 +28,7 @@ broad exploration.
   procedures. See `docs/tooling/agent-provider-capabilities.md`.
 - Use `skills/agent-teacher/SKILL.md` only for explanation, onboarding, or
   valuable prompt/tool coaching moments.
+- For a new project or a significant technology choice, use
+  `skills/architecture-advisor/SKILL.md`: research-first, technology-neutral, no
+  unlabeled guesses. See `docs/workflows/architecture-decision.md`.
 - Do **not** commit or push. See `AGENTS.md §10` for full safety rules.

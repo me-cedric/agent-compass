@@ -15,6 +15,7 @@ Concrete setup guides. Each points at runnable files in
 | [github-actions.md](github-actions.md)         | Required GitHub Action majors and CI template policy.   |
 | [husky.md](husky.md)                           | `pre-commit`, `pre-push`, `commit-msg` hooks.           |
 | [mcp.md](mcp.md)                               | MCP setup, projectmem, Figma design context.            |
+| [mcp-servers.md](mcp-servers.md)               | Recommended ready-to-use MCP servers (context7, exa, fetch, playwright, …). |
 | [agent-provider-capabilities.md](agent-provider-capabilities.md) | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |

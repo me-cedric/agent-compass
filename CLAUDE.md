@@ -15,7 +15,9 @@
   your global Claude config, sync with `skillshare` (see `skills/README.md`).
   Quality-gate skills: `gen-docs`, `verify-module`, `verify-quality`,
   `verify-change`, `verify-security`. Use `agent-teacher` for explanation and
-  prompt/tool coaching requests.
+  prompt/tool coaching requests, and `architecture-advisor` for new-project
+  architecture / technology-selection decisions (research-first, tech-neutral,
+  no unlabeled guesses).
 - **Provider leverage.** Use Claude skills for repeated playbooks, hooks for
   must-run checks, subagents/agent teams for parallel work, and MCP for external
   tools. See `docs/tooling/agent-provider-capabilities.md`.

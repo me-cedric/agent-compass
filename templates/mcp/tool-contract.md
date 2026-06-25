@@ -28,6 +28,12 @@ and update it whenever a server's allowlist changes.
 | headroom | headroom_compress | read | local | auto | input too small to compress | returns compressed payload |
 | headroom | headroom_retrieve | read | local | auto | id not cached | returns original chunk |
 | headroom | headroom_stats | read | none | auto | no session yet | returns token savings |
+| context7 | resolve-library-id | read | none | auto | library not found | returns library id |
+| context7 | query-docs | read | none | auto | id not found | returns version-correct docs |
+| sequential-thinking | sequentialthinking | read | none | auto | — | returns a reasoning step |
+| fetch | fetch | read | none | auto | url unreachable/blocked | returns page markdown |
+| exa | web_search | read | none (key in env) | auto | quota / missing key | returns search results |
+| playwright | browser_* | write | local | prompt | no browser / no page | drives a real browser |
 
 ## Rules
 

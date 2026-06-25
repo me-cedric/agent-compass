@@ -30,6 +30,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`, `agent-drift.example.yml` | CI starting points (GitHub Actions)                  |
 | `commands/`       | `agent-compass.commands.json`                                                    | command registry for agents                          |
 | `intake/`         | `work-intake.md`, `README.md`                                                    | force agent-ready Goal/Context/Constraints/Done/Validation |
+| `architecture/`   | `architecture-intake.md`, `architecture-decision.md`, `decision-matrix.md`, `diagrams.md`, `tech-backlog.md`, `technical-meetings.md` | new-project architecture decisions (scaffold with `new arch`) |
 | `context/`        | `repo-map.md`                                                                    | active repo surface map + task routing               |
 | `conformance/`    | `agent-smoke-test.md`                                                            | lightweight agent behavior smoke test                |
 | `codex/`          | `.codex/config.toml`, `.codex/hooks.json`                                        | Codex repo config, goals, hooks, MCP, sandbox profile |

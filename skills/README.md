@@ -17,6 +17,12 @@ Copilot as referenced context.
 | `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
 | `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
 
+### Architecture
+
+| Skill                  | What it does                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| `architecture-advisor` | Choose & justify a new project's architecture — research-first, technology-neutral, no unlabeled guesses; produces ADR, mermaid diagrams, risks, assumptions, open questions, and optionally a backlog and meeting list. |
+
 ### Quality gates
 
 | Skill             | What it does                                              |
