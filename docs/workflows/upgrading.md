@@ -50,6 +50,21 @@ Structural changes (renames, moved files, config keys) ship as ordered scripts i
 [`migrations/`](../../migrations/). Sync runs every migration in
 `(your lock version, current]`. They are idempotent and never touch secrets.
 
+## Automatic update check (no tokens)
+
+[`check-update.mjs`](../../scripts/check-update.mjs) tells you when the host is
+behind, cheaply and without spending any LLM tokens — it is plain CLI output for
+the terminal, not agent context, and a 24h cache makes repeated calls free.
+
+```bash
+node docs/agent-compass/scripts/check-update.mjs .            # offline, cached
+node docs/agent-compass/scripts/check-update.mjs . --remote   # also check upstream tags
+```
+
+It runs **automatically** from the installed `.husky/post-merge` hook after every
+`git pull`/merge: silent when current, one line when the standards moved
+("run sync"). It reuses `sync --check`, so it never reports a false update.
+
 ## CI drift check
 
 Fail CI when a host falls behind (read-only, writes nothing):

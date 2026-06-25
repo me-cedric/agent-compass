@@ -333,6 +333,7 @@ All scripts are dependency-free Node scripts.
 | `npm run runbook` | Print compact agent runbook. |
 | `npm run install-into` | Install pointers/templates into a host. |
 | `npm run sync-into` | Update a host's managed files from the submodule (safe, no clobber). |
+| `npm run check-update` | Cheap cached check whether a host is behind (zero LLM tokens). |
 | `npm run pull-knowledge` | Stage reusable knowledge from another project. |
 | `npm run pr` | Create PR through `gh` with Agent Compass defaults. |
 | `npm run pr-review` | Build local PR review packet or submit review. |

@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# agent-compass: cheap, cached update check after a pull/merge. Silent when
+# current; prints one line when the vendored standards have moved. No LLM tokens.
+if [ -f docs/agent-compass/scripts/check-update.mjs ]; then
+  node docs/agent-compass/scripts/check-update.mjs . --quiet || true
+fi

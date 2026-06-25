@@ -13,6 +13,7 @@ const scripts = [
   'bootstrap.mjs',
   'check-actions.mjs',
   'check-change-companions.mjs',
+  'check-update.mjs',
   'context.mjs',
   'context-pack.mjs',
   'doctor-report.mjs',

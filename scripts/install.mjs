@@ -161,7 +161,7 @@ for (const [dest, text] of toolPointers) writeTextIfMissing(dest, text)
 
 // 2) Husky hooks (only if the host has no .husky yet).
 if (!existsSync(join(HOST, '.husky'))) {
-  for (const h of ['pre-commit', 'pre-push', 'commit-msg']) place(`templates/monorepo/husky/${h}`, `.husky/${h}`)
+  for (const h of ['pre-commit', 'pre-push', 'commit-msg', 'post-merge']) place(`templates/monorepo/husky/${h}`, `.husky/${h}`)
 } else {
   skipped.push('.husky/ (exists)')
 }

@@ -31,6 +31,7 @@
     "upgrade-host": "node scripts/upgrade-host.mjs",
     "install-into": "node scripts/install.mjs",
     "sync-into": "node scripts/sync.mjs",
+    "check-update": "node scripts/check-update.mjs",
     "test": "node --test",
     "check": "npm test && npm run agent-conformance -- --strict && npm run agent-evals && npm run lint:actions && npm run lint:naming && npm run lint:indexes && npm run lint:docs",
     "lint:actions": "node scripts/check-actions.mjs",

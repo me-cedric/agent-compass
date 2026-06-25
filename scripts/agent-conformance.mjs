@@ -62,6 +62,7 @@ const checks = [
   ['context pack generator', any('scripts/context-pack.mjs')],
   ['typed command runner', any('scripts/run-command.mjs')],
   ['model routing guide', any('docs/tooling/model-routing.md')],
+  ['cached update check', any('scripts/check-update.mjs')],
 ]
 
 const providerPrompts = [

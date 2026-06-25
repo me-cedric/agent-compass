@@ -18,8 +18,23 @@
   "runbook": "npm run runbook",
   "typecheck": null,
   "build": null,
+  "agentTools": {
+    "drift": "npm run agent-drift",
+    "trace": "npm run agent-trace",
+    "onboard": "npm run agent-onboard",
+    "sync": "npm run sync-into",
+    "checkUpdate": "npm run check-update",
+    "contextPack": "npm run context-pack",
+    "runCommand": "npm run run-command",
+    "scaffold": "npm run new",
+    "redact": "npm run redact",
+    "traceToEvals": "npm run trace-to-evals",
+    "genDepgraph": "npm run gen-depgraph",
+    "checkCompanions": "npm run check-companions"
+  },
   "notes": [
     "No typecheck or build script exists in this repo.",
-    "Use scripts listed in package.json; do not invent commands."
+    "Use scripts listed in package.json; do not invent commands.",
+    "agentTools.* are host-facing helpers; resolve with run-command, e.g. agentTools.drift."
   ]
 }
