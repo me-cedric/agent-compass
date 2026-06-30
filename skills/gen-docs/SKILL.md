@@ -7,6 +7,9 @@ user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Write, Glob
 argument-hint: <模块路径> [--force]
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # 📝 造典关卡 · 文档生成器

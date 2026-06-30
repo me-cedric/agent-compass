@@ -1,6 +1,9 @@
 ---
 name: pr-workflow
 description: Streamline PR creation, PR reviews, and implementing submitted review fixes with GitHub CLI.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # PR Workflow

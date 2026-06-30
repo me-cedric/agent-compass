@@ -16,5 +16,6 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [pr-review.md](pr-review.md)                   | Local/GitHub PR reviews and implementing review fixes. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
 | [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |
+| [skill-intake.md](skill-intake.md)             | Deciding which local/public skills belong in Agent Compass. |
 | [releasing.md](releasing.md)                   | Tagging a reviewed agent-compass release.       |
 | [upgrading.md](upgrading.md)                   | Bumping an imported agent-compass submodule safely. |

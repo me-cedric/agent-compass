@@ -7,6 +7,9 @@ user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
 argument-hint: <扫描路径>
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # ⚖ 校验关卡 · 安全校验

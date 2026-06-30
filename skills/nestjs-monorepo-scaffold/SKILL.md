@@ -4,6 +4,9 @@ description: Turborepo + NestJS + Drizzle + BullMQ monorepo scaffolding — proj
 version: 1.0.0
 filePattern: "turbo.json,**/package.json,**/tsconfig*.json,docker-compose*,**/Dockerfile,.github/**"
 bashPattern: "turbo|pnpm.*workspace|docker.compose"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # NestJS Monorepo Scaffolding
@@ -311,7 +314,7 @@ chore/<topic>             # Dependencies, CI, config
 
 ```
 feat(api): add payment refund endpoint
-fix(api): resolve duplicate loyalty points
+fix(api): resolve duplicate invoice jobs
 refactor(api): extract payment amount formatting
 test: add backoffice refund service specs
 chore: update turbo to v2.x

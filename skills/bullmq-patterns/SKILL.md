@@ -4,6 +4,9 @@ description: BullMQ queue processing patterns for NestJS — processors, schedul
 version: 1.0.0
 filePattern: "**/*.processor.ts,**/*-scheduler*.ts,**/queue/**,**/*.constants.ts"
 bashPattern: "bull|queue|redis"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # BullMQ + NestJS Queue Processing Patterns

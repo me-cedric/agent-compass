@@ -7,6 +7,9 @@ description: >
   codebase", "audit for over-engineering", "what can I delete from this repo",
   "find bloat", "ponytail-audit", or "/ponytail-audit". One-shot report, does
   not apply fixes.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 ponytail-review, repo-wide. Scan the whole tree instead of a diff. Rank

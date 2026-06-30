@@ -164,5 +164,15 @@ Keyless ones can be enabled immediately; keep keys out of git.
   https://code.claude.com/docs/en/features-overview
 - Codex best practices, AGENTS.md, skills, MCP, hooks, subagents, and goals:
   https://developers.openai.com/codex/learn/best-practices
+- Codex skills:
+  https://developers.openai.com/codex/skills
 - GitHub Copilot repository instructions, prompt files, custom agents, and MCP:
   https://docs.github.com/copilot
+- GitHub Copilot custom instructions:
+  https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot
+- GitHub Copilot custom agents:
+  https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/create-custom-agents
+- GitHub Copilot MCP:
+  https://docs.github.com/en/copilot/concepts/context/mcp
+- GitHub Spec Kit:
+  https://github.com/github/spec-kit

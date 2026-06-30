@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "name": "strict-enterprise",
+  "description": "High-control setup for multi-team or regulated repositories.",
+  "gates": [
+    "provider-verify --strict",
+    "quality-gates --strict",
+    "spec-validation-map --strict",
+    "mcp-probe --strict",
+    "redact",
+    "agent-conformance --strict"
+  ],
+  "defaults": {
+    "skills": "copy",
+    "specKit": true,
+    "dashboard": true,
+    "taskLog": true
+  }
+}

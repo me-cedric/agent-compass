@@ -36,6 +36,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `codex/`          | `.codex/config.toml`, `.codex/hooks.json`                                        | Codex repo config, goals, hooks, MCP, sandbox profile |
 | `claude/`         | `.claude/agents/*`, `.claude/hooks/*`, `.claude/settings.example.json`           | Claude subagents and hook templates                  |
 | `design-system/`  | `README.md`                                                                      | Figma/design-system extraction worksheet            |
+| `policies/`       | setup policy packs (`solo-dev`, `startup-fast`, `strict-enterprise`, `regulated-api`) | `policy-pack.mjs` |
 | `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.agent.md`, `.github/ISSUE_TEMPLATE/agent-ready-task.yml` | agent rules, prompts, custom agents, intake form, PR template |
 | `mcp/`            | `README.md`, `tool-contract.md`, `figma.example.json`, `projectmem.example.json`, provider allowlist examples | MCP setup + per-tool contracts                       |
 | `evals/`          | `agent-teaching-evals.json`                                                      | teaching and provider-tool offer eval fixtures       |

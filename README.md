@@ -61,6 +61,22 @@ From the host project root:
 
 ```bash
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+node docs/agent-compass/scripts/setup-wizard.mjs . --yes
+node docs/agent-compass/scripts/setup-host.mjs . --strict
+node docs/agent-compass/scripts/apply-recommendations.mjs . --policy solo-dev
+```
+
+The wizard writes `agent-compass.answers.json` and `.agent/setup-plan.md`, then
+can run the full setup. `setup-host` installs missing pointers/templates,
+applies safe fixes, runs deep doctor checks, and writes `.agent/context.json`,
+`.agent/doctor-report.md`, and `.agent/RUNBOOK.md`.
+`apply-recommendations` applies safe missing pieces: provider verification,
+MCP readiness, spec validation map, quality gates, migration plan, dashboard,
+and optional skills/policy setup.
+
+Manual equivalent:
+
+```bash
 node docs/agent-compass/scripts/install.mjs
 node docs/agent-compass/scripts/install.mjs --doctor
 node docs/agent-compass/scripts/install.mjs --doctor --fix
@@ -169,6 +185,13 @@ Agent Compass is usable across real projects. Current version: `0.3.0`.
 | Start a new project | [`docs/workflows/new-project.md`](docs/workflows/new-project.md) | `scripts/bootstrap.mjs` |
 | Get repo context fast | [`docs/architecture/repo-map.md`](docs/architecture/repo-map.md) | `scripts/context.mjs` |
 | Check host readiness | [`docs/tooling/prerequisites.md`](docs/tooling/prerequisites.md) | `scripts/doctor-report.mjs` |
+| Full host setup | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/setup-host.mjs` |
+| Host recommendations | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/recommend.mjs` |
+| Provider verification | [`docs/tooling/agent-provider-capabilities.md`](docs/tooling/agent-provider-capabilities.md) | `scripts/provider-verify.mjs` |
+| Agent dashboard | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/dashboard.mjs` |
+| Global user setup | [`docs/agent-setup.md`](docs/agent-setup.md) | `scripts/global-setup.mjs` |
+| MCP readiness | [`docs/tooling/mcp.md`](docs/tooling/mcp.md) | `scripts/mcp-probe.mjs` |
+| Policy packs | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/policy-pack.mjs` |
 | Generate agent runbook | [`AGENTS.md`](AGENTS.md) | `scripts/runbook.mjs` |
 | Create specs | [`docs/workflows/spec-driven-development.md`](docs/workflows/spec-driven-development.md) | `templates/specs/` |
 | Use durable memory | [`docs/workflows/project-memory.md`](docs/workflows/project-memory.md) | `templates/memory/` |

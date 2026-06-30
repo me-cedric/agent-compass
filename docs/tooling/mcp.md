@@ -87,3 +87,14 @@ References:
 - Figma MCP guide: https://github.com/figma/mcp-server-guide
 - Figma MCP docs: https://developers.figma.com/docs/figma-mcp-server/
 - MCP docs: https://modelcontextprotocol.io/docs/getting-started/intro
+## Readiness Probe
+
+Run the static probe after installing MCP examples:
+
+```bash
+node docs/agent-compass/scripts/mcp-probe.mjs . --write
+```
+
+It checks committed MCP examples and local `.mcp.json` for unresolved
+`/absolute/path/to/repo` placeholders and missing stdio commands. It does not
+start long-running servers by default.

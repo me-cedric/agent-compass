@@ -3,6 +3,9 @@ name: drizzle-postgres-patterns
 description: Drizzle ORM + PostgreSQL patterns — schema definition, migrations, transactions, seeding, views, enums, indexes, and type inference
 version: 1.0.0
 filePattern: "**/*.schema.ts,**/drizzle/**,**/drizzle.config.ts,**/seed*.ts,**/database/**"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Drizzle ORM + PostgreSQL Patterns

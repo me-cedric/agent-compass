@@ -16,14 +16,30 @@ const version = (() => {
 // name → { script | argv, group, desc }. argv runs a script with fixed leading args.
 const COMMANDS = {
   bootstrap: { script: 'bootstrap.mjs', group: 'Setup', desc: 'Interactive new-project prompt generator.' },
+  wizard: { script: 'setup-wizard.mjs', group: 'Setup', desc: 'Interactive host adoption wizard.' },
+  'apply-recommendations': { script: 'apply-recommendations.mjs', group: 'Setup', desc: 'Apply safe project/global setup recommendations.' },
+  'global-setup': { script: 'global-setup.mjs', group: 'Setup', desc: 'Non-destructive user-level Agent Compass setup.' },
+  'setup-host': { script: 'setup-host.mjs', group: 'Setup', desc: 'Full host setup: install, fix, reports, onboard.' },
   install: { script: 'install.mjs', group: 'Setup', desc: 'Wire agent-compass into a host (create missing files).' },
+  'doctor-fix': { script: 'doctor-fix.mjs', group: 'Setup', desc: 'Autofix host agent setup and regenerate reports.' },
   sync: { script: 'sync.mjs', group: 'Setup', desc: 'Update managed files from the submodule (no clobber).' },
+  'spec-kit-bridge': { script: 'spec-kit-bridge.mjs', group: 'Setup', desc: 'Install optional Spec Kit bridge files.' },
+  'skills-sync': { script: 'skills-sync.mjs', group: 'Setup', desc: 'Copy or symlink skills into provider dirs.' },
+  'policy-pack': { script: 'policy-pack.mjs', group: 'Setup', desc: 'List/apply setup policy packs.' },
   upgrade: { script: 'upgrade-host.mjs', group: 'Setup', desc: 'Bump the submodule, sync, then doctor.' },
   'check-update': { script: 'check-update.mjs', group: 'Setup', desc: 'Cheap cached "are we behind?" check (no tokens).' },
 
   doctor: { argv: ['install.mjs', '--doctor'], group: 'Health', desc: 'Verify host wiring (add --deep, --fix).' },
   'doctor-report': { script: 'doctor-report.mjs', group: 'Health', desc: 'Print a host readiness report.' },
   onboard: { script: 'agent-onboard.mjs', group: 'Health', desc: 'One-command readiness aggregate.' },
+  'provider-verify': { script: 'provider-verify.mjs', group: 'Health', desc: 'Verify provider files and prompts are discoverable.' },
+  recommend: { script: 'recommend.mjs', group: 'Health', desc: 'Scan host and recommend agent setup improvements.' },
+  'quality-gates': { script: 'quality-gates.mjs', group: 'Health', desc: 'Run generic agent handoff quality gates.' },
+  dashboard: { script: 'dashboard.mjs', group: 'Health', desc: 'Write static .agent/report.html dashboard.' },
+  'migration-plan': { script: 'migration-plan.mjs', group: 'Health', desc: 'Plan host upgrade against current manifest.' },
+  'mcp-probe': { script: 'mcp-probe.mjs', group: 'Health', desc: 'Probe MCP config readiness.' },
+  'spec-validation-map': { script: 'spec-validation-map.mjs', group: 'Health', desc: 'Map specs to plan/tasks/validation coverage.' },
+  'design-importer': { script: 'design-importer.mjs', group: 'Health', desc: 'Create design-system docs from Figma/token export.' },
   drift: { script: 'agent-drift.mjs', group: 'Health', desc: 'Drift dashboard across guidance validators.' },
   conformance: { script: 'agent-conformance.mjs', group: 'Health', desc: 'Provider customization + smoke prompts.' },
   evals: { script: 'agent-evals.mjs', group: 'Health', desc: 'Validate teaching/tool-offer eval fixtures.' },
@@ -39,6 +55,8 @@ const COMMANDS = {
   redact: { script: 'redact.mjs', group: 'Build', desc: 'Scan files/staged diff for secret/PII leaks.' },
 
   trace: { script: 'agent-trace.mjs', group: 'Learning', desc: 'Validate a trace/outcome log (no secrets).' },
+  'task-log': { script: 'task-log.mjs', group: 'Learning', desc: 'Append/read completion-gate task log.' },
+  'failure-mine': { script: 'failure-mine.mjs', group: 'Learning', desc: 'Mine task logs/traces into improvement themes.' },
   'trace-to-evals': { script: 'trace-to-evals.mjs', group: 'Learning', desc: 'Turn failed trace rows into regression evals.' },
   'pull-knowledge': { script: 'pull-knowledge.mjs', group: 'Learning', desc: 'Stage reusable knowledge from a project.' },
 
@@ -48,7 +66,7 @@ const COMMANDS = {
 }
 
 const ALIASES = {
-  'new-project': 'bootstrap', 'install-into': 'install', 'sync-into': 'sync', 'upgrade-host': 'upgrade',
+  'new-project': 'bootstrap', 'setup-wizard': 'wizard', 'install-into': 'install', 'sync-into': 'sync', 'upgrade-host': 'upgrade',
   'agent-onboard': 'onboard', 'agent-drift': 'drift', 'agent-conformance': 'conformance', 'agent-evals': 'evals',
   'agent-trace': 'trace', 'gen-depgraph': 'depgraph', 'run-command': 'run', 'check-change-companions': 'check-companions',
 }

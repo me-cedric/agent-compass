@@ -8,6 +8,9 @@ description: >
   use X or Y", or provides functional/technical/client-IS info (incl. images)
   and wants a recommendation, mermaid diagrams, ADR, caveats, open questions, a
   technical backlog, or a list of technical meetings to request.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Architecture Advisor

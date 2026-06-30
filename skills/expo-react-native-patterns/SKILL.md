@@ -4,6 +4,9 @@ description: Expo Router + React Native mobile app patterns — MVVM architectur
 version: 1.0.0
 filePattern: "**/*.tsx,**/*.ts,**/app.config.ts,**/metro.config.*,**/babel.config.*,**/expo-*.ts"
 bashPattern: "expo|react-native|eas|jest-expo|metro"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Expo / React Native Mobile App Patterns

@@ -1,6 +1,9 @@
 ---
 name: figma-mcp-frontend
 description: Use Figma MCP design context to implement frontend screens, design systems, components, and styles.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Figma MCP Frontend

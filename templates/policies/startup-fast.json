@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "startup-fast",
+  "description": "Low-friction setup for fast product iteration.",
+  "gates": [
+    "provider-verify",
+    "quality-gates",
+    "dashboard"
+  ],
+  "defaults": {
+    "skills": "symlink",
+    "specKit": false,
+    "dashboard": true,
+    "taskLog": true
+  }
+}

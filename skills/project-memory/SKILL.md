@@ -10,6 +10,9 @@ user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
 argument-hint: "[before|during|after]"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Project Memory

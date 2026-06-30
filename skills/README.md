@@ -29,6 +29,7 @@ Copilot as referenced context.
 | ----------------- | -------------------------------------------------------- |
 | `gen-docs`        | Scaffolds `README.md` + `DESIGN.md` for a module.        |
 | `figma-mcp-frontend` | Uses Figma MCP context for design-system-driven UI implementation. |
+| `debug-loop`     | Builds a tight failing feedback loop before diagnosing hard bugs. |
 | `project-memory`  | Reads and writes durable projectmem context safely.      |
 | `pr-workflow`     | Creates PRs, reviews PRs, and implements review fixes.   |
 | `spec-workflow`   | Guides idea → spec → clarify → plan → tasks → docs sync. |
@@ -62,6 +63,19 @@ Copilot as referenced context.
   [`skillshare`](https://github.com/) so they auto-trigger.
 - **Codex / Copilot:** point the agent at the relevant `SKILL.md` as context;
   the patterns and checklists apply the same way.
+
+## Metadata
+
+Every `SKILL.md` frontmatter must include:
+
+- `name`: kebab-case skill id.
+- `description`: trigger summary.
+- `risk_level`: `low`, `medium`, or `high`.
+- `writes_files`: `true` or `false`.
+- `requires_tools`: inline list, e.g. `[]` or `[web, gh]`.
+
+`npm run lint:naming` enforces this so skills are safe to sync into project or
+global provider directories.
 
 ## Provenance & maintenance
 

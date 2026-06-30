@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 const help = `Usage: node scripts/check-naming.mjs [--root <dir>]
 
 Fail if project/domain names leak into generic agent-compass files.
-Also validates SKILL.md frontmatter.
+Also validates SKILL.md frontmatter and metadata.
 
 Options:
   --root <dir>  Check another root directory.
@@ -51,6 +51,9 @@ const checkSkillFrontmatter = (full, txt) => {
   }
   if (!/^name:\s*\S+/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter name`)
   if (!/^description:\s*(?:\S|[>|])/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter description`)
+  if (!/^risk_level:\s*(low|medium|high)\s*$/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing/invalid risk_level (low|medium|high)`)
+  if (!/^writes_files:\s*(true|false)\s*$/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing/invalid writes_files (true|false)`)
+  if (!/^requires_tools:\s*(\[[^\]]*\]|$)/m.test(fm[1])) skillHits.push(`${full.replace(ROOT + '/', '')}: missing requires_tools list`)
 }
 const walk = (dir) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {

@@ -4,6 +4,9 @@ description: React admin dashboard patterns — TanStack Router, MUI Material, M
 version: 1.0.0
 filePattern: "**/routes/**/*.tsx,**/features/**/*.ts,**/features/**/*.tsx,**/vite.config.*,**/*ViewModel*"
 bashPattern: "vite|vitest|tanstack|mui"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # React Admin Dashboard (Backoffice) Patterns

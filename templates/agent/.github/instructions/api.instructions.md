@@ -6,7 +6,7 @@ description: 'Use when modifying the NestJS API in apps/api, including modules, 
 ## Mandatory Agent Behavior
 
 - Use `skills:caveman` for concise agent interactions. Be terse: prefer commands, file paths, diffs and exact next actions.
-- For non-trivial code changes, start with the Dual Graph MCP: call `graph_continue`, then `graph_read` the recommended files. Do not rely on broad grep-only exploration for structural edits.
+- For non-trivial code changes, use the repo's configured context tool first when one exists (`.agent/context.json`, repo map, code graph MCP, or project memory). Do not rely on broad grep-only exploration for structural edits.
 
 # API Guidelines
 
@@ -27,7 +27,7 @@ description: 'Use when modifying the NestJS API in apps/api, including modules, 
 ## Tests and Data
 
 - Unit tests use Jest; e2e tests live under `test/`. Match the existing setup before adding a new test harness.
-- When touching seed or test helpers around loyalty-related aliases, keep insert and select aliases aligned with the current schema naming; mismatches cause cascading TypeScript failures.
+- When touching seed or test helpers, keep insert and select aliases aligned with the current schema naming; mismatches cause cascading TypeScript failures.
 - Prefer updating existing factories, mocks, and fixtures over creating parallel ones with a different shape.
 
 ## Integration Notes
@@ -58,23 +58,3 @@ When changing API behaviour, update all three specification layers in the same t
   examples). Update when business logic, error handling, or state transitions change.
 
 See `.claude/instincts/scalar-bruno-gherkin-sync.md` for the full enforcement rules.
-
-## Paygate Payment Parameters (Critical)
-
-When modifying deferred MIT (pay-per-use) payment flows in `modules/payment/` or `modules/external/payment/paygate/`:
-
-**Three payload parameters are strictly enforced by Paygate spec and MUST match exactly:**
-
-1. **`payment_use_case.acceptance_channel`** → `"browser"` (not `"in-app"`)
-   - Signals server-initiated auth, no SDK challenge
-   - Wrong value prevents Paygate from granting authorization
-
-2. **`payment.transaction_initiator`** → `"merchant"`
-   - Matches the current API code path for stored-card deferred parking auth
-   - Do not change this without validating the full Paygate parking flow end to end
-
-3. **`authentication.merchant_preference`** → `"no_challenge_requested"`
-   - Controls 3DS challenge behavior (MIT should skip)
-   - Omitting this can cause capture to fail with `cdr=-1 lib=verification echouee`
-
-**Reference:** See `/memories/repo/paygate-payperuse-payload-gotcha.md` for details, expected payload in `docs/paygate/<project>-workflows.md` § 2, and tests in `<project>-payment.service.spec.ts`.

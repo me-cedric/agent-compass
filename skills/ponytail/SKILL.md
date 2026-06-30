@@ -11,6 +11,9 @@ description: >
   they complain about over-engineering, bloat, boilerplate, or unnecessary
   dependencies.
 license: MIT
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Ponytail

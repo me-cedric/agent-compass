@@ -10,6 +10,9 @@ user-invocable: true
 disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash
 argument-hint: "[project|feature|bugfix|task]"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Spec Workflow

@@ -69,13 +69,54 @@ Use provider-native commands only when they reduce risk or repeated work:
 
 See [agent-provider-capabilities](tooling/agent-provider-capabilities.md).
 
-## Replicating your global setup on a new machine
+## Project Setup
+
+```bash
+git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+node docs/agent-compass/scripts/setup-wizard.mjs . --yes
+node docs/agent-compass/scripts/apply-recommendations.mjs . --policy solo-dev
+```
+
+Useful policy packs:
+
+- `solo-dev`: personal project, low ceremony.
+- `startup-fast`: product iteration, symlink skills.
+- `strict-enterprise`: multi-team/high-control.
+- `regulated-api`: API contract/security/traceability heavy.
+
+## Global Setup
 
 1. Install the [prerequisites](tooling/prerequisites.md).
-2. Clone agent-compass; run `node scripts/bootstrap.mjs` for new projects, or
-   `node scripts/install.mjs` inside an existing one.
-3. `skillshare` the `skills/` folder into your AI CLIs.
-4. Point each tool's rules file at the project `AGENTS.md`.
+2. Clone agent-compass.
+3. Run one of:
+
+```bash
+node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --copy
+node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --symlink
+```
+
+Global setup creates only missing files:
+
+- `~/.agent-compass/README.md`
+- `~/.agent-compass/manifest.json`
+- `~/.codex/AGENTS.md`
+- `~/.claude/CLAUDE.md`
+- skills under `~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`
+
+It never overwrites existing global files. Project-local `AGENTS.md` remains
+authoritative.
+
+## Verification
+
+```bash
+node docs/agent-compass/scripts/provider-verify.mjs . --write
+node docs/agent-compass/scripts/mcp-probe.mjs . --write
+node docs/agent-compass/scripts/spec-validation-map.mjs . --write
+node docs/agent-compass/scripts/quality-gates.mjs . --write
+node docs/agent-compass/scripts/dashboard.mjs . --write
+```
+
+Open `.agent/report.html` for the status dashboard.
 
 Keep this repo as the single source; when your global config improves, fold the
 generic part back in via [knowledge-capture](workflows/knowledge-capture.md).

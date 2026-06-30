@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "name": "solo-dev",
+  "description": "Personal setup with strong defaults and little ceremony.",
+  "gates": [
+    "provider-verify",
+    "recommend",
+    "dashboard"
+  ],
+  "defaults": {
+    "skills": "symlink",
+    "specKit": false,
+    "dashboard": true,
+    "taskLog": true
+  }
+}

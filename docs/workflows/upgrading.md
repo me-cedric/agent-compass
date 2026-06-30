@@ -11,6 +11,42 @@ re-running setup or asking an agent to merge**. Two things make this work:
 
 ## One command
 
+For first-time or refreshed host setup:
+
+```bash
+node docs/agent-compass/scripts/setup-wizard.mjs . --yes
+node docs/agent-compass/scripts/setup-host.mjs . --strict
+node docs/agent-compass/scripts/provider-verify.mjs . --write
+node docs/agent-compass/scripts/mcp-probe.mjs . --write
+node docs/agent-compass/scripts/spec-validation-map.mjs . --write
+node docs/agent-compass/scripts/recommend.mjs . --write
+node docs/agent-compass/scripts/quality-gates.mjs . --write
+node docs/agent-compass/scripts/dashboard.mjs . --write
+```
+
+This runs install, safe fixes, deep doctor, context-pack, doctor-report,
+runbook, and onboard checks. It edits only the host repo; it never changes global
+agent config.
+
+Optional add-ons:
+
+```bash
+node docs/agent-compass/scripts/spec-kit-bridge.mjs .
+node docs/agent-compass/scripts/skills-sync.mjs . --copy
+node docs/agent-compass/scripts/skills-sync.mjs . --symlink
+node docs/agent-compass/scripts/policy-pack.mjs . --apply regulated-api
+node docs/agent-compass/scripts/design-importer.mjs . --source figma-export.json --write
+```
+
+Global user setup is separate and non-destructive:
+
+```bash
+node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --symlink
+node /path/to/agent-compass/scripts/provider-verify.mjs "$HOME" --global --strict
+```
+
+Project rules still win over global rules.
+
 From the host root, after the submodule moved:
 
 ```bash

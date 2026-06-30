@@ -4,6 +4,9 @@ description: >
   Teach users how a project, feature, workflow, or agentic tool use works without
   over-coaching. Use for explanation, onboarding, "how/why" questions, prompt
   improvement, and provider-tool coaching.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Agent Teacher

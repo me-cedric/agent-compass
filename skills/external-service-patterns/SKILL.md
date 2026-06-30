@@ -4,6 +4,9 @@ description: External service integration patterns — SFTP connections, payment
 version: 1.0.0
 filePattern: "**/external/**,**/sftp/**,**/keycloak/**,**/payment/**,**/*provider*"
 bashPattern: "sftp|keycloak|paygate|payment|webhook"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # External Service Integration Patterns
@@ -152,7 +155,7 @@ export class PaymentService {
   constructor(
     private readonly provider: PaymentProviderService,
     private readonly repository: PaymentRepository,
-    private readonly loyaltyQueue: Queue,
+    private readonly notificationQueue: Queue,
   ) {}
 
   @Transactional()

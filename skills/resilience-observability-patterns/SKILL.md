@@ -4,6 +4,9 @@ description: Resilience (circuit breaker, retry) and observability (OpenTelemetr
 version: 1.0.0
 filePattern: "**/resilience/**,**/tracing/**,**/metrics*,**/otel*,**/*logger*"
 bashPattern: "otel|opentelemetry|circuit|resilience|metrics"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # Resilience & Observability Patterns

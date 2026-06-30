@@ -8,6 +8,9 @@ description: >
   delete", "is this over-engineered", "simplify review", or invokes
   /ponytail-review. Complements correctness-focused review, this one only
   hunts complexity.
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 Review diffs for unnecessary complexity. One line per finding: location, what

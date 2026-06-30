@@ -7,6 +7,9 @@ user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
 argument-hint: [--mode working|staged|committed]
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # ⚖ 校验关卡 · 变更校验

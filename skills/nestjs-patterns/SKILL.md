@@ -3,6 +3,9 @@ name: nestjs-patterns
 description: NestJS module architecture patterns — controllers, services, repositories, DTOs, guards, mappers, and module registration for production APIs
 version: 1.0.0
 filePattern: "**/*.module.ts,**/*.controller.ts,**/*.service.ts,**/*.repository.ts,**/*.guard.ts,**/*.mapper.ts,**/dto/**/*.ts"
+risk_level: medium
+writes_files: false
+requires_tools: []
 ---
 
 # NestJS Production Patterns

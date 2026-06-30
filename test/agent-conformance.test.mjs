@@ -16,6 +16,8 @@ test('agent-conformance validates live provider artifacts', async () => {
   assert.match(result.stdout, /Codex config template \| passed/)
   assert.match(result.stdout, /Claude hook template \| passed/)
   assert.match(result.stdout, /Copilot MCP allowlist template \| passed/)
+  assert.match(result.stdout, /global setup \| passed/)
+  assert.match(result.stdout, /MCP readiness probe \| passed/)
 })
 
 test('agent-conformance writes provider smoke prompt packet', async () => {
