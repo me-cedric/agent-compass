@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-01
+
 ### Added
 
 - Mission router `MISSIONS.md` plus `compass-adopt`, `compass-bootstrap`, and
