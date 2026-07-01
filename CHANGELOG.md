@@ -28,8 +28,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   + per-stack asset profiles), `recommend.mjs` fit-based assets output, and
   `skills-sync.mjs --only a,b,c` subset sync. `setup-wizard` now syncs the
   fit-based subset by default (`skillScope: fit|all`).
-- `new.mjs instinct` scaffold for knowledge notes, and post-scaffold wiring
-  checklists on every `new` kind.
+- `new.mjs` scaffolds for every extensible asset: `instinct`, `stack`,
+  `workflow`, and `tooling` kinds join `skill`/`adr`/`spec`/`arch`, each with a
+  post-scaffold wiring checklist.
+- Mission-routing guard test: every provider entry file must route through
+  `MISSIONS.md`, and every mission playbook/command it references must exist.
 - GitHub Actions version guard (`check-actions.mjs`) and CI/tooling guidance for
   required action majors.
 - Helper scripts for PR creation/review packets, host readiness reports, agent

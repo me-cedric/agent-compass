@@ -16,6 +16,9 @@ Kinds:
   spec <name>      specs/<name>/spec.md from the spec template
   arch <name>      docs/architecture/decisions/<name>.md from the decision template
   instinct <name>  knowledge/instincts/<name>.md knowledge note
+  stack <name>     stacks/<name>.md stack preset
+  workflow <name>  docs/workflows/<name>.md playbook
+  tooling <name>   docs/tooling/<name>.md tool guide
 
 Options:
   --dry   Print what would be created.
@@ -126,7 +129,62 @@ source: hand-authored
     'Keep it short and concrete; generalize project-specific names before promoting.',
     'Promote proven instincts into skills/ or docs/ via docs/workflows/knowledge-capture.md.',
   ])
+} else if (kind === 'stack') {
+  const title = name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+  emit(`stacks/${name}.md`, `# Preset: ${title}
+
+<One line: what kind of app/service this preset builds.>
+
+## Components
+
+- <framework / runtime>
+- <data layer>
+- <testing>
+
+## agent-compass pieces
+
+- Skills: <matching skills/ entries, or (none yet)>
+- Templates: <matching templates/ files>
+- Guidelines: [testing-tdd](../docs/guidelines/testing-tdd.md),
+  [coding-style](../docs/guidelines/coding-style.md)
+
+## Feature layout
+
+<Module/folder shape a new feature follows.>
+
+## Validation
+
+<The lint/typecheck/test commands this stack runs.>
+`)
+  nextSteps([
+    `Add a link row for ${name}.md in stacks/README.md (lint:indexes enforces this).`,
+    'If bootstrap should offer this stack, map it in scripts/bootstrap.mjs STACK_DOC_BY_APP and scripts/lib/profiles.mjs.',
+    'Run `npm run check`.',
+  ])
+} else if (kind === 'workflow' || kind === 'tooling') {
+  const dir = kind === 'workflow' ? 'docs/workflows' : 'docs/tooling'
+  const title = name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+  emit(`${dir}/${name}.md`, `# ${title}
+
+<One line: when an agent or human reaches for this.>
+
+## When to use
+
+- ...
+
+## Steps
+
+1. ...
+
+## Validation
+
+- ...
+`)
+  nextSteps([
+    `Add a link row for ${name}.md in ${dir}/README.md (lint:indexes enforces this).`,
+    'Run `npm run check`.',
+  ])
 } else {
-  console.error(`Unknown kind "${kind}". Use: skill | adr | spec | arch | instinct.`)
+  console.error(`Unknown kind "${kind}". Use: skill | adr | spec | arch | instinct | stack | workflow | tooling.`)
   process.exit(1)
 }

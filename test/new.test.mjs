@@ -36,6 +36,15 @@ test('new scaffolds a valid skill and an ADR', async () => {
     const instinctMd = await readFile(join(host, 'knowledge', 'instincts', 'retry-pattern.md'), 'utf8')
     assert.match(instinctMd, /^id: retry-pattern$/m)
     assert.match(instinctMd, /^trigger: /m)
+
+    const stack = await runNode([script, 'stack', 'fastify-api', host], { cwd: root.pathname })
+    assert.equal(stack.code, 0, stack.stderr)
+    assert.match(await readFile(join(host, 'stacks', 'fastify-api.md'), 'utf8'), /# Preset: Fastify Api/)
+    assert.match(stack.stdout, /stacks\/README\.md/)
+
+    const workflow = await runNode([script, 'workflow', 'incident-response', host], { cwd: root.pathname })
+    assert.equal(workflow.code, 0, workflow.stderr)
+    assert.match(await readFile(join(host, 'docs', 'workflows', 'incident-response.md'), 'utf8'), /# Incident Response/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }

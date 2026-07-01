@@ -96,7 +96,7 @@ Names accept both the short form and the underlying script name
 
 | Command | Does | Example |
 | ------- | ---- | ------- |
-| `new` | Scaffold a skill, ADR, spec, architecture decision, or instinct | `agent-compass new skill my-thing` |
+| `new` | Scaffold a skill, ADR, spec, arch decision, instinct, stack, workflow, or tooling doc | `agent-compass new skill my-thing` |
 | `run` | Run a registry command (safe) | `agent-compass run test` |
 | `check-companions` | Fail if source changed without a test | `agent-compass check-companions --base main --strict` |
 | `redact` | Scan for secret/PII leaks | `agent-compass redact . --staged` |
