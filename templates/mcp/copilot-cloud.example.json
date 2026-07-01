@@ -2,9 +2,10 @@
   "mcpServers": {
     "projectmem": {
       "type": "local",
-      "tools": ["brief", "precheck", "show"],
-      "command": "/absolute/path/to/repo/.venv/bin/python",
-      "args": ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/repo"]
+      "tools": ["get_instructions", "get_summary", "get_project_map", "precheck_file", "get_issue"],
+      "command": "uvx",
+      "args": ["--from", "projectmem", "pjm-mcp"],
+      "cwd": "."
     },
     "figma": {
       "type": "http",

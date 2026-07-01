@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -29,6 +29,19 @@ test('agent-conformance writes provider smoke prompt packet', async () => {
     assert.match(packet, /Claude/)
     assert.match(packet, /Codex/)
     assert.match(packet, /Copilot/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('agent-conformance accepts agent-compass vendored under docs', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-conformance-host-'))
+  try {
+    await mkdir(join(dir, 'docs'), { recursive: true })
+    await symlink(root.pathname, join(dir, 'docs', 'agent-compass'), 'dir')
+    const result = await runNode([script.pathname, '--root', dir, '--strict'], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+    assert.match(result.stdout, /provider capabilities guide \| passed/)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

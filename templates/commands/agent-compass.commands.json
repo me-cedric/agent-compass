@@ -32,6 +32,7 @@
   "test": null,
   "build": null,
   "projectMemory": {
+    "setup": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python projectmem && .venv/bin/pjm init",
     "brief": "test -x .venv/bin/pjm && .venv/bin/pjm brief || pjm brief",
     "precheck": "test -x .venv/bin/pjm && .venv/bin/pjm precheck || pjm precheck",
     "show": "test -x .venv/bin/pjm && .venv/bin/pjm show || pjm show",

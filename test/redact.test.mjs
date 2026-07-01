@@ -13,6 +13,7 @@ const script = new URL('../scripts/redact.mjs', import.meta.url).pathname
 test('findIssues flags secrets and emails, ignores clean text', () => {
   assert.equal(findIssues('password: swordfish').length, 1)
   assert.equal(findIssues('reach me at a@b.co').length, 1)
+  assert.equal(findIssues('apps/web-app/src/shared/components/accordion/Accordion.stories.tsx').length, 0)
   assert.equal(findIssues('just a normal note').length, 0)
 })
 

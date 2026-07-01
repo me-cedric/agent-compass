@@ -135,8 +135,8 @@ Then review and commit only host-local files:
 - repo map, ADR template, and ignore updates
 
 Do not commit the standalone clone or local MCP client config. Copy
-`.mcp/*.example.json` into your local MCP client config, replace
-`/absolute/path/to/repo`, and keep that local config out of git.
+`.mcp/*.example.json` into your local MCP client config and keep that local
+config out of git.
 
 ## Release tags
 

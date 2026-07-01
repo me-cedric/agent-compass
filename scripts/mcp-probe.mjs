@@ -12,13 +12,16 @@ const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
 const readJson = (rel) => { try { return JSON.parse(readFileSync(join(root, rel), 'utf8')) } catch { return null } }
 const configs = ['.mcp.json', '.mcp/recommended.example.json', '.mcp/projectmem.example.json', '.mcp/figma.example.json'].map((path) => [path, readJson(path)]).filter(([, json]) => json)
 const commandExists = (cmd) => Boolean(spawnSync('sh', ['-lc', `command -v ${cmd}`], { encoding: 'utf8' }).stdout.trim())
+const localPath = (text) => /(^|["'(\s=])((?:\/(?!absolute\/path\/to(?:\/|$)|path\/to(?:\/|$))[A-Za-z0-9._-]+){2,}[^"')\s,;\]]*|[A-Za-z]:\\Users\\[^"')\s,;\]]+)/m.test(text)
 const rows = []
 for (const [path, cfg] of configs) {
   for (const [name, server] of Object.entries(cfg.mcpServers || {})) {
-    const placeholder = JSON.stringify(server).includes('/absolute/path/to/repo')
+    const serialized = JSON.stringify(server)
+    const placeholder = serialized.includes('/absolute/path/to/repo')
+    const pathLeak = localPath(serialized)
     const command = server.command || (server.url || server.httpUrl ? 'http' : '')
-    const ok = placeholder ? false : command === 'http' ? true : commandExists(command)
-    rows.push({ path, name, command, ok, detail: placeholder ? 'placeholder path' : ok ? 'available' : 'command missing' })
+    const ok = placeholder || pathLeak ? false : command === 'http' ? true : commandExists(command)
+    rows.push({ path, name, command, ok, detail: placeholder ? 'placeholder path' : pathLeak ? 'local absolute path' : ok ? 'available' : 'command missing' })
   }
 }
 const report = `# MCP Readiness

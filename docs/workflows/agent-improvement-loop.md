@@ -40,7 +40,7 @@ project encodes more of its own operating manual.
 | Skills | Package reusable procedures with optional scripts/resources. | Add `skills/<name>/SKILL.md`; sync with provider tooling. |
 | MCP allowlists | Let agents use real tools with less manual copy/paste. | Document server, allowlisted tools, auth, and safety in `.mcp/README.md`. |
 | Hooks/CI gates | Enforce non-negotiable checks. | Prefer existing scripts; fail with concise output. |
-| Project memory | Preserve hard-earned facts without polluting instructions. | Use projectmem brief/precheck/show/log workflow. |
+| Project memory | Preserve hard-earned facts without polluting instructions. | Use projectmem summary/precheck/log tools. |
 | Agent smoke test | Check whether an agent follows repo rules. | Use `templates/conformance/agent-smoke-test.md`. |
 | Provider discovery prompts | Verify agents really load guidance and know provider tools. | Run `node docs/agent-compass/scripts/agent-conformance.mjs --root . --write`. |
 | Teaching/tool evals | Catch annoying over-coaching or missing tool offers. | Run `node docs/agent-compass/scripts/agent-evals.mjs --root docs/agent-compass`. |

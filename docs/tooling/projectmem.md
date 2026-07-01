@@ -18,7 +18,7 @@ Typical setup:
 
 ```bash
 python3 --version      # projectmem currently requires Python >= 3.10
-python3 -m pip install projectmem
+uv tool install projectmem
 pjm init
 pjm --help
 ```
@@ -48,8 +48,8 @@ Backfill/import commands are opt-in because they can create many legacy
 | Git repository | projectmem uses repository history and hooks. |
 | MCP-capable agent/client (optional) | Lets agents read summaries and warnings through tools. |
 
-For GUI agents, use the absolute path from `which python3` in MCP config because
-they may not inherit shell `PATH`.
+For MCP, prefer `uvx --from projectmem pjm-mcp` with `cwd: "."` so shared
+examples work in every clone.
 
 ## Agent workflow
 
@@ -79,24 +79,23 @@ brainstorming.
 
 ## MCP setup
 
-Use the upstream docs for exact client config. The common server command is:
+Use the upstream docs for exact client config. The portable server command is:
 
 ```bash
-python -m projectmem.mcp_server --root /absolute/path/to/repo
+uvx --from projectmem pjm-mcp
 ```
 
-For Codex, upstream currently documents TOML like:
+For Codex, use TOML like:
 
 ```toml
 [mcp_servers.projectmem]
-command = "/absolute/path/to/python"
-args = ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/repo"]
-cwd = "/absolute/path/to/repo"
+command = "uvx"
+args = ["--from", "projectmem", "pjm-mcp"]
+cwd = "."
 ```
 
-Copy `.mcp/projectmem.example.json` into your local MCP client config, replace
-`/absolute/path/to/repo`, and never commit that local client config. Use an
-absolute Python path when the client does not inherit shell `PATH`.
+Copy `.mcp/projectmem.example.json` into your local MCP client config and never
+commit that local client config.
 
 ## Generated files
 

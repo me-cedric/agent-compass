@@ -13,8 +13,8 @@ and flags from its own repo before relying on it; package names move.
 | **context7** | Live, version-correct library/framework/SDK docs | `npx -y @upstash/context7-mcp` (or remote `https://mcp.context7.com/mcp`) | none (optional `CONTEXT7_API_KEY` for higher limits) | Before asserting any library/API/version fact. |
 | **sequential-thinking** | Structured multi-step reasoning | `npx -y @modelcontextprotocol/server-sequential-thinking` | none | Hard decisions: architecture trade-offs, gnarly debugging. |
 | **fetch** | Fetch a URL → clean markdown | `uvx mcp-server-fetch` (needs Python/uv) | none | Read docs/pages the agent finds during research. |
-| **exa** | Web search / research API | `npx -y exa-mcp-server` (or remote `https://mcp.exa.ai/mcp`) | `EXA_API_KEY` | Current best practice, benchmarks, prior art, pricing. |
 | **playwright** | Drive a real browser | `npx @playwright/mcp@latest` | none (downloads a browser) | Verify UI, inspect or scrape a live web app. |
+| **exa** | Web search / research API | `npx -y exa-mcp-server` (or remote `https://mcp.exa.ai/mcp`) | `EXA_API_KEY` | Optional: current best practice, benchmarks, prior art, pricing. |
 | **GitHub** | Issues/PRs/code search/CI | the `gh` CLI (already used here), or the official remote `https://api.githubcopilot.com/mcp/` (auth) | auth | Repo/PR/CI access. The old `@modelcontextprotocol/server-github` npm server is **archived** — don't use it. |
 
 Optional, usually redundant for coding agents (they already have file/git tools):
@@ -39,7 +39,7 @@ into your client's MCP config:
 ## Safety
 
 - Keys go in your shell/secret store or the client's `env`, **never** in a
-  committed file. The `exa` example ships a placeholder, not a key.
+  committed file. Keep keyed servers such as `exa` in local config.
 - Record every enabled tool in
   [`../../templates/mcp/tool-contract.md`](../../templates/mcp/tool-contract.md)
   with its access (read/write), sensitivity, and approval mode. A tool absent

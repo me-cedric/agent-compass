@@ -107,7 +107,7 @@ export const doctorChecks = (root, { deep = false } = {}) => {
   const leaks = localPathLeaks(root)
   const required = [
     ['shared agent config has no local absolute path leaks', leaks.length === 0, leaks],
-    ['projectmem MCP example keeps repo placeholder when present', !mcpExample || mcpExample.includes('/absolute/path/to/repo')],
+    ['projectmem MCP example avoids local absolute paths', !mcpExample || (!mcpExample.includes('/absolute/path/to/repo') && !LOCAL_PATH_RE.test(mcpExample))],
     ['.gitignore ignores projectmem runtime files', missingLines(root, '.gitignore', PROJECTMEM_GITIGNORE).length === 0],
     ['.prettierignore ignores generated projectmem summary', missingLines(root, '.prettierignore', PROJECTMEM_PRETTIERIGNORE).length === 0],
     ...HUSKY_HOOKS.map((h) => [`existing .husky/${h} executable`, !existsSync(join(root, '.husky', h)) || isExecutable(join(root, '.husky', h))]),

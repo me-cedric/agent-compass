@@ -4,7 +4,7 @@
 // base64 blobs, and emails. ponytail: name the ceiling — extend the patterns as
 // real leaks are found rather than pretending this is exhaustive.
 
-export const SECRET_RE = /(-----BEGIN |(?:password|secret|api[_-]?key|token)\s*[:=]\s*\S|bearer\s+[a-z0-9._-]{12,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|[A-Za-z0-9+/]{40,}={0,2})/i
+export const SECRET_RE = /(-----BEGIN |(?:password|secret|api[_-]?key|token)\s*[:=]\s*\S|bearer\s+[a-z0-9._-]{12,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|(?:secret|token|key|value|credential)\s*[:=]\s*[A-Za-z0-9+/]{40,}={0,2})/i
 export const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i
 
 // Return [{ line, kind }] for each offending line. kind: 'secret' | 'pii'.

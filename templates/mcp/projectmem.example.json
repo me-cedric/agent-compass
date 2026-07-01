@@ -1,14 +1,13 @@
 {
   "mcpServers": {
     "projectmem": {
-      "command": "/absolute/path/to/python3",
+      "command": "uvx",
       "args": [
-        "-m",
-        "projectmem.mcp_server",
-        "--root",
-        "/absolute/path/to/repo"
+        "--from",
+        "projectmem",
+        "pjm-mcp"
       ],
-      "cwd": "/absolute/path/to/repo"
+      "cwd": "."
     }
   }
 }

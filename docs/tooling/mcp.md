@@ -6,13 +6,14 @@ repo files.
 ## Rules
 
 - Prefer official servers and marketplace plugins over random wrappers.
-- For ready-to-use research servers (context7, exa, fetch, playwright,
+- For ready-to-use research servers (context7, fetch, playwright,
   sequential-thinking), see [mcp-servers.md](mcp-servers.md) and
   `templates/mcp/recommended.example.json`.
 - Keep tokens in the client secret store or local env, never in committed files.
-- Use absolute paths for local servers in GUI clients.
-- Copy repo `.mcp/*.example.json` into your local MCP client config, replace
-  `/absolute/path/to/repo`, and never commit local MCP client config.
+- Prefer portable stdio commands (`uvx`, `npx`) plus `cwd: "."` in shared
+  examples.
+- Copy repo `.mcp/*.example.json` into your local MCP client config and never
+  commit local MCP client config.
 - Document every configured server in `.mcp/README.md`.
 - Before using a server, verify the client can list the expected tools.
 - For Copilot cloud agent/code review, allowlist specific read-only tools where
@@ -95,6 +96,6 @@ Run the static probe after installing MCP examples:
 node docs/agent-compass/scripts/mcp-probe.mjs . --write
 ```
 
-It checks committed MCP examples and local `.mcp.json` for unresolved
-`/absolute/path/to/repo` placeholders and missing stdio commands. It does not
-start long-running servers by default.
+It checks committed MCP examples and local `.mcp.json` for unresolved local
+absolute paths and missing stdio commands. It does not start long-running
+servers by default.

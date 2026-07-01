@@ -152,7 +152,7 @@ state without reducing risk.
 ## Ready-to-use servers
 
 For high-value MCP servers the research workflows assume — context7 (live docs),
-exa (web research), fetch (pages), playwright (live apps), sequential-thinking —
+fetch (pages), playwright (live apps), sequential-thinking, optional exa (web research) —
 see [`mcp-servers.md`](mcp-servers.md) and `templates/mcp/recommended.example.json`.
 Keyless ones can be enabled immediately; keep keys out of git.
 

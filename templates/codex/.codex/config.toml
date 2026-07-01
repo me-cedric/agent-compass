@@ -27,9 +27,10 @@ sandbox_mode = "read-only"
 [mcp_servers.projectmem]
 enabled = true
 required = false
-command = "/absolute/path/to/repo/.venv/bin/python"
-args = ["-m", "projectmem.mcp_server", "--root", "/absolute/path/to/repo"]
-enabled_tools = ["brief", "precheck", "show", "log"]
+command = "uvx"
+args = ["--from", "projectmem", "pjm-mcp"]
+cwd = "."
+enabled_tools = ["get_instructions", "get_summary", "get_project_map", "precheck_file", "get_issue", "log_issue", "record_attempt", "record_fix", "add_decision", "add_note"]
 default_tools_approval_mode = "prompt"
 
 # Hooks live in .codex/hooks.json to avoid duplicate inline/file hook sources.

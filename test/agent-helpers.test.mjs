@@ -10,7 +10,7 @@ test('doctor-report prints readiness markdown', async () => {
   assert.equal(result.code, 0, result.stderr)
   assert.match(result.stdout, /Agent Readiness Report/)
   assert.match(result.stdout, /agent-compass\.commands\.json exists/)
-  assert.match(result.stdout, /projectmem MCP example keeps repo placeholder/)
+  assert.match(result.stdout, /projectmem MCP example avoids local absolute paths/)
   assert.match(result.stdout, /\.husky\/pre-commit executable/)
 })
 

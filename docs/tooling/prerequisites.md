@@ -36,9 +36,9 @@ ships guidance and templates; it does not install global agent tooling.
 
 | Integration | Purpose | Required locally | Verify |
 | ----------- | ------- | ---------------- | ------ |
-| projectmem | Durable local project memory and pre-action warnings | Python `>=3.10`, `pip`, projectmem package | `python --version`, `pjm --help` |
+| projectmem | Durable local project memory and pre-action warnings | Python `>=3.10`, `uv` recommended, projectmem package | `python --version`, `pjm --help` |
 | GitHub Spec Kit CLI | Optional upstream spec artifact generator | Python `>=3.11`, `uv` recommended or `pipx`, `git` | `uv --version`, `specify --help` |
-| MCP clients | Let agents read projectmem through MCP | Agent/client that supports MCP, absolute Python path for server config | client shows `projectmem` tools |
+| MCP clients | Let agents read projectmem through MCP | Agent/client that supports MCP, `uvx` recommended | client shows `projectmem` tools |
 | Figma MCP | Design context for frontend implementation | Figma Desktop or supported MCP setup, Dev/Full seat where required, MCP-capable agent | client shows Figma design context tools |
 | GitHub PR automation | Create/review PRs from agent workflows | `gh` authenticated against the repo | `gh auth status`, `gh label list` |
 
@@ -46,7 +46,7 @@ projectmem quick setup:
 
 ```bash
 python3 --version      # must be >= 3.10
-python3 -m pip install projectmem
+uv tool install projectmem
 pjm init
 pjm brief
 ```

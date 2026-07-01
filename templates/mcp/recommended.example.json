@@ -12,13 +12,6 @@
       "command": "uvx",
       "args": ["mcp-server-fetch"]
     },
-    "exa": {
-      "command": "npx",
-      "args": ["-y", "exa-mcp-server"],
-      "env": {
-        "EXA_API_KEY": "set-in-your-local-config-not-in-git"
-      }
-    },
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest"]

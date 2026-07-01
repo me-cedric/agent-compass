@@ -24,6 +24,17 @@ coverage/
 .auto-claude/
 tasks/lessons.md
 tasks/todo.md
+.agent/RUNBOOK.md
+.agent/doctor-report.md
+.agent/failure-mining.md
+.agent/mcp-readiness.md
+.agent/migration-plan.md
+.agent/provider-verification.md
+.agent/quality-gates.md
+.agent/recommendations.md
+.agent/report.html
+.agent/spec-validation-map.md
+.agent/.update-check.json
 
 # Scanner/build outputs.
 .scannerwork/

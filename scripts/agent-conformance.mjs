@@ -29,7 +29,7 @@ const arg = (name) => {
 }
 
 const ROOT = resolve(arg('--root') || process.cwd())
-const has = (...parts) => existsSync(join(ROOT, ...parts))
+const has = (...parts) => existsSync(join(ROOT, ...parts)) || existsSync(join(ROOT, 'docs', 'agent-compass', ...parts))
 const any = (...paths) => paths.some((path) => has(...path.split('/')))
 
 const checks = [

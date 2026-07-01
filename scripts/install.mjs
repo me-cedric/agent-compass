@@ -214,6 +214,6 @@ console.log(`\nNext steps:
   - If you have turbo/pnpm workspace files, copy the relevant ones from
     ${acRel}/templates/monorepo/ and adapt.
   - Wire husky: add "prepare": "husky" to package.json, then run install.
-  - Copy .mcp/*.example.json into your local MCP client config, replace /absolute/path/to/repo, and never commit local MCP config.
+  - Copy .mcp/*.example.json into your local MCP client config; keep local MCP config out of git.
   - Verify wiring: node ${acRel}/scripts/install.mjs --doctor
   - Read ${acRel}/AGENTS.md and ${acRel}/docs/guidelines/.\n`)
