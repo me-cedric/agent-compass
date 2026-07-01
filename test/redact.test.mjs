@@ -17,6 +17,13 @@ test('findIssues flags secrets and emails, ignores clean text', () => {
   assert.equal(findIssues('just a normal note').length, 0)
 })
 
+test('findIssues ignores reserved documentation emails', () => {
+  assert.equal(findIssues('seed user: candidate.incomplete@example.test').length, 0)
+  assert.equal(findIssues('contact: user@example.com').length, 0)
+  assert.equal(findIssues('fixture: admin@auth.example.org').length, 0)
+  assert.equal(findIssues('real: jean.dupont@acme-corp.fr').length, 1)
+})
+
 test('redact CLI fails on a leak and passes clean files', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-redact-'))
   try {

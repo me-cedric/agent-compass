@@ -11,6 +11,10 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   vendoring (the non-submodule path) with `.vendor.json` provenance
   (version/ref/commit), replacing manual `git archive` surgery.
 
+- `spec-kit-workflow` knowledge instinct (Spec Kit slash-command sequence with
+  a hard stop before implement) and richer Drizzle-typed mapper instinct, both
+  promoted from a real host project.
+
 ### Fixed
 
 - Stack detection now aggregates workspace packages (`apps/*`, `packages/*`)
@@ -18,6 +22,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   a turbo monorepo with a NestJS API and React app previously detected as
   "Turborepo" only, and `@next/eslint-plugin-next` no longer counts as Next.js.
   Found by upgrading a real host.
+- Redaction screens no longer flag RFC-reserved documentation emails
+  (`user@example.test`) or bare ISO dates (osv-scanner `ignoreUntil`) as
+  personal data — compass's own shipped template previously failed its own
+  knowledge-capture screen. Real emails and long digit runs still refuse.
+- `pull-knowledge` INDEX status is content-aware (`new` / `differs` /
+  `identical`) and staged files no longer match themselves via
+  `knowledge/incoming`, which previously reported every pull as "0 new".
 
 ## [0.4.0] - 2026-07-01
 

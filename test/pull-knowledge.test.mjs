@@ -53,12 +53,29 @@ test('pull-knowledge refuses possible personal data before staging', async () =>
   const staged = join(root.pathname, 'knowledge', 'incoming', basename(target))
   try {
     await mkdir(target, { recursive: true })
-    await writeFile(join(target, 'AGENTS.md'), 'Contact: user@example.com\n')
+    await writeFile(join(target, 'AGENTS.md'), 'Contact: jean.dupont@acme-corp.fr\n')
 
     const result = await runNode([script.pathname, target], { cwd: root.pathname })
     assert.equal(result.code, 1)
     assert.match(result.stderr, /possible personal data/)
     await assert.rejects(readFile(join(staged, 'INDEX.md'), 'utf8'))
+  } finally {
+    await rm(target, { recursive: true, force: true })
+    await rm(staged, { recursive: true, force: true })
+  }
+})
+
+test('pull-knowledge accepts documentation emails and bare ISO dates', async () => {
+  const target = join(tmpdir(), `ac-source-${Date.now()}`)
+  const staged = join(root.pathname, 'knowledge', 'incoming', basename(target))
+  try {
+    await mkdir(target, { recursive: true })
+    await writeFile(join(target, 'AGENTS.md'), 'Seed user: candidate.incomplete@example.test\n')
+    await writeFile(join(target, '.osv-scanner.toml'), 'ignoreUntil = 2026-12-31\n')
+
+    const result = await runNode([script.pathname, target], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+    await readFile(join(staged, 'INDEX.md'), 'utf8')
   } finally {
     await rm(target, { recursive: true, force: true })
     await rm(staged, { recursive: true, force: true })

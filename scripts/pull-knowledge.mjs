@@ -11,6 +11,8 @@ import { existsSync, readdirSync, readFileSync, statSync, mkdirSync, copyFileSyn
 import { dirname, resolve, relative, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { isBareDate, isReservedExampleEmail } from './lib/redact.mjs'
+
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const allowSensitive = process.argv.includes('--allow-sensitive')
 const help = `Usage: node scripts/pull-knowledge.mjs <path-to-project>
@@ -64,7 +66,17 @@ const DENY = [
 ]
 const DENY_RE = new RegExp(`(${DENY.join('|')})`, 'i')
 const SECRET_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|(?:api|access|secret|private)[-_ ]?(?:key|token|secret)\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{16,})/i
-const PERSONAL_RE = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+?\d[\d .()-]{8,}\d)/i
+const PERSONAL_RE = /([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\+?\d[\d .()-]{8,}\d)/gi
+// First personal-data hit that is not a documentation placeholder (reserved
+// example email) or a bare ISO date (config validity fields, not PII).
+const findPersonal = (text) => {
+  for (const match of text.matchAll(PERSONAL_RE)) {
+    const value = match[1]
+    if (isReservedExampleEmail(value) || isBareDate(value)) continue
+    return match
+  }
+  return null
+}
 const scanBeforeCopy = () => {
   if (allowSensitive) return
   const warnings = []
@@ -73,7 +85,7 @@ const scanBeforeCopy = () => {
     try { text = readFileSync(item.full, 'utf8') } catch { continue }
     const secret = SECRET_RE.exec(text)
     const denied = DENY_RE.exec(text)
-    const personal = PERSONAL_RE.exec(text)
+    const personal = findPersonal(text)
     if (secret) warnings.push(`${item.rel}: possible secret (${secret[1].slice(0, 40)})`)
     if (denied) warnings.push(`${item.rel}: denied project/domain token (${denied[1]})`)
     if (personal) warnings.push(`${item.rel}: possible personal data (${personal[1].slice(0, 40)})`)
@@ -110,13 +122,23 @@ if (!found.length) {
 }
 scanBeforeCopy()
 
-// Copy + check whether agent-compass already has something similarly named.
-const acHas = (name) => {
-  let hit = false
-  walk(join(AC, 'templates'), 0, (f) => { if (basename(f) === name) hit = true }, 5)
-  walk(join(AC, 'knowledge'), 0, (f) => { if (basename(f) === name) hit = true }, 5)
-  walk(join(AC, 'skills'), 0, (f) => { if (basename(f) === name) hit = true }, 4)
+// Copy + check whether agent-compass already has something similarly named,
+// and whether the content actually differs. Never match staged files under
+// knowledge/incoming — a file must not count as its own base.
+const findBaseMatch = (name) => {
+  let hit = null
+  const record = (f) => { if (!hit && basename(f) === name && !f.includes('/incoming/')) hit = f }
+  walk(join(AC, 'templates'), 0, record, 5)
+  walk(join(AC, 'knowledge'), 0, record, 5)
+  walk(join(AC, 'skills'), 0, record, 4)
   return hit
+}
+const baseStatus = (item) => {
+  const base = findBaseMatch(basename(item.rel))
+  if (!base) return 'new'
+  try {
+    return readFileSync(base, 'utf8') === readFileSync(item.full, 'utf8') ? 'identical' : 'differs'
+  } catch { return 'differs' }
 }
 
 const rows = []
@@ -125,7 +147,7 @@ for (const item of found) {
   try {
     mkdirSync(dirname(out), { recursive: true })
     copyFileSync(item.full, out)
-    rows.push({ ...item, status: acHas(basename(item.rel)) ? 'exists-in-base' : 'new' })
+    rows.push({ ...item, status: baseStatus(item) })
   } catch (e) {
     rows.push({ ...item, status: 'copy-failed' })
   }
@@ -141,11 +163,14 @@ generic items (see ../../../docs/workflows/knowledge-capture.md) and delete the 
 
 ${Object.entries(byCat).map(([cat, items]) => `## ${cat}\n\n| File | Status |\n| ---- | ------ |\n${items.map((i) => `| \`${i.rel}\` | ${i.status} |`).join('\n')}`).join('\n\n')}
 
-> \`new\` = no same-named file in agent-compass yet · \`exists-in-base\` = compare and
-> reconcile · promote by rewriting away project-specific names (\`@scope\`, \`<project>\`).
+> \`new\` = no same-named file in agent-compass yet · \`differs\` = base has a
+> same-named file with different content — diff and reconcile · \`identical\` =
+> already in base, delete from staging · promote by rewriting away
+> project-specific names (\`@scope\`, \`<project>\`).
 `
 writeFileSync(join(dest, 'INDEX.md'), index)
 
+const count = (status) => rows.filter((r) => r.status === status).length
 console.log(`\n✓ Staged ${rows.length} files → ${relative(process.cwd(), dest)}`)
 console.log(`✓ Review ${relative(process.cwd(), join(dest, 'INDEX.md'))}`)
-console.log(`\n${rows.filter((r) => r.status === 'new').length} new · ${rows.filter((r) => r.status === 'exists-in-base').length} overlap with base\n`)
+console.log(`\n${count('new')} new · ${count('differs')} differ from base · ${count('identical')} identical\n`)
