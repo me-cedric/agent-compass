@@ -73,6 +73,13 @@ See [agent-provider-capabilities](tooling/agent-provider-capabilities.md).
 
 ```bash
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+node docs/agent-compass/scripts/adopt.mjs . --policy solo-dev
+```
+
+`adopt` chains detection, non-interactive setup, fit-based skill sync, the
+policy pack, and readiness verification. Granular equivalent:
+
+```bash
 node docs/agent-compass/scripts/setup-wizard.mjs . --yes
 node docs/agent-compass/scripts/apply-recommendations.mjs . --policy solo-dev
 ```

@@ -14,6 +14,12 @@ re-running setup or asking an agent to merge**. Two things make this work:
 For first-time or refreshed host setup:
 
 ```bash
+node docs/agent-compass/scripts/adopt.mjs .
+```
+
+Granular equivalent (what `adopt` chains for you):
+
+```bash
 node docs/agent-compass/scripts/setup-wizard.mjs . --yes
 node docs/agent-compass/scripts/setup-host.mjs . --strict
 node docs/agent-compass/scripts/provider-verify.mjs . --write

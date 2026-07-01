@@ -3,6 +3,11 @@
 Goal: from nothing to a running, standards-compliant project — and the same
 answers produce the same project for any teammate.
 
+Delegating the whole mission to an agent? Use
+[`skills/compass-bootstrap/SKILL.md`](../../skills/compass-bootstrap/SKILL.md) —
+it translates architecture guidelines into the answers file and executes the
+steps below end-to-end.
+
 ## 1. Generate the bootstrap prompt
 
 ```bash
@@ -10,7 +15,14 @@ node scripts/bootstrap.mjs
 ```
 
 Answer the questions (name, stack(s), package manager, DB/ORM, auth, queues,
-testing, CI, API tooling, …). It writes:
+testing, CI, API tooling, …). Non-interactive (agents, CI):
+
+```bash
+node scripts/bootstrap.mjs --schema                      # answers contract
+node scripts/bootstrap.mjs --answers answers.json --out ./my-app
+```
+
+It writes:
 
 - **`BOOTSTRAP_PROMPT.md`** — the precise build prompt.
 - **`agent-compass.answers.json`** — your answers, replayable.
