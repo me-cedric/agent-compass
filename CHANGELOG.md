@@ -5,6 +5,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `vendor` command (`scripts/vendor.mjs`): create/refresh a plain-copy
+  vendoring (the non-submodule path) with `.vendor.json` provenance
+  (version/ref/commit), replacing manual `git archive` surgery.
+
+### Fixed
+
+- Stack detection now aggregates workspace packages (`apps/*`, `packages/*`)
+  instead of only the monorepo root, and matches exact dependency names —
+  a turbo monorepo with a NestJS API and React app previously detected as
+  "Turborepo" only, and `@next/eslint-plugin-next` no longer counts as Next.js.
+  Found by upgrading a real host.
+
 ## [0.4.0] - 2026-07-01
 
 ### Added

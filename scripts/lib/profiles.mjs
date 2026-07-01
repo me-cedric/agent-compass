@@ -4,7 +4,7 @@
 // recommendations), setup-wizard.mjs (detection), and the compass-adopt
 // mission. Everything listed must exist — test/profiles.test.mjs guards drift.
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 // Assets every host benefits from, regardless of stack.
@@ -67,19 +67,43 @@ export const PROFILES = {
   },
 }
 
-// Detect stack ids for a host repo from its package.json and marker files.
+const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.turbo', '.venv'])
+
+// Dependency names + marker files across the whole workspace. Monorepos keep
+// their real stacks in apps/*/package.json, not the root — root-only scanning
+// detects "turbo" and nothing else.
+const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new Set() }) => {
+  if (depth < 0 || !existsSync(root)) return acc
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+    for (const name of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) acc.deps.add(name)
+  } catch {}
+  for (const marker of ['turbo.json', 'drizzle.config.ts']) {
+    if (existsSync(join(root, marker))) acc.markers.add(marker)
+  }
+  try {
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (entry.isDirectory() && !SCAN_IGNORE.has(entry.name) && !entry.name.startsWith('.')) {
+        collectWorkspace(join(root, entry.name), depth - 1, acc)
+      }
+    }
+  } catch {}
+  return acc
+}
+
+// Detect stack ids for a host repo. Matches exact dependency names (or scoped
+// prefixes), never substrings — "@next/eslint-plugin-next" is not Next.js.
 export const detectStacks = (root) => {
-  let pkg = {}
-  try { pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) } catch {}
-  const deps = JSON.stringify({ ...pkg.dependencies, ...pkg.devDependencies }).toLowerCase()
+  const { deps, markers } = collectWorkspace(root)
+  const anyDep = (pred) => [...deps].some(pred)
   return [
-    deps.includes('nestjs') && 'nestjs-api',
-    deps.includes('react') && !deps.includes('react-native') && 'react-web',
-    deps.includes('next') && 'next-web',
-    (deps.includes('expo') || deps.includes('react-native')) && 'expo-mobile',
-    (deps.includes('drizzle') || existsSync(join(root, 'drizzle.config.ts'))) && 'drizzle-postgres',
-    deps.includes('bullmq') && 'bullmq',
-    (deps.includes('turbo') || existsSync(join(root, 'turbo.json'))) && 'turbo-monorepo',
+    anyDep((n) => n.startsWith('@nestjs/')) && 'nestjs-api',
+    (deps.has('react') || deps.has('react-dom')) && !deps.has('react-native') && 'react-web',
+    deps.has('next') && 'next-web',
+    (deps.has('expo') || deps.has('react-native')) && 'expo-mobile',
+    (anyDep((n) => n.includes('drizzle')) || markers.has('drizzle.config.ts')) && 'drizzle-postgres',
+    (deps.has('bullmq') || deps.has('@nestjs/bullmq')) && 'bullmq',
+    (deps.has('turbo') || markers.has('turbo.json')) && 'turbo-monorepo',
   ].filter(Boolean)
 }
 

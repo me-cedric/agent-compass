@@ -24,6 +24,7 @@ const COMMANDS = {
   install: { script: 'install.mjs', group: 'Setup', desc: 'Wire agent-compass into a host (create missing files).' },
   'doctor-fix': { script: 'doctor-fix.mjs', group: 'Setup', desc: 'Autofix host agent setup and regenerate reports.' },
   sync: { script: 'sync.mjs', group: 'Setup', desc: 'Update managed files from the submodule (no clobber).' },
+  vendor: { script: 'vendor.mjs', group: 'Setup', desc: 'Create/refresh a plain-copy vendoring with provenance.' },
   'spec-kit-bridge': { script: 'spec-kit-bridge.mjs', group: 'Setup', desc: 'Install optional Spec Kit bridge files.' },
   'skills-sync': { script: 'skills-sync.mjs', group: 'Setup', desc: 'Copy or symlink skills into provider dirs.' },
   'policy-pack': { script: 'policy-pack.mjs', group: 'Setup', desc: 'List/apply setup policy packs.' },

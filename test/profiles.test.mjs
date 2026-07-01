@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -41,6 +41,29 @@ test('detectStacks maps dependencies to stack ids', async () => {
 
     await writeFile(join(host, 'package.json'), JSON.stringify({}))
     assert.deepEqual(detectStacks(host), [])
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('detectStacks aggregates workspace packages, not just the monorepo root', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-profiles-mono-'))
+  try {
+    // Realistic turbo monorepo: root has only tooling deps; stacks live in apps/*.
+    await writeFile(join(host, 'package.json'), JSON.stringify({ devDependencies: { turbo: '2' } }))
+    await writeFile(join(host, 'turbo.json'), '{}')
+    await mkdir(join(host, 'apps', 'api'), { recursive: true })
+    await writeFile(join(host, 'apps', 'api', 'package.json'), JSON.stringify({
+      dependencies: { '@nestjs/core': '10', '@nestjs/bullmq': '10', 'drizzle-orm': '0.30' },
+    }))
+    await mkdir(join(host, 'apps', 'web-app'), { recursive: true })
+    await writeFile(join(host, 'apps', 'web-app', 'package.json'), JSON.stringify({
+      dependencies: { react: '19', '@tanstack/react-router': '1' },
+      // Must NOT classify as next-web: scoped plugin is not the next package.
+      devDependencies: { '@next/eslint-plugin-next': '15' },
+    }))
+    const stacks = detectStacks(host)
+    assert.deepEqual(stacks, ['nestjs-api', 'react-web', 'drizzle-postgres', 'bullmq', 'turbo-monorepo'])
   } finally {
     await rm(host, { recursive: true, force: true })
   }

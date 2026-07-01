@@ -9,6 +9,22 @@ re-running setup or asking an agent to merge**. Two things make this work:
 - **Forked files are reconciled by `sync`** ([`sync.mjs`](../../scripts/sync.mjs)),
   which knows which files agent-compass owns vs. which the host owns.
 
+## Plain-copy vendoring (no submodule)
+
+Hosts that vendor agent-compass as plain files (e.g. `docs/agent-compass/`
+committed directly) refresh with `vendor` from a compass checkout, then
+reconcile:
+
+```bash
+node /path/to/agent-compass/scripts/vendor.mjs /path/to/host --ref v0.4.0
+node /path/to/host/docs/agent-compass/scripts/sync.mjs /path/to/host
+```
+
+`vendor` replaces the copy wholesale (after verifying it *is* an agent-compass
+copy) and writes `.vendor.json` with the exact version/ref/commit, so the
+copy's provenance is never ambiguous. Host-edited managed files still get
+`.acnew` conflict copies from `sync`, never clobbered.
+
 ## One command
 
 For first-time or refreshed host setup:
