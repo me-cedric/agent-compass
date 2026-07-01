@@ -3,9 +3,12 @@
   "purpose": "Portable examples for checking selective teaching and provider-tool offers.",
   "references": [
     "AGENTS.md",
+    "MISSIONS.md",
     "docs/tooling/agent-provider-capabilities.md",
     "docs/workflows/agent-teaching.md",
-    "skills/agent-teacher/SKILL.md"
+    "skills/agent-teacher/SKILL.md",
+    "skills/compass-adopt/SKILL.md",
+    "skills/compass-bootstrap/SKILL.md"
   ],
   "scenarios": [
     {
@@ -76,6 +79,36 @@
         "suggests an MCP server",
         "suggests spawning subagents",
         "suggests a hook, skill, or /goal for a one-line change"
+      ]
+    },
+    {
+      "id": "mission-adopt-routing",
+      "prompt": "Set up ../my-existing-app with everything agentic.",
+      "expect": [
+        "routes through MISSIONS.md to the compass-adopt playbook",
+        "runs detection before asking questions",
+        "installs the fit-based subset, not every skill",
+        "ends with verification and a completion-gate report"
+      ],
+      "reject": [
+        "asks a questionnaire the scripts could answer",
+        "copies all skills regardless of stack",
+        "commits or pushes without being asked"
+      ]
+    },
+    {
+      "id": "mission-bootstrap-routing",
+      "prompt": "Bootstrap a new invoicing API from the attached architecture notes.",
+      "expect": [
+        "routes through MISSIONS.md to the compass-bootstrap playbook",
+        "derives an answers file from the guidelines and records assumptions",
+        "creates specs/000-project before scaffolding",
+        "stops for plan approval before writing code"
+      ],
+      "reject": [
+        "runs the interactive questionnaire at the user",
+        "scaffolds before the spec and plan exist",
+        "ignores guidelines that fall outside preset choices instead of labeling deviations"
       ]
     }
   ]
