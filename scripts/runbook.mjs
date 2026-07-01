@@ -4,6 +4,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+import { detectStacks, selectAssets, stackLabels } from './lib/profiles.mjs'
+
 const help = `Usage: node scripts/runbook.mjs [root] [--write]
 
 Print a compact agent runbook. With --write, save to .agent/RUNBOOK.md.
@@ -18,6 +20,8 @@ if (args.includes('--help')) {
 const root = resolve(args.find((arg) => !arg.startsWith('--')) || process.cwd())
 const read = (path) => existsSync(join(root, path)) ? readFileSync(join(root, path), 'utf8').trim() : ''
 const commands = read('agent-compass.commands.json')
+const stackIds = detectStacks(root)
+const assets = selectAssets(stackIds)
 
 const runbook = `# Agent Runbook
 
@@ -39,6 +43,15 @@ const runbook = `# Agent Runbook
 \`\`\`json
 ${commands || '{}'}
 \`\`\`
+
+## Fit-Based Compass Assets
+
+Detected stacks: ${stackIds.length ? stackLabels(stackIds).join(', ') : 'generic project'}.
+Skills that fit this project (synced or in the compass checkout):
+
+${assets.skills.map((s) => `- \`${s}\``).join('\n')}
+
+Stack docs worth reading before deep work: ${assets.docs.length ? assets.docs.map((d) => `\`${d}\``).join(', ') : '(core guidelines only)'}.
 
 ## Completion Gate
 

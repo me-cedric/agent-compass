@@ -16,9 +16,10 @@ test('adopt --dry plans without writing', async () => {
   const host = await mkdtemp(join(tmpdir(), 'ac-adopt-'))
   try {
     await writeFile(join(host, 'package.json'), JSON.stringify({ name: 'fake-api', dependencies: { '@nestjs/core': '10' } }))
-    const run = await runNode([script, host, '--dry'])
+    const run = await runNode([script, host, '--dry', '--policy', 'solo-dev'])
     assert.equal(run.code, 0, run.stderr)
     assert.match(run.stdout, /fit-based skills/)
+    assert.match(run.stdout, /Would apply policy pack: solo-dev/)
     assert.ok(!existsSync(join(host, 'AGENTS.md')), 'dry run must not write')
   } finally {
     await rm(host, { recursive: true, force: true })

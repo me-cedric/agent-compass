@@ -13,8 +13,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   compass with minimal guidance. Cursor/Windsurf/Gemini pointer files now route
   through the missions in this repo too (previously host-only).
 - `adopt` command (`scripts/adopt.mjs`): one-command host adoption — detection,
-  non-interactive setup, fit-based skill sync, readiness verification, next
-  steps.
+  non-interactive setup, fit-based skill sync, optional `--policy <pack>`,
+  readiness verification, next steps.
+- `runbook` and `context-pack` now include detected stacks and fit-based
+  compass assets, so host agents see what fits at startup without re-deriving
+  it. MISSIONS.md also routes the user-level global setup mission.
 - Machine-readable asset catalog (`scripts/catalog.mjs`, `agent-compass catalog`)
   covering skills, stacks, templates, docs, instincts, and CLI commands with
   `--type` / `--grep` / `--md` filters.

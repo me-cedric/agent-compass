@@ -16,6 +16,8 @@ test('context-pack indexes the live repo', async () => {
   assert.equal(pack.schema, 1)
   assert.ok(pack.packages.some((p) => p.name === 'agent-compass'))
   assert.ok(pack.commands, 'commands registry should be parsed')
+  assert.ok(Array.isArray(pack.stacks), 'detected stacks included')
+  assert.ok(pack.fitAssets.skills.includes('gen-docs'), 'fit-based assets included')
 })
 
 test('context-pack --write then --check round-trips, detects drift', async () => {

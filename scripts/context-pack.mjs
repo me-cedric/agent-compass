@@ -6,6 +6,8 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 
+import { detectStacks, selectAssets } from './lib/profiles.mjs'
+
 const help = `Usage: node scripts/context-pack.mjs [root] [--write] [--check]
 
 Generate a machine-readable repo index at .agent/context.json.
@@ -44,11 +46,17 @@ const findPackages = (dir, depth, out = []) => {
 const present = (rel) => existsSync(join(ROOT, rel))
 const firstPresent = (...rels) => rels.find(present) || null
 
+const stackIds = detectStacks(ROOT)
+
 const build = () => ({
   schema: 1,
   agentContract: firstPresent('AGENTS.md', 'docs/agent-compass/AGENTS.md'),
   agentFiles: ['AGENTS.md', 'CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md'].filter(present),
   commands: readJson(join(ROOT, 'agent-compass.commands.json')),
+  stacks: stackIds,
+  // Fit-based compass assets for this host (core + detected stacks) — see
+  // scripts/lib/profiles.mjs. Paths are relative to the compass checkout.
+  fitAssets: selectAssets(stackIds),
   packages: findPackages(ROOT, 3).sort((a, b) => a.path.localeCompare(b.path)),
   docs: {
     repoMap: firstPresent('docs/architecture/repo-map.md'),

@@ -13,6 +13,7 @@ compass missions.
 | An **existing project** wired up with agentic rules, skills, and tooling | Adopt | [`skills/compass-adopt/SKILL.md`](skills/compass-adopt/SKILL.md) |
 | A **new project** built from architecture guidelines or an idea | Bootstrap | [`skills/compass-bootstrap/SKILL.md`](skills/compass-bootstrap/SKILL.md) |
 | To **add a capability** to compass itself (skill, knowledge, template, stack, script) | Extend | [`skills/compass-extend/SKILL.md`](skills/compass-extend/SKILL.md) |
+| Their **machine** (user-level config for all agent CLIs) set up | Global | [`docs/agent-setup.md`](docs/agent-setup.md) → `node scripts/setup-wizard.mjs "$HOME" --global --yes` |
 
 Anything else (bug fix, doc change, refactor in this repo) is normal work under
 [`AGENTS.md`](AGENTS.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).

@@ -19,6 +19,8 @@ test('runbook prints agent startup steps', async () => {
   assert.equal(result.code, 0, result.stderr)
   assert.match(result.stdout, /Agent Runbook/)
   assert.match(result.stdout, /agent-compass\.commands\.json/)
+  assert.match(result.stdout, /Fit-Based Compass Assets/)
+  assert.match(result.stdout, /`gen-docs`/)
 })
 
 test('release dry run reports version changes only', async () => {

@@ -13,22 +13,26 @@ import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
-const help = `Usage: node scripts/adopt.mjs [host-dir] [--dry]
+const help = `Usage: node scripts/adopt.mjs [host-dir] [--policy <pack>] [--dry]
 
 One-command host adoption: non-interactive setup (detected answers, fit-based
-skill sync), then readiness verification, then next steps. Never overwrites
-existing files. Equivalent to:
+skill sync), optional policy pack, then readiness verification and next steps.
+Never overwrites existing files. Equivalent to:
 
   node scripts/setup-wizard.mjs <host> --yes
+  node scripts/apply-recommendations.mjs <host> --policy <pack>   (with --policy)
   node scripts/agent-onboard.mjs <host>
 
 Options:
-  --dry   Show the plan without writing anything.
-  --help  Show this help.
+  --policy <pack>  Apply a policy pack: solo-dev | startup-fast |
+                   strict-enterprise | regulated-api.
+  --dry            Show the plan without writing anything.
+  --help           Show this help.
 `
 if (args.includes('--help')) { console.log(help); process.exit(0) }
 
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const policy = (() => { const i = args.indexOf('--policy'); return i === -1 ? null : args[i + 1] || null })()
+const HOST = resolve(args.find((a) => !a.startsWith('--') && a !== policy) || process.cwd())
 const dry = args.includes('--dry')
 
 if (!existsSync(HOST)) { console.error(`Host directory not found: ${HOST}`); process.exit(1) }
@@ -43,10 +47,12 @@ const run = (script, extra = []) => {
 
 if (dry) {
   run('setup-wizard.mjs', ['--yes', '--dry'])
+  if (policy) console.log(`\nWould apply policy pack: ${policy}`)
   process.exit(0)
 }
 
 run('setup-wizard.mjs', ['--yes'])
+if (policy) run('apply-recommendations.mjs', ['--policy', policy])
 run('agent-onboard.mjs')
 
 const registry = join(HOST, 'agent-compass.commands.json')
