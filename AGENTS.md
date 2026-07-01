@@ -10,6 +10,11 @@ to this file plus tool-specific notes.
 > facts; this file supplies the shared baseline. On conflict: **host project >
 > agent-compass > model defaults**.
 
+> Operating inside agent-compass itself (setting up a host project,
+> bootstrapping a new one, or adding a capability)? Route the request through
+> [`MISSIONS.md`](MISSIONS.md) first — it maps each mission to an executable
+> playbook.
+
 ---
 
 ## 1. The coding workflow (always)

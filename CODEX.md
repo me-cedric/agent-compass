@@ -4,6 +4,9 @@
 
 - Follow **[AGENTS.md](AGENTS.md)** first. It owns the workflow, validation,
   completion gate, handoff format, and safety rules.
+- Asked to set up an existing project, bootstrap a new one, or extend compass?
+  Route through **[MISSIONS.md](MISSIONS.md)** and follow the matching
+  `skills/compass-*` playbook.
 - This file adds only Codex-specific context behavior.
 
 ## Communication

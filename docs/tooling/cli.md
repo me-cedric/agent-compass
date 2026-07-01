@@ -64,7 +64,8 @@ Names accept both the short form and the underlying script name
 
 | Command | Does | Example |
 | ------- | ---- | ------- |
-| `bootstrap` | New-project prompt generator | `agent-compass bootstrap` |
+| `adopt` | One-command host adoption (setup + fit sync + verify) | `agent-compass adopt /path/to/host` |
+| `bootstrap` | New-project prompt generator (`--answers` for agents) | `agent-compass bootstrap --answers answers.json` |
 | `install` | Wire agent-compass into a host (create missing) | `agent-compass install --dry` |
 | `sync` | Update managed files from the submodule (no clobber) | `agent-compass sync .` |
 | `upgrade` | Bump submodule → sync → doctor | `agent-compass upgrade . docs/agent-compass` |
@@ -87,6 +88,7 @@ Names accept both the short form and the underlying script name
 | ------- | ---- | ------- |
 | `context` | Compact repo snapshot | `agent-compass context` |
 | `context-pack` | Machine-readable `.agent/context.json` | `agent-compass context-pack . --write` |
+| `catalog` | Machine-readable asset catalog | `agent-compass catalog --type skill --grep figma` |
 | `runbook` | Compact agent runbook | `agent-compass runbook . --write` |
 | `depgraph` | Mermaid dependency graph | `agent-compass depgraph . --write` |
 
@@ -94,7 +96,7 @@ Names accept both the short form and the underlying script name
 
 | Command | Does | Example |
 | ------- | ---- | ------- |
-| `new` | Scaffold a skill, ADR, spec, or architecture decision | `agent-compass new arch payments-platform` |
+| `new` | Scaffold a skill, ADR, spec, architecture decision, or instinct | `agent-compass new skill my-thing` |
 | `run` | Run a registry command (safe) | `agent-compass run test` |
 | `check-companions` | Fail if source changed without a test | `agent-compass check-companions --base main --strict` |
 | `redact` | Scan for secret/PII leaks | `agent-compass redact . --staged` |

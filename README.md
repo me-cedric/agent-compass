@@ -26,6 +26,11 @@ Agent Compass exists for three jobs:
 3. **Grow** safely: pull reusable knowledge out of real projects without leaking
    secrets, personal data, or project-specific facts.
 
+**Fastest path:** open any agent CLI (Claude Code, Codex, Copilot, Cursor, …)
+in this repo and say what you want — "set up `~/projects/foo`", "bootstrap a
+new API from these guidelines", "add a skill for X". The agent routes itself
+through [`MISSIONS.md`](MISSIONS.md) and executes the matching playbook.
+
 ---
 
 ## Table Of Contents
@@ -61,6 +66,14 @@ From the host project root:
 
 ```bash
 git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+node docs/agent-compass/scripts/adopt.mjs .
+```
+
+`adopt` runs the whole chain non-interactively: detection, setup, fit-based
+skill sync (core + detected stacks only), readiness verification, and next
+steps. Granular equivalent when you want control:
+
+```bash
 node docs/agent-compass/scripts/setup-wizard.mjs . --yes
 node docs/agent-compass/scripts/setup-host.mjs . --strict
 node docs/agent-compass/scripts/apply-recommendations.mjs . --policy solo-dev
@@ -139,6 +152,16 @@ The bootstrap writes:
 Paste `BOOTSTRAP_PROMPT.md` into your agent. It starts with
 `specs/000-project/` artifacts before scaffolding code.
 
+Agents (and CI) skip the questionnaire with an answers file:
+
+```bash
+node scripts/bootstrap.mjs --schema                       # answers contract
+node scripts/bootstrap.mjs --answers answers.json --out /path/to/new-project
+```
+
+Or let the agent do the whole mission — see
+[`skills/compass-bootstrap/SKILL.md`](skills/compass-bootstrap/SKILL.md).
+
 ### Browse And Copy
 
 Agent Compass is mostly Markdown and templates:
@@ -181,6 +204,8 @@ Agent Compass is usable across real projects. Current version: `0.3.0`.
 
 | Need | Start here | Helper |
 | ---- | ---------- | ------ |
+| Let an agent run a full mission | [`MISSIONS.md`](MISSIONS.md) | `skills/compass-*` |
+| Browse every asset programmatically | [`MISSIONS.md`](MISSIONS.md) | `scripts/catalog.mjs` |
 | Install into host repo | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/install.mjs` |
 | Start a new project | [`docs/workflows/new-project.md`](docs/workflows/new-project.md) | `scripts/bootstrap.mjs` |
 | Get repo context fast | [`docs/architecture/repo-map.md`](docs/architecture/repo-map.md) | `scripts/context.mjs` |
@@ -355,7 +380,8 @@ All scripts are dependency-free Node scripts (also reachable via the CLI above).
 | Command | Purpose |
 | ------- | ------- |
 | `npm run cli` | Unified dispatcher (`agent-compass <command>`). |
-| `npm run bootstrap` | Interactive new-project prompt generator. |
+| `npm run bootstrap` | New-project prompt generator (interactive, or `--answers` for agents). |
+| `npm run catalog` | Machine-readable asset catalog (skills, stacks, templates, docs, commands). |
 | `npm run context` | Print compact repo snapshot for agents. |
 | `npm run agent-conformance` | Check provider customization artifacts and print smoke prompts. |
 | `npm run agent-evals` | Validate teaching/tool-offer eval fixtures. |

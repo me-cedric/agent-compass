@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 
-import { buildPrompt, stackDocsForApps } from '../scripts/bootstrap.mjs'
+import { ANSWER_SCHEMA, buildPrompt, resolveAnswers, stackDocsForApps, validateAnswers } from '../scripts/bootstrap.mjs'
+import { runNode } from './helpers.mjs'
+
+const script = new URL('../scripts/bootstrap.mjs', import.meta.url).pathname
 
 test('next-web maps to its own stack preset', () => {
   assert.deepEqual(stackDocsForApps(['next-web'], false), ['stacks/next-web.md'])
@@ -66,4 +72,48 @@ test('bootstrap prompt covers common app matrices', () => {
     const prompt = buildPrompt({ ...base, apps })
     docs.forEach((doc) => assert.match(prompt, new RegExp(doc.replaceAll('/', '\\/'))))
   }
+})
+
+test('resolveAnswers fills defaults and derives scope/targetDir from name', () => {
+  const answers = resolveAnswers({ name: 'My App' })
+  assert.equal(answers.name, 'my-app')
+  assert.equal(answers.scope, '@my-app')
+  assert.equal(answers.targetDir, './my-app')
+  assert.equal(answers.pm, 'pnpm')
+  assert.deepEqual(answers.apps, ANSWER_SCHEMA.apps.default)
+  assert.deepEqual(validateAnswers(answers), [])
+})
+
+test('validateAnswers reports unknown choices and wrong types', () => {
+  const errors = validateAnswers(resolveAnswers({ name: 'x', apps: ['bad-app'], pm: 'pip', docker: 'yes' }))
+  assert.ok(errors.some((e) => e.includes('apps') && e.includes('bad-app')))
+  assert.ok(errors.some((e) => e.includes('pm') && e.includes('pip')))
+  assert.ok(errors.some((e) => e.includes('docker')))
+})
+
+test('bootstrap --answers runs non-interactively and honors --out', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-bootstrap-'))
+  try {
+    await writeFile(join(dir, 'answers.json'), JSON.stringify({ name: 'demo-app', apps: ['next-web'], monorepo: false }))
+    const run = await runNode([script, '--answers', join(dir, 'answers.json'), '--out', join(dir, 'proj')])
+    assert.equal(run.code, 0, run.stderr)
+    const prompt = await readFile(join(dir, 'proj', 'BOOTSTRAP_PROMPT.md'), 'utf8')
+    assert.match(prompt, /demo-app/)
+    assert.match(prompt, /stacks\/next-web\.md/)
+    const saved = JSON.parse(await readFile(join(dir, 'proj', 'agent-compass.answers.json'), 'utf8'))
+    assert.equal(saved.monorepo, false)
+
+    const bad = await runNode([script, '--answers', join(dir, 'missing.json')])
+    assert.equal(bad.code, 1)
+    assert.match(bad.stderr, /Cannot read answers file/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('bootstrap --schema prints the answers contract', async () => {
+  const run = await runNode([script, '--schema'])
+  assert.equal(run.code, 0, run.stderr)
+  const schema = JSON.parse(run.stdout)
+  assert.deepEqual(schema.answers.apps.choices, ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'])
 })

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // new.mjs — golden-path scaffolds. Emit standards-conformant stubs so agents
-// don't hand-roll structure: `skill`, `adr`, `spec`.
+// don't hand-roll structure: `skill`, `adr`, `spec`, `arch`, `instinct`.
 
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -11,14 +11,18 @@ const help = `Usage: node scripts/new.mjs <kind> <name> [root] [--dry]
 Scaffold a standards-conformant stub.
 
 Kinds:
-  skill <name>   skills/<name>/SKILL.md with valid frontmatter
-  adr <name>     docs/decisions/<name>.md from the ADR template
-  spec <name>    specs/<name>/spec.md from the spec template
-  arch <name>    docs/architecture/decisions/<name>.md from the decision template
+  skill <name>     skills/<name>/SKILL.md with valid frontmatter
+  adr <name>       docs/decisions/<name>.md from the ADR template
+  spec <name>      specs/<name>/spec.md from the spec template
+  arch <name>      docs/architecture/decisions/<name>.md from the decision template
+  instinct <name>  knowledge/instincts/<name>.md knowledge note
 
 Options:
   --dry   Print what would be created.
   --help  Show this help.
+
+After scaffolding, the script prints the wiring steps (index entries, checks)
+required for the new asset to pass \`npm run check\`.
 `
 
 const args = process.argv.slice(2)
@@ -56,10 +60,19 @@ const copyTemplate = (srcRel, destRel) => {
   console.log(`created ${destRel}`)
 }
 
+const nextSteps = (steps) => {
+  if (dry || !steps.length) return
+  console.log('\nNext:')
+  steps.forEach((s) => console.log(`  - ${s}`))
+}
+
 if (kind === 'skill') {
   emit(`skills/${name}/SKILL.md`, `---
 name: ${name}
-description: One-line summary of when an agent should use this skill.
+description: One-line trigger summary — when should an agent load this skill?
+risk_level: low
+writes_files: false
+requires_tools: []
 ---
 
 # ${name}
@@ -76,13 +89,44 @@ description: One-line summary of when an agent should use this skill.
 
 - ...
 `)
+  nextSteps([
+    'Fill in description (it drives auto-triggering) and correct risk_level / writes_files / requires_tools.',
+    'Add the skill to the catalog table in skills/README.md (lint:indexes enforces this).',
+    'Run `npm run check` to validate frontmatter and indexes.',
+  ])
 } else if (kind === 'adr') {
   copyTemplate('docs/decisions/000-template.md', `docs/decisions/${name}.md`)
+  nextSteps(['Fill in status, context, decision, and consequences.'])
 } else if (kind === 'spec') {
   copyTemplate('templates/specs/spec-template.md', `specs/${name}/spec.md`)
+  nextSteps(['Resolve every [NEEDS CLARIFICATION] before writing plan.md and tasks.md.'])
 } else if (kind === 'arch') {
   copyTemplate('templates/architecture/architecture-decision.md', `docs/architecture/decisions/${name}.md`)
+  nextSteps(['Complete the decision record; tag every claim Known/Assumed/Unknown.'])
+} else if (kind === 'instinct') {
+  emit(`knowledge/instincts/${name}.md`, `---
+id: ${name}
+trigger: 'when <the concrete situation this applies to>'
+confidence: 0.7
+domain: general
+source: hand-authored
+---
+
+# <Imperative one-line pattern statement>
+
+## Action
+
+<The shape to reach for, with a minimal code or config example.>
+
+## Why
+
+<The gotcha or failure this prevents.>
+`)
+  nextSteps([
+    'Keep it short and concrete; generalize project-specific names before promoting.',
+    'Promote proven instincts into skills/ or docs/ via docs/workflows/knowledge-capture.md.',
+  ])
 } else {
-  console.error(`Unknown kind "${kind}". Use: skill | adr | spec | arch.`)
+  console.error(`Unknown kind "${kind}". Use: skill | adr | spec | arch | instinct.`)
   process.exit(1)
 }

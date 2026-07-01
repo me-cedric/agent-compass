@@ -6,6 +6,16 @@ Copilot as referenced context.
 
 ## Catalog
 
+### Compass missions
+
+Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../MISSIONS.md).
+
+| Skill               | What it does                                                            |
+| ------------------- | ----------------------------------------------------------------------- |
+| `compass-adopt`     | Wire agent-compass into an existing project end-to-end with minimal input. |
+| `compass-bootstrap` | Bootstrap a new project from architecture guidelines, spec-first.        |
+| `compass-extend`    | Add a skill/instinct/template/stack/script to compass with full wiring.  |
+
 ### Working style
 
 | Skill            | What it does                                                        |

@@ -1,34 +1,49 @@
 #!/usr/bin/env node
-// bootstrap.mjs — interactive Q&A that produces a precise project-bootstrap
-// prompt for an AI agent (Claude / Codex / Copilot), plus a replayable answers
-// file. Dependency-free (Node >= 20). Run: `node scripts/bootstrap.mjs`.
+// bootstrap.mjs — produces a precise project-bootstrap prompt for an AI agent
+// (Claude / Codex / Copilot), plus a replayable answers file. Interactive Q&A
+// by default; `--answers <file>` runs non-interactively so agents can drive it
+// (derive answers from architecture guidelines, write JSON, run this).
+// Dependency-free (Node >= 20).
 //
-// Outputs (in cwd):
+// Outputs (in --out dir, default cwd):
 //   BOOTSTRAP_PROMPT.md          the prompt to paste into your agent
 //   agent-compass.answers.json   your answers (re-runnable, used by install.mjs)
 
 import { createInterface } from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const interactive = Boolean(input.isTTY)
+const argv = process.argv.slice(2)
+const flagValue = (flag) => {
+  const i = argv.indexOf(flag)
+  return i === -1 ? null : argv[i + 1] || null
+}
+const answersPathArg = flagValue('--answers')
+const outDir = resolve(flagValue('--out') || process.cwd())
+
+const interactive = Boolean(input.isTTY) && !answersPathArg
 const rl = interactive ? createInterface({ input, output }) : null
 
-const help = `Usage: node scripts/bootstrap.mjs
+const help = `Usage: node scripts/bootstrap.mjs [--answers <file>] [--out <dir>]
 
-Interactive project bootstrap prompt generator.
+Project bootstrap prompt generator. Interactive by default; give --answers to
+run non-interactively from a JSON file (agents: derive answers from the user's
+architecture guidelines, write the file, then run this).
 
-Outputs:
+Outputs (in --out dir, default cwd):
   BOOTSTRAP_PROMPT.md
   agent-compass.answers.json
 
 Options:
-  --help    Show this help.
+  --answers <file>  Non-interactive: read answers JSON (missing keys use defaults).
+  --out <dir>       Write outputs into this directory (created if missing).
+  --schema          Print the answers JSON schema (keys, choices, defaults).
+  --help            Show this help.
 `
 
-if (process.argv.includes('--help')) {
+if (argv.includes('--help')) {
   console.log(help)
   process.exit(0)
 }
@@ -68,6 +83,57 @@ export const STACK_DOC_BY_APP = {
   'react-admin': 'stacks/react-admin.md',
   'expo-mobile': 'stacks/expo-mobile.md',
   'next-web': 'stacks/next-web.md',
+}
+
+// Answers contract for --answers files. `choices: null` means free-form.
+export const ANSWER_SCHEMA = {
+  name: { type: 'string', default: 'my-app', note: 'kebab-case project name' },
+  scope: { type: 'string', default: '@<name>', note: 'npm scope for internal packages' },
+  monorepo: { type: 'boolean', default: true },
+  apps: { type: 'string[]', choices: Object.keys(STACK_DOC_BY_APP), default: ['nestjs-api'] },
+  pm: { type: 'string', choices: ['pnpm', 'npm', 'yarn'], default: 'pnpm' },
+  db: { type: 'string', choices: ['drizzle+postgres', 'prisma+postgres', 'none'], default: 'drizzle+postgres' },
+  queues: { type: 'boolean', default: true },
+  auth: { type: 'string', choices: ['keycloak', 'auth0', 'clerk', 'custom', 'none'], default: 'keycloak' },
+  resilience: { type: 'boolean', default: true },
+  observability: { type: 'boolean', default: true },
+  featureFlags: { type: 'boolean', default: true },
+  apiContract: { type: 'boolean', default: true },
+  e2e: { type: 'boolean', default: true },
+  docker: { type: 'boolean', default: true },
+  ci: { type: 'string', choices: ['github-actions', 'gitlab-ci', 'none'], default: 'github-actions' },
+  sonar: { type: 'boolean', default: true },
+  security: { type: 'boolean', default: true },
+  targetDir: { type: 'string', default: './<name>' },
+}
+
+export const resolveAnswers = (partial) => {
+  const name = slug(String(partial.name || ANSWER_SCHEMA.name.default)) || 'my-app'
+  const merged = { name }
+  for (const [key, spec] of Object.entries(ANSWER_SCHEMA)) {
+    if (key === 'name') continue
+    if (partial[key] !== undefined) merged[key] = partial[key]
+    else if (key === 'scope') merged[key] = `@${name}`
+    else if (key === 'targetDir') merged[key] = `./${name}`
+    else merged[key] = spec.default
+  }
+  return merged
+}
+
+export const validateAnswers = (answers) => {
+  const errors = []
+  for (const [key, spec] of Object.entries(ANSWER_SCHEMA)) {
+    const value = answers[key]
+    if (spec.type === 'boolean' && typeof value !== 'boolean') errors.push(`${key}: expected boolean, got ${JSON.stringify(value)}`)
+    if (spec.type === 'string' && typeof value !== 'string') errors.push(`${key}: expected string, got ${JSON.stringify(value)}`)
+    if (spec.type === 'string[]') {
+      if (!Array.isArray(value) || value.some((v) => typeof v !== 'string')) errors.push(`${key}: expected string array, got ${JSON.stringify(value)}`)
+      else if (spec.choices) value.filter((v) => !spec.choices.includes(v)).forEach((v) => errors.push(`${key}: unknown value "${v}" (choices: ${spec.choices.join(', ')})`))
+    } else if (spec.choices && typeof value === 'string' && !spec.choices.includes(value)) {
+      errors.push(`${key}: unknown value "${value}" (choices: ${spec.choices.join(', ')})`)
+    }
+  }
+  return errors
 }
 
 export const stackDocsForApps = (apps, monorepo) => {
@@ -202,7 +268,44 @@ submodule and run \`@AC/scripts/install.mjs\`.
 `
 }
 
+const writeOutputs = (answers) => {
+  const prompt = buildPrompt(answers)
+  mkdirSync(outDir, { recursive: true })
+  const promptPath = resolve(outDir, 'BOOTSTRAP_PROMPT.md')
+  const answersPath = resolve(outDir, 'agent-compass.answers.json')
+  writeFileSync(promptPath, prompt)
+  writeFileSync(answersPath, JSON.stringify(answers, null, 2) + '\n')
+  console.log(`\n✓ Wrote ${promptPath}`)
+  console.log(`✓ Wrote ${answersPath}`)
+}
+
 const main = async () => {
+  if (argv.includes('--schema')) {
+    console.log(JSON.stringify({ schema: 1, answers: ANSWER_SCHEMA }, null, 2))
+    return
+  }
+
+  if (answersPathArg) {
+    let parsed
+    try {
+      parsed = JSON.parse(readFileSync(resolve(answersPathArg), 'utf8'))
+    } catch (error) {
+      console.error(`Cannot read answers file ${answersPathArg}: ${error.message}`)
+      process.exit(1)
+    }
+    const answers = { ...resolveAnswers(parsed), generatedFrom: 'agent-compass/scripts/bootstrap.mjs' }
+    const errors = validateAnswers(answers)
+    if (errors.length) {
+      console.error(`Invalid answers in ${answersPathArg}:`)
+      errors.forEach((e) => console.error(`  - ${e}`))
+      console.error('Run with --schema to see keys, choices, and defaults.')
+      process.exit(1)
+    }
+    writeOutputs(answers)
+    console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
+    return
+  }
+
   console.log(`\n agent-compass · project bootstrap`)
   if (!interactive) console.log(' (non-interactive stdin: using all defaults)\n')
 
@@ -236,15 +339,7 @@ const main = async () => {
     generatedFrom: 'agent-compass/scripts/bootstrap.mjs',
   }
 
-  const prompt = buildPrompt(answers)
-
-  const promptPath = resolve(process.cwd(), 'BOOTSTRAP_PROMPT.md')
-  const answersPath = resolve(process.cwd(), 'agent-compass.answers.json')
-  writeFileSync(promptPath, prompt)
-  writeFileSync(answersPath, JSON.stringify(answers, null, 2) + '\n')
-
-  console.log(`\n✓ Wrote ${promptPath}`)
-  console.log(`✓ Wrote ${answersPath}`)
+  writeOutputs(answers)
   console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
 }
 

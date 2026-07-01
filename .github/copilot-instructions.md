@@ -1,7 +1,10 @@
 # Copilot — agent-compass
 
 **Read [`AGENTS.md`](../AGENTS.md) first.** It is the canonical contract; the
-points below are the Copilot-flavored summary.
+points below are the Copilot-flavored summary. Asked to set up an existing
+project, bootstrap a new one, or extend compass? Route through
+[`MISSIONS.md`](../MISSIONS.md) and follow the matching `skills/compass-*`
+playbook.
 
 ## 1. Plan before code
 

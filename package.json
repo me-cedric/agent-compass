@@ -9,11 +9,13 @@
   },
   "scripts": {
     "cli": "node scripts/cli.mjs",
+    "adopt": "node scripts/adopt.mjs",
     "bootstrap": "node scripts/bootstrap.mjs",
     "setup-wizard": "node scripts/setup-wizard.mjs",
     "apply-recommendations": "node scripts/apply-recommendations.mjs",
     "global-setup": "node scripts/global-setup.mjs",
     "context": "node scripts/context.mjs",
+    "catalog": "node scripts/catalog.mjs",
     "agent-conformance": "node scripts/agent-conformance.mjs",
     "agent-evals": "node scripts/agent-evals.mjs",
     "agent-drift": "node scripts/agent-drift.mjs",

@@ -7,6 +7,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Mission router `MISSIONS.md` plus `compass-adopt`, `compass-bootstrap`, and
+  `compass-extend` skills so any agent CLI spawned in this repo can set up an
+  existing project, bootstrap a new one from architecture guidelines, or extend
+  compass with minimal guidance. Cursor/Windsurf/Gemini pointer files now route
+  through the missions in this repo too (previously host-only).
+- `adopt` command (`scripts/adopt.mjs`): one-command host adoption — detection,
+  non-interactive setup, fit-based skill sync, readiness verification, next
+  steps.
+- Machine-readable asset catalog (`scripts/catalog.mjs`, `agent-compass catalog`)
+  covering skills, stacks, templates, docs, instincts, and CLI commands with
+  `--type` / `--grep` / `--md` filters.
+- Non-interactive bootstrap: `bootstrap.mjs --answers <file> --out <dir>` with
+  `--schema` contract output and validated answers, so agents can drive project
+  bootstrap from architecture guidelines.
+- Fit-based asset selection as data: `scripts/lib/profiles.mjs` (stack detection
+  + per-stack asset profiles), `recommend.mjs` fit-based assets output, and
+  `skills-sync.mjs --only a,b,c` subset sync. `setup-wizard` now syncs the
+  fit-based subset by default (`skillScope: fit|all`).
+- `new.mjs instinct` scaffold for knowledge notes, and post-scaffold wiring
+  checklists on every `new` kind.
 - GitHub Actions version guard (`check-actions.mjs`) and CI/tooling guidance for
   required action majors.
 - Helper scripts for PR creation/review packets, host readiness reports, agent
@@ -17,6 +37,15 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 - CI and CI templates now use current action majors and the repo now includes
   `.nvmrc` for `actions/setup-node`.
+- `setup-wizard.mjs` and `recommend.mjs` share one stack-detection source
+  (`scripts/lib/profiles.mjs`); Expo/React Native projects no longer classify
+  as React web apps.
+
+### Fixed
+
+- `new.mjs skill` now emits the full required frontmatter
+  (`risk_level`, `writes_files`, `requires_tools`) so freshly scaffolded skills
+  pass `npm run check` instead of failing `lint:naming`.
 
 ## [0.3.0] - 2026-06-23
 

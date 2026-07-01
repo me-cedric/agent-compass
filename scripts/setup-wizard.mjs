@@ -8,6 +8,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { detectStacks, selectAssets } from './lib/profiles.mjs'
+
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
 const help = `Usage: node scripts/setup-wizard.mjs [host-dir] [--global] [--yes] [--dry] [--no-run]
@@ -35,16 +37,6 @@ const detectPm = () => existsSync(join(HOST, 'pnpm-lock.yaml')) ? 'pnpm'
   : existsSync(join(HOST, 'yarn.lock')) ? 'yarn'
     : existsSync(join(HOST, 'bun.lockb')) ? 'bun'
       : 'npm'
-const detectStacks = () => {
-  const text = JSON.stringify(pkg).toLowerCase()
-  return [
-    text.includes('nestjs') && 'nestjs-api',
-    text.includes('react') && 'react-web',
-    text.includes('expo') && 'expo-mobile',
-    text.includes('next') && 'next-web',
-    (existsSync(join(HOST, 'turbo.json')) || text.includes('turbo')) && 'turbo-monorepo',
-  ].filter(Boolean)
-}
 
 const ask = async (rl, label, fallback) => {
   if (yes) return fallback
@@ -57,10 +49,11 @@ const answers = {
   name: await ask(rl, 'Project name', pkg.name || HOST.split('/').pop()),
   scope: await ask(rl, 'Package scope', '@scope'),
   packageManager: await ask(rl, 'Package manager', detectPm()),
-  stacks: (await ask(rl, 'Stacks comma-list', detectStacks().join(',') || 'generic')).split(',').map((s) => s.trim()).filter(Boolean),
+  stacks: (await ask(rl, 'Stacks comma-list', detectStacks(HOST).join(',') || 'generic')).split(',').map((s) => s.trim()).filter(Boolean),
   providers: (await ask(rl, 'Agent providers comma-list', 'claude,codex,copilot,cursor,windsurf,gemini')).split(',').map((s) => s.trim()).filter(Boolean),
   useSpecKit: (await ask(rl, 'Install Spec Kit bridge? yes/no', 'yes')).toLowerCase().startsWith('y'),
   skillSync: await ask(rl, 'Skill sync mode copy|symlink|none', 'copy'),
+  skillScope: await ask(rl, 'Skill scope fit|all (fit = core + detected stacks only)', 'fit'),
 }
 if (rl) rl.close()
 
@@ -79,7 +72,7 @@ ${JSON.stringify(answers, null, 2)}
 
 1. Run \`${global ? 'global-setup' : 'setup-host --strict'}\`.
 2. ${answers.useSpecKit ? 'Install Spec Kit bridge files.' : 'Skip Spec Kit bridge.'}
-3. ${answers.skillSync === 'none' ? 'Skip skill sync.' : `Sync skills using ${answers.skillSync}.`}
+3. ${answers.skillSync === 'none' ? 'Skip skill sync.' : `Sync ${answers.skillScope === 'all' ? 'all skills' : 'fit-based skills (core + detected stacks)'} using ${answers.skillSync}.`}
 4. Run provider verification, recommendations, quality gates, and dashboard.
 `
 
@@ -104,7 +97,10 @@ if (!noRun) {
     process.exit(0)
   }
   if (answers.useSpecKit) spawnSync(process.execPath, [join(AC, 'scripts', 'spec-kit-bridge.mjs'), HOST], { stdio: 'inherit' })
-  if (answers.skillSync !== 'none') spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`], { stdio: 'inherit' })
+  if (answers.skillSync !== 'none') {
+    const scopeArgs = answers.skillScope === 'all' ? [] : ['--only', selectAssets(detectStacks(HOST)).skills.join(',')]
+    spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`, ...scopeArgs], { stdio: 'inherit' })
+  }
   spawnSync(process.execPath, [join(AC, 'scripts', 'provider-verify.mjs'), HOST, '--write'], { stdio: 'inherit' })
   spawnSync(process.execPath, [join(AC, 'scripts', 'recommend.mjs'), HOST, '--write'], { stdio: 'inherit' })
   spawnSync(process.execPath, [join(AC, 'scripts', 'quality-gates.mjs'), HOST, '--write'], { stdio: 'inherit' })

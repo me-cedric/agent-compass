@@ -3,6 +3,9 @@
 ## Priority
 
 - Read **[AGENTS.md](AGENTS.md)** first; it is the canonical contract.
+- Asked to set up an existing project, bootstrap a new one, or add a
+  capability to compass? Route through **[MISSIONS.md](MISSIONS.md)** — it maps
+  the request to an executable playbook skill.
 - This file adds only Claude-specific behavior.
 - In a host project, the host's own `CLAUDE.md` / `AGENTS.md` win on conflict.
 

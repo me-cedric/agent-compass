@@ -15,7 +15,8 @@ const version = (() => {
 
 // name → { script | argv, group, desc }. argv runs a script with fixed leading args.
 const COMMANDS = {
-  bootstrap: { script: 'bootstrap.mjs', group: 'Setup', desc: 'Interactive new-project prompt generator.' },
+  adopt: { script: 'adopt.mjs', group: 'Setup', desc: 'One-command host adoption: setup + fit sync + verify.' },
+  bootstrap: { script: 'bootstrap.mjs', group: 'Setup', desc: 'New-project prompt generator (--answers for agents).' },
   wizard: { script: 'setup-wizard.mjs', group: 'Setup', desc: 'Interactive host adoption wizard.' },
   'apply-recommendations': { script: 'apply-recommendations.mjs', group: 'Setup', desc: 'Apply safe project/global setup recommendations.' },
   'global-setup': { script: 'global-setup.mjs', group: 'Setup', desc: 'Non-destructive user-level Agent Compass setup.' },
@@ -46,10 +47,11 @@ const COMMANDS = {
 
   context: { script: 'context.mjs', group: 'Context', desc: 'Compact repo snapshot for agents.' },
   'context-pack': { script: 'context-pack.mjs', group: 'Context', desc: 'Machine-readable .agent/context.json.' },
+  catalog: { script: 'catalog.mjs', group: 'Context', desc: 'Machine-readable asset catalog (skills, stacks, templates, docs).' },
   runbook: { script: 'runbook.mjs', group: 'Context', desc: 'Compact agent runbook.' },
   depgraph: { script: 'gen-depgraph.mjs', group: 'Context', desc: 'Mermaid dependency graph from imports.' },
 
-  new: { script: 'new.mjs', group: 'Build', desc: 'Scaffold a skill, ADR, or spec.' },
+  new: { script: 'new.mjs', group: 'Build', desc: 'Scaffold a skill, ADR, spec, or instinct.' },
   run: { script: 'run-command.mjs', group: 'Build', desc: 'Run a registry command (refuses unknown/destructive).' },
   'check-companions': { script: 'check-change-companions.mjs', group: 'Build', desc: 'Fail when source changes ship without a test.' },
   redact: { script: 'redact.mjs', group: 'Build', desc: 'Scan files/staged diff for secret/PII leaks.' },
