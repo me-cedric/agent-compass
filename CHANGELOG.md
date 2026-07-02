@@ -15,8 +15,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   a hard stop before implement) and richer Drizzle-typed mapper instinct, both
   promoted from a real host project.
 
+### Changed
+
+- The five CCG quality-gate skills (`gen-docs`, `verify-module`,
+  `verify-quality`, `verify-change`, `verify-security`) are now fully in
+  English — SKILL.md docs, script comments, and report output. The `caveman`
+  skill's wenyan variants keep their intentional classical-Chinese examples.
+
 ### Fixed
 
+- Quality-gate skill scripts are now runnable: they were CommonJS `.js` files
+  inside an ESM package (`require is not defined`) and depended on a
+  `skills/lib/shared.js` lost in the original import — and unreachable anyway
+  once skills sync into hosts as independent folders. Rewritten as
+  self-contained `.cjs` with helpers inlined; `.cjs`/`.mjs` now count as code
+  in the quality/security scanners.
 - Stack detection now aggregates workspace packages (`apps/*`, `packages/*`)
   instead of only the monorepo root, and matches exact dependency names —
   a turbo monorepo with a NestJS API and React app previously detected as

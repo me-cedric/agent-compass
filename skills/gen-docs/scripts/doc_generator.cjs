@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-/**
- * 文档生成器
- * 自动生成/更新 README.md 和 DESIGN.md 骨架
- */
+'use strict';
+
+// doc_generator.cjs — README.md / DESIGN.md skeleton generator (see ../SKILL.md).
+// Self-contained on purpose: skill folders are synced into hosts individually,
+// so no cross-skill requires. CommonJS (.cjs) so it runs under any host
+// package.json module type.
 
 const fs = require('fs');
 const path = require('path');
@@ -13,10 +15,10 @@ function parseGitignore(modPath) {
   const patterns = [];
   const hardcoded = ['node_modules', '.git', '__pycache__', '.vscode', '.idea', 'dist', 'build', '.DS_Store'];
 
-  // 硬编码常见排除
+  // hardcoded common excludes
   hardcoded.forEach(p => patterns.push({ pattern: p, negate: false }));
 
-  // 解析 .gitignore
+  // parse .gitignore
   try {
     const gitignorePath = path.join(modPath, '.gitignore');
     const content = fs.readFileSync(gitignorePath, 'utf8');
@@ -39,20 +41,20 @@ function shouldIgnore(filePath, basePath, patterns) {
   const name = path.basename(filePath);
 
   let ignored = false;
-  for (const {pattern, negate} of patterns) {
+  for (const { pattern, negate } of patterns) {
     let match = false;
     const cleanPattern = pattern.replace(/\/$/, '');
 
     if (cleanPattern.includes('*')) {
-      // 通配符 → 正则：先转义特殊字符，再将 \* 还原为 [^/]*
+      // wildcard → regex: escape specials, then turn \* back into [^/]*
       const escaped = cleanPattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
       const regex = new RegExp('^' + escaped + '$');
       match = regex.test(name) || parts.some(p => regex.test(p));
     } else if (cleanPattern.includes('/')) {
-      // 路径匹配：必须从头匹配或完整段匹配
+      // path match: must match from the start or a whole segment
       match = relPath === cleanPattern || relPath.startsWith(cleanPattern + '/');
     } else {
-      // 目录/文件名精确匹配
+      // exact directory/file name match
       match = name === cleanPattern || parts.includes(cleanPattern);
     }
 
@@ -215,80 +217,80 @@ function generateReadme(info) {
   if (info.description) {
     L.push(info.description);
   } else {
-    L.push('> 请在此描述模块的核心功能、解决的问题和主要用途。');
-    L.push('> 例如：本模块提供 X 功能，用于解决 Y 问题。');
+    L.push('> TODO: describe the module\'s core purpose, the problem it solves, and its main use.');
+    L.push('> Example: this module provides X, used to solve Y.');
   }
-  L.push('', '## 概述', '', '<!-- 描述这个模块是什么，解决什么问题 -->', '');
-  L.push('## 特性', '', '<!-- 列出模块的主要特性，每项应包含简短描述 -->', '');
-  L.push('- **特性1**: 请描述第一个主要特性');
-  L.push('- **特性2**: 请描述第二个主要特性');
-  L.push('- **特性3**: 请描述第三个主要特性', '');
+  L.push('', '## Overview', '', '<!-- What this module is and which problem it solves -->', '');
+  L.push('## Features', '', '<!-- List the main features, each with a short description -->', '');
+  L.push('- **Feature 1**: TODO describe the first main feature');
+  L.push('- **Feature 2**: TODO describe the second main feature');
+  L.push('- **Feature 3**: TODO describe the third main feature', '');
 
   if (info.dependencies.length) {
-    L.push('## 依赖', '', '```');
+    L.push('## Dependencies', '', '```');
     info.dependencies.slice(0, 10).forEach(d => L.push(d));
-    if (info.dependencies.length > 10) L.push(`# ... 及其他 ${info.dependencies.length - 10} 个依赖`);
+    if (info.dependencies.length > 10) L.push(`# ... and ${info.dependencies.length - 10} more`);
     L.push('```', '');
   }
 
-  L.push('## 使用方法', '');
+  L.push('## Usage', '');
   if (info.entry_points.length) {
-    L.push('### 运行', '', '```bash');
+    L.push('### Run', '', '```bash');
     const cmds = {
       Python: `python -m ${info.name}`, Go: 'go run ./cmd/main.go',
       Rust: 'cargo run', TypeScript: 'npm start', JavaScript: 'npm start'
     };
-    L.push(cmds[info.language] || `# 请根据 ${info.language} 项目结构添加运行命令`);
+    L.push(cmds[info.language] || `# TODO: add the run command for this ${info.language} project`);
     L.push('```', '');
   }
 
-  L.push('### 示例', '');
+  L.push('### Example', '');
   const EXAMPLES = {
     Python: `from ${info.name.toLowerCase()} import main\n\n` +
-      `# 初始化\nobj = main()\n\n# 执行操作\nresult = obj.process()\nprint(result)`,
+      `# initialize\nobj = main()\n\n# run\nresult = obj.process()\nprint(result)`,
     Go: `package main\n\nimport "${info.name.toLowerCase()}"\n\nfunc main() {\n` +
-      `    // 初始化\n    obj := ${info.name.toLowerCase()}.New()\n` +
-      `\n    // 执行操作\n    result := obj.Process()\n    println(result)\n}`,
+      `    // initialize\n    obj := ${info.name.toLowerCase()}.New()\n` +
+      `\n    // run\n    result := obj.Process()\n    println(result)\n}`,
     Rust: `use ${info.name.toLowerCase()}::*;\n\nfn main() {\n` +
-      `    // 初始化\n    let obj = Object::new();\n\n` +
-      `    // 执行操作\n    let result = obj.process();\n` +
+      `    // initialize\n    let obj = Object::new();\n\n` +
+      `    // run\n    let result = obj.process();\n` +
       `    println!("{}", result);\n}`,
     TypeScript: `import { main } from "./${info.name.toLowerCase()}";\n\n` +
-      `// 初始化\nconst obj = new main();\n\n` +
-      `// 执行操作\nconst result = obj.process();\nconsole.log(result);`,
+      `// initialize\nconst obj = new main();\n\n` +
+      `// run\nconst result = obj.process();\nconsole.log(result);`,
     JavaScript: `const { main } = require("./${info.name.toLowerCase()}");\n\n` +
-      `// 初始化\nconst obj = new main();\n\n` +
-      `// 执行操作\nconst result = obj.process();\nconsole.log(result);`,
+      `// initialize\nconst obj = new main();\n\n` +
+      `// run\nconst result = obj.process();\nconsole.log(result);`,
   };
   if (EXAMPLES[info.language]) {
     L.push('```' + info.language.toLowerCase(), EXAMPLES[info.language], '```');
   } else {
     L.push('```' + info.language.toLowerCase());
-    L.push(`<!-- 请根据 ${info.language} 语言特性提供使用示例 -->`);
-    L.push(`<!-- 示例应包含：初始化、基本操作、结果处理 -->`);
+    L.push(`<!-- TODO: provide a usage example idiomatic to ${info.language} -->`);
+    L.push(`<!-- The example should cover: initialization, a basic operation, handling the result -->`);
     L.push('```');
   }
   L.push('');
 
   if (info.classes.length || info.functions.length) {
-    L.push('## API 概览', '');
+    L.push('## API Overview', '');
     if (info.classes.length) {
-      L.push('### 类', '', '| 类名 | 描述 |', '|------|------|');
-      info.classes.slice(0, 10).forEach(c => L.push(`| \`${c.name}\` | ${c.doc || '请补充此类的功能描述'} |`));
+      L.push('### Classes', '', '| Class | Description |', '|------|------|');
+      info.classes.slice(0, 10).forEach(c => L.push(`| \`${c.name}\` | ${c.doc || 'TODO: describe this class'} |`));
       L.push('');
     }
     if (info.functions.length) {
-      L.push('### 函数', '', '| 函数 | 描述 |', '|------|------|');
-      info.functions.slice(0, 10).forEach(f => L.push(`| \`${f.name}()\` | ${f.doc || '请补充此函数的功能描述'} |`));
+      L.push('### Functions', '', '| Function | Description |', '|------|------|');
+      info.functions.slice(0, 10).forEach(f => L.push(`| \`${f.name}()\` | ${f.doc || 'TODO: describe this function'} |`));
       L.push('');
     }
   }
 
-  L.push('## 目录结构', '', '```', `${info.name}/`);
+  L.push('## Structure', '', '```', `${info.name}/`);
   info.files.sort().slice(0, 15).forEach(f => L.push(`├── ${f}`));
   if (info.files.length > 15) L.push(`└── ... (${info.files.length - 15} more files)`);
   L.push('```', '');
-  L.push('## 相关文档', '', '- [设计文档](DESIGN.md)', '');
+  L.push('## Related docs', '', '- [Design document](DESIGN.md)', '');
   return L.join('\n');
 }
 
@@ -297,49 +299,49 @@ function generateReadme(info) {
 function generateDesign(info) {
   const today = new Date().toISOString().slice(0, 10);
   const L = [];
-  L.push(`# ${info.name} 设计文档`, '');
-  L.push('## 设计概述', '', '### 目标', '', '<!-- 这个模块要解决什么问题？ -->', '');
-  L.push('### 非目标', '', '<!-- 这个模块明确不做什么？ -->', '');
-  L.push('## 架构设计', '', '### 整体架构', '', '```');
+  L.push(`# ${info.name} — Design`, '');
+  L.push('## Overview', '', '### Goals', '', '<!-- What problem does this module solve? -->', '');
+  L.push('### Non-goals', '', '<!-- What does this module deliberately NOT do? -->', '');
+  L.push('## Architecture', '', '### Overall shape', '', '```');
   L.push('┌─────────────────────────────────────┐');
-  L.push('│  请在此绘制模块的整体架构图          │');
-  L.push('│  包括主要组件、数据流、依赖关系      │');
-  L.push('│  可使用 ASCII 图或 Mermaid 图表      │');
+  L.push('│  TODO: sketch the overall architecture │');
+  L.push('│  main components, data flow, deps      │');
+  L.push('│  ASCII art or a Mermaid diagram        │');
   L.push('└─────────────────────────────────────┘');
   L.push('```', '');
-  L.push('### 核心组件', '');
+  L.push('### Core components', '');
   if (info.classes.length) {
-    info.classes.slice(0, 5).forEach(c => L.push(`- **${c.name}**: ${c.doc || '请描述此组件的职责和功能'}`));
+    info.classes.slice(0, 5).forEach(c => L.push(`- **${c.name}**: ${c.doc || 'TODO: describe this component\'s responsibility'}`));
   } else {
-    L.push('<!-- 列出模块的核心组件及其职责 -->');
-    L.push('- **组件1**: 请描述第一个核心组件的职责');
-    L.push('- **组件2**: 请描述第二个核心组件的职责');
-    L.push('- **组件3**: 请描述第三个核心组件的职责');
+    L.push('<!-- List the core components and their responsibilities -->');
+    L.push('- **Component 1**: TODO describe the first core component');
+    L.push('- **Component 2**: TODO describe the second core component');
+    L.push('- **Component 3**: TODO describe the third core component');
   }
   L.push('');
-  L.push('## 设计决策', '', '### 决策记录', '');
-  L.push('| 日期 | 决策 | 理由 | 影响 |', '|------|------|------|------|');
-  L.push(`| ${today} | 初始设计 | - | - |`, '');
-  L.push('### 技术选型', '', `- **语言**: ${info.language}`);
-  if (info.dependencies.length) L.push(`- **主要依赖**: ${info.dependencies.slice(0, 5).join(', ')}`);
-  L.push('- **理由**: <!-- 请说明为什么选择这些技术栈，包括性能、可维护性、生态等考量 -->', '');
-  L.push('## 权衡取舍', '', '### 已知限制', '');
-  L.push('<!-- 列出模块的已知限制和约束条件 -->');
-  L.push('- **限制1**: 请描述第一个已知限制及其原因');
-  L.push('- **限制2**: 请描述第二个已知限制及其原因', '');
-  L.push('### 技术债务', '');
-  L.push('<!-- 记录有意引入的技术债务、临时方案及其原因 -->');
-  L.push('- **债务1**: 描述 | 原因：性能优先 | 计划偿还时间：v2.0', '');
-  L.push('## 安全考量', '', '### 威胁模型', '');
-  L.push('<!-- 识别潜在的安全威胁，如认证、授权、数据泄露等 -->');
-  L.push('- **威胁1**: 请描述潜在威胁及其影响');
-  L.push('- **威胁2**: 请描述潜在威胁及其影响', '');
-  L.push('### 安全措施', '');
-  L.push('<!-- 列出已实施的安全措施，如输入验证、加密、访问控制等 -->');
-  L.push('- **措施1**: 请描述已实施的安全措施');
-  L.push('- **措施2**: 请描述已实施的安全措施', '');
-  L.push('## 变更历史', '', `### ${today} - 初始版本`, '');
-  L.push('**变更内容**: 创建模块', '', '**变更理由**: 初始开发', '');
+  L.push('## Design decisions', '', '### Decision record', '');
+  L.push('| Date | Decision | Rationale | Impact |', '|------|------|------|------|');
+  L.push(`| ${today} | Initial design | - | - |`, '');
+  L.push('### Technology choices', '', `- **Language**: ${info.language}`);
+  if (info.dependencies.length) L.push(`- **Main dependencies**: ${info.dependencies.slice(0, 5).join(', ')}`);
+  L.push('- **Rationale**: <!-- TODO: why this stack — performance, maintainability, ecosystem -->', '');
+  L.push('## Trade-offs', '', '### Known limitations', '');
+  L.push('<!-- List the known limitations and constraints -->');
+  L.push('- **Limitation 1**: TODO describe the first known limitation and its cause');
+  L.push('- **Limitation 2**: TODO describe the second known limitation and its cause', '');
+  L.push('### Technical debt', '');
+  L.push('<!-- Record deliberately incurred debt, temporary approaches, and why -->');
+  L.push('- **Debt 1**: description | reason: performance first | planned repayment: v2.0', '');
+  L.push('## Security considerations', '', '### Threat model', '');
+  L.push('<!-- Identify potential threats: authentication, authorization, data leaks, ... -->');
+  L.push('- **Threat 1**: TODO describe the threat and its impact');
+  L.push('- **Threat 2**: TODO describe the threat and its impact', '');
+  L.push('### Mitigations', '');
+  L.push('<!-- List the mitigations in place: input validation, encryption, access control, ... -->');
+  L.push('- **Mitigation 1**: TODO describe the mitigation');
+  L.push('- **Mitigation 2**: TODO describe the mitigation', '');
+  L.push('## Change history', '', `### ${today} - Initial version`, '');
+  L.push('**What changed**: module created', '', '**Why**: initial development', '');
   return L.join('\n');
 }
 
@@ -351,7 +353,7 @@ function generateDocs(targetPath, force) {
 
   if (!fs.existsSync(modPath)) {
     result.status = 'error';
-    result.messages.push(`路径不存在: ${modPath}`);
+    result.messages.push(`Path does not exist: ${modPath}`);
     return result;
   }
 
@@ -359,20 +361,20 @@ function generateDocs(targetPath, force) {
 
   const readmePath = path.join(modPath, 'README.md');
   if (fs.existsSync(readmePath) && !force) {
-    result.messages.push('README.md 已存在，跳过（使用 --force 覆盖）');
+    result.messages.push('README.md already exists, skipped (use --force to overwrite)');
   } else {
     fs.writeFileSync(readmePath, generateReadme(info));
     result.readme = readmePath;
-    result.messages.push('已生成 README.md');
+    result.messages.push('Generated README.md');
   }
 
   const designPath = path.join(modPath, 'DESIGN.md');
   if (fs.existsSync(designPath) && !force) {
-    result.messages.push('DESIGN.md 已存在，跳过（使用 --force 覆盖）');
+    result.messages.push('DESIGN.md already exists, skipped (use --force to overwrite)');
   } else {
     fs.writeFileSync(designPath, generateDesign(info));
     result.design = designPath;
-    result.messages.push('已生成 DESIGN.md');
+    result.messages.push('Generated DESIGN.md');
   }
 
   return result;
@@ -390,7 +392,7 @@ function parseArgs(argv) {
     else if (a === '--readme-only') args.readmeOnly = true;
     else if (a === '--design-only') args.designOnly = true;
     else if (a === '-h' || a === '--help') {
-      console.log('Usage: doc_generator.js [path] [-f|--force] [--json] [--readme-only] [--design-only]');
+      console.log('Usage: doc_generator.cjs [path] [-f|--force] [--json] [--readme-only] [--design-only]');
       process.exit(0);
     } else positional.push(a);
   }
@@ -406,10 +408,10 @@ function main() {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
   } else {
     console.log('='.repeat(50));
-    console.log('文档生成报告');
+    console.log('Documentation Generation Report');
     console.log('='.repeat(50));
     for (const msg of result.messages) {
-      console.log(`  \u2022 ${msg}`);
+      console.log(`  • ${msg}`);
     }
     console.log('='.repeat(50));
   }

@@ -1,77 +1,76 @@
 ---
 name: verify-security
-description: 安全校验关卡。自动扫描代码安全漏洞，检测危险模式，确保安全决策有文档记录。当用户提到安全扫描、漏洞检测、安全审计、代码安全、OWASP、注入检测、敏感信息泄露时使用。在新建模块、安全相关变更、攻防任务、重构完成时自动触发。
+description: Security verification gate. Scans code for vulnerabilities, detects dangerous patterns, and ensures security decisions are documented. Use when the user mentions security scans, vulnerability detection, security audits, code security, OWASP, injection detection, or sensitive-data leaks. Auto-triggers for new modules, security-related changes, offensive/defensive tasks, and completed refactors.
 license: MIT
 compatibility: node>=18
 user-invocable: true
 disable-model-invocation: false
 allowed-tools: Bash, Read, Grep
-argument-hint: <扫描路径>
+argument-hint: <scan-path>
 risk_level: medium
 writes_files: false
 requires_tools: []
 ---
 
-# ⚖ 校验关卡 · 安全校验
+# ⚖ Verification Gate · Security
 
-
-## 核心原则
+## Core principle
 
 ```
-安全即道基，破则劫败
-安全决策必须可追溯
-Critical/High 问题必须修复后才能交付
+Security is the foundation; a breach sinks the release.
+Security decisions must be traceable.
+Critical/High findings must be fixed before delivery.
 ```
 
-## 自动扫描
+## Automatic scan
 
-运行安全扫描脚本（跨平台）：
+Run the security scanner script (cross-platform):
 
 ```bash
-# 在 skill 目录下运行
-node scripts/security_scanner.js <扫描路径>
-node scripts/security_scanner.js <扫描路径> -v           # 详细模式
-node scripts/security_scanner.js <扫描路径> --json       # JSON 输出
-node scripts/security_scanner.js <扫描路径> --exclude vendor  # 排除目录
+# from the skill directory
+node scripts/security_scanner.cjs <scan-path>
+node scripts/security_scanner.cjs <scan-path> -v           # verbose mode
+node scripts/security_scanner.cjs <scan-path> --json       # JSON output
+node scripts/security_scanner.cjs <scan-path> --exclude vendor  # exclude a directory
 ```
 
-## 检测范围
+## Coverage
 
-### 自动检测的漏洞类型
+### Vulnerability classes detected
 
-| 类别 | 检测项 | 严重度 |
+| Class | Checks | Severity |
 |------|--------|--------|
-| **注入** | SQL 注入、命令注入、代码注入 | 🔴 Critical |
-| **敏感信息** | 硬编码密钥、AWS Key、私钥 | 🔴 Critical |
-| **XSS** | innerHTML、dangerouslySetInnerHTML | 🟠 High |
-| **反序列化** | pickle.loads、yaml.load | 🟠 High |
-| **路径遍历** | 未验证的文件路径操作 | 🟠 High |
-| **SSRF** | 未验证的 URL 请求 | 🟠 High |
-| **XXE** | 不安全的 XML 解析 | 🟠 High |
-| **弱加密** | MD5、SHA1 用于安全场景 | 🟡 Medium |
-| **不安全随机** | random 模块用于安全场景 | 🟡 Medium |
-| **调试代码** | console.log、print、debugger | 🔵 Low |
+| **Injection** | SQL injection, command injection, code injection | 🔴 Critical |
+| **Secrets** | Hardcoded keys, AWS keys, private keys | 🔴 Critical |
+| **XSS** | innerHTML, dangerouslySetInnerHTML | 🟠 High |
+| **Deserialization** | pickle.loads, yaml.load | 🟠 High |
+| **Path traversal** | Unvalidated file-path operations | 🟠 High |
+| **SSRF** | Unvalidated URL requests | 🟠 High |
+| **XXE** | Unsafe XML parsing | 🟠 High |
+| **Weak crypto** | MD5/SHA1 in security contexts | 🟡 Medium |
+| **Insecure randomness** | Non-crypto RNG in security contexts | 🟡 Medium |
+| **Debug code** | console.log, print, debugger | 🔵 Low |
 
-### 文档层面检查
+### Documentation-level checks
 
-安全相关代码必须在 DESIGN.md 中记录：
+Security-relevant code must be recorded in DESIGN.md:
 
-- [ ] **威胁模型** — 防御哪些攻击
-- [ ] **安全决策** — 为何选择此方案
-- [ ] **安全边界** — 信任边界在哪里
-- [ ] **已知风险** — 接受了哪些风险
+- [ ] **Threat model** — which attacks are defended against
+- [ ] **Security decisions** — why this approach was chosen
+- [ ] **Security boundaries** — where the trust boundaries sit
+- [ ] **Accepted risks** — which risks were consciously accepted
 
-## 危险模式速查
+## Dangerous-pattern quick reference
 
 ### Python
 ```python
-# 🔴 危险 - 触犯道基
+# 🔴 Dangerous
 eval(), exec(), os.system()
 subprocess(..., shell=True)
 pickle.loads(), yaml.load()
 cursor.execute(f"SELECT * FROM t WHERE id = {id}")
 
-# ✅ 安全替代 - 道基稳固
+# ✅ Safe alternative
 ast.literal_eval()
 subprocess([...], shell=False)
 yaml.safe_load()
@@ -80,67 +79,67 @@ cursor.execute("SELECT * FROM t WHERE id = %s", (id,))
 
 ### JavaScript
 ```javascript
-// 🔴 危险 - 触犯道基
+// 🔴 Dangerous
 eval(), innerHTML, document.write()
 new Function(userInput)
 
-// ✅ 安全替代 - 道基稳固
+// ✅ Safe alternative
 JSON.parse(), textContent
-模板引擎自动转义
+template engines with auto-escaping
 ```
 
 ### Go
 ```go
-// 🔴 危险 - 触犯道基
+// 🔴 Dangerous
 exec.Command("sh", "-c", userInput)
 template.HTML(userInput)
 
-// ✅ 安全替代 - 道基稳固
+// ✅ Safe alternative
 exec.Command("cmd", args...)
-html/template 自动转义
+html/template auto-escaping
 ```
 
-## 校验流程
+## Verification flow
 
 ```
-1. 运行 security_scanner.js 自动扫描
-2. 分析扫描结果，按严重度排序
-3. 检查安全决策是否有文档记录
-4. 输出安全校验报告
-5. Critical/High 问题必须修复后才能交付
+1. Run security_scanner.cjs
+2. Review findings, sorted by severity
+3. Check that security decisions are documented
+4. Emit the security report
+5. Critical/High findings must be fixed before delivery
 ```
 
-## 自动触发时机
+## Auto-trigger moments
 
-| 场景 | 触发条件 |
+| Scenario | Trigger |
 |------|----------|
-| 新建模块 | 模块创建完成时 |
-| 安全相关变更 | 涉及认证、授权、加密、输入处理 |
-| 攻防任务 | 红队/蓝队任务完成时 |
-| 重构完成 | 重构任务完成时 |
-| 提交前 | 代码提交前检查 |
+| New module | When module creation completes |
+| Security-related change | Auth, authorization, crypto, input handling |
+| Offensive/defensive task | When a red/blue-team task completes |
+| Refactor done | When a refactoring task completes |
+| Pre-commit | Before committing code |
 
-## 校验报告格式
+## Report format
 
 ```
-## 安全校验报告
+## Security Verification Report
 
-✓ 通过 | ✗ 未通过
+✓ pass | ✗ fail
 
 - 🔴 Critical: N
 - 🟠 High: N
 - 🟡 Medium: N
 - 🔵 Low: N
 
-### 发现问题
+### Findings
 
-| 文件 | 行号 | 类型 | 严重度 | 描述 |
+| File | Line | Kind | Severity | Description |
 |------|------|------|--------|------|
 | ... | ... | ... | ... | ... |
 
-### 结论
+### Verdict
 
-可交付 / 需修复后交付
+Deliverable / fix before delivery
 ```
 
 ---
