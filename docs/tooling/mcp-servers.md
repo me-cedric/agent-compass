@@ -14,6 +14,7 @@ and flags from its own repo before relying on it; package names move.
 | **sequential-thinking** | Structured multi-step reasoning | `npx -y @modelcontextprotocol/server-sequential-thinking` | none | Hard decisions: architecture trade-offs, gnarly debugging. |
 | **fetch** | Fetch a URL → clean markdown | `uvx mcp-server-fetch` (needs Python/uv) | none | Read docs/pages the agent finds during research. |
 | **playwright** | Drive a real browser | `npx @playwright/mcp@latest` | none (downloads a browser) | Verify UI, inspect or scrape a live web app. |
+| **figma-mcp-go** | Local Figma design context via plugin bridge, no REST token | `npx -y @vkhanhqui/figma-mcp-go@latest` | none | When official Figma MCP/API limits block design reads; requires Figma Desktop plugin running and edit role. |
 | **exa** | Web search / research API | `npx -y exa-mcp-server` (or remote `https://mcp.exa.ai/mcp`) | `EXA_API_KEY` | Optional: current best practice, benchmarks, prior art, pricing. |
 | **GitHub** | Issues/PRs/code search/CI | the `gh` CLI (already used here), or the official remote `https://api.githubcopilot.com/mcp/` (auth) | auth | Repo/PR/CI access. The old `@modelcontextprotocol/server-github` npm server is **archived** — don't use it. |
 
@@ -35,6 +36,11 @@ into your client's MCP config:
   [`../../templates/mcp/codex.example.toml`](../../templates/mcp/codex.example.toml)).
 - **Remote URLs** (`context7`, `exa`) work across clients when you'd rather not
   spawn a local process.
+- **Figma plugin bridge:** copy
+  [`../../templates/mcp/figma-mcp-go.example.json`](../../templates/mcp/figma-mcp-go.example.json)
+  and follow
+  [`../../templates/mcp/figma-mcp-go.md`](../../templates/mcp/figma-mcp-go.md).
+  The user must have edit role on the Figma file to run plugins.
 
 ## Safety
 

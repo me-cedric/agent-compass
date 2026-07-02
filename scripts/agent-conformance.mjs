@@ -49,6 +49,7 @@ const checks = [
   ['Claude reviewer agent template', any('.claude/agents/reviewer.md', 'templates/claude/.claude/agents/reviewer.md')],
   ['Claude hook template', any('.claude/settings.example.json', 'templates/claude/.claude/settings.example.json')],
   ['Copilot MCP allowlist template', any('.mcp/copilot-cloud.example.json', 'templates/mcp/copilot-cloud.example.json')],
+  ['Figma plugin MCP bridge template', any('.mcp/figma-mcp-go.example.json', 'templates/mcp/figma-mcp-go.example.json')],
   ['provider discovery smoke template', any('templates/conformance/provider-discovery-smoke.md')],
   ['teaching eval fixture', any('templates/evals/agent-teaching-evals.json')],
   ['work-intake template', any('docs/work-intake-template.md', 'templates/intake/work-intake.md')],

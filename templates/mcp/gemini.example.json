@@ -7,6 +7,10 @@
     },
     "figma": {
       "httpUrl": "http://127.0.0.1:3845/mcp"
+    },
+    "figma-mcp-go": {
+      "command": "npx",
+      "args": ["-y", "@vkhanhqui/figma-mcp-go@latest"]
     }
   }
 }

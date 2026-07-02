@@ -35,6 +35,7 @@
     "policyPack": "npm run policy-pack",
     "failureMine": "npm run failure-mine",
     "mcpProbe": "npm run mcp-probe",
+    "mcpFigmaGoHelp": "npm run mcp:figma-go:help",
     "specValidationMap": "npm run spec-validation-map",
     "designImporter": "npm run design-importer",
     "drift": "npm run agent-drift",

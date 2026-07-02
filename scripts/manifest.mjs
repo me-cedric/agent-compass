@@ -59,6 +59,8 @@ export const FILE_MANIFEST = [
   ['templates/mcp/README.md', '.mcp/README.md', 'managed'],
   ['templates/mcp/tool-contract.md', '.mcp/tool-contract.md', 'managed'],
   ['templates/mcp/figma.example.json', '.mcp/figma.example.json', 'managed'],
+  ['templates/mcp/figma-mcp-go.example.json', '.mcp/figma-mcp-go.example.json', 'managed'],
+  ['templates/mcp/figma-mcp-go.md', '.mcp/figma-mcp-go.md', 'managed'],
   ['templates/mcp/projectmem.example.json', '.mcp/projectmem.example.json', 'managed'],
   ['templates/mcp/copilot-cloud.example.json', '.mcp/copilot-cloud.example.json', 'managed'],
   ['templates/mcp/codex.example.toml', '.mcp/codex.example.toml', 'managed'],

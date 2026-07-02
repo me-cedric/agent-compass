@@ -31,6 +31,25 @@ and update it whenever a server's allowlist changes.
 | projectmem | add_note | write | local | prompt | write denied if read-only mount | note appears in memory |
 | figma | get_file | read | local | prompt | file not open / no auth | returns frames |
 | figma | get_selection | read | local | prompt | nothing selected | returns nodes |
+| figma-mcp-go | get_metadata | read | local | prompt | plugin not running / no file open | returns file metadata |
+| figma-mcp-go | get_pages | read | local | prompt | plugin not running / no file open | returns page list |
+| figma-mcp-go | get_document | read | local | prompt | plugin not running / no file open | returns current page tree |
+| figma-mcp-go | get_selection | read | local | prompt | nothing selected | returns selected nodes |
+| figma-mcp-go | get_node | read | local | prompt | node id not found | returns node data |
+| figma-mcp-go | get_nodes_info | read | local | prompt | node ids not found | returns node info |
+| figma-mcp-go | get_design_context | read | local | prompt | node unavailable | returns depth-limited design context |
+| figma-mcp-go | search_nodes | read | local | prompt | no matches | returns matching nodes |
+| figma-mcp-go | scan_text_nodes | read | local | prompt | no text nodes | returns text nodes |
+| figma-mcp-go | scan_nodes_by_types | read | local | prompt | no matching types | returns matching nodes |
+| figma-mcp-go | get_viewport | read | local | prompt | plugin not running / no file open | returns viewport data |
+| figma-mcp-go | get_styles | read | local | prompt | no local styles | returns local styles |
+| figma-mcp-go | get_variable_defs | read | local | prompt | no local variables | returns variable collections |
+| figma-mcp-go | get_local_components | read | local | prompt | no components | returns local components |
+| figma-mcp-go | get_annotations | read | local | prompt | no annotations | returns annotations |
+| figma-mcp-go | get_fonts | read | local | prompt | no fonts found | returns fonts used |
+| figma-mcp-go | get_reactions | read | local | prompt | no reactions | returns prototype reactions |
+| figma-mcp-go | get_screenshot | read | local | prompt | export failed | returns base64 screenshot |
+| figma-mcp-go | export_tokens | read | local | prompt | export failed | returns design tokens |
 | headroom | headroom_compress | read | local | auto | input too small to compress | returns compressed payload |
 | headroom | headroom_retrieve | read | local | auto | id not cached | returns original chunk |
 | headroom | headroom_stats | read | none | auto | no session yet | returns token savings |

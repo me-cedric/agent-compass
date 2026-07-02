@@ -40,6 +40,7 @@ client approval prompts. Template:
 | Provider | Template |
 | -------- | -------- |
 | Tool contract (all) | [`../../templates/mcp/tool-contract.md`](../../templates/mcp/tool-contract.md) |
+| Figma plugin bridge | [`../../templates/mcp/figma-mcp-go.example.json`](../../templates/mcp/figma-mcp-go.example.json) |
 | Copilot cloud/code review | [`../../templates/mcp/copilot-cloud.example.json`](../../templates/mcp/copilot-cloud.example.json) |
 | Codex | [`../../templates/mcp/codex.example.toml`](../../templates/mcp/codex.example.toml) |
 | Cursor | [`../../templates/mcp/cursor.example.json`](../../templates/mcp/cursor.example.json) |
@@ -63,6 +64,10 @@ Recommended setup:
 4. Verify the server exposes design context tools before implementation.
 5. Ask the agent to pull tokens, components, layout rules, states, and target
    frames before writing UI code.
+
+If official Figma MCP/API limits block design reads, use `figma-mcp-go` as a
+local plugin bridge. Follow
+[`../../templates/mcp/figma-mcp-go.md`](../../templates/mcp/figma-mcp-go.md).
 
 Agent flow:
 
@@ -88,6 +93,7 @@ References:
 - Figma MCP guide: https://github.com/figma/mcp-server-guide
 - Figma MCP docs: https://developers.figma.com/docs/figma-mcp-server/
 - MCP docs: https://modelcontextprotocol.io/docs/getting-started/intro
+
 ## Readiness Probe
 
 Run the static probe after installing MCP examples:

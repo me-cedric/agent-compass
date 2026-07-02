@@ -8,6 +8,7 @@ This project may use MCP servers for agent tools and context.
 | ---- | ------- | ----- | --------------- |
 | projectmem | Durable project memory | See `.mcp/projectmem.example.json` | none or local only |
 | figma | Design context | See `.mcp/figma.example.json` | client secret store |
+| figma-mcp-go | Figma plugin bridge for free/local design reads | See `.mcp/figma-mcp-go.md` and `.mcp/figma-mcp-go.example.json` | none; requires Figma Desktop plugin running and edit role on the Figma file |
 | headroom | Context compression (compress/retrieve/stats) | See `.mcp/headroom.example.json` | none or local only |
 | research (context7, sequential-thinking, fetch, playwright) | Live docs, reasoning, web pages, browser | See `.mcp/recommended.example.json` + `docs/tooling/mcp-servers.md` | none |
 
@@ -24,3 +25,16 @@ This project may use MCP servers for agent tools and context.
 - Record every enabled tool in [`tool-contract.md`](tool-contract.md) with its
   access (read/write), sensitivity, and approval mode. A tool absent from the
   contract is not approved.
+
+## Figma Free Bridge
+
+`figma-mcp-go` is a local plugin bridge for teams that hit official Figma MCP
+or REST API limits. It does not require a Figma API token, but the Figma plugin
+must be imported and running in Figma Desktop. Users need edit role on the target
+Figma file because plugins run from the editor; view-only access is not enough.
+
+Default shared examples should enable read/export tools first. Upstream write
+tools exist, but do not allowlist them until the team has accepted the risk and
+updated `tool-contract.md`.
+
+Full setup guide: [`figma-mcp-go.md`](figma-mcp-go.md).

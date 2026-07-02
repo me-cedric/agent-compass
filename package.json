@@ -34,6 +34,7 @@
     "policy-pack": "node scripts/policy-pack.mjs",
     "failure-mine": "node scripts/failure-mine.mjs",
     "mcp-probe": "node scripts/mcp-probe.mjs",
+    "mcp:figma-go:help": "npx -y @vkhanhqui/figma-mcp-go@latest --help",
     "spec-validation-map": "node scripts/spec-validation-map.mjs",
     "design-importer": "node scripts/design-importer.mjs",
     "context-pack": "node scripts/context-pack.mjs",

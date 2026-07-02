@@ -10,7 +10,13 @@ const help = `Usage: node scripts/mcp-probe.mjs [root] [--write] [--json] [--str
 if (args.includes('--help')) { console.log(help); process.exit(0) }
 const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
 const readJson = (rel) => { try { return JSON.parse(readFileSync(join(root, rel), 'utf8')) } catch { return null } }
-const configs = ['.mcp.json', '.mcp/recommended.example.json', '.mcp/projectmem.example.json', '.mcp/figma.example.json'].map((path) => [path, readJson(path)]).filter(([, json]) => json)
+const configs = [
+  '.mcp.json',
+  '.mcp/recommended.example.json',
+  '.mcp/projectmem.example.json',
+  '.mcp/figma.example.json',
+  '.mcp/figma-mcp-go.example.json',
+].map((path) => [path, readJson(path)]).filter(([, json]) => json)
 const commandExists = (cmd) => Boolean(spawnSync('sh', ['-lc', `command -v ${cmd}`], { encoding: 'utf8' }).stdout.trim())
 const localPath = (text) => /(^|["'(\s=])((?:\/(?!absolute\/path\/to(?:\/|$)|path\/to(?:\/|$))[A-Za-z0-9._-]+){2,}[^"')\s,;\]]*|[A-Za-z]:\\Users\\[^"')\s,;\]]+)/m.test(text)
 const rows = []

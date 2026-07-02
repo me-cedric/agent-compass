@@ -24,6 +24,8 @@
   "policyPackList": "node docs/agent-compass/scripts/policy-pack.mjs . --list",
   "failureMine": "node docs/agent-compass/scripts/failure-mine.mjs . --write",
   "mcpProbe": "node docs/agent-compass/scripts/mcp-probe.mjs . --write",
+  "mcpFigmaGo": "npx -y @vkhanhqui/figma-mcp-go@latest",
+  "mcpFigmaGoHelp": "npx -y @vkhanhqui/figma-mcp-go@latest --help",
   "specValidationMap": "node docs/agent-compass/scripts/spec-validation-map.mjs . --write",
   "designImporter": "node docs/agent-compass/scripts/design-importer.mjs . --write",
   "lint": null,

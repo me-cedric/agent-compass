@@ -33,4 +33,12 @@ cwd = "."
 enabled_tools = ["get_instructions", "get_summary", "get_project_map", "precheck_file", "get_issue", "log_issue", "record_attempt", "record_fix", "add_decision", "add_note"]
 default_tools_approval_mode = "prompt"
 
+[mcp_servers.figma_go]
+enabled = true
+required = false
+command = "npx"
+args = ["-y", "@vkhanhqui/figma-mcp-go@latest"]
+enabled_tools = ["get_metadata", "get_selection", "get_design_context", "export_tokens"]
+default_tools_approval_mode = "prompt"
+
 # Hooks live in .codex/hooks.json to avoid duplicate inline/file hook sources.
