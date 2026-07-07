@@ -86,6 +86,8 @@ node docs/agent-compass/scripts/apply-recommendations.mjs . --policy solo-dev
 
 Useful policy packs:
 
+- `safe-local-work`: local edits, validation, and reports only; no commit, push,
+  PR, deploy, publish, production write, or secret output.
 - `solo-dev`: personal project, low ceremony.
 - `startup-fast`: product iteration, symlink skills.
 - `strict-enterprise`: multi-team/high-control.

@@ -17,6 +17,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- projectmem is now set up collaboration-safe: commit the append-only
+  `events.jsonl` (the source of truth) with a `.gitattributes merge=union`
+  driver, and gitignore the regenerated projections (`summary.md`,
+  `PROJECT_MAP.md`, `AI_INSTRUCTIONS.md`, `issues/`) — the reverse of the old
+  default that committed the regenerated `summary.md` and let the last writer
+  overwrite teammates. The `post-merge` hook runs `pjm regenerate` after a pull;
+  durable decisions go in committed ADRs. Touches `scripts/doctor-checks.mjs`
+  ignore/attribute defaults, `scripts/install.mjs`, `templates/monorepo/`,
+  `templates/memory/`, the project-memory skill, and the tooling/workflow docs.
+
 - The five CCG quality-gate skills (`gen-docs`, `verify-module`,
   `verify-quality`, `verify-change`, `verify-security`) are now fully in
   English — SKILL.md docs, script comments, and report output. The `caveman`

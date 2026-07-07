@@ -24,7 +24,7 @@ Never overwrites existing files. Equivalent to:
   node scripts/agent-onboard.mjs <host>
 
 Options:
-  --policy <pack>  Apply a policy pack: solo-dev | startup-fast |
+  --policy <pack>  Apply a policy pack: safe-local-work | solo-dev | startup-fast |
                    strict-enterprise | regulated-api.
   --dry            Show the plan without writing anything.
   --help           Show this help.

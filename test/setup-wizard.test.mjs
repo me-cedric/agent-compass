@@ -14,9 +14,9 @@ test('wizard --yes --dry plans fit-based skill sync with detected stacks', async
     await writeFile(join(host, 'package.json'), JSON.stringify({ name: 'fake-api', dependencies: { '@nestjs/core': '10' } }))
     const run = await runNode([script, host, '--yes', '--dry'])
     assert.equal(run.code, 0, run.stderr)
-    assert.match(run.stdout, /"skillScope": "fit"/)
+    assert.match(run.stdout, /"skillScope": "fit\+style"/)
     assert.match(run.stdout, /nestjs-api/)
-    assert.match(run.stdout, /fit-based skills \(core \+ detected stacks\)/)
+    assert.match(run.stdout, /fit-based skills plus working-style skills/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }

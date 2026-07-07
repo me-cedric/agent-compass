@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "name": "safe-local-work",
+  "description": "Local-only work policy: inspect, edit, validate, and report without outward-facing or destructive actions.",
+  "gates": [
+    "provider-verify",
+    "recommend",
+    "quality-gates",
+    "redact",
+    "dashboard"
+  ],
+  "constraints": [
+    "no commit unless explicitly requested",
+    "no push unless explicitly requested",
+    "no PR unless explicitly requested",
+    "no deploy unless explicitly requested",
+    "no publish unless explicitly requested",
+    "no production write unless explicitly requested",
+    "no destructive database command unless explicitly requested",
+    "no secrets, tokens, passwords, private keys, or raw env values in output"
+  ],
+  "defaults": {
+    "skills": "symlink",
+    "specKit": false,
+    "dashboard": true,
+    "taskLog": true,
+    "redaction": true
+  }
+}

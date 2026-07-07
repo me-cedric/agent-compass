@@ -17,7 +17,9 @@ test('setup-wizard writes answers and plan without running setup', async () => {
     const result = await runNode([script('setup-wizard'), host, '--yes', '--no-run'], { cwd: root.pathname })
     assert.equal(result.code, 0, result.stderr)
     assert.match(await readFile(join(host, 'agent-compass.answers.json'), 'utf8'), /react-web/)
-    assert.match(await readFile(join(host, '.agent', 'setup-plan.md'), 'utf8'), /Agent Compass Setup Plan/)
+    const plan = await readFile(join(host, '.agent', 'setup-plan.md'), 'utf8')
+    assert.match(plan, /Agent Compass Setup Plan/)
+    assert.match(plan, /working-style skills/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }
@@ -111,6 +113,9 @@ test('global setup creates user-level pointers and skills without project files'
     assert.ok(existsSync(join(home, '.agent-compass', 'manifest.json')))
     assert.ok(existsSync(join(home, '.codex', 'AGENTS.md')))
     assert.ok(existsSync(join(home, '.agents', 'skills', 'caveman', 'SKILL.md')))
+    assert.ok(existsSync(join(home, '.agents', 'skills', 'ponytail', 'SKILL.md')))
+    assert.ok(existsSync(join(home, '.codex', 'skills', 'ponytail', 'SKILL.md')))
+    assert.ok(existsSync(join(home, '.claude', 'skills', 'ponytail-review', 'SKILL.md')))
     const verify = await runNode([script('provider-verify'), home, '--global', '--strict'], { cwd: root.pathname })
     assert.equal(verify.code, 0, verify.stderr)
   } finally {
@@ -128,6 +133,10 @@ test('policy pack, migration plan, mcp probe, spec map, design importer write ar
     const policy = await runNode([script('policy-pack'), host, '--apply', 'solo-dev'], { cwd: root.pathname })
     assert.equal(policy.code, 0, policy.stderr)
     assert.ok(existsSync(join(host, '.agent', 'policy.json')))
+
+    const safePolicy = await runNode([script('policy-pack'), host, '--apply', 'safe-local-work'], { cwd: root.pathname })
+    assert.equal(safePolicy.code, 0, safePolicy.stderr)
+    assert.match(await readFile(join(host, '.agent', 'policy.md'), 'utf8'), /no deploy/)
 
     const migration = await runNode([script('migration-plan'), host, '--write'], { cwd: root.pathname })
     assert.equal(migration.code, 0, migration.stderr)

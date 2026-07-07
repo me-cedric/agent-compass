@@ -37,6 +37,14 @@ writeMissing('.codex/AGENTS.md', `# Global Codex Agent Compass Pointer
 
 Prefer project-local AGENTS.md. If absent, use Agent Compass baseline:
 ${AC}/AGENTS.md
+
+Default personal style:
+
+- English unless the user asks otherwise.
+- Use caveman full for concise, useful output.
+- Use ponytail full for the smallest correct change.
+- Never invent validation commands; use the repo command registry.
+- No commit, push, PR, deploy, publish, or production write unless requested.
 `)
 writeMissing('.claude/CLAUDE.md', `# Global Claude Agent Compass Pointer
 

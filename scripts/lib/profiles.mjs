@@ -13,7 +13,8 @@ export const CORE_PROFILE = {
   skills: [
     'gen-docs', 'verify-module', 'verify-quality', 'verify-change',
     'verify-security', 'spec-workflow', 'project-memory', 'pr-workflow',
-    'pr-review-governance', 'debug-loop', 'agent-teacher', 'architecture-advisor',
+    'pr-review-governance', 'debug-loop', 'agent-teacher',
+    'architecture-advisor', 'long-running-task',
   ],
   templates: ['templates/specs', 'templates/intake', 'templates/commands'],
   docs: ['docs/guidelines/coding-style.md', 'docs/guidelines/testing-tdd.md', 'docs/guidelines/documentation.md'],
@@ -25,7 +26,7 @@ export const STYLE_SKILLS = ['caveman', 'caveman-commit', 'caveman-review', 'pon
 export const PROFILES = {
   'nestjs-api': {
     label: 'NestJS API',
-    skills: ['nestjs-patterns', 'nestjs-monorepo-scaffold', 'external-service-patterns', 'resilience-observability-patterns'],
+    skills: ['nestjs-patterns', 'nestjs-monorepo-scaffold', 'external-service-patterns', 'resilience-observability-patterns', 'api-contract-sync'],
     templates: ['templates/docker', 'templates/eslint'],
     docs: ['docs/architecture/api-design.md', 'docs/tooling/api-contract-sync.md', 'docs/architecture/resilience.md', 'docs/architecture/observability.md'],
   },
@@ -43,7 +44,7 @@ export const PROFILES = {
   },
   'expo-mobile': {
     label: 'Expo mobile',
-    skills: ['expo-react-native-patterns'],
+    skills: ['expo-react-native-patterns', 'figma-mcp-frontend'],
     templates: ['templates/eslint'],
     docs: [],
   },

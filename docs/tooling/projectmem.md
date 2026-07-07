@@ -99,12 +99,45 @@ commit that local client config.
 
 ## Generated files
 
-- `.projectmem/summary.md` is generated shared context. It may be committed after
-  review for secrets, personal data, and local absolute paths.
-- `.projectmem/events.jsonl`, `.projectmem/issues/`, `.projectmem/watch.*`,
-  `.projectmem/data/`, and DB files stay ignored by default.
-- Keep `.projectmem/summary.md` in `.prettierignore`; agents can read it without
-  formatter churn.
+projectmem is event-sourced. `.projectmem/events.jsonl` is an append-only log —
+the source of truth — and every other file is a projection folded from it by
+`pjm regenerate`. This decides what to commit:
+
+- **Commit `.projectmem/events.jsonl`** (the shared source of truth) plus the
+  static docs (`README.md`, `projectmem-policy.md`, `config.toml`).
+- **Gitignore the regenerated projections:** `.projectmem/summary.md`,
+  `.projectmem/PROJECT_MAP.md`, `.projectmem/AI_INSTRUCTIONS.md`,
+  `.projectmem/issues/`, plus `.projectmem/watch.*`, `.projectmem/data/`, and DB
+  files. Rebuild them locally with `pjm regenerate`.
+- `.gitattributes` gives the log `merge=union` so concurrent appends auto-combine.
+- Keep `.projectmem/` in `.prettierignore`; agents read the files without
+  formatter churn, and stable lines keep the union merge clean.
+
+`node scripts/install.mjs --fix` (or a fresh install) writes these `.gitignore`,
+`.gitattributes`, and `.prettierignore` entries for you.
+
+## Collaboration
+
+The failure mode this avoids: projectmem's own default commits the regenerated
+`summary.md` and gitignores the log, so each teammate regenerates their own
+summary from their own local log and the last commit silently overwrites the rest.
+Agent Compass inverts that — share the append-only log, derive the summary locally.
+
+- **After every `git pull`/merge, run `pjm regenerate`** to fold teammates' events
+  into your local summary. The vendored `post-merge` hook does this automatically.
+- **First-time migration on an existing repo:** one collaborator's log has never
+  been shared, so before switching, union the two `events.jsonl` files
+  (concatenate, sort by timestamp, drop duplicate lines) or the un-shared history
+  is lost. After that, `merge=union` handles ongoing appends.
+- **Division of labor with durable notes:** the log is a high-churn running record
+  (attempts, findings, fixes, risks). Architecture and design decisions that must
+  survive belong in a committed, one-file-per-item note that merges cleanly — an
+  ADR under `docs/decisions/NNN-*.md` — not the regenerated summary. `tasks/lessons.md`
+  stays local scratch (gitignored); promote a durable lesson into an ADR or the log.
+- **Known limit:** sequential issue ids (`0042`) can collide between two offline
+  writers; `merge=union` keeps both lines, but a later `pjm fix --issue`/
+  `--supersedes` on that id can be ambiguous. Rare for small teams; if it bites,
+  give each author a separate `PROJECTMEM_ROOT` and concatenate before regenerate.
 
 ## Export mode
 

@@ -24,10 +24,17 @@ tokens, or visual implementation from design.
    - states: hover, focus, disabled, loading, empty, error
 5. Map Figma components to existing code components before creating new ones.
 
+If Figma MCP is unavailable or rate-limited, use project-local design exports
+and screenshots before guessing. Common fallback locations: checked-in design
+docs, `docs/design/`, `templates/design-system/`, and user-provided PNG exports.
+Report the gap clearly.
+
 ## Implement
 
 - Reuse existing design system first.
 - Create new components only when no matching local component exists.
+- Do not invent visual rules that conflict with Figma, local tokens, or shared
+  components.
 - Preserve accessibility basics: labels, focus, contrast, keyboard flow.
 - Validate visually with screenshot or browser check when UI changed.
 

@@ -28,6 +28,7 @@
   "mcpFigmaGoHelp": "npx -y @vkhanhqui/figma-mcp-go@latest --help",
   "specValidationMap": "node docs/agent-compass/scripts/spec-validation-map.mjs . --write",
   "designImporter": "node docs/agent-compass/scripts/design-importer.mjs . --write",
+  "validateChanged": null,
   "lint": null,
   "lintActions": null,
   "typecheck": null,
@@ -45,6 +46,7 @@
   "notes": [
     "Replace nulls with real package.json commands.",
     "Agents must use this file before inventing validation commands.",
+    "For code changes, fill and run lint + typecheck + relevant tests; add build when config, public exports, routing, or deployment output changed.",
     "After installing projectmem, verify projectMemory commands with pjm --help."
   ]
 }

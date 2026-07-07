@@ -3,6 +3,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { STYLE_SKILLS } from './lib/profiles.mjs'
 
 const args = process.argv.slice(2)
 const help = `Usage: node scripts/provider-verify.mjs [root] [--global] [--write] [--json] [--strict]`
@@ -11,6 +12,7 @@ const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
 const global = args.includes('--global')
 const has = (p) => existsSync(join(root, p))
 const reads = (p, re) => has(p) && re.test(readFileSync(join(root, p), 'utf8'))
+const hasSkills = (base, names = STYLE_SKILLS) => names.every((name) => has(join(base, name, 'SKILL.md')))
 const projectChecks = [
   ['AGENTS.md', has('AGENTS.md'), 'root contract/pointer'],
   ['CLAUDE.md points to AGENTS', reads('CLAUDE.md', /AGENTS\.md/), 'Claude'],
@@ -28,9 +30,9 @@ const globalChecks = [
   ['global manifest exists', has('.agent-compass/manifest.json'), 'all'],
   ['global Codex pointer exists', has('.codex/AGENTS.md'), 'Codex'],
   ['global Claude pointer exists', has('.claude/CLAUDE.md'), 'Claude'],
-  ['global universal skills exist', has('.agents/skills/caveman/SKILL.md'), 'all'],
-  ['global Codex skills exist', has('.codex/skills/caveman/SKILL.md'), 'Codex'],
-  ['global Claude skills exist', has('.claude/skills/caveman/SKILL.md'), 'Claude'],
+  ['global universal working-style skills exist', hasSkills('.agents/skills'), 'all'],
+  ['global Codex working-style skills exist', hasSkills('.codex/skills'), 'Codex'],
+  ['global Claude working-style skills exist', hasSkills('.claude/skills'), 'Claude'],
 ]
 const checks = global ? globalChecks : projectChecks
 const report = `# Provider Verification

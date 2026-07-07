@@ -5,10 +5,12 @@ tool.
 
 ## Before starting
 
-1. Read relevant memory summaries, usually with `pjm brief` or MCP summary tools.
-2. Check pre-action warnings before editing fragile areas, usually with
+1. If you just pulled/merged, run `pjm regenerate` to fold teammates' shared
+   events into your local summary (the `post-merge` hook does this automatically).
+2. Read relevant memory summaries, usually with `pjm brief` or MCP summary tools.
+3. Check pre-action warnings before editing fragile areas, usually with
    `pjm precheck`.
-3. Search memory for the files, modules, libraries, or error strings involved.
+4. Search memory for the files, modules, libraries, or error strings involved.
 
 ## During work
 
@@ -38,6 +40,22 @@ Log:
 - raw customer data
 - temporary brainstorming
 - noisy todo lists that will be stale tomorrow
+
+## Sharing across a team
+
+projectmem is event-sourced: `events.jsonl` is the append-only source of truth and
+every other file is a projection rebuilt by `pjm regenerate`. Share the log, not
+the projections.
+
+- Commit `.projectmem/events.jsonl` (union-merged via `.gitattributes`); gitignore
+  the regenerated `summary.md`, `PROJECT_MAP.md`, `AI_INSTRUCTIONS.md`, `issues/`.
+- Run `pjm regenerate` after every pull/merge.
+- High-churn running record (attempts, findings, fixes) lives in the log. Durable
+  architecture/design decisions go in a committed ADR (`docs/decisions/NNN-*.md`) —
+  one file per decision merges cleanly and survives regeneration.
+
+See `docs/tooling/projectmem.md` for the full collaboration model, the one-time
+migration, and the sequential-issue-id caveat.
 
 ## If projectmem is unavailable
 

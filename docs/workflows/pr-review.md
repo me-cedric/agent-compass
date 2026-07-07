@@ -24,7 +24,7 @@ Review locally first. Findings lead. Include file/line references when possible.
 Do not submit anything to GitHub unless asked.
 Use the [`pr-review-governance`](../../skills/pr-review-governance/SKILL.md)
 skill for the review checklist, summary, inline comments, validation evidence,
-and retry/duplicate checks.
+GitHub/GitLab diff positions, and retry/duplicate checks.
 
 ## Direct GitHub Review
 

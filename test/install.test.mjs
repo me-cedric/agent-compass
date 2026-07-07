@@ -60,9 +60,11 @@ test('install creates substituted pointer and executable husky hooks', async () 
     assert.match(await readFile(join(host, '.mcp', 'codex.example.toml'), 'utf8'), /enabled_tools/)
     assert.match(await readFile(join(host, '.mcp', 'cursor.example.json'), 'utf8'), /mcpServers/)
     assert.match(await readFile(join(host, '.mcp', 'gemini.example.json'), 'utf8'), /httpUrl/)
-    assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/events\.jsonl/)
+    assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/summary\.md/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/issues\//)
-    assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\/summary\.md/)
+    assert.doesNotMatch(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/events\.jsonl/)
+    assert.match(await readFile(join(host, '.gitattributes'), 'utf8'), /\.projectmem\/events\.jsonl merge=union/)
+    assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\//)
 
     for (const pointerPath of ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md', '.cursor/rules/agent-compass.mdc', '.windsurf/rules/agent-compass.md']) {
       assert.match(await readFile(join(host, pointerPath), 'utf8'), /AGENTS\.md/)
@@ -172,7 +174,9 @@ test('doctor passes partial adoption when only advisory files are missing', asyn
   try {
     await writeFile(join(host, '.gitignore'), [
       '.venv/',
-      '.projectmem/events.jsonl',
+      '.projectmem/summary.md',
+      '.projectmem/PROJECT_MAP.md',
+      '.projectmem/AI_INSTRUCTIONS.md',
       '.projectmem/issues/',
       '.projectmem/watch.*',
       '.projectmem/data/',
@@ -183,7 +187,8 @@ test('doctor passes partial adoption when only advisory files are missing', asyn
       '.projectmem/*.sqlite3',
       '.projectmem/*.sqlite3-*',
     ].join('\n'))
-    await writeFile(join(host, '.prettierignore'), '.projectmem/summary.md\n')
+    await writeFile(join(host, '.gitattributes'), '.projectmem/events.jsonl merge=union\n')
+    await writeFile(join(host, '.prettierignore'), '.projectmem/\n')
 
     const doctor = await runNode([script.pathname, '--doctor', host], { cwd: root.pathname })
     assert.equal(doctor.code, 0, doctor.stderr)
@@ -207,8 +212,9 @@ test('--fix only appends safe ignores and chmods existing hooks', async () => {
     const result = await runNode([script.pathname, '--fix', host], { cwd: root.pathname })
     assert.equal(result.code, 0, result.stderr)
     assert.match(result.stdout, /agent-compass fix/)
-    assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/events\.jsonl/)
-    assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\/summary\.md/)
+    assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/summary\.md/)
+    assert.match(await readFile(join(host, '.gitattributes'), 'utf8'), /\.projectmem\/events\.jsonl merge=union/)
+    assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\//)
     assert.ok((await stat(join(host, '.husky', 'pre-commit'))).mode & 0o111)
 
     await assert.rejects(readFile(join(host, 'AGENTS.md'), 'utf8'))

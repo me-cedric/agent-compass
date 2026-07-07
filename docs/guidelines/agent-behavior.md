@@ -16,6 +16,11 @@ A task is complete only when you report: changed files, exact validation command
 run, each result (`passed`/`failed`/`partial`/`not run`), whether failures are
 pre-existing or introduced, and remaining risks.
 
+Default command choice lives in
+[`../workflows/validation-defaults.md`](../workflows/validation-defaults.md):
+lint, typecheck, relevant tests, and build when config, routing, public exports,
+or deployment output changed.
+
 ## Handoff format
 
 ```

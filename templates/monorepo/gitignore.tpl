@@ -46,8 +46,11 @@ test-report.xml
 test-report-e2e.xml
 checkmarx-*.zip
 
-# projectmem local runtime
-.projectmem/events.jsonl
+# projectmem — commit events.jsonl (shared source of truth, union-merged via
+# .gitattributes); ignore the regenerated projections (rebuilt by pjm regenerate).
+.projectmem/summary.md
+.projectmem/PROJECT_MAP.md
+.projectmem/AI_INSTRUCTIONS.md
 .projectmem/issues/
 .projectmem/watch.*
 .projectmem/data/

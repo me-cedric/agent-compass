@@ -72,7 +72,9 @@ test('detectStacks aggregates workspace packages, not just the monorepo root', a
 test('selectAssets merges core with matched profiles, deduped', () => {
   const selection = selectAssets(['nestjs-api', 'drizzle-postgres'])
   assert.ok(selection.skills.includes('gen-docs'), 'core skills always included')
+  assert.ok(selection.skills.includes('long-running-task'), 'long-running workflow is core')
   assert.ok(selection.skills.includes('nestjs-patterns'))
+  assert.ok(selection.skills.includes('api-contract-sync'), 'API projects get contract sync')
   assert.ok(selection.skills.includes('drizzle-postgres-patterns'))
   assert.ok(!selection.skills.includes('expo-react-native-patterns'), 'unmatched stacks excluded')
   assert.equal(new Set(selection.skills).size, selection.skills.length, 'no duplicates')

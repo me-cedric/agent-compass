@@ -3,9 +3,14 @@ import { dirname, extname, join } from 'node:path'
 
 export const HUSKY_HOOKS = ['pre-commit', 'pre-push', 'commit-msg']
 
+// Collaboration-safe defaults: the append-only event log is the shared source of
+// truth (committed, union-merged); the regenerated projections are local and
+// rebuilt with `pjm regenerate`. See docs/tooling/projectmem.md.
 export const PROJECTMEM_GITIGNORE = [
   '.venv/',
-  '.projectmem/events.jsonl',
+  '.projectmem/summary.md',
+  '.projectmem/PROJECT_MAP.md',
+  '.projectmem/AI_INSTRUCTIONS.md',
   '.projectmem/issues/',
   '.projectmem/watch.*',
   '.projectmem/data/',
@@ -17,7 +22,9 @@ export const PROJECTMEM_GITIGNORE = [
   '.projectmem/*.sqlite3-*',
 ]
 
-export const PROJECTMEM_PRETTIERIGNORE = ['.projectmem/summary.md']
+export const PROJECTMEM_GITATTRIBUTES = ['.projectmem/events.jsonl merge=union']
+
+export const PROJECTMEM_PRETTIERIGNORE = ['.projectmem/']
 
 const TEXT_EXT = new Set(['', '.json', '.md', '.mdc', '.toml', '.yaml', '.yml'])
 const LOCAL_PATH_RE = /(^|["'(\s=])((?:\/(?!absolute\/path\/to(?:\/|$)|path\/to(?:\/|$))[A-Za-z0-9._-]+){2,}[^"')\s,;\]]*|[A-Za-z]:\\Users\\[^"')\s,;\]]+)/m
@@ -70,7 +77,7 @@ const sharedConfigFiles = (root) => {
     '.github/PULL_REQUEST_TEMPLATE.md',
     '.projectmem/README.md',
     '.projectmem/projectmem-policy.md',
-    '.projectmem/summary.md',
+    '.projectmem/events.jsonl',
     '.claude/settings.example.json',
   ].map((path) => join(root, path))
   const dirs = ['.mcp', '.github/instructions', '.github/prompts', '.github/agents', '.cursor/rules', '.windsurf/rules', '.codex', '.claude/agents', '.claude/hooks']
@@ -83,8 +90,9 @@ const localPathLeaks = (root) => sharedConfigFiles(root)
   .map((file) => file.slice(root.length + 1))
 
 export const ensureProjectmemIgnores = (root, dry = false) => ({
-  gitignore: appendMissingLines(root, '.gitignore', '# projectmem local runtime', PROJECTMEM_GITIGNORE, dry),
-  prettierignore: appendMissingLines(root, '.prettierignore', '# projectmem generated summary', PROJECTMEM_PRETTIERIGNORE, dry),
+  gitignore: appendMissingLines(root, '.gitignore', '# projectmem regenerated projections (rebuilt by pjm regenerate)', PROJECTMEM_GITIGNORE, dry),
+  gitattributes: appendMissingLines(root, '.gitattributes', '# projectmem shared event log (source of truth)', PROJECTMEM_GITATTRIBUTES, dry),
+  prettierignore: appendMissingLines(root, '.prettierignore', '# projectmem generated files', PROJECTMEM_PRETTIERIGNORE, dry),
 })
 
 export const fixHuskyHookModes = (root, dry = false) => {
@@ -108,8 +116,9 @@ export const doctorChecks = (root, { deep = false } = {}) => {
   const required = [
     ['shared agent config has no local absolute path leaks', leaks.length === 0, leaks],
     ['projectmem MCP example avoids local absolute paths', !mcpExample || (!mcpExample.includes('/absolute/path/to/repo') && !LOCAL_PATH_RE.test(mcpExample))],
-    ['.gitignore ignores projectmem runtime files', missingLines(root, '.gitignore', PROJECTMEM_GITIGNORE).length === 0],
-    ['.prettierignore ignores generated projectmem summary', missingLines(root, '.prettierignore', PROJECTMEM_PRETTIERIGNORE).length === 0],
+    ['.gitignore ignores regenerated projectmem projections', missingLines(root, '.gitignore', PROJECTMEM_GITIGNORE).length === 0],
+    ['.gitattributes gives the projectmem event log a union merge driver', missingLines(root, '.gitattributes', PROJECTMEM_GITATTRIBUTES).length === 0],
+    ['.prettierignore ignores generated projectmem files', missingLines(root, '.prettierignore', PROJECTMEM_PRETTIERIGNORE).length === 0],
     ...HUSKY_HOOKS.map((h) => [`existing .husky/${h} executable`, !existsSync(join(root, '.husky', h)) || isExecutable(join(root, '.husky', h))]),
   ]
   const advisory = [

@@ -18,6 +18,8 @@ request, branch, or submitted review comments.
 ## Output Contract
 
 - Publish or return the global summary first, then inline comments.
+- If no actionable findings exist, say so and approve only when explicitly
+  allowed by the user/request.
 - Use the host repo's requested review language. If none is set, use the user's
   language.
 - Lead with validated findings, ordered by severity: `P0`, `P1`, `P2`, `P3`.
@@ -34,8 +36,9 @@ request, branch, or submitted review comments.
 3. Fetch PR/MR metadata: target branch, source branch, commits, diff refs,
    changed files, and existing discussions.
 4. Compare with the merge base or platform diff refs, not only the local working
-   tree. For platform inline comments, use the platform's exact diff position
-   model.
+   tree. For GitHub, use PR review positions. For GitLab, use merge request
+   `base_sha`, `start_sha`, `head_sha`, and `position` data from the MR diff
+   refs.
 5. Map changed files to relevant product docs, specs, design docs, architecture
    docs, module README/DESIGN, and tests before judging the code.
 
@@ -105,3 +108,5 @@ request, branch, or submitted review comments.
 - If the exact line is not available, comment on the closest changed line and
   name the referenced code precisely.
 - Verify posted comments and remove accidental duplicates before finishing.
+- For GitLab MRs, inspect existing discussions before retrying so repeated tool
+  calls do not post duplicate notes.

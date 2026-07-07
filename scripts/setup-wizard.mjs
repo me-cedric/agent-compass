@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { detectStacks, selectAssets } from './lib/profiles.mjs'
+import { STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
@@ -21,6 +21,7 @@ Options:
   --yes     Use detected/default answers.
   --dry     Print plan, write nothing.
   --no-run  Write plan only; do not run setup-host.
+  Skill scope defaults to fit+style: core + detected stacks + working-style skills.
   --help    Show this help.
 `
 if (args.includes('--help')) { console.log(help); process.exit(0) }
@@ -53,7 +54,7 @@ const answers = {
   providers: (await ask(rl, 'Agent providers comma-list', 'claude,codex,copilot,cursor,windsurf,gemini')).split(',').map((s) => s.trim()).filter(Boolean),
   useSpecKit: (await ask(rl, 'Install Spec Kit bridge? yes/no', 'yes')).toLowerCase().startsWith('y'),
   skillSync: await ask(rl, 'Skill sync mode copy|symlink|none', 'copy'),
-  skillScope: await ask(rl, 'Skill scope fit|all (fit = core + detected stacks only)', 'fit'),
+  skillScope: await ask(rl, 'Skill scope fit|fit+style|all (fit+style = core + detected stacks + working-style skills)', 'fit+style'),
 }
 if (rl) rl.close()
 
@@ -72,7 +73,7 @@ ${JSON.stringify(answers, null, 2)}
 
 1. Run \`${global ? 'global-setup' : 'setup-host --strict'}\`.
 2. ${answers.useSpecKit ? 'Install Spec Kit bridge files.' : 'Skip Spec Kit bridge.'}
-3. ${answers.skillSync === 'none' ? 'Skip skill sync.' : `Sync ${answers.skillScope === 'all' ? 'all skills' : 'fit-based skills (core + detected stacks)'} using ${answers.skillSync}.`}
+3. ${answers.skillSync === 'none' ? 'Skip skill sync.' : `Sync ${answers.skillScope === 'all' ? 'all skills' : answers.skillScope === 'fit+style' ? 'fit-based skills plus working-style skills' : 'fit-based skills (core + detected stacks)'} using ${answers.skillSync}.`}
 4. Run provider verification, recommendations, quality gates, and dashboard.
 `
 
@@ -98,7 +99,10 @@ if (!noRun) {
   }
   if (answers.useSpecKit) spawnSync(process.execPath, [join(AC, 'scripts', 'spec-kit-bridge.mjs'), HOST], { stdio: 'inherit' })
   if (answers.skillSync !== 'none') {
-    const scopeArgs = answers.skillScope === 'all' ? [] : ['--only', selectAssets(detectStacks(HOST)).skills.join(',')]
+    const fitSkills = selectAssets(detectStacks(HOST)).skills
+    const styleSkills = answers.skillScope === 'fit+style' ? STYLE_SKILLS : []
+    const scoped = [...new Set([...fitSkills, ...styleSkills])]
+    const scopeArgs = answers.skillScope === 'all' ? [] : ['--only', scoped.join(',')]
     spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`, ...scopeArgs], { stdio: 'inherit' })
   }
   spawnSync(process.execPath, [join(AC, 'scripts', 'provider-verify.mjs'), HOST, '--write'], { stdio: 'inherit' })

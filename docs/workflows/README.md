@@ -12,6 +12,8 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [agent-teaching.md](agent-teaching.md)          | Teaching users without coaching every prompt. |
 | [agent-improvement-loop.md](agent-improvement-loop.md) | Turning repeated friction into instructions, skills, prompts, hooks, MCP, and checks. |
 | [agent-value-expansion.md](agent-value-expansion.md) | Extra automation and precision ideas beyond the current baseline. |
+| [long-running-task.md](long-running-task.md) | Safe autonomous multi-phase implementation loops. |
+| [validation-defaults.md](validation-defaults.md) | Default lint/typecheck/test/build selection when a repo leaves details open. |
 | [pull-requests.md](pull-requests.md)           | Creating PRs with base, labels, assignee, and reviewers. |
 | [pr-review.md](pr-review.md)                   | Local/GitHub PR reviews and implementing review fixes. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |

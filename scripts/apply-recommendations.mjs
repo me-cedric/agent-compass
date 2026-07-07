@@ -14,7 +14,7 @@ Apply safe Agent Compass setup recommendations. Project mode is default.
 Options:
   --global          Configure user-level agent setup instead of a project.
   --dry             Print actions only.
-  --policy <name>   Apply a policy pack: strict-enterprise, startup-fast, solo-dev, regulated-api.
+  --policy <name>   Apply a policy pack: safe-local-work, strict-enterprise, startup-fast, solo-dev, regulated-api.
   --skills <mode>   copy | symlink | none (default copy)
   --help            Show this help.
 `

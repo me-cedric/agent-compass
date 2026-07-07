@@ -14,6 +14,10 @@
 Be concise: prefer commands, diffs, file paths, and exact next actions. Keep
 essential reasoning, verification, and risks short.
 
+Default personal style: English, `caveman full`, and `ponytail full` unless the
+user or host repo says otherwise. That means terse output, smallest useful
+change, reuse-first, and no speculative abstraction.
+
 ## Context layering
 
 Load only what you need, smallest scope first. Never ask for "full context" or
@@ -25,6 +29,9 @@ broad exploration.
 
 - Don't do broad/recursive exploration when a targeted read answers the question.
 - Use only scripts that exist in the project; never invent commands.
+- For non-trivial implementation, use the long-running task loop: intake,
+  short plan, one phase at a time, validation after meaningful phases, final
+  diff review.
 - Use Codex-native features when they reduce risk: `/plan` for ambiguous work,
   `/goal` for long bounded loops, subagents for independent review/exploration,
   `/review` for diff review, MCP for external tools, and skills for repeated

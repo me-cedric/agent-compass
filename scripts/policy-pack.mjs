@@ -28,6 +28,7 @@ writeFileSync(join(root, '.agent', 'policy.md'), `# Agent Policy: ${pack.name}
 
 ${pack.description}
 
+${pack.constraints?.length ? `## Constraints\n\n${pack.constraints.map((g) => `- ${g}`).join('\n')}\n\n` : ''}
 ## Required Gates
 
 ${pack.gates.map((g) => `- ${g}`).join('\n')}
