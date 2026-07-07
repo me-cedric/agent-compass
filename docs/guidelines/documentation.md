@@ -34,9 +34,10 @@ setup or scripts.
 
 ## env.example discipline
 
-Every env var the app reads appears in `.env.example` with a comment. Update it in
-the same change that adds/removes a variable. Never commit real `.env`. See
-[tooling/env-management.md](../tooling/env-management.md).
+Every env var the app reads appears in `.env.example` with a comment. When a
+var is added, renamed, or removed, update the validation schema and committed
+local-development env template in the same change. Never commit real `.env`.
+See [tooling/env-management.md](../tooling/env-management.md).
 
 ## API contract sync
 

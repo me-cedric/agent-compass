@@ -190,6 +190,18 @@ logic, keep all specification layers in sync **in the same task**:
 OpenAPI/Scalar decorators, the Bruno request collection, and the Gherkin
 `.feature` files. See [tooling/api-contract-sync](docs/tooling/api-contract-sync.md).
 
+## 8b. Environment variable sync (config-driven projects)
+
+When you add, rename, or remove an environment variable an app reads, keep its
+validation schema, `.env.example`, and committed local-development env template
+in sync **in the same task**. Add/adjust validation tests for required vars.
+Read values through the typed/config service; if the runtime config still
+returns raw strings after validation, coerce numbers/booleans at read time with
+a shared helper. Never read `process.env` directly outside config/bootstrap
+code unless the project has an explicit exception. See
+[tooling/env-management](docs/tooling/env-management.md) and the
+[`env-var-sync`](knowledge/instincts/env-var-sync.md) instinct.
+
 ## 9. Shared package impact
 
 When changing a shared package, identify every consumer that imports the changed

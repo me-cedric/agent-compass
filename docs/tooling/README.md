@@ -23,5 +23,5 @@ Concrete setup guides. Each points at runnable files in
 | [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |
 | [docker.md](docker.md)                         | Multi-stage images, local/test compose.                 |
-| [env-management.md](env-management.md)         | `.env.example` discipline, startup validation.          |
+| [env-management.md](env-management.md)         | Env validation, examples, and local defaults kept in sync. |
 | [api-contract-sync.md](api-contract-sync.md)   | OpenAPI/Scalar + Bruno + Gherkin + Mockoon.             |

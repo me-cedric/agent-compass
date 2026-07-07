@@ -5,6 +5,10 @@
 - **One `.env.example`, always current.** Every variable the app reads appears
   there, with a comment explaining it and a safe placeholder. Update it in the
   **same change** that adds/removes a variable.
+- **Sync all env surfaces together.** If the project has startup validation and
+  a committed local-development env template (`.env.development`,
+  `.env.local.example`, or equivalent), update those with `.env.example` in the
+  same task.
 - **Never commit `.env`.** It's gitignored; only `.env.example` is tracked.
 - **Validate at startup.** Parse and validate required env on boot (schema-based);
   fail fast with a clear message naming the missing/invalid var. Don't let a
@@ -33,5 +37,7 @@ README and filling `.env` from `.env.example`.
 
 ## For agents
 
-Touched env? Update `.env.example` and the README's setup section in the same
-task. Surfacing a needed-but-undocumented var is part of "done".
+Touched env? Update validation, `.env.example`, local-dev defaults, validation
+tests for required vars, and the README setup section in the same task.
+Surfacing a needed-but-undocumented var is part of "done". See the
+[`env-var-sync`](../../knowledge/instincts/env-var-sync.md) instinct.
