@@ -55,6 +55,8 @@ test('spec-kit bridge writes bridge files non-destructively', async () => {
     assert.equal(result.code, 0, result.stderr)
     assert.match(await readFile(join(host, '.specify', 'README.md'), 'utf8'), /Spec Kit Bridge/)
     assert.match(await readFile(join(host, 'docs', 'spec-kit', 'README.md'), 'utf8'), /Spec Kit Usage/)
+    assert.match(await readFile(join(host, '.github', 'prompts', 'speckit.specify.prompt.md'), 'utf8'), /speckit-specify/)
+    assert.match(await readFile(join(host, '.github', 'agents', 'speckit.taskstoissues.agent.md'), 'utf8'), /same repository/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }

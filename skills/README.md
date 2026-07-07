@@ -51,6 +51,26 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |
 | `verify-security` | Scans a path for vulnerabilities (OWASP-style).          |
 
+### Spec Kit bridge
+
+Optional command skills for hosts that use GitHub Spec Kit. Use them with
+`spec-kit-bridge` provider prompts/agents, or sync them with `skills-sync` when
+a repo has `.specify/`.
+
+| Skill | What it does |
+| ----- | ------------ |
+| `speckit-constitution` | Create/update project constitution rules. |
+| `speckit-specify` | Create/update behavior-focused feature specs. |
+| `speckit-clarify` | Resolve open spec questions before planning. |
+| `speckit-plan` | Produce technical plan, research, contracts, and validation. |
+| `speckit-tasks` | Generate ordered, test-first implementation tasks. |
+| `speckit-analyze` | Review Spec Kit artifacts for drift and gaps. |
+| `speckit-checklist` | Create feature readiness checklists. |
+| `speckit-implement` | Execute approved tasks under Agent Compass gates. |
+| `speckit-converge` | Reconcile code, tests, docs, and specs after work. |
+| `speckit-agent-context-update` | Refresh Spec Kit context markers without clobbering host guidance. |
+| `speckit-taskstoissues` | Convert tasks into deduped GitHub issues when explicitly approved. |
+
 ### Stack patterns (backend)
 
 | Skill                              | What it does                                               |

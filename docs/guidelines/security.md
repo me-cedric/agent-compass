@@ -37,6 +37,14 @@ If you find a security issue: stop, fix Critical/High before continuing, rotate
 exposed secrets, and sweep the codebase for the same class of bug. Use the
 `verify-security` skill to scan a changed path.
 
+## API edge cases
+
+For API changes touching authorization scope, sensitive tokens, uploads,
+encrypted secrets, external-provider cleanup, or background jobs, also check the
+[`api-security-edge-cases`](../../knowledge/instincts/api-security-edge-cases.md)
+instinct. It covers common BOLA/IDOR scope gaps, token logging, encrypted lookup
+columns, and cleanup failure semantics.
+
 ## For agents
 
 Treat dual-use security work as legitimate only with clear authorization

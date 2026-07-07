@@ -66,6 +66,17 @@ export const PROFILES = {
     templates: ['templates/monorepo'],
     docs: ['docs/architecture/monorepo.md', 'docs/tooling/pnpm.md', 'docs/tooling/turbo.md', 'docs/architecture/shared-types.md'],
   },
+  'spec-kit': {
+    label: 'Spec Kit',
+    skills: [
+      'speckit-constitution', 'speckit-specify', 'speckit-clarify',
+      'speckit-plan', 'speckit-tasks', 'speckit-analyze',
+      'speckit-checklist', 'speckit-implement', 'speckit-converge',
+      'speckit-agent-context-update', 'speckit-taskstoissues',
+    ],
+    templates: ['templates/spec-kit'],
+    docs: ['docs/workflows/spec-driven-development.md'],
+  },
 }
 
 const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.turbo', '.venv'])
@@ -79,7 +90,7 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
     for (const name of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) acc.deps.add(name)
   } catch {}
-  for (const marker of ['turbo.json', 'drizzle.config.ts']) {
+  for (const marker of ['turbo.json', 'drizzle.config.ts', '.specify']) {
     if (existsSync(join(root, marker))) acc.markers.add(marker)
   }
   try {
@@ -105,6 +116,7 @@ export const detectStacks = (root) => {
     (anyDep((n) => n.includes('drizzle')) || markers.has('drizzle.config.ts')) && 'drizzle-postgres',
     (deps.has('bullmq') || deps.has('@nestjs/bullmq')) && 'bullmq',
     (deps.has('turbo') || markers.has('turbo.json')) && 'turbo-monorepo',
+    markers.has('.specify') && 'spec-kit',
   ].filter(Boolean)
 }
 

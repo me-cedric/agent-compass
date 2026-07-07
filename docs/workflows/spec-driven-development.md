@@ -84,3 +84,13 @@ Typical upstream command order:
 
 Keep upstream tooling updates separate from feature artifact updates. Agent
 Compass remains the baseline contract; Spec Kit is an optional artifact generator.
+
+To add provider-facing helpers for a Spec Kit project, run:
+
+```bash
+agent-compass spec-kit-bridge .
+agent-compass skills-sync . --only speckit-constitution,speckit-specify,speckit-clarify,speckit-plan,speckit-tasks,speckit-analyze,speckit-checklist,speckit-implement,speckit-converge,speckit-agent-context-update,speckit-taskstoissues
+```
+
+The bridge creates generic GitHub Copilot `speckit.*` prompts and custom agents.
+It does not install the upstream Spec Kit CLI.

@@ -32,3 +32,8 @@ brokers — is wrapped in resilience policies. Implementation:
 Reference example: [`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md)
 and the `resilience-policy-pattern` instinct in
 [`knowledge/instincts/`](../../knowledge/instincts/).
+
+For queue-backed provider work (media processing, imports, exports, AI calls),
+also use the
+[`async-external-pipeline`](../../knowledge/instincts/async-external-pipeline.md)
+instinct.

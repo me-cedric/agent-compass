@@ -41,6 +41,9 @@ test('detectStacks maps dependencies to stack ids', async () => {
 
     await writeFile(join(host, 'package.json'), JSON.stringify({}))
     assert.deepEqual(detectStacks(host), [])
+
+    await mkdir(join(host, '.specify'), { recursive: true })
+    assert.deepEqual(detectStacks(host), ['spec-kit'])
   } finally {
     await rm(host, { recursive: true, force: true })
   }
@@ -78,6 +81,10 @@ test('selectAssets merges core with matched profiles, deduped', () => {
   assert.ok(selection.skills.includes('drizzle-postgres-patterns'))
   assert.ok(!selection.skills.includes('expo-react-native-patterns'), 'unmatched stacks excluded')
   assert.equal(new Set(selection.skills).size, selection.skills.length, 'no duplicates')
+
+  const specKit = selectAssets(['spec-kit'])
+  assert.ok(specKit.skills.includes('speckit-specify'), 'Spec Kit projects get command skills')
+  assert.ok(specKit.templates.includes('templates/spec-kit'), 'Spec Kit projects get provider pack')
 
   const generic = selectAssets([])
   assert.deepEqual(generic.skills, CORE_PROFILE.skills, 'generic project gets core only')

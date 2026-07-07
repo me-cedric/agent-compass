@@ -69,6 +69,8 @@ Names accept both the short form and the underlying script name
 | `install` | Wire agent-compass into a host (create missing) | `agent-compass install --dry` |
 | `sync` | Update managed files from the submodule (no clobber) | `agent-compass sync .` |
 | `vendor` | Create/refresh a plain-copy vendoring with provenance | `agent-compass vendor /path/to/host --ref v0.4.0` |
+| `spec-kit-bridge` | Install optional Spec Kit bridge files and provider prompts/agents | `agent-compass spec-kit-bridge .` |
+| `skills-sync` | Copy or symlink skills into provider dirs | `agent-compass skills-sync . --only spec-workflow` |
 | `upgrade` | Bump submodule → sync → doctor | `agent-compass upgrade . docs/agent-compass` |
 | `check-update` | Cheap cached "are we behind?" (no tokens) | `agent-compass check-update . --remote` |
 
