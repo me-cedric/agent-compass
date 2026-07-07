@@ -43,9 +43,12 @@ for (const [, relDir] of selected) {
   for (const skill of skills) {
     const src = join(AC, 'skills', skill.name)
     const dest = join(dir, skill.name)
+    if (dry) {
+      console.log(`would ${mode} ${skill.name} -> ${relDir}`)
+      continue
+    }
     if (existsSync(dest)) rmSync(dest, { recursive: true, force: true })
-    if (dry) console.log(`would ${mode} ${skill.name} -> ${relDir}`)
-    else if (mode === 'symlink') symlinkSync(src, dest, 'dir')
+    if (mode === 'symlink') symlinkSync(src, dest, 'dir')
     else cpSync(src, dest, { recursive: true })
   }
 }

@@ -22,6 +22,9 @@ gh pr diff 123
 
 Review locally first. Findings lead. Include file/line references when possible.
 Do not submit anything to GitHub unless asked.
+Use the [`pr-review-governance`](../../skills/pr-review-governance/SKILL.md)
+skill for the review checklist, summary, inline comments, validation evidence,
+and retry/duplicate checks.
 
 ## Direct GitHub Review
 
@@ -30,10 +33,12 @@ User can say: "review PR #123 on GitHub".
 Flow:
 
 1. Read PR metadata and diff.
-2. Decide review mode: comment, approve, or request changes.
-3. Use inline comments when a finding maps to a precise changed line.
-4. Use summary comments for cross-cutting issues.
-5. Submit:
+2. Apply the [`pr-review-governance`](../../skills/pr-review-governance/SKILL.md)
+   checklist.
+3. Decide review mode: comment, approve, or request changes.
+4. Use inline comments when a finding maps to a precise changed line.
+5. Use summary comments for cross-cutting issues.
+6. Submit:
 
 ```bash
 gh pr review 123 --comment --body-file /tmp/review.md

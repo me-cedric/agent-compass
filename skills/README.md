@@ -41,6 +41,7 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | `figma-mcp-frontend` | Uses Figma MCP context for design-system-driven UI implementation. |
 | `debug-loop`     | Builds a tight failing feedback loop before diagnosing hard bugs. |
 | `project-memory`  | Reads and writes durable projectmem context safely.      |
+| `pr-review-governance` | Deep PR/MR review checklist for specs, security, repo rules, docs sync, UI evidence, summary, and inline comments. |
 | `pr-workflow`     | Creates PRs, reviews PRs, and implements review fixes.   |
 | `spec-workflow`   | Guides idea → spec → clarify → plan → tasks → docs sync. |
 | `verify-module`   | Checks module structure/doc completeness.                |

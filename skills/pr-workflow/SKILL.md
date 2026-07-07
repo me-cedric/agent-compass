@@ -23,8 +23,11 @@ implement review fixes.
 
 ## Review PR
 
-- Local review: inspect metadata and diff, then report findings locally.
-- GitHub review: submit `--comment`, `--approve`, or `--request-changes`.
+- Use `pr-review-governance` for the review checklist, summary, and inline
+  comment rules.
+- Local review: inspect metadata and diff, then report governed findings locally.
+- GitHub review: submit `--comment`, `--approve`, or `--request-changes` only
+  after the governed checklist is complete.
 - Inline comments when exact changed lines matter; summary comment otherwise.
 
 ## Implement Review Fixes

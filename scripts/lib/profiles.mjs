@@ -13,7 +13,7 @@ export const CORE_PROFILE = {
   skills: [
     'gen-docs', 'verify-module', 'verify-quality', 'verify-change',
     'verify-security', 'spec-workflow', 'project-memory', 'pr-workflow',
-    'debug-loop', 'agent-teacher', 'architecture-advisor',
+    'pr-review-governance', 'debug-loop', 'agent-teacher', 'architecture-advisor',
   ],
   templates: ['templates/specs', 'templates/intake', 'templates/commands'],
   docs: ['docs/guidelines/coding-style.md', 'docs/guidelines/testing-tdd.md', 'docs/guidelines/documentation.md'],

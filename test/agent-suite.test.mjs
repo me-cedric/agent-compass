@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -68,6 +68,23 @@ test('skills-sync supports copy and symlink modes', async () => {
     const link = await runNode([script('skills-sync'), host, '--symlink', '--target', 'claude'], { cwd: root.pathname })
     assert.equal(link.code, 0, link.stderr)
     assert.ok((await lstat(join(host, '.claude', 'skills', 'caveman'))).isSymbolicLink())
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('skills-sync dry-run preserves existing skill copies', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-skills-dry-'))
+  try {
+    const skillDir = join(host, '.agents', 'skills', 'caveman')
+    const skillFile = join(skillDir, 'SKILL.md')
+    await mkdir(skillDir, { recursive: true })
+    await writeFile(skillFile, 'sentinel')
+
+    const dry = await runNode([script('skills-sync'), host, '--dry', '--target', 'agents', '--only', 'caveman'], { cwd: root.pathname })
+    assert.equal(dry.code, 0, dry.stderr)
+    assert.match(dry.stdout, /would copy caveman -> \.agents\/skills/)
+    assert.equal(await readFile(skillFile, 'utf8'), 'sentinel')
   } finally {
     await rm(host, { recursive: true, force: true })
   }
