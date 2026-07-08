@@ -33,6 +33,18 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | ---------------------- | ------------------------------------------------------------------ |
 | `architecture-advisor` | Choose & justify a new project's architecture — research-first, technology-neutral, no unlabeled guesses; produces ADR, mermaid diagrams, risks, assumptions, open questions, and optionally a backlog and meeting list. |
 
+### Planning & delivery
+
+Chainable playbooks for taking a project from "where are we?" to build-ready
+work: audit → scope → split → detail.
+
+| Skill                     | What it does                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| `progress-audit`          | Diffs specs/requirements against real code into an honest, verified per-feature + global progress matrix. |
+| `completion-plan`         | Turns the audit/specs into an ordered backlog of remaining work-items (plan, rules, matched ticket, deps, gates) and flags work missing from the tracker. |
+| `work-splitting`          | Splits a backlog across owners with clear separation of concern, minimal file overlap, coordination seams, and a shareable assignment brief. |
+| `implementation-planning` | Produces a detailed, production-ready, plug-and-play implementation spec per work-item that a dev or agent can one-shot. |
+
 ### Quality gates
 
 | Skill             | What it does                                              |
