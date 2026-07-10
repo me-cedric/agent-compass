@@ -8,6 +8,7 @@ and the validation commands — so the **same answers yield the same project**.
 | ----------------------------------- | ------------------------------------------------ |
 | [turbo-monorepo.md](turbo-monorepo.md) | The umbrella: pnpm + turbo workspace + tooling. |
 | [nestjs-api.md](nestjs-api.md)      | Backend API (NestJS + Drizzle + BullMQ + OTel).  |
+| [angular-web.md](angular-web.md)    | Angular web app (standalone + signals + CLI MCP). |
 | [react-admin.md](react-admin.md)    | Admin/back-office SPA (Vite + React + MUI).       |
 | [next-web.md](next-web.md)          | Next.js web app (App Router + React).             |
 | [expo-mobile.md](expo-mobile.md)    | Mobile app (Expo Router + React Native).          |

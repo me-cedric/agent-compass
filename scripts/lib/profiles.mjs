@@ -30,6 +30,12 @@ export const PROFILES = {
     templates: ['templates/docker', 'templates/eslint'],
     docs: ['docs/architecture/api-design.md', 'docs/tooling/api-contract-sync.md', 'docs/architecture/resilience.md', 'docs/architecture/observability.md'],
   },
+  'angular-web': {
+    label: 'Angular app',
+    skills: ['angular-patterns', 'figma-mcp-frontend'],
+    templates: ['templates/mcp'],
+    docs: ['docs/tooling/mcp-servers.md'],
+  },
   'react-web': {
     label: 'React app',
     skills: ['react-admin-dashboard-patterns', 'figma-mcp-frontend'],
@@ -90,7 +96,7 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
     for (const name of Object.keys({ ...pkg.dependencies, ...pkg.devDependencies })) acc.deps.add(name)
   } catch {}
-  for (const marker of ['turbo.json', 'drizzle.config.ts', '.specify']) {
+  for (const marker of ['turbo.json', 'drizzle.config.ts', '.specify', 'angular.json']) {
     if (existsSync(join(root, marker))) acc.markers.add(marker)
   }
   try {
@@ -110,6 +116,7 @@ export const detectStacks = (root) => {
   const anyDep = (pred) => [...deps].some(pred)
   return [
     anyDep((n) => n.startsWith('@nestjs/')) && 'nestjs-api',
+    (anyDep((n) => n.startsWith('@angular/')) || markers.has('angular.json')) && 'angular-web',
     (deps.has('react') || deps.has('react-dom')) && !deps.has('react-native') && 'react-web',
     deps.has('next') && 'next-web',
     (deps.has('expo') || deps.has('react-native')) && 'expo-mobile',

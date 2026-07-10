@@ -39,6 +39,9 @@ test('detectStacks maps dependencies to stack ids', async () => {
     assert.ok(mobile.includes('expo-mobile'))
     assert.ok(!mobile.includes('react-web'), 'react-native must not classify as react-web')
 
+    await writeFile(join(host, 'package.json'), JSON.stringify({ dependencies: { '@angular/core': '20' } }))
+    assert.deepEqual(detectStacks(host), ['angular-web'])
+
     await writeFile(join(host, 'package.json'), JSON.stringify({}))
     assert.deepEqual(detectStacks(host), [])
 

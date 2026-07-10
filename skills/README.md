@@ -98,6 +98,7 @@ a repo has `.specify/`.
 
 | Skill                          | What it does                                          |
 | ------------------------------ | ----------------------------------------------------- |
+| `angular-patterns`             | Standalone components, signals, native control flow, inject() DI. |
 | `react-admin-dashboard-patterns` | TanStack Router, MUI, MVVM, RBAC, React Query CRUD. |
 | `expo-react-native-patterns`   | Expo Router, MVVM, Zustand auth, React Query, theming. |
 

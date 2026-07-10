@@ -80,6 +80,7 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+
 
 export const STACK_DOC_BY_APP = {
   'nestjs-api': 'stacks/nestjs-api.md',
+  'angular-web': 'stacks/angular-web.md',
   'react-admin': 'stacks/react-admin.md',
   'expo-mobile': 'stacks/expo-mobile.md',
   'next-web': 'stacks/next-web.md',

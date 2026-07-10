@@ -10,6 +10,7 @@ This project may use MCP servers for agent tools and context.
 | figma | Design context | See `.mcp/figma.example.json` | client secret store |
 | figma-mcp-go | Figma plugin bridge for free/local design reads | See `.mcp/figma-mcp-go.md` and `.mcp/figma-mcp-go.example.json` | none; requires Figma Desktop plugin running and edit role on the Figma file |
 | headroom | Context compression (compress/retrieve/stats) | See `.mcp/headroom.example.json` | none or local only |
+| angular-cli | Angular CLI tools + live best practices/doc search | See `.mcp/angular-cli.example.json` (ships `--read-only`) | none |
 | research (context7, sequential-thinking, fetch, playwright) | Live docs, reasoning, web pages, browser | See `.mcp/recommended.example.json` + `docs/tooling/mcp-servers.md` | none |
 
 ## Rules

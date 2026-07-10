@@ -53,6 +53,15 @@ and update it whenever a server's allowlist changes.
 | headroom | headroom_compress | read | local | auto | input too small to compress | returns compressed payload |
 | headroom | headroom_retrieve | read | local | auto | id not cached | returns original chunk |
 | headroom | headroom_stats | read | none | auto | no session yet | returns token savings |
+| angular-cli | get_best_practices | read | none | auto | — | returns best-practices guide |
+| angular-cli | search_documentation | read | none | auto | no results | returns doc excerpts |
+| angular-cli | list_projects | read | local | auto | no angular.json found | returns workspace projects |
+| angular-cli | onpush_zoneless_migration | read | local | auto | not applicable to code | returns migration analysis |
+| angular-cli | devserver.wait_for_build | read | local | auto | no dev server running | returns latest build logs |
+| angular-cli | ai_tutor | read | none | prompt | interactive; rarely useful in agent runs | returns tutor session |
+| angular-cli | devserver.start | write | local | prompt | port in use / build fails | dev server reachable |
+| angular-cli | devserver.stop | write | local | prompt | no dev server running | server stops |
+| angular-cli | run_target | write | local | prompt | target missing / task fails | target output returned |
 | context7 | resolve-library-id | read | none | auto | library not found | returns library id |
 | context7 | query-docs | read | none | auto | id not found | returns version-correct docs |
 | sequential-thinking | sequentialthinking | read | none | auto | — | returns a reasoning step |

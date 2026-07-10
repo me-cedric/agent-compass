@@ -115,5 +115,5 @@ test('bootstrap --schema prints the answers contract', async () => {
   const run = await runNode([script, '--schema'])
   assert.equal(run.code, 0, run.stderr)
   const schema = JSON.parse(run.stdout)
-  assert.deepEqual(schema.answers.apps.choices, ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'])
+  assert.deepEqual(schema.answers.apps.choices, ['nestjs-api', 'angular-web', 'react-admin', 'expo-mobile', 'next-web'])
 })
