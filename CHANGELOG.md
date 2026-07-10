@@ -3,9 +3,40 @@
 All notable changes to agent-compass are documented here. Keep entries short.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.5.0] - 2026-07-10
 
 ### Added
+
+- Angular AI integration: `stacks/angular-web.md` preset (detected via
+  `@angular/*` deps or `angular.json`, offered by bootstrap), the `angular-cli`
+  MCP server as template/catalog/tool-contract entries (read-only by default),
+  an `angular-patterns` skill with a vendored copy of Angular's official
+  best-practices context file (MIT, provenance header) as offline fallback to
+  the live MCP tools, and an `angular-ai-assets` instinct preferring live
+  sources over training-data recall.
+
+- Project progression pack: `completion-plan`, `implementation-planning`,
+  `progress-audit`, and `work-splitting` skills plus a
+  `verified-progress-signal` instinct.
+
+- Spec Kit bridge pack: `speckit-*` skills wrapping the Spec Kit
+  slash-command flow with a hard stop before implement, a `spec-kit` profile
+  (detected via `.specify`), and `spec-kit-bridge` wiring. Security instincts
+  `api-security-edge-cases` and `async-external-pipeline`, promoted from a
+  real host project.
+
+- `env-var-sync` instinct plus env-management rules in `AGENTS.md` and the
+  env tooling doc.
+
+- `pr-review-governance` skill (deep PR review against specs, security, and
+  repo rules) and tightened `pr-workflow` guidance.
+
+- `figma-mcp-go` plugin-bridge integration (templates, setup guide,
+  `mcp-probe` support): free/local Figma design reads when official Figma
+  MCP/API limits block.
+
+- Validation-defaults and long-running-task workflow docs, plus projectmem
+  guideline gaps closed across doctor/global-setup.
 
 - `vendor` command (`scripts/vendor.mjs`): create/refresh a plain-copy
   vendoring (the non-submodule path) with `.vendor.json` provenance
