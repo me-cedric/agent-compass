@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { lstat, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -120,6 +120,70 @@ test('global setup creates user-level pointers and skills without project files'
     assert.ok(existsSync(join(home, '.claude', 'skills', 'ponytail-review', 'SKILL.md')))
     const verify = await runNode([script('provider-verify'), home, '--global', '--strict'], { cwd: root.pathname })
     assert.equal(verify.code, 0, verify.stderr)
+  } finally {
+    await rm(home, { recursive: true, force: true })
+  }
+})
+
+test('global setup prompts for Jira token and merges Codex and Claude MCP config', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'ac-global-jira-'))
+  const token = 'test-personal-token'
+  try {
+    await mkdir(join(home, '.codex'), { recursive: true })
+    await writeFile(join(home, '.codex', 'config.toml'), '[mcp_servers.existing]\ncommand = "existing"\n')
+    await writeFile(join(home, '.claude.json'), JSON.stringify({
+      mcpServers: { existing: { command: 'existing' } },
+    }))
+
+    const result = await runNode([
+      script('global-setup'),
+      home,
+      '--copy',
+      '--no-skills',
+      '--jira',
+      '--jira-url',
+      'https://jira.example.com/base',
+    ], { cwd: root.pathname, input: `${token}\n` })
+
+    assert.equal(result.code, 0, result.stderr)
+    assert.match(result.stdout, /Jira personal token:/)
+    assert.doesNotMatch(result.stdout, new RegExp(token))
+
+    const codexPath = join(home, '.codex', 'config.toml')
+    const codex = await readFile(codexPath, 'utf8')
+    assert.match(codex, /\[mcp_servers\.existing\]/)
+    assert.match(codex, /\[mcp_servers\.mcp-atlassian\]/)
+    assert.match(codex, /JIRA_URL = "https:\/\/jira\.example\.com\/base"/)
+    assert.match(codex, new RegExp(`JIRA_PERSONAL_TOKEN = "${token}"`))
+
+    const claudePath = join(home, '.claude.json')
+    const claude = JSON.parse(await readFile(claudePath, 'utf8'))
+    assert.equal(claude.mcpServers.existing.command, 'existing')
+    assert.deepEqual(claude.mcpServers['mcp-atlassian'], {
+      type: 'stdio',
+      command: 'uvx',
+      args: ['mcp-atlassian'],
+      env: {
+        JIRA_URL: 'https://jira.example.com/base',
+        JIRA_PERSONAL_TOKEN: token,
+      },
+    })
+    assert.equal((await stat(codexPath)).mode & 0o777, 0o600)
+    assert.equal((await stat(claudePath)).mode & 0o777, 0o600)
+
+    const rerun = await runNode([
+      script('global-setup'),
+      home,
+      '--no-skills',
+      '--jira',
+      '--jira-url',
+      'https://replacement.example.com',
+    ], { cwd: root.pathname, input: 'replacement-token\n' })
+    assert.equal(rerun.code, 0, rerun.stderr)
+    assert.match(rerun.stdout, /skip \.codex\/config\.toml \(mcp-atlassian exists\)/)
+    assert.match(rerun.stdout, /skip \.claude\.json \(mcp-atlassian exists\)/)
+    assert.match(await readFile(codexPath, 'utf8'), new RegExp(token))
+    assert.equal(JSON.parse(await readFile(claudePath, 'utf8')).mcpServers['mcp-atlassian'].env.JIRA_PERSONAL_TOKEN, token)
   } finally {
     await rm(home, { recursive: true, force: true })
   }

@@ -104,6 +104,17 @@ node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --copy
 node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --symlink
 ```
 
+Optional Jira MCP setup for Codex and Claude:
+
+```bash
+node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --jira
+```
+
+The command prompts for the Jira URL and personal token. Token input is hidden
+on an interactive terminal. Pass `--jira-url https://jira.example.com` to skip
+only the URL prompt; the token is always prompted. Existing `mcp-atlassian`
+entries are preserved.
+
 Global setup creates only missing files:
 
 - `~/.agent-compass/README.md`
@@ -112,8 +123,10 @@ Global setup creates only missing files:
 - `~/.claude/CLAUDE.md`
 - skills under `~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`
 
-It never overwrites existing global files. Project-local `AGENTS.md` remains
-authoritative.
+With `--jira`, it merges a new `mcp-atlassian` entry into
+`~/.codex/config.toml` and `~/.claude.json`, preserving other configuration and
+setting both files to owner-only permissions. It never replaces an existing
+Jira MCP entry. Project-local `AGENTS.md` remains authoritative.
 
 ## Verification
 

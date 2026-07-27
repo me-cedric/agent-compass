@@ -1,21 +1,77 @@
 #!/usr/bin/env node
 // global-setup.mjs — non-destructive user-level Agent Compass setup.
 
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync, rmSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import { stdin as input, stdout as output } from 'node:process'
+import { createInterface } from 'node:readline/promises'
+import { Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const args = process.argv.slice(2)
-const help = `Usage: node scripts/global-setup.mjs [home-dir] [--copy|--symlink] [--no-skills] [--dry]
+const help = `Usage: node scripts/global-setup.mjs [home-dir] [--copy|--symlink] [--no-skills] [--jira] [--jira-url <url>] [--dry]
 
-Set up user-level Agent Compass references. Never overwrites existing global files.
+Set up user-level Agent Compass references without replacing existing entries.
+
+Options:
+  --jira             Configure mcp-atlassian globally for Codex and Claude.
+  --jira-url <url>   Jira base URL. Prompted when omitted.
+                     Jira personal token is always prompted and never echoed.
 `
 if (args.includes('--help')) { console.log(help); process.exit(0) }
-const home = resolve(args.find((a) => !a.startsWith('--')) || process.env.HOME || process.cwd())
+const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
+const jiraUrlFlag = flag('--jira-url')
+const home = resolve(args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--jira-url') || process.env.HOME || process.cwd())
 const dry = args.includes('--dry')
 const mode = args.includes('--symlink') ? 'symlink' : 'copy'
 const noSkills = args.includes('--no-skills')
+const jira = args.includes('--jira')
+
+const collectJiraConfig = async () => {
+  let muted = false
+  const terminal = Boolean(input.isTTY && output.isTTY)
+  const promptOutput = new Writable({
+    write(chunk, encoding, callback) {
+      if (!muted) output.write(chunk, encoding)
+      callback()
+    },
+  })
+  const rl = createInterface({ input, output: promptOutput, terminal })
+  try {
+    const rawUrl = (jiraUrlFlag || await rl.question('Jira URL: ')).trim()
+    let url
+    try {
+      url = new URL(rawUrl)
+      if (!['http:', 'https:'].includes(url.protocol)) throw new Error()
+    } catch {
+      throw new Error('Jira URL must be a valid HTTP(S) URL.')
+    }
+
+    const tokenAnswer = rl.question('Jira personal token: ')
+    muted = terminal
+    const token = (await tokenAnswer).trim()
+    muted = false
+    if (terminal) output.write('\n')
+    if (!token) throw new Error('Jira personal token is required.')
+
+    return { url: url.toString().replace(/\/$/, ''), token }
+  } finally {
+    muted = false
+    rl.close()
+  }
+}
+
+let jiraConfig = null
+if (jira && !dry) {
+  try {
+    jiraConfig = await collectJiraConfig()
+  } catch (error) {
+    console.error(`Jira MCP setup failed: ${error.message}`)
+    process.exit(1)
+  }
+}
+
 const writeMissing = (rel, text) => {
   const dest = join(home, rel)
   if (existsSync(dest)) { console.log(`skip ${rel}`); return }
@@ -66,6 +122,73 @@ if (!noSkills) {
     }
   }
 }
+
+const secureWrite = (dest, text) => {
+  mkdirSync(dirname(dest), { recursive: true })
+  writeFileSync(dest, text, { mode: 0o600 })
+  chmodSync(dest, 0o600)
+}
+
+const configureJiraMcp = ({ url, token }) => {
+  const codexPath = join(home, '.codex', 'config.toml')
+  const codex = existsSync(codexPath) ? readFileSync(codexPath, 'utf8') : ''
+  const claudePath = join(home, '.claude.json')
+  const claudeExists = existsSync(claudePath)
+  let claude = {}
+  if (claudeExists) {
+    try {
+      claude = JSON.parse(readFileSync(claudePath, 'utf8'))
+    } catch {
+      throw new Error('.claude.json is not valid JSON; Jira MCP was not configured.')
+    }
+  }
+  if (claude.mcpServers == null) claude.mcpServers = {}
+  if (typeof claude.mcpServers !== 'object' || Array.isArray(claude.mcpServers)) {
+    throw new Error('.claude.json mcpServers must be an object.')
+  }
+
+  if (/^\s*\[mcp_servers\.(?:"mcp-atlassian"|mcp-atlassian)\]\s*$/m.test(codex)) {
+    console.log('skip .codex/config.toml (mcp-atlassian exists)')
+  } else {
+    const block = `[mcp_servers.mcp-atlassian]
+type = "stdio"
+command = "uvx"
+args = ["mcp-atlassian"]
+
+[mcp_servers.mcp-atlassian.env]
+JIRA_URL = ${JSON.stringify(url)}
+JIRA_PERSONAL_TOKEN = ${JSON.stringify(token)}
+`
+    const separator = codex && !codex.endsWith('\n') ? '\n\n' : codex ? '\n' : ''
+    secureWrite(codexPath, codex + separator + block)
+    console.log(`${codex ? 'updated' : 'created'} .codex/config.toml`)
+  }
+
+  if (Object.hasOwn(claude.mcpServers, 'mcp-atlassian')) {
+    console.log('skip .claude.json (mcp-atlassian exists)')
+  } else {
+    claude.mcpServers['mcp-atlassian'] = {
+      type: 'stdio',
+      command: 'uvx',
+      args: ['mcp-atlassian'],
+      env: { JIRA_URL: url, JIRA_PERSONAL_TOKEN: token },
+    }
+    secureWrite(claudePath, JSON.stringify(claude, null, 2) + '\n')
+    console.log(`${claudeExists ? 'updated' : 'created'} .claude.json`)
+  }
+}
+
+if (jiraConfig) {
+  try {
+    configureJiraMcp(jiraConfig)
+  } catch (error) {
+    console.error(`Jira MCP setup failed: ${error.message}`)
+    process.exit(1)
+  }
+} else if (jira && dry) {
+  console.log('would configure Jira MCP -> .codex/config.toml, .claude.json')
+}
+
 const manifest = { schema: 1, source: AC, mode, skills: !noSkills, updatedAt: new Date().toISOString() }
 if (!dry) writeFileSync(join(home, '.agent-compass', 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 else console.log(JSON.stringify(manifest, null, 2))
