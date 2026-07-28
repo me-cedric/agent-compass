@@ -3,6 +3,17 @@
 All notable changes to agent-compass are documented here. Keep entries short.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- `pr-review-governance` skill: a "GitLab MR posting (`glab`)" section
+  documenting the two silent `glab api` traps — `-f "body=@file"` posts the
+  literal `@path` instead of the file, and inline comments need a JSON body with
+  an explicit `Content-Type: application/json` header and a `position` object
+  (nested `-f "position[...]"` form fields are dropped, degrading the comment to
+  a general thread) — plus the post-hoc anchoring verification step.
+
 ## [0.5.0] - 2026-07-10
 
 ### Added

@@ -110,3 +110,46 @@ request, branch, or submitted review comments.
 - Verify posted comments and remove accidental duplicates before finishing.
 - For GitLab MRs, inspect existing discussions before retrying so repeated tool
   calls do not post duplicate notes.
+
+## GitLab MR posting (`glab`)
+
+`glab api` has two silent traps when posting a review — both post *something*
+that looks fine but is wrong, so always verify after posting.
+
+1. **Summary / general note** (`POST .../merge_requests/<iid>/notes`) — pass the
+   body via command substitution, never `@file`:
+
+   ```bash
+   glab api "projects/:id/merge_requests/<iid>/notes" -f "body=$(cat review.md)"
+   ```
+
+   `-f "body=@review.md"` does **not** read the file — it posts the literal
+   string `@review.md`. `--input file` alone returns `HTTP 415` (no
+   content-type).
+
+2. **Line-anchored inline comment** (`POST .../merge_requests/<iid>/discussions`)
+   — must use a JSON body **and** an explicit content-type header. Nested
+   `-f "position[...]"` form fields are dropped silently: the comment posts as a
+   general thread, not on the line.
+
+   ```bash
+   # diff SHAs come from: glab api projects/:id/merge_requests/<iid> -> .diff_refs
+   glab api "projects/:id/merge_requests/<iid>/discussions" --method POST \
+     -H "Content-Type: application/json" --input discussion.json
+   ```
+
+   ```json
+   {
+     "body": "…",
+     "position": {
+       "position_type": "text",
+       "base_sha": "…", "start_sha": "…", "head_sha": "…",
+       "new_path": "path/to/file.ts", "old_path": "path/to/file.ts",
+       "new_line": 515
+     }
+   }
+   ```
+
+3. **Verify anchoring** — re-read each discussion; a null `notes[0].position`
+   means it degraded to a general thread. Delete the stray note
+   (`DELETE .../merge_requests/<iid>/notes/<id>`) and repost with the JSON body.
