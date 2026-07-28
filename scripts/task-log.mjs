@@ -1,33 +1,46 @@
 #!/usr/bin/env node
 // task-log.mjs — append/read structured completion-gate records.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/task-log.mjs [root] --add --goal <text> [--mode <mode>] [--files <csv>] [--commands <csv>] [--validation <text>] [--risks <text>] [--next <text>]
-       node scripts/task-log.mjs [root] --list [--markdown]
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name, fallback = '') => { const i = args.indexOf(name); return i === -1 ? fallback : args[i + 1] || fallback }
-const positional = args.filter((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--'))
-const root = resolve(positional[0] || process.cwd())
+const { values, positionals } = parseCliArgs({
+  name: 'task-log',
+  script: 'task-log.mjs',
+  summary: 'Append/read structured completion-gate records.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    add: { type: 'boolean', desc: 'Append a record (requires --goal).' },
+    goal: { type: 'string', value: '<text>', desc: 'What the task set out to do (required with --add).' },
+    mode: { type: 'string', value: '<mode>', desc: 'Task mode (default: implementation).' },
+    files: { type: 'string', value: '<csv>', desc: 'Comma-separated changed files.' },
+    commands: { type: 'string', value: '<csv>', desc: 'Comma-separated commands run.' },
+    validation: { type: 'string', value: '<text>', desc: 'Validation result (default: not run).' },
+    risks: { type: 'string', value: '<text>', desc: 'Remaining risks (default: none stated).' },
+    next: { type: 'string', value: '<text>', desc: 'Suggested next step.' },
+    list: { type: 'boolean', desc: 'Read the log (default when --add is absent).' },
+    markdown: { type: 'boolean', desc: 'Render the log as markdown instead of JSON.' },
+  },
+})
+
+const root = resolveRoot(positionals)
 const logPath = join(root, '.agent', 'task-log.jsonl')
 const rows = () => existsSync(logPath) ? readFileSync(logPath, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []
 
-if (args.includes('--add')) {
-  const goal = flag('--goal')
+if (values.add) {
+  const goal = values.goal || ''
   if (!goal) { console.error('--goal required'); process.exit(1) }
   const row = {
     schema: 1,
     createdAt: new Date().toISOString(),
     goal,
-    mode: flag('--mode', 'implementation'),
-    files: flag('--files').split(',').map((s) => s.trim()).filter(Boolean),
-    commands: flag('--commands').split(',').map((s) => s.trim()).filter(Boolean),
-    validation: flag('--validation', 'not run'),
-    risks: flag('--risks', 'none stated'),
-    next: flag('--next', ''),
+    mode: values.mode || 'implementation',
+    files: (values.files || '').split(',').map((s) => s.trim()).filter(Boolean),
+    commands: (values.commands || '').split(',').map((s) => s.trim()).filter(Boolean),
+    validation: values.validation || 'not run',
+    risks: values.risks || 'none stated',
+    next: values.next || '',
   }
   mkdirSync(join(root, '.agent'), { recursive: true })
   appendFileSync(logPath, JSON.stringify(row) + '\n')
@@ -36,7 +49,7 @@ if (args.includes('--add')) {
 }
 
 const data = rows()
-if (args.includes('--markdown')) {
+if (values.markdown) {
   console.log(`# Agent Task Log
 
 | Date | Mode | Goal | Validation |

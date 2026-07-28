@@ -2,29 +2,30 @@
 // apply-recommendations.mjs — apply safe recommendation actions for project or global setup.
 
 import { spawnSync } from 'node:child_process'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/apply-recommendations.mjs [root] [--global] [--dry] [--policy <name>] [--skills copy|symlink|none]
 
-Apply safe Agent Compass setup recommendations. Project mode is default.
+const { values, positionals } = parseCliArgs({
+  name: 'apply-recommendations',
+  script: 'apply-recommendations.mjs',
+  summary: 'Apply safe Agent Compass setup recommendations. Project mode is default.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    global: { type: 'boolean', desc: 'Configure user-level agent setup instead of a project.' },
+    dry: { type: 'boolean', desc: 'Print actions only.' },
+    policy: { type: 'string', value: '<name>', desc: 'Apply a policy pack: safe-local-work, strict-enterprise, startup-fast, solo-dev, regulated-api.' },
+    skills: { type: 'string', value: '<mode>', default: 'copy', desc: 'copy | symlink | none (default copy)' },
+  },
+})
 
-Options:
-  --global          Configure user-level agent setup instead of a project.
-  --dry             Print actions only.
-  --policy <name>   Apply a policy pack: safe-local-work, strict-enterprise, startup-fast, solo-dev, regulated-api.
-  --skills <mode>   copy | symlink | none (default copy)
-  --help            Show this help.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name, fallback = null) => { const i = args.indexOf(name); return i === -1 ? fallback : args[i + 1] || fallback }
-const target = resolve(args.find((a) => !a.startsWith('--') && !['copy', 'symlink', 'none'].includes(a) && a !== flag('--policy') && a !== flag('--skills')) || process.cwd())
-const dry = args.includes('--dry')
-const skills = flag('--skills', 'copy')
-const policy = flag('--policy')
-const global = args.includes('--global')
+const target = resolveRoot(positionals)
+const dry = Boolean(values.dry)
+const skills = values.skills
+const policy = values.policy || null
+const global = Boolean(values.global)
 
 const run = (label, script, scriptArgs) => {
   const cmd = [join(AC, 'scripts', script), ...scriptArgs]

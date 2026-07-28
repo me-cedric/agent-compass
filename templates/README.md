@@ -26,15 +26,17 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `docker/`         | `Dockerfile.{nestjs,web}`, `.dockerignore`, `docker-compose.local.example.yml`  | [docker](../docs/tooling/docker.md)                  |
 | `sonar/`          | `sonar-project.{api,web}.properties`                                            | [sonarqube](../docs/tooling/sonarqube.md)            |
 | `security/`       | `.osv-scanner.toml`                                                              | [security-scanning](../docs/tooling/security-scanning.md) |
-| `scripts/`        | `checkmarx-package.sh`, `sonar-setup.sh`                                         | [security-scanning](../docs/tooling/security-scanning.md), [sonarqube](../docs/tooling/sonarqube.md) |
+| `scripts/`        | `checkmarx-package.sh`, `sonar-setup.sh`, `sonar-do.sh`, `sonar-doctor.sh`, `bulk-close-stale-issues.mjs`, `patch-sonar-summary.mjs` | [security-scanning](../docs/tooling/security-scanning.md), [sonarqube](../docs/tooling/sonarqube.md) |
 | `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`, `agent-drift.example.yml` | CI starting points (GitHub Actions)                  |
 | `commands/`       | `agent-compass.commands.json`                                                    | command registry for agents                          |
 | `intake/`         | `work-intake.md`, `README.md`                                                    | force agent-ready Goal/Context/Constraints/Done/Validation |
 | `architecture/`   | `architecture-intake.md`, `architecture-decision.md`, `decision-matrix.md`, `diagrams.md`, `tech-backlog.md`, `technical-meetings.md` | new-project architecture decisions (scaffold with `new arch`) |
 | `context/`        | `repo-map.md`                                                                    | active repo surface map + task routing               |
-| `conformance/`    | `agent-smoke-test.md`                                                            | lightweight agent behavior smoke test                |
+| `conformance/`    | `agent-smoke-test.md`, `provider-discovery-smoke.md`                             | lightweight agent behavior + provider discovery smoke tests |
 | `codex/`          | `.codex/config.toml`, `.codex/hooks.json`                                        | Codex repo config, goals, hooks, MCP, sandbox profile |
 | `claude/`         | `.claude/agents/*`, `.claude/hooks/*`, `.claude/settings.example.json`           | Claude subagents and hook templates                  |
+| `gemini/`         | `.gemini/settings.example.json`                                                  | Gemini CLI settings with recommended MCP servers (installed as host `.gemini/settings.example.json`) |
+| `handoff.md`      | loose file — agent handoff report (goal, files, validation, decisions)           | Completion Gate handoff (`AGENTS.md §4`)             |
 | `design-system/`  | `README.md`                                                                      | Figma/design-system extraction worksheet            |
 | `policies/`       | setup policy packs (`safe-local-work`, `solo-dev`, `startup-fast`, `strict-enterprise`, `regulated-api`) | `policy-pack.mjs` |
 | `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.agent.md`, `.github/ISSUE_TEMPLATE/agent-ready-task.yml` | agent rules, prompts, custom agents, intake form, PR template |

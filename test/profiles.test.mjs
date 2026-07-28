@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -22,6 +22,24 @@ test('every asset referenced by a profile exists in the repo', () => {
   }
   for (const skill of STYLE_SKILLS) {
     assert.ok(existsSync(join(AC, 'skills', skill, 'SKILL.md')), `style skill missing: ${skill}`)
+  }
+})
+
+test('every skills/ directory is reachable from a profile (no orphan skills)', () => {
+  // compass-* skills are mission playbooks that run inside compass itself, and
+  // STYLE_SKILLS are user-preference picks — everything else must be installable
+  // via CORE_PROFILE or some stack profile, or it can never reach a host.
+  const reachable = new Set([
+    ...CORE_PROFILE.skills,
+    ...Object.values(PROFILES).flatMap((p) => p.skills),
+    ...STYLE_SKILLS,
+  ])
+  const dirs = readdirSync(join(AC, 'skills'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('compass-'))
+    .map((entry) => entry.name)
+  assert.ok(dirs.length > 0, 'skills/ scan found nothing — wrong path?')
+  for (const name of dirs) {
+    assert.ok(reachable.has(name), `orphan skill: skills/${name} is not in CORE_PROFILE, any PROFILES[*].skills, or STYLE_SKILLS`)
   }
 })
 

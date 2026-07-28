@@ -2,15 +2,24 @@
 // doctor-fix.mjs — stronger autofix wrapper around setup-host + reports.
 
 import { spawnSync } from 'node:child_process'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/doctor-fix.mjs [host-dir] [--dry]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const dry = args.includes('--dry')
+
+const { values, positionals } = parseCliArgs({
+  name: 'doctor-fix',
+  script: 'doctor-fix.mjs',
+  summary: 'Autofix host agent setup and regenerate reports.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Show what would change; write nothing.' },
+  },
+})
+
+const root = resolveRoot(positionals)
+const dry = Boolean(values.dry)
 const steps = [
   ['setup-host.mjs', dry ? ['--dry', root] : [root]],
   ['provider-verify.mjs', dry ? [root] : [root, '--write']],

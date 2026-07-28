@@ -6,28 +6,28 @@
 
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/run-command.mjs <name> [root] [--confirm] [--dry] [--list]
+const { values, positionals } = parseCliArgs({
+  name: 'run',
+  script: 'run-command.mjs',
+  summary: `Resolve <name> (dotted ok, e.g. projectMemory.brief) in agent-compass.commands.json
+and run it. Destructive commands require --confirm.`,
+  positionals: [
+    { name: 'name', required: false },
+    { name: 'root', required: false },
+  ],
+  options: {
+    list: { type: 'boolean', desc: 'List runnable command names.' },
+    confirm: { type: 'boolean', desc: 'Allow a destructive command to run.' },
+    dry: { type: 'boolean', desc: 'Print the resolved command without running it.' },
+  },
+})
 
-Resolve <name> (dotted ok, e.g. projectMemory.brief) in agent-compass.commands.json
-and run it. Destructive commands require --confirm.
-
-Options:
-  --list      List runnable command names.
-  --confirm   Allow a destructive command to run.
-  --dry       Print the resolved command without running it.
-  --help      Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const flags = new Set(args.filter((a) => a.startsWith('--')))
-const positional = args.filter((a) => !a.startsWith('--'))
-const listing = flags.has('--list')
-const name = listing ? null : positional[0]
-const ROOT = resolve((listing ? positional[0] : positional[1]) || process.cwd())
+const listing = Boolean(values.list)
+const name = listing ? null : positionals[0]
+const ROOT = resolveRoot(listing ? positionals : positionals.slice(1))
 const DESTRUCTIVE = /\b(push|deploy|publish|release|force)\b|\brm\s|reset\s+--hard|drop\s+(table|database)|--force\b/i
 
 let registry
@@ -61,11 +61,11 @@ if (!isRunnable(entry)) {
 const cmd = typeof entry === 'string' ? entry : entry.cmd
 const destructive = typeof entry === 'object' ? Boolean(entry.destructive) : DESTRUCTIVE.test(cmd)
 
-if (destructive && !flags.has('--confirm')) {
+if (destructive && !values.confirm) {
   console.error(`"${name}" looks destructive (${cmd}). Re-run with --confirm to proceed.`)
   process.exit(1)
 }
-if (flags.has('--dry')) { console.log(cmd); process.exit(0) }
+if (values.dry) { console.log(cmd); process.exit(0) }
 
 const result = spawnSync(cmd, { cwd: ROOT, shell: true, stdio: 'inherit' })
 process.exit(result.status === null ? 1 : result.status)

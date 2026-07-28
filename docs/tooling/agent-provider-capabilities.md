@@ -14,7 +14,7 @@ with the closest plain workflow.
 
 | Need | First choice | Use when | Avoid when |
 | ---- | ------------ | -------- | ---------- |
-| Persistent project rules | `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md` | Rule should apply every session. | One-off task detail. |
+| Persistent project rules | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` | Rule should apply every session. | One-off task detail. |
 | Repeated workflow | Skill, prompt file, or command | Same checklist/prompt appears more than twice. | It is still experimental. |
 | External tool/data | MCP | Agent needs Figma, browser, docs, project memory, GitHub, DB, or product systems. | A normal repo command answers it. |
 | Deterministic enforcement | Hook, husky, CI | Action must happen every time. | Judgment or product choice is required. |
@@ -94,21 +94,40 @@ Offer to use Copilot-native tooling when:
 - Path rules differ by package: "I can add `.github/instructions` rules."
 - Cloud agent needs safe external data: "I can document MCP allowlisted tools."
 
-## VS Code Agents, Cursor, Windsurf, Gemini
+## Gemini
 
-These tools should still route through `AGENTS.md` first, then use their native
-customization layer only where it adds discovery or automation:
+Use:
 
-- VS Code Agents: instructions, prompt files, skills, custom agents, MCP,
-  hooks, plugins, and the customizations evaluation extension.
-- Cursor: project/team/user rules, `AGENTS.md`, skills, hooks, subagents, plan
-  mode, cloud agents, automations, and MCP.
-- Windsurf/Devin Desktop: rules, workflows/playbooks, memories, and MCP. Keep
-  rules short and move long procedures into docs/skills.
-- Gemini CLI / Gemini Code Assist: `GEMINI.md`, slash commands, extensions,
-  MCP, built-in tools, and agent-mode plan/tool approvals.
+- `GEMINI.md` for Gemini-specific pointers that sit behind `AGENTS.md`. It is
+  Gemini CLI's context file — the direct equivalent of `CLAUDE.md`.
+- Slash commands, extensions, built-in tools, and agent-mode plan/tool
+  approvals where the surface supports them.
+- MCP servers via `.gemini/settings.json`. Start from
+  [`../../templates/gemini/.gemini/settings.example.json`](../../templates/gemini/.gemini/settings.example.json)
+  (installed into hosts as `.gemini/settings.example.json`) and record every
+  enabled tool in the
+  [MCP tool contract](../../templates/mcp/tool-contract.md) — Gemini has no
+  per-tool allowlist, so the contract plus client approval prompts are the
+  guardrail.
+- Husky hooks, CI, and the command registry `agent-compass.commands.json` for
+  deterministic enforcement. Gemini CLI has **no hook system**, so anything
+  that must happen every time belongs in the repo, not in instructions.
 
-Use [`../../templates/agent-tools/README.md`](../../templates/agent-tools/README.md)
+Offer to use Gemini-native tooling when:
+
+- A rule must apply every Gemini session: "This belongs in `GEMINI.md`."
+- Missing external context blocks progress: "I can add an MCP server to
+  `.gemini/settings.json`."
+- A check must never be skipped: "Gemini has no hooks — this belongs in Husky
+  or CI."
+
+## Other tools
+
+Any other agent tool (editor agents, desktop agents, new CLIs) should point its
+rule/instructions file at `AGENTS.md` and reuse the same skills, templates, and
+command registry. Keep provider-specific rules short and move long procedures
+into docs/skills. Use
+[`../../templates/agent-tools/README.md`](../../templates/agent-tools/README.md)
 as the provider-template index.
 
 ## Tool Offer Pattern
@@ -166,6 +185,8 @@ Keyless ones can be enabled immediately; keep keys out of git.
   https://developers.openai.com/codex/learn/best-practices
 - Codex skills:
   https://developers.openai.com/codex/skills
+- Gemini CLI (GEMINI.md context, settings, MCP, extensions):
+  https://github.com/google-gemini/gemini-cli
 - GitHub Copilot repository instructions, prompt files, custom agents, and MCP:
   https://docs.github.com/copilot
 - GitHub Copilot custom instructions:

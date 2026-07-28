@@ -4,22 +4,21 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/upgrade-host.mjs <host-root> [submodule-path] [--dry]
+const { values, positionals } = parseCliArgs({
+  name: 'upgrade',
+  script: 'upgrade-host.mjs',
+  summary: 'Update an agent-compass submodule, sync managed files, then run doctor.',
+  positionals: [{ name: 'host-root', required: true }, { name: 'submodule-path', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Print the commands without running them.' },
+  },
+})
 
-Update an agent-compass submodule, sync managed files, then run doctor.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const positional = args.filter((arg) => !arg.startsWith('--'))
-const host = resolve(positional[0] || '')
-const submodule = positional[1] || 'docs/agent-compass'
-const dry = args.includes('--dry')
+const host = resolve(positionals[0] || '')
+const submodule = positionals[1] || 'docs/agent-compass'
+const dry = Boolean(values.dry)
 const ac = join(host, submodule)
 const run = (cmd, cmdArgs, cwd = host) => execFileSync(cmd, cmdArgs, { cwd, encoding: 'utf8' }).trim()
 

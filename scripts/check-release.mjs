@@ -1,30 +1,27 @@
 #!/usr/bin/env node
-// check-release.mjs — verify package version, changelog, and local git tag agree.
+// check-release.mjs — verify package version, changelog, README, and local git tag agree.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/check-release.mjs [--root <dir>]
-
-Verify release metadata before tagging/publishing:
+const { values, positionals } = parseCliArgs({
+  name: 'check-release',
+  usage: 'node scripts/check-release.mjs [root] [options]',
+  summary: `Verify release metadata before tagging/publishing:
   - package.json version exists
   - CHANGELOG.md has matching dated section
-  - local git repo has tag v<version>
+  - README.md badge and "Current version" string match
+  - local git repo has tag v<version>`,
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Check another root directory.' },
+  },
+})
 
-Options:
-  --root <dir>  Check another root directory.
-  --help        Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const rootArg = process.argv.indexOf('--root')
-const ROOT = rootArg === -1 ? dirname(dirname(fileURLToPath(import.meta.url))) : resolve(process.argv[rootArg + 1] || '')
+const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToPath(import.meta.url))))
 const hits = []
 
 let version = ''
@@ -45,6 +42,16 @@ if (version) {
   }
 }
 
+if (version) {
+  const readme = existsSync(join(ROOT, 'README.md')) ? readFileSync(join(ROOT, 'README.md'), 'utf8') : ''
+  if (!readme.includes(`version-v${version}`)) {
+    hits.push(`README.md: missing badge token version-v${version}`)
+  }
+  if (!readme.includes(`Current version: \`${version}\``)) {
+    hits.push(`README.md: missing string Current version: \`${version}\``)
+  }
+}
+
 if (version && existsSync(join(ROOT, '.git'))) {
   const tag = `v${version}`
   const result = spawnSync('git', ['-C', ROOT, 'tag', '--list', tag], { encoding: 'utf8' })
@@ -58,4 +65,4 @@ if (hits.length) {
   process.exit(1)
 }
 
-console.log('✓ release check passed — package version, changelog, and local tag agree.')
+console.log('✓ release check passed — package version, changelog, README, and local tag agree.')

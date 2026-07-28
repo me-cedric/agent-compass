@@ -4,24 +4,23 @@
 // runbook and smoke test. Read-only aggregator; --strict fails on any gap.
 
 import { spawnSync } from 'node:child_process'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/agent-onboard.mjs [host-dir] [--strict]
-
-Aggregate readiness checks and print the startup route.
-
-Options:
-  --strict   Exit 1 if any check fails.
-  --help     Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
+const { values, positionals } = parseCliArgs({
+  name: 'onboard',
+  script: 'agent-onboard.mjs',
+  summary: 'Aggregate readiness checks and print the startup route.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    strict: { type: 'boolean', desc: 'Exit 1 if any check fails.' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const strict = args.includes('--strict')
+const HOST = resolveRoot(positionals)
+const strict = Boolean(values.strict)
 
 const step = (label, scriptArgs) => {
   const run = spawnSync(process.execPath, [join(AC, 'scripts', scriptArgs[0]), ...scriptArgs.slice(1)], { encoding: 'utf8' })

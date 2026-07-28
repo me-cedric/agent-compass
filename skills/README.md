@@ -106,7 +106,7 @@ a repo has `.specify/`.
 
 - **Claude Code:** reference a skill in a prompt ("use the `verify-security`
   skill on `src/modules/payments`"), or sync them into your global config with
-  [`skillshare`](https://github.com/) so they auto-trigger.
+  `skillshare` so they auto-trigger.
 - **Codex / Copilot:** point the agent at the relevant `SKILL.md` as context;
   the patterns and checklists apply the same way.
 

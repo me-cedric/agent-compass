@@ -2,22 +2,17 @@
 // context.mjs — print a compact agent startup snapshot for the current repo.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/context.mjs [root]
+const { positionals } = parseCliArgs({
+  name: 'context',
+  script: 'context.mjs',
+  summary: 'Print a compact repo snapshot for coding agents.',
+  positionals: [{ name: 'root', required: false }],
+})
 
-Print a compact repo snapshot for coding agents.
-
-Options:
-  --help      Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const ROOT = resolve(process.argv.slice(2).find((arg) => !arg.startsWith('--')) || process.cwd())
+const ROOT = resolveRoot(positionals)
 const readJson = (path) => {
   try { return JSON.parse(readFileSync(path, 'utf8')) } catch { return null }
 }

@@ -2,22 +2,22 @@
 // runbook.mjs — generate a compact .agent/RUNBOOK.md from local agent files.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 
 import { detectStacks, selectAssets, stackLabels } from './lib/profiles.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/runbook.mjs [root] [--write]
+const { values, positionals } = parseCliArgs({
+  name: 'runbook',
+  script: 'runbook.mjs',
+  summary: 'Print a compact agent runbook. With --write, save to .agent/RUNBOOK.md.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the runbook to .agent/RUNBOOK.md.' },
+  },
+})
 
-Print a compact agent runbook. With --write, save to .agent/RUNBOOK.md.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const root = resolve(args.find((arg) => !arg.startsWith('--')) || process.cwd())
+const root = resolveRoot(positionals)
 const read = (path) => existsSync(join(root, path)) ? readFileSync(join(root, path), 'utf8').trim() : ''
 const commands = read('agent-compass.commands.json')
 const stackIds = detectStacks(root)
@@ -72,7 +72,7 @@ Use \`.agent/provider-discovery-smoke.md\` or generated \`.agent/agent-conforman
 to ask Claude, Codex, and Copilot which guidance/tools they loaded.
 `
 
-if (args.includes('--write')) {
+if (values.write) {
   const out = join(root, '.agent', 'RUNBOOK.md')
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(out, runbook)

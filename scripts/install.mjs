@@ -8,35 +8,33 @@
 //   node docs/agent-compass/scripts/install.mjs <host-dir> # explicit host root
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
-import { dirname, resolve, relative, join } from 'node:path'
+import { dirname, relative, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { doctorChecks, ensureProjectmemIgnores, fixHuskyHookModes } from './doctor-checks.mjs'
 import { FILE_MANIFEST, LOCK_REL, TEXT_RE, isHook, sha, loadSubst, renderSource, acVersion } from './manifest.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { c, sym } from './lib/tui.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/install.mjs [--dry] [--doctor] [--deep] [host-dir]
 
-Wire agent-compass pointers, hooks, and config templates into a host project.
+const { values, positionals } = parseCliArgs({
+  name: 'install',
+  script: 'install.mjs',
+  summary: 'Wire agent-compass pointers, hooks, and config templates into a host project.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Preview files that would be created.' },
+    doctor: { type: 'boolean', desc: 'Verify host wiring.' },
+    deep: { type: 'boolean', desc: 'Include advisory checks for optional agent workflows.' },
+    fix: { type: 'boolean', desc: 'Append projectmem ignores and chmod existing Husky hooks.' },
+  },
+})
 
-Options:
-  --dry       Preview files that would be created.
-  --doctor    Verify host wiring.
-  --deep      Include advisory checks for optional agent workflows.
-  --fix       Append projectmem ignores and chmod existing Husky hooks.
-  --help      Show this help.
-`
-
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const dry = args.includes('--dry')
-const doctor = args.includes('--doctor')
-const deep = args.includes('--deep')
-const fix = args.includes('--fix')
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const dry = Boolean(values.dry)
+const doctor = Boolean(values.doctor)
+const deep = Boolean(values.deep)
+const fix = Boolean(values.fix)
+const HOST = resolveRoot(positionals)
 
 if (HOST === AC) {
   console.error('Refusing to install agent-compass into itself. Run from the host project root.')
@@ -64,20 +62,20 @@ const runDoctor = () => {
   const failed = checks.filter(([, ok]) => !ok)
   console.log(`\nagent-compass doctor → ${HOST}\n`)
   console.log('Required checks:')
-  checks.forEach(([label, ok, detail]) => console.log(`${ok ? '✓' : '✗'} ${label}${!ok && detail?.length ? ` (${detail.join(', ')})` : ''}`))
+  checks.forEach(([label, ok, detail]) => console.log(`${ok ? sym.ok() : sym.fail()} ${label}${!ok && detail?.length ? ` (${detail.join(', ')})` : ''}`))
   console.log('\nAdvisory checks:')
-  advisory.forEach(([label, ok]) => console.log(`${ok ? '✓' : '·'} ${label}`))
+  advisory.forEach(([label, ok]) => console.log(`${ok ? sym.ok() : sym.skip()} ${label}`))
   if (deep) {
     const missing = deepChecks.filter(([, ok]) => !ok)
     console.log('\nDeep advisory checks:')
-    deepChecks.forEach(([label, ok]) => console.log(`${ok ? '✓' : '·'} ${label}`))
+    deepChecks.forEach(([label, ok]) => console.log(`${ok ? sym.ok() : sym.skip()} ${label}`))
     if (missing.length) console.log(`\nDeep advisory: ${missing.length} optional setup file(s) missing.`)
   }
   if (failed.length) {
     console.error(`\n${failed.length} required check(s) failed. Run --fix for safe fixes; remove local path leaks manually.`)
     process.exit(1)
   }
-  console.log('\n✓ doctor passed')
+  console.log(`\n${sym.ok()} ${c.green('doctor passed')}`)
 }
 
 if (doctor) {
@@ -126,6 +124,7 @@ This project follows the shared **agent-compass** contract.
 - Read \`${acRel}/AGENTS.md\` first — it is the canonical agent contract.
 - Guidelines: \`${acRel}/docs/guidelines/\` · Architecture: \`${acRel}/docs/architecture/\` · Tooling: \`${acRel}/docs/tooling/\`
 - Skills: \`${acRel}/skills/\` · Templates: \`${acRel}/templates/\`
+- Knowledge: \`${acRel}/knowledge/\` — instincts and worked examples.
 
 Add project-specific conventions below this line; they take precedence over the
 agent-compass baseline on conflict.
@@ -143,22 +142,24 @@ Read \`${acRel}/AGENTS.md\` first. It is the canonical agent-compass contract.
 Host project \`AGENTS.md\` takes precedence when it adds project-specific rules.
 `
 const toolPointers = [
-  ['CLAUDE.md', pointerText('Claude')],
-  ['CODEX.md', pointerText('Codex')],
-  ['GEMINI.md', pointerText('Gemini')],
-  ['.github/copilot-instructions.md', pointerText('GitHub Copilot')],
-  ['.cursor/rules/agent-compass.mdc', `---
-description: Agent Compass contract
-alwaysApply: true
----
-
-Read \`${acRel}/AGENTS.md\` first. It is the canonical agent-compass contract.
-
-Host project \`AGENTS.md\` takes precedence when it adds project-specific rules.
-`],
-  ['.windsurf/rules/agent-compass.md', pointerText('Windsurf')],
+  ['claude', 'CLAUDE.md', pointerText('Claude')],
+  ['codex', 'CODEX.md', pointerText('Codex')],
+  ['gemini', 'GEMINI.md', pointerText('Gemini')],
+  ['copilot', '.github/copilot-instructions.md', pointerText('GitHub Copilot')],
 ]
-for (const [dest, text] of toolPointers) writeTextIfMissing(dest, text)
+// Only create pointers for providers picked at bootstrap time (answers.json);
+// without a providers list, create all of them. Unknown values are skipped.
+const readProviders = () => {
+  try {
+    const answers = JSON.parse(readFileSync(join(HOST, 'agent-compass.answers.json'), 'utf8'))
+    return Array.isArray(answers.providers) ? answers.providers : null
+  } catch { return null }
+}
+const providers = readProviders()
+for (const [provider, dest, text] of toolPointers) {
+  if (providers && !providers.includes(provider)) continue
+  writeTextIfMissing(dest, text)
+}
 
 // 2) Husky hooks (only if the host has no .husky yet).
 if (!existsSync(join(HOST, '.husky'))) {
@@ -208,9 +209,9 @@ console.log(`\nagent-compass install ${dry ? '(dry run) ' : ''}→ ${HOST}`)
 console.log(`  source: ${AC}`)
 console.log(`  scope:  ${scope}   name: ${name}\n`)
 console.log('Created:')
-created.length ? created.forEach((f) => console.log('  + ' + f)) : console.log('  (nothing)')
+created.length ? created.forEach((f) => console.log(`  ${sym.plus()} ${f}`)) : console.log('  (nothing)')
 console.log('\nSkipped (already present):')
-skipped.length ? skipped.forEach((f) => console.log('  · ' + f)) : console.log('  (none)')
+skipped.length ? skipped.forEach((f) => console.log(`  ${sym.skip()} ${f}`)) : console.log('  (none)')
 console.log(`\nNext steps:
   - Review created files; substitute remaining placeholders (<project>, <app>, <PM>).
   - If you have turbo/pnpm workspace files, copy the relevant ones from

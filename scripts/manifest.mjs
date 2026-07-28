@@ -7,7 +7,7 @@
 //               when the host has not diverged; on divergence it writes a
 //               `<file>.acnew` beside it instead of clobbering.
 //
-// Pointers (CLAUDE.md, AGENTS.md, .cursor/rules, …) are NOT here: they reference
+// Pointers (CLAUDE.md, AGENTS.md, GEMINI.md, …) are NOT here: they reference
 // the submodule, so they update for free when the submodule updates.
 
 import { createHash } from 'node:crypto'
@@ -64,8 +64,9 @@ export const FILE_MANIFEST = [
   ['templates/mcp/projectmem.example.json', '.mcp/projectmem.example.json', 'managed'],
   ['templates/mcp/copilot-cloud.example.json', '.mcp/copilot-cloud.example.json', 'managed'],
   ['templates/mcp/codex.example.toml', '.mcp/codex.example.toml', 'managed'],
-  ['templates/mcp/cursor.example.json', '.mcp/cursor.example.json', 'managed'],
+  ['templates/mcp/angular-cli.example.json', '.mcp/angular-cli.example.json', 'managed'],
   ['templates/mcp/gemini.example.json', '.mcp/gemini.example.json', 'managed'],
+  ['templates/gemini/.gemini/settings.example.json', '.gemini/settings.example.json', 'managed'],
   ['templates/mcp/headroom.example.json', '.mcp/headroom.example.json', 'managed'],
   ['templates/mcp/recommended.example.json', '.mcp/recommended.example.json', 'managed'],
 ].map(([src, dest, mode]) => ({ src, dest, mode }))

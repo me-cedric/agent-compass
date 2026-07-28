@@ -7,31 +7,30 @@
 
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { acVersion } from './manifest.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/check-update.mjs [host] [--remote] [--force] [--quiet] [--strict]
-
-Report whether the host's agent-compass files are behind. Cached for 24h.
-
-Options:
-  --remote   Also compare the vendored version to the newest upstream git tag.
-  --force    Ignore the cache and re-check now.
-  --quiet    Print nothing when up to date (still prints when behind).
-  --strict   Exit 1 when an update is available.
-  --help     Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
+const { values, positionals } = parseCliArgs({
+  name: 'check-update',
+  script: 'check-update.mjs',
+  summary: "Report whether the host's agent-compass files are behind. Cached for 24h.",
+  positionals: [{ name: 'host', required: false }],
+  options: {
+    remote: { type: 'boolean', desc: 'Also compare the vendored version to the newest upstream git tag.' },
+    force: { type: 'boolean', desc: 'Ignore the cache and re-check now.' },
+    quiet: { type: 'boolean', desc: 'Print nothing when up to date (still prints when behind).' },
+    strict: { type: 'boolean', desc: 'Exit 1 when an update is available.' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const remote = args.includes('--remote')
-const force = args.includes('--force')
-const quiet = args.includes('--quiet')
-const strict = args.includes('--strict')
+const HOST = resolveRoot(positionals)
+const remote = Boolean(values.remote)
+const force = Boolean(values.force)
+const quiet = Boolean(values.quiet)
+const strict = Boolean(values.strict)
 const TTL_MS = 24 * 60 * 60 * 1000
 const cachePath = join(HOST, '.agent', '.update-check.json')
 

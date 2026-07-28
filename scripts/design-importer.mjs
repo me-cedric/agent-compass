@@ -1,24 +1,29 @@
 #!/usr/bin/env node
 // design-importer.mjs — create design-system docs from Figma/token export.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/design-importer.mjs [root] [--source <json>] [--write]
+const { values, positionals } = parseCliArgs({
+  name: 'design-importer',
+  script: 'design-importer.mjs',
+  summary: 'Source JSON may contain tokens/colors/type/components. Without source, writes starter.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    source: { type: 'string', value: '<json>', desc: 'Figma/token export JSON to import.' },
+    write: { type: 'boolean', desc: 'Write docs/design/DESIGN-SYSTEM.md and FIGMA-CODE-MAP.md.' },
+  },
+})
 
-Source JSON may contain tokens/colors/type/components. Without source, writes starter.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const root = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--source')) || process.cwd())
+const root = resolveRoot(positionals)
 let source = {}
-try { source = JSON.parse(readFileSync(resolve(flag('--source')), 'utf8')) } catch {}
+try { source = JSON.parse(readFileSync(resolve(values.source), 'utf8')) } catch {}
 const colors = source.colors || source.tokens?.colors || {}
 const components = source.components || []
 const report = `# Design System
 
-Source: ${flag('--source') || 'starter'}
+Source: ${values.source || 'starter'}
 
 ## Tokens
 
@@ -43,7 +48,7 @@ const map = `# Figma To Code Map
 | ---------- | --------- | ----- |
 | TBD | TBD | Add during implementation |
 `
-if (args.includes('--write')) {
+if (values.write) {
   mkdirSync(join(root, 'docs', 'design'), { recursive: true })
   writeFileSync(join(root, 'docs', 'design', 'DESIGN-SYSTEM.md'), report)
   writeFileSync(join(root, 'docs', 'design', 'FIGMA-CODE-MAP.md'), map)

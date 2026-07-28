@@ -4,30 +4,27 @@
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { findIssues } from './lib/redact.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/redact.mjs [root] [--staged] [--files a,b]
+const { values, positionals } = parseCliArgs({
+  name: 'redact',
+  script: 'redact.mjs',
+  summary: 'Scan files for secret/PII-looking content. Exit 1 if any is found.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    staged: { type: 'boolean', desc: 'Scan files staged for commit (git diff --cached).' },
+    files: { type: 'string', value: 'a,b', desc: 'Explicit comma-separated file list.' },
+  },
+})
 
-Scan files for secret/PII-looking content. Exit 1 if any is found.
-
-Options:
-  --staged     Scan files staged for commit (git diff --cached).
-  --files a,b  Explicit comma-separated file list.
-  --help       Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const ROOT = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--files')) || process.cwd())
+const ROOT = resolveRoot(positionals)
 
 let files = []
-const filesFlag = flag('--files')
-if (filesFlag) {
-  files = filesFlag.split(',').map((f) => f.trim()).filter(Boolean)
-} else if (args.includes('--staged')) {
+if (values.files) {
+  files = values.files.split(',').map((f) => f.trim()).filter(Boolean)
+} else if (values.staged) {
   try {
     files = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACM'], { cwd: ROOT, encoding: 'utf8' })
       .split('\n').map((f) => f.trim()).filter(Boolean)

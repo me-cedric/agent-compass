@@ -4,25 +4,23 @@
 // JS/TS relative imports only; not a full module resolver.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/gen-depgraph.mjs [root] [--dir <subdir>] [--write] [--check]
+const { values, positionals } = parseCliArgs({
+  name: 'depgraph',
+  script: 'gen-depgraph.mjs',
+  summary: 'Generate a Mermaid import graph at docs/architecture/dependencies.md.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    dir: { type: 'string', value: '<subdir>', desc: 'Directory to scan (default: src if present, else scripts).' },
+    write: { type: 'boolean', desc: 'Write docs/architecture/dependencies.md.' },
+    check: { type: 'boolean', desc: 'Exit 1 if the file is missing or stale (read-only).' },
+  },
+})
 
-Generate a Mermaid import graph at docs/architecture/dependencies.md.
-
-Options:
-  --dir <subdir>  Directory to scan (default: src if present, else scripts).
-  --write         Write docs/architecture/dependencies.md.
-  --check         Exit 1 if the file is missing or stale (read-only).
-  --help          Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const ROOT = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--dir')) || process.cwd())
-const SUBDIR = flag('--dir') || (existsSync(join(ROOT, 'src')) ? 'src' : 'scripts')
+const ROOT = resolveRoot(positionals)
+const SUBDIR = values.dir || (existsSync(join(ROOT, 'src')) ? 'src' : 'scripts')
 const SCAN = join(ROOT, SUBDIR)
 const OUT = join(ROOT, 'docs', 'architecture', 'dependencies.md')
 const CODE = /\.(ts|tsx|js|jsx|mjs|cjs)$/
@@ -43,7 +41,7 @@ const files = walk(SCAN).sort()
 const fileSet = new Set(files)
 const rel = (f) => relative(SCAN, f)
 const resolveImport = (fromFile, spec) => {
-  const base = resolve(dirname(fromFile), spec)
+  const base = join(dirname(fromFile), spec)
   for (const candidate of [base, `${base}.mjs`, `${base}.js`, `${base}.ts`, join(base, 'index.mjs'), join(base, 'index.js'), join(base, 'index.ts')]) {
     if (fileSet.has(candidate)) return candidate
   }
@@ -74,11 +72,11 @@ if (hot.length) for (const to of hot) lines.push(`- \`${to}\` ← ${dependedOnBy
 else lines.push('- (no internal dependencies found)')
 const serialized = lines.join('\n') + '\n'
 
-if (args.includes('--check')) {
+if (values.check) {
   const current = existsSync(OUT) ? readFileSync(OUT, 'utf8') : ''
   if (current !== serialized) { console.error('✗ dependencies.md is missing or stale — run with --write'); process.exit(1) }
   console.log('✓ dependency graph up to date.')
-} else if (args.includes('--write')) {
+} else if (values.write) {
   mkdirSync(dirname(OUT), { recursive: true })
   writeFileSync(OUT, serialized)
   console.log(OUT)

@@ -8,25 +8,31 @@ import { createInterface } from 'node:readline/promises'
 import { Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
+import { parseCliArgs } from './lib/args.mjs'
+
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/global-setup.mjs [home-dir] [--copy|--symlink] [--no-skills] [--jira] [--jira-url <url>] [--dry]
 
-Set up user-level Agent Compass references without replacing existing entries.
+const { values, positionals } = parseCliArgs({
+  name: 'global-setup',
+  script: 'global-setup.mjs',
+  summary: 'Set up user-level Agent Compass references without replacing existing entries.',
+  positionals: [{ name: 'home-dir', required: false }],
+  options: {
+    copy: { type: 'boolean', desc: 'Copy skills into user-level skill dirs (default).' },
+    symlink: { type: 'boolean', desc: 'Symlink skills instead of copying.' },
+    'no-skills': { type: 'boolean', desc: 'Skip syncing skills.' },
+    jira: { type: 'boolean', desc: 'Configure mcp-atlassian globally for Codex and Claude.' },
+    'jira-url': { type: 'string', value: '<url>', desc: 'Jira base URL; prompted when omitted. The Jira personal token is always prompted and never echoed.' },
+    dry: { type: 'boolean', desc: 'Print what would change; write nothing.' },
+  },
+})
 
-Options:
-  --jira             Configure mcp-atlassian globally for Codex and Claude.
-  --jira-url <url>   Jira base URL. Prompted when omitted.
-                     Jira personal token is always prompted and never echoed.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const jiraUrlFlag = flag('--jira-url')
-const home = resolve(args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--jira-url') || process.env.HOME || process.cwd())
-const dry = args.includes('--dry')
-const mode = args.includes('--symlink') ? 'symlink' : 'copy'
-const noSkills = args.includes('--no-skills')
-const jira = args.includes('--jira')
+const jiraUrlFlag = values['jira-url'] || null
+const home = resolve(positionals[0] || process.env.HOME || process.cwd())
+const dry = Boolean(values.dry)
+const mode = values.symlink ? 'symlink' : 'copy'
+const noSkills = Boolean(values['no-skills'])
+const jira = Boolean(values.jira)
 
 const collectJiraConfig = async () => {
   let muted = false

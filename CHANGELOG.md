@@ -5,7 +5,46 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-28
+
+### Changed
+
+- **Provider consolidation: Claude, Codex, Gemini, GitHub Copilot only.**
+  Cursor and Windsurf integrations removed (repo rule files, host pointers,
+  MCP example, verify/doctor checks, docs). `migrations/0.6.0.mjs` cleans
+  compass-authored Cursor/Windsurf pointers out of existing hosts on `sync`
+  (user-edited files are never touched). `install` now respects a
+  `providers` list from `agent-compass.answers.json`.
+
+- **CLI modernization (still zero-dependency).** New shared strict flag
+  parser (`scripts/lib/args.mjs`, on `node:util` `parseArgs`): unknown flags
+  error instead of being ignored, `--flag=value` works, `-h` can no longer be
+  swallowed as a positional. New terminal UX lib (`scripts/lib/tui.mjs`):
+  colors (NO_COLOR-aware), arrow-key select/multi-select, confirm, spinner.
+  `wizard` and `bootstrap` are interactive with real menus and no longer hang
+  in non-TTY contexts; `cli.mjs` exports `COMMANDS` as data (catalog imports
+  it instead of regex-parsing), shows aliases in help, and reports spawn
+  failures properly.
+
 ### Added
+
+- Gemini parity: `templates/gemini/.gemini/settings.example.json` (recommended
+  MCP servers) installed to hosts, enriched `GEMINI.md`, and `provider-verify`
+  now checks the Gemini pointer + settings example.
+
+- `docs/architecture/compass-map.md`: a maintained self-map of the repo
+  (layout, flows, provider matrix, validation matrix) so agents stop
+  re-exploring from scratch.
+
+- Planning skills (`progress-audit`, `completion-plan`, `work-splitting`,
+  `implementation-planning`) added to the core fit profile so fit-based
+  adoption actually delivers them.
+
+- `spec-status-sync` instinct: when you ship a feature covered by a spec-kit
+  spec, sync its status in the same task — update the global
+  `implementation-status.md` and the spec's own `## Implementation Status`
+  (a verified one-line status + pointer, checked against wired code, not labels)
+  — never leave a shipped feature's spec reading "Not implemented".
 
 - `self-review-before-done` instinct: review your own change like an MR before
   calling it done — target the runtime blind spots typecheck and unit mocks miss
@@ -19,6 +58,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   an explicit `Content-Type: application/json` header and a `position` object
   (nested `-f "position[...]"` form fields are dropped, degrading the comment to
   a general thread) — plus the post-hoc anchoring verification step.
+
+### Fixed
+
+- README version drift (badge and "Current version" said 0.4.0);
+  `check-release` now guards README against `package.json`.
+- `.mcp/angular-cli.example.json` is now installed (hosts previously received
+  a README pointing at a file the manifest never placed).
+- `docs/tooling/cli.md` documents all CLI commands; `check-indexes` now fails
+  on missing command docs, knowledge-index drift, stale skill rows,
+  unindexed template files, and unindexed guideline/architecture docs.
+- `knowledge/README.md` lists all instincts; host `AGENTS.md` pointer now
+  mentions `knowledge/`; `recommend` path-instruction advice includes the
+  exact copy command; `mcp-probe` probes all shipped MCP examples.
 
 ## [0.5.0] - 2026-07-10
 

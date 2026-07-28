@@ -3,26 +3,25 @@
 // Runs only agent-compass scripts; no global config edits, no dependency install.
 
 import { spawnSync } from 'node:child_process'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/setup-host.mjs [host-dir] [--dry] [--strict]
-
-Install or refresh agent-compass host setup, then generate agent startup files.
-
-Options:
-  --dry      Preview install only; generated reports are skipped.
-  --strict   Exit 1 if onboarding check has any gap.
-  --help     Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
+const { values, positionals } = parseCliArgs({
+  name: 'setup-host',
+  script: 'setup-host.mjs',
+  summary: 'Install or refresh agent-compass host setup, then generate agent startup files.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Preview install only; generated reports are skipped.' },
+    strict: { type: 'boolean', desc: 'Exit 1 if onboarding check has any gap.' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const dry = args.includes('--dry')
-const strict = args.includes('--strict')
+const HOST = resolveRoot(positionals)
+const dry = Boolean(values.dry)
+const strict = Boolean(values.strict)
 
 if (HOST === AC) {
   console.error('Refusing to set up agent-compass into itself. Pass a host project path.')

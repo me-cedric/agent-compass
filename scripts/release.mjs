@@ -3,30 +3,27 @@
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/release.mjs <version> [--commit] [--tag] [--dry]
+const { values, positionals } = parseCliArgs({
+  name: 'release',
+  script: 'release.mjs',
+  summary: 'Bump package.json and CHANGELOG.md from Unreleased to a dated release section.',
+  positionals: [{ name: 'version', required: true }],
+  options: {
+    commit: { type: 'boolean', desc: 'Commit package.json and CHANGELOG.md.' },
+    tag: { type: 'boolean', desc: 'Create annotated v<version> tag. Requires --commit or clean tree.' },
+    dry: { type: 'boolean', desc: 'Print changes, do not write, commit, or tag.' },
+  },
+})
 
-Bump package.json and CHANGELOG.md from Unreleased to a dated release section.
-
-Options:
-  --commit  Commit package.json and CHANGELOG.md.
-  --tag     Create annotated v<version> tag. Requires --commit or clean tree.
-  --dry     Print changes, do not write, commit, or tag.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const version = args.find((arg) => /^\d+\.\d+\.\d+/.test(arg))
-if (!version) {
+const version = positionals[0]
+if (!version || !/^\d+\.\d+\.\d+/.test(version)) {
   console.error('Usage: node scripts/release.mjs <version>')
   process.exit(1)
 }
 
-const dry = args.includes('--dry')
+const dry = Boolean(values.dry)
 const date = new Date().toISOString().slice(0, 10)
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
 pkg.version = version
@@ -41,8 +38,8 @@ if (dry) {
 writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`)
 writeFileSync('CHANGELOG.md', changelog)
 
-if (args.includes('--tag')) {
-  if (args.includes('--commit')) {
+if (values.tag) {
+  if (values.commit) {
     execFileSync('git', ['add', 'package.json', 'CHANGELOG.md'], { stdio: 'inherit' })
     execFileSync('git', ['commit', '-m', `chore: release v${version}`], { stdio: 'inherit' })
   } else {

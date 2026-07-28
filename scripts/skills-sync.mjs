@@ -2,26 +2,34 @@
 // skills-sync.mjs — copy or symlink Agent Compass skills into host provider dirs.
 
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/skills-sync.mjs [host-dir] [--copy|--symlink] [--target <name>] [--only a,b,c] [--dry]
+
+const { values, positionals } = parseCliArgs({
+  name: 'skills-sync',
+  script: 'skills-sync.mjs',
+  summary: `Copy or symlink Agent Compass skills into host provider dirs.
 
 Targets: agents (.agents/skills), claude (.claude/skills), codex (.agents/skills), all
-Default: --copy --target all
+Default: --copy --target all`,
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    copy: { type: 'boolean', desc: 'Copy skills into provider dirs (default).' },
+    symlink: { type: 'boolean', desc: 'Symlink skills instead of copying.' },
+    target: { type: 'string', value: '<name>', desc: 'Provider target: agents | claude | codex | all (default: all).' },
+    only: { type: 'string', value: '<a,b,c>', desc: 'Sync a fit-based subset (comma-separated skill names; see `recommend --json` assets.skills).' },
+    dry: { type: 'boolean', desc: 'Show what would sync; write nothing.' },
+  },
+})
 
---only syncs a fit-based subset (comma-separated skill names). Get the list for
-a host from \`recommend --json\` (assets.skills).
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const root = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--target') && a !== flag('--only')) || process.cwd())
-const mode = args.includes('--symlink') ? 'symlink' : 'copy'
-const target = flag('--target') || 'all'
-const only = flag('--only')?.split(',').map((s) => s.trim()).filter(Boolean) || null
-const dry = args.includes('--dry')
+const root = resolveRoot(positionals)
+const mode = values.symlink ? 'symlink' : 'copy'
+const target = values.target || 'all'
+const only = values.only?.split(',').map((s) => s.trim()).filter(Boolean) || null
+const dry = Boolean(values.dry)
 const targets = {
   agents: '.agents/skills',
   codex: '.agents/skills',

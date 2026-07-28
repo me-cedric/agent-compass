@@ -2,35 +2,39 @@
 // setup-wizard.mjs — interactive host setup planner + executor.
 
 import { spawnSync } from 'node:child_process'
-import { createInterface } from 'node:readline/promises'
-import { stdin as input, stdout as output } from 'node:process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
+import { confirm, multiselect, select, text } from './lib/tui.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/setup-wizard.mjs [host-dir] [--global] [--yes] [--dry] [--no-run]
 
-Create agent-compass.answers.json and an adoption plan, then optionally run setup-host.
+const { values, positionals } = parseCliArgs({
+  name: 'wizard',
+  script: 'setup-wizard.mjs',
+  summary: 'Create agent-compass.answers.json and an adoption plan, then optionally run setup-host.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    global: { type: 'boolean', desc: 'Plan user-level setup instead of project setup.' },
+    yes: { type: 'boolean', desc: 'Use detected/default answers (no prompts).' },
+    dry: { type: 'boolean', desc: 'Print plan, write nothing.' },
+    'no-run': { type: 'boolean', desc: 'Write plan only; do not run setup-host.' },
+  },
+})
 
-Options:
-  --global  Plan user-level setup instead of project setup.
-  --yes     Use detected/default answers.
-  --dry     Print plan, write nothing.
-  --no-run  Write plan only; do not run setup-host.
-  Skill scope defaults to fit+style: core + detected stacks + working-style skills.
-  --help    Show this help.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
+const HOST = resolveRoot(positionals)
+const yes = Boolean(values.yes)
+const dry = Boolean(values.dry)
+const noRun = Boolean(values['no-run'])
+const global = Boolean(values.global)
 
-const HOST = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const yes = args.includes('--yes')
-const dry = args.includes('--dry')
-const noRun = args.includes('--no-run')
-const global = args.includes('--global')
+if (!yes && !process.stdin.isTTY) {
+  console.error('non-interactive terminal: pass --yes or run in a TTY')
+  process.exit(1)
+}
 
 const readJson = (path) => { try { return JSON.parse(readFileSync(path, 'utf8')) } catch { return null } }
 const pkg = readJson(join(HOST, 'package.json')) || {}
@@ -39,24 +43,43 @@ const detectPm = () => existsSync(join(HOST, 'pnpm-lock.yaml')) ? 'pnpm'
     : existsSync(join(HOST, 'bun.lockb')) ? 'bun'
       : 'npm'
 
-const ask = async (rl, label, fallback) => {
-  if (yes) return fallback
-  const answer = await rl.question(`${label} [${fallback}]: `)
-  return answer.trim() || fallback
+const PROVIDERS = ['claude', 'codex', 'gemini', 'copilot']
+const detected = detectStacks(HOST)
+const defaults = {
+  name: pkg.name || HOST.split('/').pop(),
+  scope: '@scope',
+  packageManager: detectPm(),
+  stacks: detected.length ? detected : ['generic'],
+  providers: PROVIDERS,
+  useSpecKit: true,
+  skillSync: 'copy',
+  skillScope: 'fit+style',
 }
 
-const rl = yes ? null : createInterface({ input, output })
-const answers = {
-  name: await ask(rl, 'Project name', pkg.name || HOST.split('/').pop()),
-  scope: await ask(rl, 'Package scope', '@scope'),
-  packageManager: await ask(rl, 'Package manager', detectPm()),
-  stacks: (await ask(rl, 'Stacks comma-list', detectStacks(HOST).join(',') || 'generic')).split(',').map((s) => s.trim()).filter(Boolean),
-  providers: (await ask(rl, 'Agent providers comma-list', 'claude,codex,copilot,cursor,windsurf,gemini')).split(',').map((s) => s.trim()).filter(Boolean),
-  useSpecKit: (await ask(rl, 'Install Spec Kit bridge? yes/no', 'yes')).toLowerCase().startsWith('y'),
-  skillSync: await ask(rl, 'Skill sync mode copy|symlink|none', 'copy'),
-  skillScope: await ask(rl, 'Skill scope fit|fit+style|all (fit+style = core + detected stacks + working-style skills)', 'fit+style'),
-}
-if (rl) rl.close()
+const promptAnswers = async () => ({
+  name: await text({ message: 'Project name', initial: defaults.name }),
+  scope: await text({ message: 'Package scope', initial: defaults.scope }),
+  packageManager: await select({ message: 'Package manager', options: ['npm', 'pnpm', 'yarn', 'bun'], initial: defaults.packageManager }),
+  stacks: await multiselect({
+    message: 'Stacks',
+    options: [...new Set([...detected, ...Object.keys(PROFILES), 'generic'])],
+    initial: defaults.stacks,
+  }),
+  providers: await multiselect({ message: 'Agent providers', options: PROVIDERS, initial: PROVIDERS }),
+  useSpecKit: await confirm({ message: 'Install Spec Kit bridge?', initial: true }),
+  skillSync: await select({ message: 'Skill sync mode', options: ['copy', 'symlink', 'none'], initial: 'copy' }),
+  skillScope: await select({
+    message: 'Skill scope',
+    options: [
+      { value: 'fit', label: 'fit', hint: 'core + detected stacks' },
+      { value: 'fit+style', label: 'fit+style', hint: 'core + detected stacks + working-style skills' },
+      { value: 'all', label: 'all' },
+    ],
+    initial: defaults.skillScope,
+  }),
+})
+
+const answers = yes ? defaults : await promptAnswers()
 
 const plan = `# Agent Compass Setup Plan
 

@@ -2,14 +2,23 @@
 // provider-verify.mjs — deterministic provider setup verification.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import { STYLE_SKILLS } from './lib/profiles.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/provider-verify.mjs [root] [--global] [--write] [--json] [--strict]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const global = args.includes('--global')
+const { values, positionals } = parseCliArgs({
+  name: 'provider-verify',
+  script: 'provider-verify.mjs',
+  summary: 'Deterministic provider setup verification.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    global: { type: 'boolean', desc: 'Verify user-level setup instead of a project.' },
+    write: { type: 'boolean', desc: 'Write report to .agent/provider-verification.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable JSON instead of markdown.' },
+    strict: { type: 'boolean', desc: 'Exit 1 when any check fails.' },
+  },
+})
+const root = resolveRoot(positionals)
 const has = (p) => existsSync(join(root, p))
 const reads = (p, re) => has(p) && re.test(readFileSync(join(root, p), 'utf8'))
 const hasSkills = (base, names = STYLE_SKILLS) => names.every((name) => has(join(base, name, 'SKILL.md')))
@@ -18,8 +27,8 @@ const projectChecks = [
   ['CLAUDE.md points to AGENTS', reads('CLAUDE.md', /AGENTS\.md/), 'Claude'],
   ['CODEX.md points to AGENTS', reads('CODEX.md', /AGENTS\.md/), 'Codex'],
   ['Copilot instructions point to AGENTS', reads('.github/copilot-instructions.md', /AGENTS\.md/), 'Copilot'],
-  ['Cursor rule exists', has('.cursor/rules/agent-compass.mdc'), 'Cursor'],
-  ['Windsurf rule exists', has('.windsurf/rules/agent-compass.md'), 'Windsurf'],
+  ['GEMINI.md points to AGENTS', reads('GEMINI.md', /AGENTS\.md/), 'Gemini'],
+  ['Gemini settings example exists', has('.gemini/settings.example.json'), 'Gemini'],
   ['Codex hooks/config exist', has('.codex/config.toml') && has('.codex/hooks.json'), 'Codex'],
   ['Claude agents/hooks exist', has('.claude/agents/reviewer.md') && has('.claude/hooks/remind-completion-gate.sh'), 'Claude'],
   ['Copilot prompts/agents exist', has('.github/prompts/prompt-upgrade.prompt.md') && has('.github/agents/agent-compass-teacher.agent.md'), 'Copilot'],
@@ -34,20 +43,20 @@ const globalChecks = [
   ['global Codex working-style skills exist', hasSkills('.codex/skills'), 'Codex'],
   ['global Claude working-style skills exist', hasSkills('.claude/skills'), 'Claude'],
 ]
-const checks = global ? globalChecks : projectChecks
+const checks = values.global ? globalChecks : projectChecks
 const report = `# Provider Verification
 
 Root: \`${root}\`
-Mode: \`${global ? 'global' : 'project'}\`
+Mode: \`${values.global ? 'global' : 'project'}\`
 
 | Check | Status | Provider |
 | ----- | ------ | -------- |
 ${checks.map(([label, ok, provider]) => `| ${label} | ${ok ? 'ok' : 'missing'} | ${provider} |`).join('\n')}
 `
-if (args.includes('--json')) console.log(JSON.stringify({ schema: 1, root, checks: checks.map(([label, ok, provider]) => ({ label, ok, provider })) }, null, 2))
-else if (args.includes('--write')) {
+if (values.json) console.log(JSON.stringify({ schema: 1, root, checks: checks.map(([label, ok, provider]) => ({ label, ok, provider })) }, null, 2))
+else if (values.write) {
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(join(root, '.agent', 'provider-verification.md'), report)
   console.log(join(root, '.agent', 'provider-verification.md'))
 } else console.log(report)
-if (args.includes('--strict') && checks.some(([, ok]) => !ok)) process.exit(1)
+if (values.strict && checks.some(([, ok]) => !ok)) process.exit(1)

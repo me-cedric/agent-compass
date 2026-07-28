@@ -3,32 +3,24 @@
 // provider smoke prompts. Does not run external agents.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/agent-conformance.mjs [--root <dir>] [--write] [--json] [--strict]
+const { values, positionals } = parseCliArgs({
+  name: 'conformance',
+  script: 'agent-conformance.mjs',
+  summary: `Inspect Claude/Codex/Copilot agent customization artifacts and print smoke
+prompts that ask each agent what guidance/tools it loaded.`,
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Root directory (also accepted as a positional).' },
+    write: { type: 'boolean', desc: 'Save prompt packet to .agent/agent-conformance.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable checks.' },
+    strict: { type: 'boolean', desc: 'Exit 1 when any check is missing.' },
+  },
+})
 
-Inspect Claude/Codex/Copilot agent customization artifacts and print smoke
-prompts that ask each agent what guidance/tools it loaded.
-
-Options:
-  --root <dir>  Check another root directory.
-  --write       Save prompt packet to .agent/agent-conformance.md.
-  --json        Print machine-readable checks.
-  --strict      Exit 1 when any check is missing.
-  --help        Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const arg = (name) => {
-  const i = process.argv.indexOf(name)
-  return i === -1 ? null : process.argv[i + 1]
-}
-
-const ROOT = resolve(arg('--root') || process.cwd())
+const ROOT = resolveRoot(positionals, values.root)
 const has = (...parts) => existsSync(join(ROOT, ...parts)) || existsSync(join(ROOT, 'docs', 'agent-compass', ...parts))
 const any = (...paths) => paths.some((path) => has(...path.split('/')))
 
@@ -120,13 +112,13 @@ ${prompt}
 - Agent teaches selectively, not every turn.
 `
 
-if (process.argv.includes('--write')) {
+if (values.write) {
   const out = join(ROOT, '.agent', 'agent-conformance.md')
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, packet)
 }
 
-if (process.argv.includes('--json')) {
+if (values.json) {
   console.log(JSON.stringify({ root: ROOT, checks: checks.map(([label, ok]) => ({ label, ok })) }, null, 2))
 } else {
   console.log(`# Agent Conformance
@@ -140,4 +132,4 @@ ${checks.map(([label, ok]) => `| ${label} | ${ok ? 'passed' : 'missing'} |`).joi
 ${packet}`)
 }
 
-if (process.argv.includes('--strict') && checks.some(([, ok]) => !ok)) process.exit(1)
+if (values.strict && checks.some(([, ok]) => !ok)) process.exit(1)

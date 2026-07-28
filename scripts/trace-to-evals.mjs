@@ -5,25 +5,23 @@
 
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/trace-to-evals.mjs --file <trace.jsonl> [--out <path>] [--min-corrections N] [root]
+const { values, positionals } = parseCliArgs({
+  name: 'trace-to-evals',
+  script: 'trace-to-evals.mjs',
+  summary: 'Emit regression eval scenarios from failed or high-correction trace rows.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    file: { type: 'string', value: '<path>', desc: 'Trace JSONL (required).' },
+    out: { type: 'string', value: '<path>', desc: 'Write the fixture; otherwise print it.' },
+    'min-corrections': { type: 'string', value: 'N', desc: 'Treat rows with >= N corrections as regressions (default 2).' },
+  },
+})
 
-Emit regression eval scenarios from failed or high-correction trace rows.
-
-Options:
-  --file <path>         Trace JSONL (required).
-  --out <path>          Write the fixture; otherwise print it.
-  --min-corrections N   Treat rows with >= N corrections as regressions (default 2).
-  --help                Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const ROOT = resolve(args.find((a) => !a.startsWith('--') && ![flag('--file'), flag('--out'), flag('--min-corrections')].includes(a)) || process.cwd())
-const file = flag('--file')
-const minCorrections = Number(flag('--min-corrections') || 2)
+const ROOT = resolveRoot(positionals)
+const file = values.file
+const minCorrections = Number(values['min-corrections'] || 2)
 
 if (!file) { console.error('Pass --file <trace.jsonl>.'); process.exit(1) }
 
@@ -60,7 +58,7 @@ const fixture = {
   })),
 }
 
-const out = flag('--out')
+const out = values.out
 const serialized = JSON.stringify(fixture, null, 2) + '\n'
 if (out) {
   writeFileSync(resolve(ROOT, out), serialized)

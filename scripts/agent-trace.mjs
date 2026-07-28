@@ -7,30 +7,22 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { SECRET_RE, EMAIL_RE } from './lib/redact.mjs'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/agent-trace.mjs [--root <dir>] [--file <path>]
-
-Validate an agent trace log (JSONL): required fields + no secrets/PII.
-
-Options:
-  --root <dir>   Repository root.
-  --file <path>  JSONL log (default: templates/trace/agent-trace.example.jsonl).
-  --help         Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const arg = (name) => {
-  const i = process.argv.indexOf(name)
-  return i === -1 ? null : process.argv[i + 1]
-}
+const { values, positionals } = parseCliArgs({
+  name: 'trace',
+  script: 'agent-trace.mjs',
+  summary: 'Validate an agent trace log (JSONL): required fields + no secrets/PII.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Repository root (also accepted as a positional).' },
+    file: { type: 'string', value: '<path>', desc: 'JSONL log (default: templates/trace/agent-trace.example.jsonl).' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const ROOT = resolve(arg('--root') || AC)
-const file = resolve(ROOT, arg('--file') || 'templates/trace/agent-trace.example.jsonl')
+const ROOT = resolve(values.root || positionals[0] || AC)
+const file = resolve(ROOT, values.file || 'templates/trace/agent-trace.example.jsonl')
 
 const REQUIRED = ['task', 'type', 'validation', 'outcome']
 const VALIDATION = new Set(['passed', 'failed', 'partial', 'not run'])

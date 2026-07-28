@@ -12,6 +12,7 @@ to the concrete skill(s) that implement it.
 | [api-design.md](api-design.md)        | Response envelope, versioning, DTO/mapper, validation.         | `nestjs-patterns`, `drizzle-postgres-patterns`      |
 | [shared-types.md](shared-types.md)    | One source of cross-app types; impact analysis on change.      | —                                                   |
 | [repo-map.md](repo-map.md)            | Active surfaces, entrypoints, generated files, fragile zones.  | —                                                   |
+| [compass-map.md](compass-map.md)      | Self-map of THIS repo: layout, flows, providers, validators.   | —                                                   |
 
 Pick what the project needs. The bootstrap script (`scripts/bootstrap.mjs`) wires
 the relevant ones into the generated prompt based on your answers.

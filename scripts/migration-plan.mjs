@@ -2,15 +2,25 @@
 // migration-plan.mjs — compare host setup to current Agent Compass and plan upgrade.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { FILE_MANIFEST, LOCK_REL, loadSubst, renderSource, sha, acVersion } from './manifest.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/migration-plan.mjs [host-dir] [--write] [--json]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const host = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+
+const { values, positionals } = parseCliArgs({
+  name: 'migration-plan',
+  script: 'migration-plan.mjs',
+  summary: 'Compare host setup to current Agent Compass and plan upgrade.',
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the plan to .agent/migration-plan.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable JSON instead of markdown.' },
+  },
+})
+
+const host = resolveRoot(positionals)
 const { subst } = loadSubst(host)
 let lock = { version: '0.0.0', managed: {} }
 try { lock = JSON.parse(readFileSync(join(host, LOCK_REL), 'utf8')) } catch {}
@@ -42,8 +52,8 @@ To: \`${acVersion(AC)}\`
 | ---- | ---- | ------ | ------ |
 ${rows.map((r) => `| ${r.path} | ${r.mode} | ${r.status} | ${r.action} |`).join('\n')}
 `
-if (args.includes('--json')) console.log(JSON.stringify({ schema: 1, host, from: lock.version || '0.0.0', to: acVersion(AC), rows }, null, 2))
-else if (args.includes('--write')) {
+if (values.json) console.log(JSON.stringify({ schema: 1, host, from: lock.version || '0.0.0', to: acVersion(AC), rows }, null, 2))
+else if (values.write) {
   mkdirSync(join(host, '.agent'), { recursive: true })
   writeFileSync(join(host, '.agent', 'migration-plan.md'), report)
   console.log(join(host, '.agent', 'migration-plan.md'))

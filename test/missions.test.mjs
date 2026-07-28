@@ -13,8 +13,6 @@ const PROVIDER_FILES = [
   'CODEX.md',
   'GEMINI.md',
   '.github/copilot-instructions.md',
-  '.cursor/rules/agent-compass.mdc',
-  '.windsurf/rules/agent-compass.md',
   'AGENTS.md',
 ]
 

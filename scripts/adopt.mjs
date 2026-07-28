@@ -8,39 +8,40 @@
 
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { c, sym } from './lib/tui.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/adopt.mjs [host-dir] [--policy <pack>] [--dry]
 
-One-command host adoption: non-interactive setup (detected answers, fit-based
+const { values, positionals } = parseCliArgs({
+  name: 'adopt',
+  script: 'adopt.mjs',
+  summary: `One-command host adoption: non-interactive setup (detected answers, fit-based
 skill sync), optional policy pack, then readiness verification and next steps.
 Never overwrites existing files. Equivalent to:
 
   node scripts/setup-wizard.mjs <host> --yes
   node scripts/apply-recommendations.mjs <host> --policy <pack>   (with --policy)
-  node scripts/agent-onboard.mjs <host>
+  node scripts/agent-onboard.mjs <host>`,
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    policy: { type: 'string', value: '<pack>', desc: 'Apply a policy pack: safe-local-work | solo-dev | startup-fast | strict-enterprise | regulated-api.' },
+    dry: { type: 'boolean', desc: 'Show the plan without writing anything.' },
+  },
+})
 
-Options:
-  --policy <pack>  Apply a policy pack: safe-local-work | solo-dev | startup-fast |
-                   strict-enterprise | regulated-api.
-  --dry            Show the plan without writing anything.
-  --help           Show this help.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const policy = (() => { const i = args.indexOf('--policy'); return i === -1 ? null : args[i + 1] || null })()
-const HOST = resolve(args.find((a) => !a.startsWith('--') && a !== policy) || process.cwd())
-const dry = args.includes('--dry')
+const policy = values.policy || null
+const HOST = resolveRoot(positionals)
+const dry = Boolean(values.dry)
 
 if (!existsSync(HOST)) { console.error(`Host directory not found: ${HOST}`); process.exit(1) }
 
 const run = (script, extra = []) => {
   const result = spawnSync(process.execPath, [join(AC, 'scripts', script), HOST, ...extra], { stdio: 'inherit' })
   if (result.status) {
-    console.error(`\n✗ ${script} failed (exit ${result.status}). Fix the cause and re-run — adopt is idempotent.`)
+    console.error(`\n${sym.fail()} ${script} failed (exit ${result.status}). Fix the cause and re-run — adopt is idempotent.`)
     process.exit(result.status)
   }
 }
@@ -60,9 +61,9 @@ let placeholders = false
 try { placeholders = /replace-me|<[a-z-]+>|TODO/i.test(readFileSync(registry, 'utf8')) } catch {}
 
 console.log(`
-✓ Adoption complete. Reports live in ${join(HOST, '.agent')}/.
+${sym.ok()} Adoption complete. Reports live in ${join(HOST, '.agent')}/.
 
-Next steps:
+${c.bold('Next steps:')}
   1. ${placeholders ? 'Fill agent-compass.commands.json with the real install/lint/typecheck/test commands — agents depend on it.' : 'Review agent-compass.commands.json — agents run only what it lists.'}
   2. Read .agent/recommendations.md and apply what fits.
   3. Review and commit the new files yourself (adopt never commits).

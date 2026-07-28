@@ -28,13 +28,15 @@ Copy what you want from
 [`../../templates/mcp/recommended.example.json`](../../templates/mcp/recommended.example.json)
 into your client's MCP config:
 
-- **Claude Code / Cursor:** `mcpServers` in `.mcp.json` (project) or
-  `.cursor/mcp.json`. This repo ships a root `.mcp.json` with the two safe,
-  keyless servers (context7, sequential-thinking) already enabled — your client
-  will ask you to approve them on first use.
+- **Claude Code:** `mcpServers` in `.mcp.json` (project). This repo ships a
+  root `.mcp.json` with the two safe, keyless servers (context7,
+  sequential-thinking) already enabled — your client will ask you to approve
+  them on first use.
 - **Codex:** translate to `config.toml` `[mcp_servers.<name>]` with
   `enabled_tools` + `default_tools_approval_mode` (see
   [`../../templates/mcp/codex.example.toml`](../../templates/mcp/codex.example.toml)).
+- **Gemini CLI:** `mcpServers` in `.gemini/settings.json` (see
+  [`../../templates/gemini/.gemini/settings.example.json`](../../templates/gemini/.gemini/settings.example.json)).
 - **Remote URLs** (`context7`, `exa`) work across clients when you'd rather not
   spawn a local process.
 - **Angular workspaces:** copy

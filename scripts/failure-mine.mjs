@@ -2,12 +2,21 @@
 // failure-mine.mjs — mine task logs/traces for reusable agent failures.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/failure-mine.mjs [root] [--write] [--json]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const { values, positionals } = parseCliArgs({
+  name: 'failure-mine',
+  script: 'failure-mine.mjs',
+  summary: 'Mine task logs/traces for reusable agent failures.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the report to .agent/failure-mining.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable JSON instead of markdown.' },
+  },
+})
+
+const root = resolveRoot(positionals)
 const readJsonl = (rel) => existsSync(join(root, rel)) ? readFileSync(join(root, rel), 'utf8').trim().split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l) } catch { return null } }).filter(Boolean) : []
 const tasks = readJsonl('.agent/task-log.jsonl')
 const traces = readJsonl('.agent/trace/agent-trace.example.jsonl').concat(readJsonl('.agent/trace.jsonl'))
@@ -32,8 +41,8 @@ ${Object.entries(themes).map(([k, v]) => `- ${k}: ${v}`).join('\n') || '- none'}
 
 ${Object.keys(themes).map((k) => `- Add/adjust eval or rule for ${k}.`).join('\n') || '- No failure-driven improvements found.'}
 `
-if (args.includes('--json')) console.log(JSON.stringify({ schema: 1, root, failures, themes }, null, 2))
-else if (args.includes('--write')) {
+if (values.json) console.log(JSON.stringify({ schema: 1, root, failures, themes }, null, 2))
+else if (values.write) {
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(join(root, '.agent', 'failure-mining.md'), report)
   console.log(join(root, '.agent', 'failure-mining.md'))

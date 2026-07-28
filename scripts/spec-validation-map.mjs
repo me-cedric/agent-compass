@@ -2,12 +2,22 @@
 // spec-validation-map.mjs — map specs to plan/tasks/checks.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/spec-validation-map.mjs [root] [--write] [--json] [--strict]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const { values, positionals } = parseCliArgs({
+  name: 'spec-validation-map',
+  script: 'spec-validation-map.mjs',
+  summary: 'Map specs to plan/tasks/checks.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the map to .agent/spec-validation-map.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable JSON instead of markdown.' },
+    strict: { type: 'boolean', desc: 'Exit 1 when a spec lacks plan, tasks, or validation language.' },
+  },
+})
+
+const root = resolveRoot(positionals)
 const specsRoot = join(root, 'specs')
 const walk = (dir, out = []) => {
   if (!existsSync(dir)) return out
@@ -35,10 +45,10 @@ const report = `# Spec Validation Map
 | ---- | ---- | ----- | --------- | ------------------- |
 ${rows.length ? rows.map((r) => `| ${r.spec} | ${r.plan ? 'ok' : 'missing'} | ${r.tasks ? 'ok' : 'missing'} | ${r.checklist ? 'ok' : 'missing'} | ${r.validation ? 'ok' : 'missing'} |`).join('\n') : '| none | missing | missing | missing | missing |'}
 `
-if (args.includes('--json')) console.log(JSON.stringify({ schema: 1, root, specs: rows }, null, 2))
-else if (args.includes('--write')) {
+if (values.json) console.log(JSON.stringify({ schema: 1, root, specs: rows }, null, 2))
+else if (values.write) {
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(join(root, '.agent', 'spec-validation-map.md'), report)
   console.log(join(root, '.agent', 'spec-validation-map.md'))
 } else console.log(report)
-if (args.includes('--strict') && rows.some((r) => !r.plan || !r.tasks || !r.validation)) process.exit(1)
+if (values.strict && rows.some((r) => !r.plan || !r.tasks || !r.validation)) process.exit(1)

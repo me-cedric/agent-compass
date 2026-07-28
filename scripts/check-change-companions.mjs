@@ -4,36 +4,33 @@
 // on a diff in pre-push or CI. Host tool — not part of agent-compass's own gate.
 
 import { execFileSync } from 'node:child_process'
-import { resolve } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/check-change-companions.mjs [root] [--base <ref>] [--files a,b] [--allow <reason>] [--strict]
+const { values, positionals } = parseCliArgs({
+  name: 'check-companions',
+  script: 'check-change-companions.mjs',
+  summary: 'Fail when changed source files have no test companion in the same change.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    base: { type: 'string', value: '<ref>', desc: 'Diff <ref>...HEAD (default: staged changes).' },
+    files: { type: 'string', value: 'a,b', desc: 'Explicit comma-separated file list (skips git).' },
+    allow: { type: 'string', value: '<why>', desc: 'Record an explicit reason and pass anyway.' },
+    strict: { type: 'boolean', desc: 'Exit 1 on violations (default warns, exit 0).' },
+  },
+})
 
-Fail when changed source files have no test companion in the same change.
-
-Options:
-  --base <ref>   Diff <ref>...HEAD (default: staged changes).
-  --files a,b    Explicit comma-separated file list (skips git).
-  --allow <why>  Record an explicit reason and pass anyway.
-  --strict       Exit 1 on violations (default warns, exit 0).
-  --help         Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const ROOT = resolve(args.find((a) => !a.startsWith('--') && ![flag('--base'), flag('--files'), flag('--allow')].includes(a)) || process.cwd())
+const ROOT = resolveRoot(positionals)
 
 const SOURCE = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rb|rs|java|kt|swift|php)$/i
 const TEST = /(\.test\.|\.spec\.|_test\.|test_|\/__tests__\/|\/tests?\/)/i
 const CONFIG = /(\.config\.|\.eslintrc|\.prettier|tsconfig|\.d\.ts$)/i
 
 let files
-const filesFlag = flag('--files')
+const filesFlag = values.files
 if (filesFlag) {
   files = filesFlag.split(',').map((f) => f.trim()).filter(Boolean)
 } else {
-  const base = flag('--base')
+  const base = values.base
   const gitArgs = base ? ['diff', '--name-only', `${base}...HEAD`] : ['diff', '--cached', '--name-only']
   try {
     files = execFileSync('git', gitArgs, { cwd: ROOT, encoding: 'utf8' }).split('\n').map((f) => f.trim()).filter(Boolean)
@@ -45,7 +42,7 @@ if (filesFlag) {
 
 const sources = files.filter((f) => SOURCE.test(f) && !TEST.test(f) && !CONFIG.test(f))
 const tests = files.filter((f) => TEST.test(f))
-const allow = flag('--allow')
+const allow = values.allow
 
 const violations = []
 if (sources.length && !tests.length) {
@@ -61,4 +58,4 @@ if (allow) {
   process.exit(0)
 }
 console.error(`✗ change-companion check:\n${violations.join('\n')}\n\nAdd a test, or pass --allow "<reason>" (docs/config-only, external integration).`)
-process.exit(args.includes('--strict') ? 1 : 0)
+process.exit(values.strict ? 1 : 0)

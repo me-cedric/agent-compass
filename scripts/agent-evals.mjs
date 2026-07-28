@@ -4,30 +4,22 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/agent-evals.mjs [--root <dir>] [--fixture <path>] [--list]
+const { values, positionals } = parseCliArgs({
+  name: 'evals',
+  script: 'agent-evals.mjs',
+  summary: 'Validate agent teaching/tool-offer eval fixtures and referenced repo artifacts.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Repository root (also accepted as a positional).' },
+    fixture: { type: 'string', value: '<path>', desc: 'Eval JSON path. Defaults to templates/evals/agent-teaching-evals.json.' },
+    list: { type: 'boolean', desc: 'Print scenario names.' },
+  },
+})
 
-Validate agent teaching/tool-offer eval fixtures and referenced repo artifacts.
-
-Options:
-  --root <dir>      Repository root.
-  --fixture <path>  Eval JSON path. Defaults to templates/evals/agent-teaching-evals.json.
-  --list            Print scenario names.
-  --help            Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const arg = (name) => {
-  const i = process.argv.indexOf(name)
-  return i === -1 ? null : process.argv[i + 1]
-}
-
-const ROOT = resolve(arg('--root') || dirname(dirname(fileURLToPath(import.meta.url))))
-const fixturePath = resolve(ROOT, arg('--fixture') || 'templates/evals/agent-teaching-evals.json')
+const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToPath(import.meta.url))))
+const fixturePath = resolve(ROOT, values.fixture || 'templates/evals/agent-teaching-evals.json')
 const fail = (msg) => {
   console.error(msg)
   process.exit(1)
@@ -55,7 +47,7 @@ for (const scenario of fixture.scenarios) {
 }
 if (issues.length) fail(`invalid eval fixture:\n${issues.map((i) => `- ${i}`).join('\n')}`)
 
-if (process.argv.includes('--list')) {
+if (values.list) {
   fixture.scenarios.forEach((scenario) => console.log(`${scenario.id}: ${scenario.prompt}`))
 } else {
   console.log(`✓ agent eval fixture valid — ${fixture.scenarios.length} scenarios, ${fixture.references.length} references.`)

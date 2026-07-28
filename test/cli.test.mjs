@@ -43,5 +43,25 @@ test('cli dispatches a command and passes args through', async () => {
 test('cli help <command> shows that command help', async () => {
   const result = await runNode([script, 'help', 'sync'], { cwd: root.pathname })
   assert.equal(result.code, 0, result.stderr)
-  assert.match(result.stdout, /Usage:.*sync\.mjs/)
+  assert.match(result.stdout, /Usage:.*sync/)
+})
+
+test('cli help shows aliases', async () => {
+  const result = await runNode([script, 'help'], { cwd: root.pathname })
+  assert.equal(result.code, 0, result.stderr)
+  assert.match(result.stdout, /\(alias: upgrade-host\)/)
+  assert.match(result.stdout, /\(alias: new-project\)/)
+})
+
+test('cli translates a bare -h into --help for the child script', async () => {
+  const result = await runNode([script, 'sync', '-h'], { cwd: root.pathname })
+  assert.equal(result.code, 0, result.stderr)
+  assert.match(result.stdout, /Usage:/)
+})
+
+test('cli exports COMMANDS/ALIASES/GROUPS as data without side effects', async () => {
+  const { COMMANDS, ALIASES, GROUPS } = await import('../scripts/cli.mjs')
+  assert.ok(Object.keys(COMMANDS).length >= 40)
+  for (const target of Object.values(ALIASES)) assert.ok(COMMANDS[target], `alias target ${target} missing`)
+  for (const entry of Object.values(COMMANDS)) assert.ok(GROUPS.includes(entry.group), `unknown group ${entry.group}`)
 })

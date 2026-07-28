@@ -4,19 +4,19 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/check-actions.mjs [--root <dir>]
+const { values, positionals } = parseCliArgs({
+  name: 'check-actions',
+  usage: 'node scripts/check-actions.mjs [root] [options]',
+  summary: 'Fail when repo workflows/templates use stale GitHub Action major versions.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Root directory (also accepted as a positional).' },
+  },
+})
 
-Fail when repo workflows/templates use stale GitHub Action major versions.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const rootArg = process.argv.indexOf('--root')
-const ROOT = rootArg === -1 ? dirname(dirname(fileURLToPath(import.meta.url))) : resolve(process.argv[rootArg + 1] || '')
+const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToPath(import.meta.url))))
 const REQUIRED = new Map([
   ['actions/checkout', 'v7'],
   ['actions/setup-node', 'v6'],

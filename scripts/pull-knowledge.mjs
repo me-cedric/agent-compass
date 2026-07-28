@@ -12,25 +12,23 @@ import { dirname, resolve, relative, join, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { isBareDate, isReservedExampleEmail } from './lib/redact.mjs'
+import { parseCliArgs } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const allowSensitive = process.argv.includes('--allow-sensitive')
-const help = `Usage: node scripts/pull-knowledge.mjs <path-to-project>
 
-Stage reusable project signal under knowledge/incoming/<project> for review.
-Never auto-merges staged files.
+const { values, positionals } = parseCliArgs({
+  name: 'pull-knowledge',
+  script: 'pull-knowledge.mjs',
+  summary: `Stage reusable project signal under knowledge/incoming/<project> for review.
+Never auto-merges staged files.`,
+  positionals: [{ name: 'path-to-project', required: true }],
+  options: {
+    'allow-sensitive': { type: 'boolean', desc: 'Stage files even when redaction warnings are found.' },
+  },
+})
 
-Options:
-  --allow-sensitive  Stage files even when redaction warnings are found.
-  --help             Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const targetArg = process.argv.find((arg, i) => i > 1 && !arg.startsWith('--'))
+const allowSensitive = Boolean(values['allow-sensitive'])
+const targetArg = positionals[0]
 const target = resolve(targetArg || '')
 if (!targetArg || !existsSync(target)) {
   console.error('Usage: node scripts/pull-knowledge.mjs <path-to-project>')

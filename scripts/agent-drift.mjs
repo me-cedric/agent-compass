@@ -6,33 +6,25 @@
 import { spawnSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/agent-drift.mjs [--root <dir>] [--json] [--strict]
-
-Run the agent-guidance validators (conformance, evals, indexes, docs, actions,
-naming) and print one drift dashboard. Read-only.
-
-Options:
-  --root <dir>  Root to validate (default: the agent-compass repo).
-  --json        Machine-readable output.
-  --strict      Exit 1 when any check fails.
-  --help        Show this help.
-`
-
-if (process.argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const arg = (name) => {
-  const i = process.argv.indexOf(name)
-  return i === -1 ? null : process.argv[i + 1]
-}
+const { values, positionals } = parseCliArgs({
+  name: 'drift',
+  script: 'agent-drift.mjs',
+  summary: `Run the agent-guidance validators (conformance, evals, indexes, docs, actions,
+naming) and print one drift dashboard. Read-only.`,
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    root: { type: 'string', value: '<dir>', desc: 'Root to validate (also accepted as a positional; default: the agent-compass repo).' },
+    json: { type: 'boolean', desc: 'Machine-readable output.' },
+    strict: { type: 'boolean', desc: 'Exit 1 when any check fails.' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const ROOT = resolve(arg('--root') || AC)
-const json = process.argv.includes('--json')
-const strict = process.argv.includes('--strict')
+const ROOT = resolve(values.root || positionals[0] || AC)
+const json = Boolean(values.json)
+const strict = Boolean(values.strict)
 
 // Eval fixtures ship with the standards source, so always validate them at AC.
 const checks = [

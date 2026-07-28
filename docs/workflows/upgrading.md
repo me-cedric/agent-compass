@@ -3,7 +3,7 @@
 When agent-compass updates, a host gets the new rules and tools **without
 re-running setup or asking an agent to merge**. Two things make this work:
 
-- **Pointers reference the submodule** (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules`,
+- **Pointers reference the submodule** (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`,
   the `docs/agent-compass/` guides, skills, and all `scripts/`). Bumping the
   submodule updates them for free — nothing to copy.
 - **Forked files are reconciled by `sync`** ([`sync.mjs`](../../scripts/sync.mjs)),
@@ -16,7 +16,7 @@ committed directly) refresh with `vendor` from a compass checkout, then
 reconcile:
 
 ```bash
-node /path/to/agent-compass/scripts/vendor.mjs /path/to/host --ref v0.4.0
+node /path/to/agent-compass/scripts/vendor.mjs /path/to/host --ref v0.6.0
 node /path/to/host/docs/agent-compass/scripts/sync.mjs /path/to/host
 ```
 

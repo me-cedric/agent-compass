@@ -2,12 +2,19 @@
 // dashboard.mjs — static HTML dashboard for agent setup status.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/dashboard.mjs [root] [--write]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const { values, positionals } = parseCliArgs({
+  name: 'dashboard',
+  script: 'dashboard.mjs',
+  summary: 'Render a static HTML dashboard of agent setup status reports.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Write .agent/report.html instead of printing HTML.' },
+  },
+})
+const root = resolveRoot(positionals)
 const read = (p) => existsSync(join(root, p)) ? readFileSync(join(root, p), 'utf8') : ''
 const esc = (s) => String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 const cards = [
@@ -46,7 +53,7 @@ ${cards.map(([title, path]) => `<section><h2>${title} <span class="${read(path) 
 </body>
 </html>
 `
-if (args.includes('--write')) {
+if (values.write) {
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(join(root, '.agent', 'report.html'), html)
   console.log(join(root, '.agent', 'report.html'))

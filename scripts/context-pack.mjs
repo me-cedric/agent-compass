@@ -4,24 +4,23 @@
 // output (no timestamps) so --check can fail CI on drift.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 
 import { detectStacks, selectAssets } from './lib/profiles.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/context-pack.mjs [root] [--write] [--check]
+const { values, positionals } = parseCliArgs({
+  name: 'context-pack',
+  script: 'context-pack.mjs',
+  summary: 'Generate a machine-readable repo index at .agent/context.json.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Write .agent/context.json.' },
+    check: { type: 'boolean', desc: 'Exit 1 if .agent/context.json is missing or stale (read-only).' },
+  },
+})
 
-Generate a machine-readable repo index at .agent/context.json.
-
-Options:
-  --write   Write .agent/context.json.
-  --check   Exit 1 if .agent/context.json is missing or stale (read-only).
-  --help    Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-
-const ROOT = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const ROOT = resolveRoot(positionals)
 const IGNORE = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'coverage', '.turbo', '.venv', 'incoming', '.agent'])
 const OUT = join(ROOT, '.agent', 'context.json')
 
@@ -69,14 +68,14 @@ const build = () => ({
 const pack = build()
 const serialized = JSON.stringify(pack, null, 2) + '\n'
 
-if (args.includes('--check')) {
+if (values.check) {
   const current = existsSync(OUT) ? readFileSync(OUT, 'utf8') : ''
   if (current !== serialized) {
     console.error('✗ .agent/context.json is missing or stale — run: node scripts/context-pack.mjs . --write')
     process.exit(1)
   }
   console.log('✓ context pack up to date.')
-} else if (args.includes('--write')) {
+} else if (values.write) {
   mkdirSync(dirname(OUT), { recursive: true })
   writeFileSync(OUT, serialized)
   console.log(OUT)

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { existsSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, rm, stat, readFile, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -58,17 +59,21 @@ test('install creates substituted pointer and executable husky hooks', async () 
     assert.match(await readFile(join(host, '.mcp', 'projectmem.example.json'), 'utf8'), /uvx/)
     assert.match(await readFile(join(host, '.mcp', 'copilot-cloud.example.json'), 'utf8'), /projectmem/)
     assert.match(await readFile(join(host, '.mcp', 'codex.example.toml'), 'utf8'), /enabled_tools/)
-    assert.match(await readFile(join(host, '.mcp', 'cursor.example.json'), 'utf8'), /mcpServers/)
+    assert.match(await readFile(join(host, '.mcp', 'angular-cli.example.json'), 'utf8'), /mcpServers/)
     assert.match(await readFile(join(host, '.mcp', 'gemini.example.json'), 'utf8'), /httpUrl/)
+    assert.match(await readFile(join(host, '.gemini', 'settings.example.json'), 'utf8'), /mcpServers/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/summary\.md/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/issues\//)
     assert.doesNotMatch(await readFile(join(host, '.gitignore'), 'utf8'), /\.projectmem\/events\.jsonl/)
     assert.match(await readFile(join(host, '.gitattributes'), 'utf8'), /\.projectmem\/events\.jsonl merge=union/)
     assert.match(await readFile(join(host, '.prettierignore'), 'utf8'), /\.projectmem\//)
 
-    for (const pointerPath of ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md', '.cursor/rules/agent-compass.mdc', '.windsurf/rules/agent-compass.md']) {
+    for (const pointerPath of ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md']) {
       assert.match(await readFile(join(host, pointerPath), 'utf8'), /AGENTS\.md/)
     }
+    assert.ok(!existsSync(join(host, '.cursor')), 'no .cursor pointer should be created')
+    assert.ok(!existsSync(join(host, '.windsurf')), 'no .windsurf pointer should be created')
+    assert.match(await readFile(join(host, 'AGENTS.md'), 'utf8'), /knowledge\//)
 
     for (const hook of ['pre-commit', 'pre-push', 'commit-msg']) {
       const mode = (await stat(join(host, '.husky', hook))).mode
@@ -91,6 +96,42 @@ test('install creates substituted pointer and executable husky hooks', async () 
       const text = await readFile(file, 'utf8')
       assert.doesNotMatch(text, /<project>|@scope/, `${file} should have rendered placeholders`)
     }
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('install limits tool pointers to the providers in answers.json', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-install-'))
+  try {
+    await writeFile(join(host, 'package.json'), JSON.stringify({ scripts: { prepare: 'husky' } }))
+    await writeFile(join(host, 'agent-compass.answers.json'), JSON.stringify({ name: 'sample-app', scope: '@sample', providers: ['claude'] }))
+
+    const result = await runNode([script.pathname, host], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+
+    assert.match(await readFile(join(host, 'CLAUDE.md'), 'utf8'), /AGENTS\.md/)
+    for (const pointerPath of ['CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md']) {
+      assert.ok(!existsSync(join(host, pointerPath)), `${pointerPath} should not be created`)
+    }
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('install skips unknown legacy providers silently', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-install-'))
+  try {
+    await writeFile(join(host, 'package.json'), JSON.stringify({ scripts: { prepare: 'husky' } }))
+    await writeFile(join(host, 'agent-compass.answers.json'), JSON.stringify({ name: 'sample-app', scope: '@sample', providers: ['claude', 'cursor', 'windsurf'] }))
+
+    const result = await runNode([script.pathname, host], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+
+    assert.match(await readFile(join(host, 'CLAUDE.md'), 'utf8'), /AGENTS\.md/)
+    assert.ok(!existsSync(join(host, '.cursor')), 'legacy cursor provider should be ignored')
+    assert.ok(!existsSync(join(host, '.windsurf')), 'legacy windsurf provider should be ignored')
+    assert.ok(!existsSync(join(host, 'CODEX.md')), 'CODEX.md should not be created')
   } finally {
     await rm(host, { recursive: true, force: true })
   }

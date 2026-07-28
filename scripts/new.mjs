@@ -3,12 +3,14 @@
 // don't hand-roll structure: `skill`, `adr`, `spec`, `arch`, `instinct`.
 
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, renderHelp, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/new.mjs <kind> <name> [root] [--dry]
-
-Scaffold a standards-conformant stub.
+const cliConfig = {
+  name: 'new',
+  script: 'new.mjs',
+  summary: `Scaffold a standards-conformant stub.
 
 Kinds:
   skill <name>     skills/<name>/SKILL.md with valid frontmatter
@@ -20,23 +22,25 @@ Kinds:
   workflow <name>  docs/workflows/<name>.md playbook
   tooling <name>   docs/tooling/<name>.md tool guide
 
-Options:
-  --dry   Print what would be created.
-  --help  Show this help.
-
 After scaffolding, the script prints the wiring steps (index entries, checks)
-required for the new asset to pass \`npm run check\`.
-`
+required for the new asset to pass \`npm run check\`.`,
+  positionals: [
+    { name: 'kind', required: true },
+    { name: 'name', required: true },
+    { name: 'root', required: false },
+  ],
+  options: {
+    dry: { type: 'boolean', desc: 'Print what would be created.' },
+  },
+}
 
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-if (args.filter((a) => !a.startsWith('--')).length < 2) { console.log(help); process.exit(1) }
+const { values, positionals } = parseCliArgs(cliConfig)
+if (positionals.length < 2) { console.log(renderHelp(cliConfig)); process.exit(1) }
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const positional = args.filter((a) => !a.startsWith('--'))
-const [kind, name] = positional
-const ROOT = resolve(positional[2] || process.cwd())
-const dry = args.includes('--dry')
+const [kind, name] = positionals
+const ROOT = resolveRoot(positionals.slice(2))
+const dry = Boolean(values.dry)
 
 if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name)) {
   console.error(`Name must be kebab-case: got "${name}".`)

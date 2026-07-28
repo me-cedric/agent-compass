@@ -8,9 +8,38 @@ material humans and agents *read* and *promote from*.
 
 | Path                     | What                                                                 |
 | ------------------------ | ------------------------------------------------------------------- |
-| `instincts/`      | Seed "instincts" — short, concrete patterns extracted from a real project (module structure, repository, mapper, BullMQ processor, OTel logger, resilience policy, API security edges, async provider pipelines, shared types, env-var sync, commit convention, Scalar/Bruno/Gherkin sync, payment module). Project-flavored; generalize before promoting. |
-| `examples/`              | Worked artifacts: real module `README`s (resilience, acme) and a per-path Copilot instructions example. Use as the bar for [documentation](../docs/guidelines/documentation.md). |
+| `instincts/`      | Seed "instincts" — short, concrete patterns extracted from real projects. Project-flavored; generalize before promoting. Full list below. |
+| `examples/`              | Worked artifacts: real module `README`s (resilience, external service). Use as the bar for [documentation](../docs/guidelines/documentation.md). |
 | `incoming/`              | *Gitignored.* Staging for `pull-knowledge.mjs` output, awaiting review. |
+
+### Instincts by domain
+
+- **Backend structure:**
+  [`nestjs-module-structure`](instincts/nestjs-module-structure.md),
+  [`drizzle-repository-pattern`](instincts/drizzle-repository-pattern.md),
+  [`mapper-pattern`](instincts/mapper-pattern.md),
+  [`shared-types-pattern`](instincts/shared-types-pattern.md),
+  [`payment-module-pattern`](instincts/payment-module-pattern.md).
+- **Async & pipelines:**
+  [`bullmq-processor-pattern`](instincts/bullmq-processor-pattern.md),
+  [`async-external-pipeline`](instincts/async-external-pipeline.md).
+- **Resilience & observability:**
+  [`resilience-policy-pattern`](instincts/resilience-policy-pattern.md),
+  [`otel-logger-pattern`](instincts/otel-logger-pattern.md).
+- **API contract & security:**
+  [`api-security-edge-cases`](instincts/api-security-edge-cases.md),
+  [`scalar-bruno-gherkin-sync`](instincts/scalar-bruno-gherkin-sync.md).
+- **Config & environment:**
+  [`env-var-sync`](instincts/env-var-sync.md).
+- **Frontend:**
+  [`angular-ai-assets`](instincts/angular-ai-assets.md).
+- **Workflow & process:**
+  [`commit-convention`](instincts/commit-convention.md),
+  [`spec-kit-workflow`](instincts/spec-kit-workflow.md),
+  [`testing-pattern`](instincts/testing-pattern.md),
+  [`self-review-before-done`](instincts/self-review-before-done.md),
+  [`verified-progress-signal`](instincts/verified-progress-signal.md),
+  [`spec-status-sync`](instincts/spec-status-sync.md).
 
 ## What an "instinct" is
 

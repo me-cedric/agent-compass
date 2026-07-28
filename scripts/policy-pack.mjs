@@ -1,22 +1,32 @@
 #!/usr/bin/env node
 // policy-pack.mjs — list/apply Agent Compass setup policy packs.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/policy-pack.mjs [root] [--list] [--apply <name>] [--json]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] }
-const root = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--apply')) || process.cwd())
+
+const { values, positionals } = parseCliArgs({
+  name: 'policy-pack',
+  script: 'policy-pack.mjs',
+  summary: 'List/apply Agent Compass setup policy packs.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    list: { type: 'boolean', desc: 'List available policy packs (default when no --apply).' },
+    apply: { type: 'string', value: '<name>', desc: 'Apply the named policy pack to <root>/.agent/.' },
+    json: { type: 'boolean', desc: 'Output the pack list as JSON.' },
+  },
+})
+
+const root = resolveRoot(positionals)
 const dir = join(AC, 'templates', 'policies')
 const packs = readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(readFileSync(join(dir, f), 'utf8')))
-const name = flag('--apply')
-if (args.includes('--list') || !name) {
+const name = values.apply || null
+if (values.list || !name) {
   const data = packs.map(({ name, description, gates }) => ({ name, description, gates }))
-  if (args.includes('--json')) console.log(JSON.stringify(data, null, 2))
+  if (values.json) console.log(JSON.stringify(data, null, 2))
   else console.log(data.map((p) => `- ${p.name}: ${p.description}`).join('\n'))
   process.exit(0)
 }

@@ -2,12 +2,22 @@
 // quality-gates.mjs — generic repo health gates agents can run before handoff.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/quality-gates.mjs [root] [--write] [--json] [--strict]`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
+const { values, positionals } = parseCliArgs({
+  name: 'quality-gates',
+  script: 'quality-gates.mjs',
+  summary: 'Generic repo health gates agents can run before handoff.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the report to .agent/quality-gates.md.' },
+    json: { type: 'boolean', desc: 'Print machine-readable JSON instead of markdown.' },
+    strict: { type: 'boolean', desc: 'Exit 1 when any gate finds an issue.' },
+  },
+})
+
+const root = resolveRoot(positionals)
 const has = (p) => existsSync(join(root, p))
 const walk = (dir, depth, out = []) => {
   if (!existsSync(dir) || depth < 0) return out
@@ -43,10 +53,10 @@ const report = `# Agent Quality Gates
 | ---- | ------ | ------ |
 ${issues.length ? issues.map(([gate, detail]) => `| ${gate} | issue | ${detail} |`).join('\n') : '| all | ok | no issues found |'}
 `
-if (args.includes('--json')) console.log(JSON.stringify({ schema: 1, root, issues: issues.map(([gate, detail]) => ({ gate, detail })) }, null, 2))
-else if (args.includes('--write')) {
+if (values.json) console.log(JSON.stringify({ schema: 1, root, issues: issues.map(([gate, detail]) => ({ gate, detail })) }, null, 2))
+else if (values.write) {
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(join(root, '.agent', 'quality-gates.md'), report)
   console.log(join(root, '.agent', 'quality-gates.md'))
 } else console.log(report)
-if (args.includes('--strict') && issues.length) process.exit(1)
+if (values.strict && issues.length) process.exit(1)

@@ -111,6 +111,21 @@ test('bootstrap --answers runs non-interactively and honors --out', async () => 
   }
 })
 
+test('bootstrap without a TTY and without --answers uses all defaults', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-bootstrap-tty-'))
+  try {
+    const run = await runNode([script, '--out', dir])
+    assert.equal(run.code, 0, run.stderr)
+    assert.match(run.stdout, /non-interactive stdin: using all defaults/)
+    const saved = JSON.parse(await readFile(join(dir, 'agent-compass.answers.json'), 'utf8'))
+    assert.equal(saved.name, 'my-app')
+    assert.deepEqual(saved.apps, ['nestjs-api'])
+    assert.match(await readFile(join(dir, 'BOOTSTRAP_PROMPT.md'), 'utf8'), /stacks\/nestjs-api\.md/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('bootstrap --schema prints the answers contract', async () => {
   const run = await runNode([script, '--schema'])
   assert.equal(run.code, 0, run.stderr)

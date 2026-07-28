@@ -31,7 +31,7 @@ headroom --version
 Wrap the agent — the lowest-effort, highest-leverage mode:
 
 ```bash
-headroom wrap claude               # or: codex | cursor | aider | copilot | opencode
+headroom wrap claude               # or: codex | copilot | aider | opencode
 headroom wrap claude --memory      # add cross-agent memory
 headroom perf                      # show token savings
 ```

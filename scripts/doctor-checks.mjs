@@ -80,7 +80,7 @@ const sharedConfigFiles = (root) => {
     '.projectmem/events.jsonl',
     '.claude/settings.example.json',
   ].map((path) => join(root, path))
-  const dirs = ['.mcp', '.github/instructions', '.github/prompts', '.github/agents', '.cursor/rules', '.windsurf/rules', '.codex', '.claude/agents', '.claude/hooks']
+  const dirs = ['.mcp', '.github/instructions', '.github/prompts', '.github/agents', '.gemini', '.codex', '.claude/agents', '.claude/hooks']
     .flatMap((path) => walk(join(root, path), 3))
   return [...direct, ...dirs].filter((file) => existsSync(file))
 }
@@ -109,7 +109,7 @@ export const fixHuskyHookModes = (root, dry = false) => {
 export const doctorChecks = (root, { deep = false } = {}) => {
   let pkg = {}
   try { pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) } catch {}
-  const pointers = ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md', '.cursor/rules/agent-compass.mdc', '.windsurf/rules/agent-compass.md']
+  const pointers = ['CLAUDE.md', 'CODEX.md', 'GEMINI.md', '.github/copilot-instructions.md']
   const gitmodulesPath = join(root, '.gitmodules')
   const mcpExample = read(root, '.mcp/projectmem.example.json')
   const leaks = localPathLeaks(root)
@@ -166,8 +166,9 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.mcp/figma.example.json exists', existsSync(join(root, '.mcp', 'figma.example.json'))],
     ['.mcp/copilot-cloud.example.json exists', existsSync(join(root, '.mcp', 'copilot-cloud.example.json'))],
     ['.mcp/codex.example.toml exists', existsSync(join(root, '.mcp', 'codex.example.toml'))],
-    ['.mcp/cursor.example.json exists', existsSync(join(root, '.mcp', 'cursor.example.json'))],
+    ['.mcp/angular-cli.example.json exists', existsSync(join(root, '.mcp', 'angular-cli.example.json'))],
     ['.mcp/gemini.example.json exists', existsSync(join(root, '.mcp', 'gemini.example.json'))],
+    ['.gemini/settings.example.json exists', existsSync(join(root, '.gemini', 'settings.example.json'))],
     ['.mcp/headroom.example.json exists', existsSync(join(root, '.mcp', 'headroom.example.json'))],
     ['.mcp/recommended.example.json exists', existsSync(join(root, '.mcp', 'recommended.example.json'))],
     ['.mcp/tool-contract.md exists', existsSync(join(root, '.mcp', 'tool-contract.md'))],

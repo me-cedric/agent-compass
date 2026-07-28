@@ -5,37 +5,30 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/pr.mjs --reviewer <login> [--title <title>] [--base develop] [--label <name>] [--dry]
+const { values } = parseCliArgs({
+  name: 'pr',
+  script: 'pr.mjs',
+  summary: 'Create a GitHub PR with agent-compass defaults.',
+  options: {
+    reviewer: { type: 'string', multiple: true, value: '<login>', desc: 'Reviewer to request. Repeat for multiple reviewers.' },
+    title: { type: 'string', value: '<title>', desc: 'PR title. Defaults to latest commit subject.' },
+    base: { type: 'string', value: '<branch>', default: 'develop', desc: 'Base branch. Defaults to develop.' },
+    label: { type: 'string', multiple: true, value: '<name>', desc: 'Existing label to apply. Repeat for multiple labels.' },
+    dry: { type: 'boolean', desc: 'Print the gh command and generated body only.' },
+  },
+})
 
-Create a GitHub PR with agent-compass defaults.
-
-Options:
-  --reviewer <login>  Reviewer to request. Repeat for multiple reviewers.
-  --title <title>     PR title. Defaults to latest commit subject.
-  --base <branch>     Base branch. Defaults to develop.
-  --label <name>      Existing label to apply. Repeat for multiple labels.
-  --dry               Print the gh command and generated body only.
-  --help              Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const values = (flag) => args.flatMap((arg, i) => arg === flag ? [args[i + 1]] : []).filter(Boolean)
-const value = (flag, fallback) => values(flag)[0] || fallback
 const run = (cmd, cmdArgs) => execFileSync(cmd, cmdArgs, { encoding: 'utf8' }).trim()
 const tryRun = (cmd, cmdArgs, fallback = '') => {
   try { return run(cmd, cmdArgs) } catch { return fallback }
 }
-const dry = args.includes('--dry')
-const reviewers = values('--reviewer')
-const labels = values('--label')
-const base = value('--base', 'develop')
-const title = value('--title', run('git', ['log', '-1', '--pretty=%s']))
+const dry = Boolean(values.dry)
+const reviewers = values.reviewer || []
+const labels = values.label || []
+const base = values.base
+const title = values.title || run('git', ['log', '-1', '--pretty=%s'])
 
 if (!reviewers.length) {
   console.error('Missing --reviewer. Pick at least one reviewer from repo contributors:')

@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 // cli.mjs — one entrypoint for every agent-compass script. Dispatches
 // `agent-compass <command> [...args]` to the matching script, passing flags
-// through untouched. `agent-compass help [command]` and `--version` included.
+// through untouched (a bare `-h` is translated to `--help` so it can never be
+// mistaken for a positional). `agent-compass help [command]` and `--version`
+// included. COMMANDS/ALIASES/GROUPS are exported as data so catalog.mjs and
+// check-indexes.mjs import them instead of regex-parsing this file.
 
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { c } from './lib/tui.mjs'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
 const version = (() => {
@@ -14,7 +18,7 @@ const version = (() => {
 })()
 
 // name → { script | argv, group, desc }. argv runs a script with fixed leading args.
-const COMMANDS = {
+export const COMMANDS = {
   adopt: { script: 'adopt.mjs', group: 'Setup', desc: 'One-command host adoption: setup + fit sync + verify.' },
   bootstrap: { script: 'bootstrap.mjs', group: 'Setup', desc: 'New-project prompt generator (--answers for agents).' },
   wizard: { script: 'setup-wizard.mjs', group: 'Setup', desc: 'Interactive host adoption wizard.' },
@@ -68,25 +72,29 @@ const COMMANDS = {
   release: { script: 'release.mjs', group: 'Git', desc: 'Prepare version/changelog release metadata.' },
 }
 
-const ALIASES = {
+export const ALIASES = {
   'new-project': 'bootstrap', 'setup-wizard': 'wizard', 'install-into': 'install', 'sync-into': 'sync', 'upgrade-host': 'upgrade',
   'agent-onboard': 'onboard', 'agent-drift': 'drift', 'agent-conformance': 'conformance', 'agent-evals': 'evals',
   'agent-trace': 'trace', 'gen-depgraph': 'depgraph', 'run-command': 'run', 'check-change-companions': 'check-companions',
 }
-const GROUPS = ['Setup', 'Health', 'Context', 'Build', 'Learning', 'Git']
-const resolve = (name) => ALIASES[name] || name
+export const GROUPS = ['Setup', 'Health', 'Context', 'Build', 'Learning', 'Git']
+
+const resolveName = (name) => ALIASES[name] || name
+const aliasesFor = (name) => Object.entries(ALIASES).filter(([, target]) => target === name).map(([alias]) => alias)
 
 const printHelp = () => {
-  let out = `agent-compass ${version}
+  let out = `${c.bold(`agent-compass ${version}`)}
 
 Usage: agent-compass <command> [options]
        agent-compass help <command>     per-command help
        agent-compass --version
 `
   for (const group of GROUPS) {
-    out += `\n${group}\n`
+    out += `\n${c.bold(c.cyan(group))}\n`
     for (const [name, entry] of Object.entries(COMMANDS)) {
-      if (entry.group === group) out += `  ${name.padEnd(18)} ${entry.desc}\n`
+      if (entry.group !== group) continue
+      const aliases = aliasesFor(name)
+      out += `  ${c.green(name.padEnd(18))} ${entry.desc}${aliases.length ? c.dim(` (alias: ${aliases.join(', ')})`) : ''}\n`
     }
   }
   out += `\nEvery command passes its flags straight through, e.g.:
@@ -96,33 +104,57 @@ Usage: agent-compass <command> [options]
   console.log(out)
 }
 
-const argv = process.argv.slice(2)
-const first = argv[0]
-
-if (!first || first === 'help' || first === '--help' || first === '-h') {
-  const topic = argv[1]
-  if (topic) {
-    const entry = COMMANDS[resolve(topic)]
-    if (!entry) { console.error(`Unknown command: ${topic}`); process.exit(1) }
-    const script = entry.script || entry.argv[0]
-    const result = spawnSync(process.execPath, [join(DIR, script), '--help'], { stdio: 'inherit' })
-    process.exit(result.status === null ? 1 : result.status)
+const dispatch = (entry, passthrough) => {
+  // `-h` before any script sees it: a bare -h would otherwise be parsed as a
+  // positional (e.g. `sync -h` creating a literal ./-h directory).
+  const argsThrough = passthrough.map((a) => (a === '-h' ? '--help' : a))
+  const lead = entry.argv ? [join(DIR, entry.argv[0]), ...entry.argv.slice(1)] : [join(DIR, entry.script)]
+  if (!existsSync(lead[0])) {
+    console.error(`Internal error: ${lead[0]} not found. The agent-compass checkout may be incomplete.`)
+    process.exit(1)
   }
-  printHelp()
-  process.exit(0)
+  const result = spawnSync(process.execPath, [...lead, ...argsThrough], { stdio: 'inherit' })
+  if (result.error) {
+    console.error(`Failed to run ${lead[0]}: ${result.error.message}`)
+    process.exit(1)
+  }
+  if (result.signal) {
+    console.error(`Command terminated by signal ${result.signal}.`)
+    process.exit(1)
+  }
+  process.exit(result.status ?? 1)
 }
 
-if (first === '--version' || first === '-v' || first === 'version') {
-  console.log(version)
-  process.exit(0)
+const main = () => {
+  const argv = process.argv.slice(2)
+  const first = argv[0]
+
+  if (!first || first === 'help' || first === '--help' || first === '-h') {
+    const topic = argv[1]
+    if (topic) {
+      const entry = COMMANDS[resolveName(topic)]
+      if (!entry) { console.error(`Unknown command: ${topic}`); process.exit(1) }
+      dispatch(entry, ['--help'])
+    }
+    printHelp()
+    process.exit(0)
+  }
+
+  if (first === '--version' || first === '-v' || first === 'version') {
+    console.log(version)
+    process.exit(0)
+  }
+
+  const entry = COMMANDS[resolveName(first)]
+  if (!entry) {
+    console.error(`Unknown command: ${first}\nRun \`agent-compass help\` for the command list.`)
+    process.exit(1)
+  }
+  dispatch(entry, argv.slice(1))
 }
 
-const entry = COMMANDS[resolve(first)]
-if (!entry) {
-  console.error(`Unknown command: ${first}\nRun \`agent-compass help\` for the command list.`)
-  process.exit(1)
-}
-
-const lead = entry.argv ? [join(DIR, entry.argv[0]), ...entry.argv.slice(1)] : [join(DIR, entry.script)]
-const result = spawnSync(process.execPath, [...lead, ...argv.slice(1)], { stdio: 'inherit' })
-process.exit(result.status === null ? 1 : result.status)
+// Only dispatch when executed directly — importing COMMANDS stays side-effect free.
+const isMain = (() => {
+  try { return process.argv[1] && realpathSync(resolve(process.argv[1])) === fileURLToPath(import.meta.url) } catch { return false }
+})()
+if (isMain) main()

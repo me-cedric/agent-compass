@@ -11,38 +11,29 @@
 // Then applies ordered migrations in (lock.version, current] and updates the lock.
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { FILE_MANIFEST, LOCK_REL, loadSubst, renderSource, sha, isHook, acVersion } from './manifest.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
 
-const help = `Usage: node scripts/sync.mjs [host-dir] [--dry] [--check] [--target <ver>]
+const { values, positionals } = parseCliArgs({
+  name: 'sync',
+  script: 'sync.mjs',
+  summary: "Reconcile a host's managed agent-compass files with the current submodule.",
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Show what would change; write nothing.' },
+    check: { type: 'boolean', desc: 'Exit 1 if anything is out of date (read-only; for CI).' },
+    target: { type: 'string', value: '<ver>', desc: 'Override the agent-compass version (default: package.json).' },
+  },
+})
 
-Reconcile a host's managed agent-compass files with the current submodule.
-
-Options:
-  --dry            Show what would change; write nothing.
-  --check          Exit 1 if anything is out of date (read-only; for CI).
-  --target <ver>   Override the agent-compass version (default: package.json).
-  --help           Show this help.
-`
-
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const flag = (name) => {
-  const i = args.indexOf(name)
-  return i === -1 ? null : args[i + 1]
-}
-
-const dry = args.includes('--dry')
-const check = args.includes('--check')
+const dry = Boolean(values.dry)
+const check = Boolean(values.check)
 const apply = !dry && !check
-const HOST = resolve(args.find((a) => !a.startsWith('--') && a !== flag('--target')) || process.cwd())
+const HOST = resolveRoot(positionals)
 
 if (HOST === AC) {
   console.error('Refusing to sync agent-compass into itself. Run from the host project root.')
@@ -54,7 +45,7 @@ const lockPath = join(HOST, LOCK_REL)
 let lock = { version: '0.0.0', managed: {} }
 try { lock = JSON.parse(readFileSync(lockPath, 'utf8')) } catch {}
 lock.managed = lock.managed || {}
-const currentVersion = flag('--target') || acVersion(AC)
+const currentVersion = values.target || acVersion(AC)
 
 const cmpSemver = (a, b) => {
   const pa = String(a).split('.').map(Number)

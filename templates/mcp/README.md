@@ -13,6 +13,10 @@ This project may use MCP servers for agent tools and context.
 | angular-cli | Angular CLI tools + live best practices/doc search | See `.mcp/angular-cli.example.json` (ships `--read-only`) | none |
 | research (context7, sequential-thinking, fetch, playwright) | Live docs, reasoning, web pages, browser | See `.mcp/recommended.example.json` + `docs/tooling/mcp-servers.md` | none |
 
+Gemini CLI reads MCP servers from `.gemini/settings.json` instead of `.mcp/`
+examples — start from the host's `.gemini/settings.example.json` (template:
+`templates/gemini/` in agent-compass).
+
 ## Rules
 
 - Do not commit tokens.

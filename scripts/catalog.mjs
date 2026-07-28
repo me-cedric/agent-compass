@@ -9,27 +9,21 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs } from './lib/args.mjs'
 
-const help = `Usage: node scripts/catalog.mjs [--type <t>] [--grep <term>] [--md]
-
-Print the agent-compass asset catalog as JSON (default) or a Markdown table.
+const { values } = parseCliArgs({
+  name: 'catalog',
+  script: 'catalog.mjs',
+  summary: `Print the agent-compass asset catalog as JSON (default) or a Markdown table.
 
 Types: skill | stack | template-group | workflow | tooling | guideline |
-       architecture | instinct | command
-
-Options:
-  --type <t>    Only assets of one type.
-  --grep <term> Case-insensitive match against id, title, and description.
-  --md          Human-readable Markdown table instead of JSON.
-  --help        Show this help.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const flagValue = (flag) => {
-  const i = args.indexOf(flag)
-  return i === -1 ? null : args[i + 1] || null
-}
+       architecture | instinct | command`,
+  options: {
+    type: { type: 'string', value: '<t>', desc: 'Only assets of one type.' },
+    grep: { type: 'string', value: '<term>', desc: 'Case-insensitive match against id, title, and description.' },
+    md: { type: 'boolean', desc: 'Human-readable Markdown table instead of JSON.' },
+  },
+})
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const read = (rel) => readFileSync(join(AC, rel), 'utf8')
@@ -131,22 +125,21 @@ for (const entry of readdirSync(join(AC, 'templates'), { withFileTypes: true }))
   })
 }
 
-// CLI commands — parsed from cli.mjs (it executes on import, so regex it).
-const cliText = read('scripts/cli.mjs')
-for (const match of cliText.matchAll(/^ {2}'?([\w-]+)'?: \{ (?:script|argv): [^}]*group: '(\w+)', desc: '([^']+)'/gm)) {
-  const [, name, group, desc] = match
-  assets.push({ id: name, type: 'command', path: 'scripts/cli.mjs', group, description: desc })
+// CLI commands — cli.mjs exports COMMANDS as data (dispatch is main-guarded).
+const { COMMANDS } = await import('./cli.mjs')
+for (const [name, entry] of Object.entries(COMMANDS)) {
+  assets.push({ id: name, type: 'command', path: 'scripts/cli.mjs', group: entry.group, description: entry.desc })
 }
 
 assets.sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id))
 
-const typeFilter = flagValue('--type')
-const grep = flagValue('--grep')?.toLowerCase()
+const typeFilter = values.type
+const grep = values.grep?.toLowerCase()
 let selected = assets
 if (typeFilter) selected = selected.filter((a) => a.type === typeFilter)
 if (grep) selected = selected.filter((a) => `${a.id} ${a.title || ''} ${a.description || ''}`.toLowerCase().includes(grep))
 
-if (args.includes('--md')) {
+if (values.md) {
   console.log('| Type | Id | Description | Path |')
   console.log('| ---- | -- | ----------- | ---- |')
   for (const a of selected) console.log(`| ${a.type} | \`${a.id}\` | ${(a.description || a.title || '').replaceAll('|', '\\|')} | \`${a.path}\` |`)

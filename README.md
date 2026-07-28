@@ -1,18 +1,17 @@
 # agent-compass
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-v0.4.0-blue)
+![Version](https://img.shields.io/badge/version-v0.6.0-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
-![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Copilot%20%7C%20Cursor-purple)
+![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
 ![Memory](https://img.shields.io/badge/projectmem-supported-success)
 
 Importable operating manual for AI coding agents.
 
-Agent Compass gives Claude Code, Codex, GitHub Copilot, Cursor, Windsurf,
-Gemini, and similar tools the same project contract, quality gates, workflows,
-templates, and helper scripts.
+Agent Compass gives Claude Code, Codex, Gemini, and GitHub Copilot the same
+project contract, quality gates, workflows, templates, and helper scripts.
 
 Use it as a submodule in real projects, or clone it standalone to bootstrap a
 new project from proven defaults.
@@ -26,7 +25,7 @@ Agent Compass exists for three jobs:
 3. **Grow** safely: pull reusable knowledge out of real projects without leaking
    secrets, personal data, or project-specific facts.
 
-**Fastest path:** open any agent CLI (Claude Code, Codex, Copilot, Cursor, …)
+**Fastest path:** open any agent CLI (Claude Code, Codex, Gemini, Copilot, …)
 in this repo and say what you want — "set up `~/projects/foo`", "bootstrap a
 new API from these guidelines", "add a skill for X". The agent routes itself
 through [`MISSIONS.md`](MISSIONS.md) and executes the matching playbook.
@@ -175,11 +174,11 @@ Agent Compass is mostly Markdown and templates:
 
 ## Status
 
-Agent Compass is usable across real projects. Current version: `0.4.0`.
+Agent Compass is usable across real projects. Current version: `0.6.0`.
 
 | Area | Current state |
 | ---- | ------------- |
-| Agent contract | Tool-agnostic `AGENTS.md` with Claude, Codex, Copilot, Cursor, Windsurf, and Gemini pointers. |
+| Agent contract | Tool-agnostic `AGENTS.md` with Claude, Codex, Gemini, and Copilot pointers. |
 | Installer | Non-destructive host setup with `--doctor` and `--doctor --deep`. |
 | Bootstrap | Interactive prompt generator for new projects and stack presets. |
 | Specs | Native `specs/` templates and spec workflow; optional upstream Spec Kit path documented. |
@@ -250,17 +249,21 @@ Agent Compass is usable across real projects. Current version: `0.4.0`.
 
 ```text
 agent-compass/
-├── AGENTS.md
-├── CLAUDE.md
-├── CODEX.md
-├── agent-compass.commands.json
+├── AGENTS.md                       # canonical agent contract
+├── CLAUDE.md                       # Claude pointer + notes
+├── CODEX.md                        # Codex pointer + notes
+├── GEMINI.md                       # Gemini pointer + notes
+├── MISSIONS.md                     # mission router → compass-* playbooks
+├── agent-compass.commands.json     # command registry
+├── .github/                        # CI workflows (tests, drift check)
 ├── docs/
 │   ├── architecture/
 │   ├── decisions/
 │   ├── guidelines/
 │   ├── tooling/
 │   └── workflows/
-├── knowledge/
+├── knowledge/                      # instincts, worked examples, incoming
+├── migrations/                     # versioned sync migrations for hosts
 ├── scripts/
 ├── skills/
 ├── stacks/
@@ -329,11 +332,10 @@ Next step:
 | ---- | ---------- | ----- |
 | Claude | `CLAUDE.md` → `AGENTS.md` | Skills can be referenced directly or synced globally. |
 | Codex | `CODEX.md` → `AGENTS.md` | Uses same contract and repo context helpers. |
+| Gemini | `GEMINI.md` → `AGENTS.md` | MCP servers configure via `.gemini/settings.json`; the installer ships a `.gemini/settings.example.json` starter. |
 | Copilot | `.github/copilot-instructions.md` → `AGENTS.md` | Extra `.github/instructions/*.instructions.md` templates included. |
-| Cursor | `.cursor/rules/agent-compass.mdc` → `AGENTS.md` | Created by installer when missing. |
-| Windsurf | `.windsurf/rules/agent-compass.md` → `AGENTS.md` | Created by installer when missing. |
-| Gemini | `GEMINI.md` → `AGENTS.md` | Created by installer when missing. |
-| Other tools | Point rule file at `AGENTS.md` | Keep one contract, many front doors. |
+
+Other tools: point a rule file at `AGENTS.md`.
 
 ---
 
@@ -415,7 +417,7 @@ node scripts/doctor-report.mjs /path/to/host --write
 node scripts/runbook.mjs /path/to/host --write
 node scripts/pr.mjs --reviewer alice --label enhancement --dry
 node scripts/pr-review.mjs 123 --out .agent/pr-123-review.md
-node scripts/release.mjs 0.4.0 --dry
+node scripts/release.mjs 0.6.0 --dry
 node scripts/upgrade-host.mjs /path/to/host docs/agent-compass --dry
 ```
 
@@ -599,12 +601,12 @@ git diff --check
 Release prep:
 
 ```bash
-node scripts/release.mjs 0.4.0 --dry
-node scripts/release.mjs 0.4.0
+node scripts/release.mjs 0.6.0 --dry
+node scripts/release.mjs 0.6.0
 npm run check
 git add package.json CHANGELOG.md
-git commit -m "chore: release v0.4.0"
-git tag -a v0.4.0 -m "v0.4.0"
+git commit -m "chore: release v0.6.0"
+git tag -a v0.6.0 -m "v0.6.0"
 npm run lint:release
 ```
 
@@ -676,10 +678,10 @@ generic and move host-specific rules into the host project.
 
 ## Keywords
 
-AI coding agents, agent instructions, AGENTS.md, Claude Code, Codex, GitHub
-Copilot, Cursor, Windsurf, Gemini, spec-driven development, project memory,
-projectmem, MCP, Figma MCP, PR automation, code review, TDD, documentation,
-quality gates, monorepo, pnpm, turbo, NestJS, React, Expo.
+AI coding agents, agent instructions, AGENTS.md, Claude Code, Codex, Gemini,
+GitHub Copilot, spec-driven development, project memory, projectmem, MCP,
+Figma MCP, PR automation, code review, TDD, documentation, quality gates,
+monorepo, pnpm, turbo, NestJS, React, Expo.
 
 ## License
 

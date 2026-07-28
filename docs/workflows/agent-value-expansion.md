@@ -174,6 +174,7 @@ then add the first missing item that removes repeated user steering.
   roles already exist as `.claude/agents/*` and the Copilot teacher agent; this
   would wire them to run with no human trigger. Deferred because it needs a
   provider CLI authenticated in CI (a stored token) and a severity gate policy,
-  which should be decided per host. Sketch: `templates/ci/agent-review.example.yml`
-  invoking the provider headless over `git diff`, gated on findings severity.
+  which should be decided per host. Sketch (not shipped as a template): a future
+  agent-review CI workflow invoking the provider headless over `git diff`,
+  gated on findings severity.
 

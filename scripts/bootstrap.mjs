@@ -1,80 +1,21 @@
 #!/usr/bin/env node
 // bootstrap.mjs — produces a precise project-bootstrap prompt for an AI agent
 // (Claude / Codex / Copilot), plus a replayable answers file. Interactive Q&A
-// by default; `--answers <file>` runs non-interactively so agents can drive it
-// (derive answers from architecture guidelines, write JSON, run this).
-// Dependency-free (Node >= 20).
+// (arrow-key select/multi-select) by default; `--answers <file>` runs
+// non-interactively so agents can drive it (derive answers from architecture
+// guidelines, write JSON, run this). Dependency-free (Node >= 20).
 //
 // Outputs (in --out dir, default cwd):
 //   BOOTSTRAP_PROMPT.md          the prompt to paste into your agent
 //   agent-compass.answers.json   your answers (re-runnable, used by install.mjs)
 
-import { createInterface } from 'node:readline/promises'
-import { stdin as input, stdout as output } from 'node:process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { stdin } from 'node:process'
 import { pathToFileURL } from 'node:url'
 
-const argv = process.argv.slice(2)
-const flagValue = (flag) => {
-  const i = argv.indexOf(flag)
-  return i === -1 ? null : argv[i + 1] || null
-}
-const answersPathArg = flagValue('--answers')
-const outDir = resolve(flagValue('--out') || process.cwd())
-
-const interactive = Boolean(input.isTTY) && !answersPathArg
-const rl = interactive ? createInterface({ input, output }) : null
-
-const help = `Usage: node scripts/bootstrap.mjs [--answers <file>] [--out <dir>]
-
-Project bootstrap prompt generator. Interactive by default; give --answers to
-run non-interactively from a JSON file (agents: derive answers from the user's
-architecture guidelines, write the file, then run this).
-
-Outputs (in --out dir, default cwd):
-  BOOTSTRAP_PROMPT.md
-  agent-compass.answers.json
-
-Options:
-  --answers <file>  Non-interactive: read answers JSON (missing keys use defaults).
-  --out <dir>       Write outputs into this directory (created if missing).
-  --schema          Print the answers JSON schema (keys, choices, defaults).
-  --help            Show this help.
-`
-
-if (argv.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const ask = async (q, def) => {
-  if (!interactive) return def
-  const hint = def !== undefined && def !== '' ? ` [${def}]` : ''
-  const a = (await rl.question(`${q}${hint}: `)).trim()
-  return a || def
-}
-const askBool = async (q, def = true) => /^y/i.test(await ask(`${q} (y/n)`, def ? 'y' : 'n'))
-const askChoice = async (q, choices, def) => {
-  if (!interactive) return def
-  console.log(`\n${q}`)
-  choices.forEach((c, i) => console.log(`  ${i + 1}) ${c}`))
-  const a = await ask('choose number or name', def)
-  const byNum = choices[Number(a) - 1]
-  return byNum || (choices.includes(a) ? a : def)
-}
-const askMulti = async (q, choices, def = []) => {
-  if (!interactive) return def
-  console.log(`\n${q} (comma-separated numbers or names; Enter for default)`)
-  choices.forEach((c, i) => console.log(`  ${i + 1}) ${c}`))
-  const a = await ask('select', def.join(','))
-  if (!a) return def
-  return a
-    .split(',')
-    .map((t) => t.trim())
-    .map((t) => choices[Number(t) - 1] || (choices.includes(t) ? t : null))
-    .filter(Boolean)
-}
+import { parseCliArgs } from './lib/args.mjs'
+import { confirm, multiselect, select, text } from './lib/tui.mjs'
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
 
@@ -269,7 +210,7 @@ submodule and run \`@AC/scripts/install.mjs\`.
 `
 }
 
-const writeOutputs = (answers) => {
+const writeOutputs = (answers, outDir) => {
   const prompt = buildPrompt(answers)
   mkdirSync(outDir, { recursive: true })
   const promptPath = resolve(outDir, 'BOOTSTRAP_PROMPT.md')
@@ -281,37 +222,62 @@ const writeOutputs = (answers) => {
 }
 
 const main = async () => {
-  if (argv.includes('--schema')) {
+  const { values } = parseCliArgs({
+    name: 'bootstrap',
+    script: 'bootstrap.mjs',
+    summary: `Project bootstrap prompt generator. Interactive by default; give --answers to
+run non-interactively from a JSON file (agents: derive answers from the user's
+architecture guidelines, write the file, then run this).
+
+Outputs (in --out dir, default cwd):
+  BOOTSTRAP_PROMPT.md
+  agent-compass.answers.json`,
+    options: {
+      answers: { type: 'string', value: '<file>', desc: 'Non-interactive: read answers JSON (missing keys use defaults).' },
+      out: { type: 'string', value: '<dir>', desc: 'Write outputs into this directory (created if missing).' },
+      schema: { type: 'boolean', desc: 'Print the answers JSON schema (keys, choices, defaults).' },
+    },
+  })
+
+  if (values.schema) {
     console.log(JSON.stringify({ schema: 1, answers: ANSWER_SCHEMA }, null, 2))
     return
   }
 
-  if (answersPathArg) {
+  const outDir = resolve(values.out || process.cwd())
+
+  if (values.answers) {
     let parsed
     try {
-      parsed = JSON.parse(readFileSync(resolve(answersPathArg), 'utf8'))
+      parsed = JSON.parse(readFileSync(resolve(values.answers), 'utf8'))
     } catch (error) {
-      console.error(`Cannot read answers file ${answersPathArg}: ${error.message}`)
+      console.error(`Cannot read answers file ${values.answers}: ${error.message}`)
       process.exit(1)
     }
     const answers = { ...resolveAnswers(parsed), generatedFrom: 'agent-compass/scripts/bootstrap.mjs' }
     const errors = validateAnswers(answers)
     if (errors.length) {
-      console.error(`Invalid answers in ${answersPathArg}:`)
+      console.error(`Invalid answers in ${values.answers}:`)
       errors.forEach((e) => console.error(`  - ${e}`))
       console.error('Run with --schema to see keys, choices, and defaults.')
       process.exit(1)
     }
-    writeOutputs(answers)
+    writeOutputs(answers, outDir)
     console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
     return
   }
 
+  const interactive = Boolean(stdin.isTTY)
   console.log(`\n agent-compass · project bootstrap`)
   if (!interactive) console.log(' (non-interactive stdin: using all defaults)\n')
 
-  const name = slug(await ask('Project name', 'my-app')) || 'my-app'
-  const scope = (await ask('npm scope for internal packages', `@${name}`)) || `@${name}`
+  const askText = async (message, initial) => (interactive ? text({ message, initial }) : initial)
+  const askBool = async (message, initial = true) => (interactive ? confirm({ message, initial }) : initial)
+  const askChoice = async (message, options, initial) => (interactive ? select({ message, options, initial }) : initial)
+  const askMulti = async (message, options, initial = []) => (interactive ? multiselect({ message, options, initial }) : initial)
+
+  const name = slug(await askText('Project name', 'my-app')) || 'my-app'
+  const scope = (await askText('npm scope for internal packages', `@${name}`)) || `@${name}`
   const monorepo = await askBool('Monorepo (pnpm + turbo)?', true)
   const apps = await askMulti('Which apps?', ['nestjs-api', 'react-admin', 'expo-mobile', 'next-web'], ['nestjs-api'])
   const pm = await askChoice('Package manager?', ['pnpm', 'npm', 'yarn'], 'pnpm')
@@ -330,9 +296,7 @@ const main = async () => {
   const ci = await askChoice('CI provider?', ['github-actions', 'gitlab-ci', 'none'], 'github-actions')
   const sonar = await askBool('Local SonarQube (scan + reports)?', true)
   const security = await askBool('Security scanning (OSV + Checkmarx)?', true)
-  const targetDir = (await ask('Target directory', `./${name}`)) || `./${name}`
-
-  if (rl) rl.close()
+  const targetDir = (await askText('Target directory', `./${name}`)) || `./${name}`
 
   const answers = {
     name, scope, monorepo, apps, pm, db, queues, auth, resilience,
@@ -340,7 +304,7 @@ const main = async () => {
     generatedFrom: 'agent-compass/scripts/bootstrap.mjs',
   }
 
-  writeOutputs(answers)
+  writeOutputs(answers, outDir)
   console.log(`\nNext: paste BOOTSTRAP_PROMPT.md into your agent. It will plan first and wait for approval.\n`)
 }
 

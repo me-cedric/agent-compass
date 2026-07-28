@@ -2,17 +2,21 @@
 // spec-kit-bridge.mjs — optional host bridge for Spec Kit without vendoring upstream.
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/spec-kit-bridge.mjs [host-dir] [--dry]
-
-Create generic Spec Kit bridge docs/config and provider prompts/agents.
-Does not install the upstream CLI.
-`
-if (args.includes('--help')) { console.log(help); process.exit(0) }
-const root = resolve(args.find((a) => !a.startsWith('--')) || process.cwd())
-const dry = args.includes('--dry')
+const { values, positionals } = parseCliArgs({
+  name: 'spec-kit-bridge',
+  script: 'spec-kit-bridge.mjs',
+  summary: `Create generic Spec Kit bridge docs/config and provider prompts/agents.
+Does not install the upstream CLI.`,
+  positionals: [{ name: 'host-dir', required: false }],
+  options: {
+    dry: { type: 'boolean', desc: 'Print what would be created; write nothing.' },
+  },
+})
+const root = resolveRoot(positionals)
+const dry = Boolean(values.dry)
 const specKitCommands = [
   ['constitution', 'Update or review the project constitution.'],
   ['specify', 'Create or update a feature specification from a feature request.'],

@@ -8,33 +8,36 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseCliArgs, renderHelp } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
-const args = process.argv.slice(2)
-const help = `Usage: node scripts/vendor.mjs <host-dir> [--ref <tag|commit>] [--dest <rel-dir>] [--dry]
 
-Copy this agent-compass checkout (at --ref, default HEAD) into the host as
+const cliConfig = {
+  name: 'vendor',
+  script: 'vendor.mjs',
+  summary: `Copy this agent-compass checkout (at --ref, default HEAD) into the host as
 plain files, replacing any previous copy, and write <dest>/.vendor.json with
 {version, ref, commit, vendoredAt}. Must run from a git checkout of
 agent-compass. After vendoring, run sync to reconcile managed host files:
 
-  node <dest>/scripts/sync.mjs <host-dir>
+  node <dest>/scripts/sync.mjs <host-dir>`,
+  positionals: [{ name: 'host-dir', required: true }],
+  options: {
+    ref: { type: 'string', value: '<ref>', desc: 'Tag or commit to vendor (default: HEAD).' },
+    dest: { type: 'string', value: '<dir>', desc: 'Destination inside the host (default: docs/agent-compass).' },
+    dry: { type: 'boolean', desc: 'Report what would happen; write nothing.' },
+  },
+}
+const { values, positionals } = parseCliArgs(cliConfig)
 
-Options:
-  --ref <ref>    Tag or commit to vendor (default: HEAD).
-  --dest <dir>   Destination inside the host (default: docs/agent-compass).
-  --dry          Report what would happen; write nothing.
-  --help         Show this help.
-`
-if (args.includes('--help') || !args.length) { console.log(help); process.exit(args.length ? 0 : 1) }
+const ref = values.ref || 'HEAD'
+const destRel = values.dest || 'docs/agent-compass'
+const dry = Boolean(values.dry)
 
-const flag = (name) => { const i = args.indexOf(name); return i === -1 ? null : args[i + 1] || null }
-const ref = flag('--ref') || 'HEAD'
-const destRel = flag('--dest') || 'docs/agent-compass'
-const dry = args.includes('--dry')
-const HOST = resolve(args.find((a) => !a.startsWith('--') && a !== ref && a !== destRel) || '')
+if (!positionals[0]) { console.log(renderHelp(cliConfig)); process.exit(1) }
+const HOST = resolve(positionals[0])
 
-if (!HOST || !existsSync(HOST)) { console.error(`Host directory not found: ${HOST || '(missing)'}`); process.exit(1) }
+if (!existsSync(HOST)) { console.error(`Host directory not found: ${HOST}`); process.exit(1) }
 
 const git = (...argv) => execFileSync('git', ['-C', AC, ...argv], { encoding: 'utf8' }).trim()
 let commit

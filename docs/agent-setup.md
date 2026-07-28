@@ -33,7 +33,7 @@ anything that should bind everyone in the repo; keep personal ergonomics global.
 ## Skills across tools
 
 `skills/` holds tool-agnostic `SKILL.md` folders. To make them auto-trigger in
-each AI CLI (Claude, Cursor, Windsurf, Copilot, …) from one source, use
+each AI CLI (Claude, Codex, Gemini, Copilot, …) from one source, use
 [`skillshare`](../skills/README.md): point it at `skills/` and let it symlink/copy
 into each tool's skills directory. That's how one definition reaches every agent.
 
@@ -65,6 +65,8 @@ Use provider-native commands only when they reduce risk or repeated work:
 
 - Claude: skills, hooks, subagents/agent teams, plugins, MCP.
 - Codex: `/plan`, `/goal`, `/review`, subagents, skills, hooks, MCP.
+- Gemini: `GEMINI.md` context, slash commands, extensions, MCP via
+  `.gemini/settings.json` (no hooks — enforcement lives in Husky/CI).
 - Copilot: repository/path instructions, prompt files, custom agents, MCP.
 
 See [agent-provider-capabilities](tooling/agent-provider-capabilities.md).

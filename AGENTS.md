@@ -1,9 +1,9 @@
 # Agent Contract
 
 This is the canonical, tool-agnostic contract for any AI coding agent (Claude,
-Codex, Copilot, Cursor, …) working in a repository that imports **agent-compass**.
-`CLAUDE.md`, `CODEX.md`, and `.github/copilot-instructions.md` are thin pointers
-to this file plus tool-specific notes.
+Codex, Gemini, Copilot, …) working in a repository that imports **agent-compass**.
+`CLAUDE.md`, `CODEX.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are
+thin pointers to this file plus tool-specific notes.
 
 > When agent-compass is imported as a submodule (e.g. at `docs/agent-compass/`),
 > the host project's own root `AGENTS.md` takes precedence for project-specific

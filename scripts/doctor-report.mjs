@@ -2,21 +2,21 @@
 // doctor-report.mjs — markdown readiness report for host agent setup.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { doctorChecks } from './doctor-checks.mjs'
+import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
-const help = `Usage: node scripts/doctor-report.mjs [root] [--write]
+const { values, positionals } = parseCliArgs({
+  name: 'doctor-report',
+  script: 'doctor-report.mjs',
+  summary: 'Print a markdown host-readiness report. With --write, save to .agent/doctor-report.md.',
+  positionals: [{ name: 'root', required: false }],
+  options: {
+    write: { type: 'boolean', desc: 'Save the report to .agent/doctor-report.md.' },
+  },
+})
 
-Print a markdown host-readiness report. With --write, save to .agent/doctor-report.md.
-`
-
-const args = process.argv.slice(2)
-if (args.includes('--help')) {
-  console.log(help)
-  process.exit(0)
-}
-
-const root = resolve(args.find((arg) => !arg.startsWith('--')) || process.cwd())
+const root = resolveRoot(positionals)
 const check = (label, path) => `| ${label} | ${existsSync(join(root, path)) ? 'ok' : 'missing'} | \`${path}\` |`
 const checkRow = ([label, ok, detail]) => `| ${label} | ${ok ? 'ok' : 'issue'} | ${detail?.length ? detail.join(', ') : ''} |`
 let scripts = []
@@ -57,7 +57,7 @@ ${[...advisory, ...deepChecks].map(checkRow).join('\n')}
 ${scripts.length ? scripts.map((script) => `- ${script}`).join('\n') : '- none'}
 `
 
-if (args.includes('--write')) {
+if (values.write) {
   const out = join(root, '.agent', 'doctor-report.md')
   mkdirSync(join(root, '.agent'), { recursive: true })
   writeFileSync(out, report)
