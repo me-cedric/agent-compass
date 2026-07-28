@@ -7,6 +7,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `self-review-before-done` instinct: review your own change like an MR before
+  calling it done — target the runtime blind spots typecheck and unit mocks miss
+  (DI/boot wiring, whether input validation actually runs, response-shape leaks,
+  by-id scope), run the fuller checks (full build, whole suite, pre-commit lint),
+  and fix findings inline rather than enumerating them.
+
 - `pr-review-governance` skill: a "GitLab MR posting (`glab`)" section
   documenting the two silent `glab api` traps — `-f "body=@file"` posts the
   literal `@path` instead of the file, and inline comments need a JSON body with
