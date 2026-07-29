@@ -33,7 +33,14 @@ test('catalog lists every asset type with descriptions', async () => {
   const security = assets.find((a) => a.id === 'security' && a.type === 'capability-pack')
   assert.ok(security, 'security capability pack missing')
   assert.equal(security.skill_count, 35)
+  assert.equal(security.kind, 'root')
   assert.ok(security.skills.includes('ai-agent-security'))
+
+  const packs = assets.filter((a) => a.type === 'capability-pack')
+  assert.equal(packs.length, 14)
+  const aws = packs.find((pack) => pack.id === 'aws')
+  assert.equal(aws.kind, 'subpack')
+  assert.equal(aws.parent, 'infrastructure')
 })
 
 test('catalog filters by type and grep, and renders markdown', async () => {

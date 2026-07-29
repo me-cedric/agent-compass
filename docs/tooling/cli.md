@@ -112,11 +112,13 @@ agent-compass skills-sync . --pack devops-platform
 agent-compass skills-sync . --pack security,infrastructure,compliance
 ```
 
-Available packs: `devops-platform`, `security`, `infrastructure`, `compliance`.
-Default sync excludes these broad packs. Use `--pack` for selected packs or
-`--all` for every skill. `--all`, `--only`, and `--pack` are mutually
-exclusive. Global setup also excludes capability packs; sync them explicitly
-afterward when wanted.
+Root packs: `devops-platform`, `security`, `infrastructure`, `compliance`.
+Focused subpacks: `aws`, `azure`, `gcp`, `kubernetes`, `observability`,
+`ai-ops`, `security-scanning`, `secrets`, `hardening`, and
+`compliance-frameworks`. Default sync excludes capability packs. Use `--pack`
+for selected packs or `--all` for every skill. `--all`, `--only`, and `--pack`
+are mutually exclusive. Global setup also excludes capability packs; sync them
+explicitly afterward when wanted.
 
 ```bash
 agent-compass skills-sync --list-packs
@@ -136,6 +138,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `provider-verify` | Verify provider files and prompts are discoverable. | — |
 | `recommend` | Scan host and recommend agent setup improvements. | — |
 | `quality-gates` | Run generic agent handoff quality gates. | — |
+| `check-skill-quality` | Validate imported skills against safety, provenance, and reviewed-risk rules. | — |
 | `dashboard` | Write static `.agent/report.html` dashboard. | — |
 | `migration-plan` | Plan host upgrade against current manifest. | — |
 | `mcp-probe` | Probe MCP config readiness. | — |
@@ -152,6 +155,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `context` | Compact repo snapshot for agents. | — |
 | `context-pack` | Machine-readable `.agent/context.json`. | — |
 | `catalog` | Machine-readable asset catalog (skills, stacks, templates, docs). | — |
+| `skills` | Search skills, filter capability packs, and inspect exact provenance. | — |
 | `runbook` | Compact agent runbook. | — |
 | `depgraph` | Mermaid dependency graph from imports. | `gen-depgraph` |
 
@@ -162,6 +166,8 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `new` | Scaffold a skill, ADR, spec, arch decision, instinct, stack, workflow, or tooling doc. | — |
 | `run` | Run a registry command (refuses unknown/destructive). | `run-command` |
 | `check-companions` | Fail when source changes ship without a test. | `check-change-companions` |
+| `skill-docs` | Generate or check README skill counts and pack catalogs. | — |
+| `upstream-skills` | Verify the pinned lock or refresh from an explicit local checkout. Never fetches. | — |
 | `redact` | Scan files/staged diff for secret/PII leaks. | — |
 
 **Learning**

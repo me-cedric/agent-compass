@@ -32,7 +32,7 @@ source of truth and never drift.
 | `docs/` | `architecture/`, `decisions/` (ADRs), `guidelines/`, `tooling/`, `workflows/`, `agent-setup.md`. |
 | `knowledge/` | `instincts/` (distilled reusable patterns), `examples/`, `incoming/` (staging from `pull-knowledge`). |
 | `migrations/` | Ordered per-version host migrations, applied by `sync` (see Stay current). |
-| `scripts/` | All executable tooling; `cli.mjs` dispatches commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `capability-packs`, `redact`). |
+| `scripts/` | All executable tooling; `cli.mjs` dispatches commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `capability-packs`, `upstream-skills`, `redact`). |
 | `skills/` | Provider-portable skills (one folder per skill with `SKILL.md`). |
 | `stacks/` | Stack presets mapping a detected stack to fitting skills/templates/docs. |
 | `templates/` | Everything installable into hosts; `scripts/manifest.mjs` defines each file's destination and `seed` vs `managed` mode. |
@@ -49,7 +49,8 @@ source of truth and never drift.
 5. Fit-based `skills-sync.mjs`: core + detected-stack + working-style skills
    (selection in `scripts/lib/profiles.mjs`), copy or symlink. Broad operational
    skills remain opt-in through `--pack`; discover them with `--list-packs` or
-   `catalog --type capability-pack`.
+   `catalog --type capability-pack`. Use `skills --grep` or `skills <name>` to
+   find exact skills and inspect risk/provenance metadata.
 6. Optional `--policy <pack>` applies a policy via `apply-recommendations.mjs`; `agent-onboard.mjs` gates readiness. Nothing is ever overwritten or committed.
 
 **Stay current** (host follows a moving submodule):
@@ -98,6 +99,8 @@ column is what `install.mjs` places into a *host* (see `scripts/manifest.mjs`).
 | `agent-evals` | Invalid teaching / tool-offer eval fixtures. |
 | `check-actions` | Unsupported GitHub Action major versions. |
 | `check-change-companions` | Source change shipped without its test companion (host-facing gate). |
+| `check-skill-quality` | Imported-skill lock, safety gate, metadata, provenance, payload, link, and risk-baseline drift. |
+| `skill-docs --check` | README skill badge and root/focused capability-pack catalog drift. |
 | `ci.yml` | Runs script syntax check + tests + the lint guards on every push/PR. |
 | `agent-drift.yml` | Weekly read-only drift dashboard (`agent-drift --strict`) across all validators. |
 

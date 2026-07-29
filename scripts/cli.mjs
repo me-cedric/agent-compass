@@ -41,6 +41,7 @@ export const COMMANDS = {
   'provider-verify': { script: 'provider-verify.mjs', group: 'Health', desc: 'Verify provider files and prompts are discoverable.' },
   recommend: { script: 'recommend.mjs', group: 'Health', desc: 'Scan host and recommend agent setup improvements.' },
   'quality-gates': { script: 'quality-gates.mjs', group: 'Health', desc: 'Run generic agent handoff quality gates.' },
+  'check-skill-quality': { script: 'check-skill-quality.mjs', group: 'Health', desc: 'Validate imported skills against safety and provenance rules.' },
   dashboard: { script: 'dashboard.mjs', group: 'Health', desc: 'Write static .agent/report.html dashboard.' },
   'migration-plan': { script: 'migration-plan.mjs', group: 'Health', desc: 'Plan host upgrade against current manifest.' },
   'mcp-probe': { script: 'mcp-probe.mjs', group: 'Health', desc: 'Probe MCP config readiness.' },
@@ -53,12 +54,15 @@ export const COMMANDS = {
   context: { script: 'context.mjs', group: 'Context', desc: 'Compact repo snapshot for agents.' },
   'context-pack': { script: 'context-pack.mjs', group: 'Context', desc: 'Machine-readable .agent/context.json.' },
   catalog: { script: 'catalog.mjs', group: 'Context', desc: 'Machine-readable asset catalog (skills, stacks, templates, docs).' },
+  skills: { script: 'skills-info.mjs', group: 'Context', desc: 'Search skills, filter packs, and inspect provenance.' },
   runbook: { script: 'runbook.mjs', group: 'Context', desc: 'Compact agent runbook.' },
   depgraph: { script: 'gen-depgraph.mjs', group: 'Context', desc: 'Mermaid dependency graph from imports.' },
 
   new: { script: 'new.mjs', group: 'Build', desc: 'Scaffold a skill, ADR, spec, or instinct.' },
   run: { script: 'run-command.mjs', group: 'Build', desc: 'Run a registry command (refuses unknown/destructive).' },
   'check-companions': { script: 'check-change-companions.mjs', group: 'Build', desc: 'Fail when source changes ship without a test.' },
+  'skill-docs': { script: 'skill-docs.mjs', group: 'Build', desc: 'Generate or check README skill counts and pack catalogs.' },
+  'upstream-skills': { script: 'upstream-skills.mjs', group: 'Build', desc: 'Verify or refresh imported skills from a local checkout.' },
   redact: { script: 'redact.mjs', group: 'Build', desc: 'Scan files/staged diff for secret/PII leaks.' },
 
   trace: { script: 'agent-trace.mjs', group: 'Learning', desc: 'Validate a trace/outcome log (no secrets).' },

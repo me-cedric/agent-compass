@@ -18,6 +18,8 @@ test('unified CLI lists capability packs and dispatches pack sync', async () => 
   assert.match(listed.stdout, /security\s+35/)
   assert.match(listed.stdout, /infrastructure\s+70/)
   assert.match(listed.stdout, /compliance\s+19/)
+  assert.match(listed.stdout, /aws\s+12/)
+  assert.match(listed.stdout, /security-scanning\s+7/)
 
   const registered = await runNode([registryRunner, 'agentTools.skillsListPacks', AC])
   assert.equal(registered.code, 0, registered.stderr)
@@ -49,6 +51,12 @@ test('skills-sync accepts one or more opt-in capability packs', async () => {
     assert.equal(multiple.stdout.trim().split('\n').length, 54)
     assert.match(multiple.stdout, /would copy ai-agent-security -> \.agents\/skills/)
     assert.match(multiple.stdout, /would copy soc2-compliance -> \.agents\/skills/)
+
+    const focused = await runNode([script, host, '--pack', 'aws', '--target', 'agents', '--dry'])
+    assert.equal(focused.code, 0, focused.stderr)
+    assert.equal(focused.stdout.trim().split('\n').length, 12)
+    assert.match(focused.stdout, /terraform-aws/)
+    assert.match(focused.stdout, /aws-cloudtrail/)
   } finally {
     await rm(host, { recursive: true, force: true })
   }

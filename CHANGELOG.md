@@ -18,6 +18,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   `catalog --type capability-pack`, plus command-registry entries. Default
   project/global sync excludes broad packs; explicit `--all` includes them.
   Backed by focused inventory/content/sync/dispatch tests.
+- Ten focused operational subpacks for AWS, Azure, GCP, Kubernetes,
+  observability, AI operations, security scanning, secrets, hardening, and
+  compliance frameworks.
+- Local-only upstream lifecycle tooling: deterministic pinned lock, dry-run
+  comparison, reviewed-risk refresh gate, and lock verification. It never
+  fetches or monitors remote state.
+- Imported-skill quality and generated-documentation gates, plus unified CLI
+  skill search, pack filtering, exact metadata, and provenance details.
 - Operational safety contract and `plan-before-operational-change` instinct for
   production changes, incident evidence, least privilege, rollback, and
   compliance limitations.

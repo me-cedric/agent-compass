@@ -63,17 +63,20 @@ work: audit → scope → split → detail.
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |
 | `verify-security` | Scans a path for vulnerabilities (OWASP-style).          |
 
+<!-- BEGIN GENERATED:OPERATIONAL_SKILLS -->
 ### Operational capability packs
 
 146 upstream-derived skills stay opt-in so normal host/global adoption remains
-small. Sync one or more packs:
+small. Sync one or more root packs or focused subpacks:
 
 ```bash
 node scripts/cli.mjs skills-sync --list-packs
 node scripts/cli.mjs skills-sync /path/to/host --pack devops-platform
-node scripts/cli.mjs skills-sync /path/to/host --pack security,infrastructure,compliance
+node scripts/cli.mjs skills-sync /path/to/host --pack aws,kubernetes,observability
 node scripts/cli.mjs catalog --type capability-pack --md
 ```
+
+#### Root packs
 
 | Pack | Skills | Covers |
 | ---- | -----: | ------ |
@@ -82,7 +85,24 @@ node scripts/cli.mjs catalog --type capability-pack --md
 | **infrastructure** | 70 | Cloud, IaC, servers, networking, databases, storage, platforms, IT, and AI infrastructure operations. |
 | **compliance** | 19 | Framework mapping, governance, evidence, continuity, auditing, and incident management. |
 
+#### Focused subpacks
+
+| Pack | Skills | Covers |
+| ---- | -----: | ------ |
+| **aws** | 12 | AWS compute, containers, IAM, networking, data, secrets, auditing, cost, CloudFormation, and Terraform. |
+| **azure** | 9 | Azure compute, AKS, networking, SQL, functions, Key Vault, audit monitoring, ARM/Bicep, and Terraform. |
+| **gcp** | 8 | GCP compute, GKE, networking, Cloud SQL, functions, secrets, audit logs, and Terraform. |
+| **kubernetes** | 9 | Kubernetes operations, packaging, GitOps, managed clusters, GPU workloads, scaling, and hardening. |
+| **observability** | 8 | Metrics, traces, logs, alerts, audit telemetry, and cloud audit trails. |
+| **ai-ops** | 14 | AI pipelines, model serving, GPU operations, gateways, caching, cost, RAG, vector stores, and inference scaling. |
+| **security-scanning** | 7 | Dependency, source, dynamic, container, vulnerability, SBOM, and supply-chain scanning. |
+| **secrets** | 5 | Vault, cloud secret managers, and encrypted GitOps secrets. |
+| **hardening** | 6 | CIS, Linux, Windows, container, Kubernetes, and agent deployment hardening. |
+| **compliance-frameworks** | 6 | FedRAMP, GDPR, HIPAA, ISO 27001, PCI DSS, and SOC 2 framework guidance. |
+
 Every imported skill includes an Agent Compass operational safety gate and pinned MIT provenance. Upstream executable scripts and assets are not vendored.
+
+#### Root-pack contents
 
 <details>
 <summary><strong>DevOps platform (22)</strong></summary>
@@ -134,6 +154,86 @@ Every imported skill includes an Agent Compass operational safety gate and pinne
 
 </details>
 
+#### Focused-subpack contents
+
+<details>
+<summary><strong>AWS (12)</strong></summary>
+
+- `aws-cloudtrail`, `aws-cost-optimization`, `aws-ec2`, `aws-ecs-fargate`, `aws-iam`, `aws-lambda`
+- `aws-rds`, `aws-s3`, `aws-secrets-manager`, `aws-vpc`, `cloudformation`, `terraform-aws`
+
+</details>
+
+<details>
+<summary><strong>Azure (9)</strong></summary>
+
+- `arm-templates`, `azure-aks`, `azure-functions`, `azure-keyvault`, `azure-monitor-audit`, `azure-networking`
+- `azure-sql`, `azure-vms`, `terraform-azure`
+
+</details>
+
+<details>
+<summary><strong>GCP (8)</strong></summary>
+
+- `gcp-audit-logs`, `gcp-cloud-functions`, `gcp-cloud-sql`, `gcp-compute`, `gcp-gke`, `gcp-networking`
+- `gcp-secret-manager`, `terraform-gcp`
+
+</details>
+
+<details>
+<summary><strong>Kubernetes (9)</strong></summary>
+
+- `argocd-gitops`, `azure-aks`, `gcp-gke`, `gpu-kubernetes-operations`, `helm-charts`, `kubernetes-hardening`
+- `kubernetes-ops`, `kustomize`, `llm-inference-scaling`
+
+</details>
+
+<details>
+<summary><strong>Observability (8)</strong></summary>
+
+- `alerting-oncall`, `audit-logging`, `aws-cloudtrail`, `azure-monitor-audit`, `gcp-audit-logs`, `loki-logging`
+- `opentelemetry`, `prometheus-grafana`
+
+</details>
+
+<details>
+<summary><strong>AI operations (14)</strong></summary>
+
+- `ai-inference-service-mesh`, `ai-pipeline-orchestration`, `gpu-kubernetes-operations`, `gpu-server-management`, `llm-caching`, `llm-cost-optimization`
+- `llm-fine-tuning`, `llm-gateway`, `llm-inference-scaling`, `multi-tenant-llm-hosting`, `ollama-stack`, `rag-infrastructure`
+- `vector-database-ops`, `vllm-server`
+
+</details>
+
+<details>
+<summary><strong>Security scanning (7)</strong></summary>
+
+- `container-scanning`, `dast-scanning`, `dependency-scanning`, `sast-scanning`, `sbom-supply-chain`, `supply-chain-attack-response`
+- `vulnerability-scanning`
+
+</details>
+
+<details>
+<summary><strong>Secrets management (5)</strong></summary>
+
+- `aws-secrets-manager`, `azure-keyvault`, `gcp-secret-manager`, `hashicorp-vault`, `sops-encryption`
+
+</details>
+
+<details>
+<summary><strong>Hardening (6)</strong></summary>
+
+- `cis-benchmarks`, `container-hardening`, `kubernetes-hardening`, `linux-hardening`, `openclaw-deployment-hardening`, `windows-hardening`
+
+</details>
+
+<details>
+<summary><strong>Compliance frameworks (6)</strong></summary>
+
+- `fedramp-compliance`, `gdpr-compliance`, `hipaa-compliance`, `iso27001-compliance`, `pci-dss-compliance`, `soc2-compliance`
+
+</details>
+<!-- END GENERATED:OPERATIONAL_SKILLS -->
 ### Spec Kit bridge
 
 Optional command skills for hosts that use GitHub Spec Kit. Use them with
@@ -208,4 +308,7 @@ adapted from
 [BagelHole/DevOps-Security-Agent-Skills](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
 at pinned commit `0365f57a079b1332f95cf26e31dd2d5332a8399f`.
 Agent Compass adds safety metadata and rules, and does not vendor upstream
-executables. See [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
+executables. Verify the current lock with `agent-compass upstream-skills
+--verify`; compare or refresh only from an explicit local checkout with
+`--source`. The command never fetches or monitors remote state. See
+[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).

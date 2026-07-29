@@ -3,13 +3,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { CAPABILITY_PACKS } from '../scripts/lib/capability-packs.mjs'
+import { rootCapabilitySkills } from '../scripts/lib/capability-packs.mjs'
 
 const AC = new URL('..', import.meta.url).pathname
 const COMMIT = '0365f57a079b1332f95cf26e31dd2d5332a8399f'
 
 test('imported operational skills are knowledge-only, hardened, and attributable', () => {
-  const names = Object.values(CAPABILITY_PACKS).flatMap((pack) => pack.skills)
+  const names = rootCapabilitySkills()
   assert.equal(names.length, 146)
   assert.equal(new Set(names).size, 146)
 

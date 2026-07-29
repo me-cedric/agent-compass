@@ -3,6 +3,7 @@
 
 export const CAPABILITY_PACKS = {
   "devops-platform": {
+    "kind": "root",
     "label": "DevOps platform",
     "description": "CI/CD, containers, Kubernetes, observability, AI pipelines, developer environments, and release operations.",
     "skills": [
@@ -31,6 +32,7 @@ export const CAPABILITY_PACKS = {
     ]
   },
   "security": {
+    "kind": "root",
     "label": "Security",
     "description": "Defensive scanning, secrets, hardening, network security, incident response, and AI security.",
     "skills": [
@@ -72,6 +74,7 @@ export const CAPABILITY_PACKS = {
     ]
   },
   "infrastructure": {
+    "kind": "root",
     "label": "Infrastructure",
     "description": "Cloud, IaC, servers, networking, databases, storage, platforms, IT, and AI infrastructure operations.",
     "skills": [
@@ -148,6 +151,7 @@ export const CAPABILITY_PACKS = {
     ]
   },
   "compliance": {
+    "kind": "root",
     "label": "Compliance",
     "description": "Framework mapping, governance, evidence, continuity, auditing, and incident management.",
     "skills": [
@@ -171,8 +175,179 @@ export const CAPABILITY_PACKS = {
       "soc2-compliance",
       "vendor-management"
     ]
+  },
+  "aws": {
+    "kind": "subpack",
+    "parent": "infrastructure",
+    "label": "AWS",
+    "description": "AWS compute, containers, IAM, networking, data, secrets, auditing, cost, CloudFormation, and Terraform.",
+    "skills": [
+      "aws-cloudtrail",
+      "aws-cost-optimization",
+      "aws-ec2",
+      "aws-ecs-fargate",
+      "aws-iam",
+      "aws-lambda",
+      "aws-rds",
+      "aws-s3",
+      "aws-secrets-manager",
+      "aws-vpc",
+      "cloudformation",
+      "terraform-aws"
+    ]
+  },
+  "azure": {
+    "kind": "subpack",
+    "parent": "infrastructure",
+    "label": "Azure",
+    "description": "Azure compute, AKS, networking, SQL, functions, Key Vault, audit monitoring, ARM/Bicep, and Terraform.",
+    "skills": [
+      "arm-templates",
+      "azure-aks",
+      "azure-functions",
+      "azure-keyvault",
+      "azure-monitor-audit",
+      "azure-networking",
+      "azure-sql",
+      "azure-vms",
+      "terraform-azure"
+    ]
+  },
+  "gcp": {
+    "kind": "subpack",
+    "parent": "infrastructure",
+    "label": "GCP",
+    "description": "GCP compute, GKE, networking, Cloud SQL, functions, secrets, audit logs, and Terraform.",
+    "skills": [
+      "gcp-audit-logs",
+      "gcp-cloud-functions",
+      "gcp-cloud-sql",
+      "gcp-compute",
+      "gcp-gke",
+      "gcp-networking",
+      "gcp-secret-manager",
+      "terraform-gcp"
+    ]
+  },
+  "kubernetes": {
+    "kind": "subpack",
+    "parent": "devops-platform",
+    "label": "Kubernetes",
+    "description": "Kubernetes operations, packaging, GitOps, managed clusters, GPU workloads, scaling, and hardening.",
+    "skills": [
+      "argocd-gitops",
+      "azure-aks",
+      "gcp-gke",
+      "gpu-kubernetes-operations",
+      "helm-charts",
+      "kubernetes-hardening",
+      "kubernetes-ops",
+      "kustomize",
+      "llm-inference-scaling"
+    ]
+  },
+  "observability": {
+    "kind": "subpack",
+    "parent": "devops-platform",
+    "label": "Observability",
+    "description": "Metrics, traces, logs, alerts, audit telemetry, and cloud audit trails.",
+    "skills": [
+      "alerting-oncall",
+      "audit-logging",
+      "aws-cloudtrail",
+      "azure-monitor-audit",
+      "gcp-audit-logs",
+      "loki-logging",
+      "opentelemetry",
+      "prometheus-grafana"
+    ]
+  },
+  "ai-ops": {
+    "kind": "subpack",
+    "parent": "infrastructure",
+    "label": "AI operations",
+    "description": "AI pipelines, model serving, GPU operations, gateways, caching, cost, RAG, vector stores, and inference scaling.",
+    "skills": [
+      "ai-inference-service-mesh",
+      "ai-pipeline-orchestration",
+      "gpu-kubernetes-operations",
+      "gpu-server-management",
+      "llm-caching",
+      "llm-cost-optimization",
+      "llm-fine-tuning",
+      "llm-gateway",
+      "llm-inference-scaling",
+      "multi-tenant-llm-hosting",
+      "ollama-stack",
+      "rag-infrastructure",
+      "vector-database-ops",
+      "vllm-server"
+    ]
+  },
+  "security-scanning": {
+    "kind": "subpack",
+    "parent": "security",
+    "label": "Security scanning",
+    "description": "Dependency, source, dynamic, container, vulnerability, SBOM, and supply-chain scanning.",
+    "skills": [
+      "container-scanning",
+      "dast-scanning",
+      "dependency-scanning",
+      "sast-scanning",
+      "sbom-supply-chain",
+      "supply-chain-attack-response",
+      "vulnerability-scanning"
+    ]
+  },
+  "secrets": {
+    "kind": "subpack",
+    "parent": "security",
+    "label": "Secrets management",
+    "description": "Vault, cloud secret managers, and encrypted GitOps secrets.",
+    "skills": [
+      "aws-secrets-manager",
+      "azure-keyvault",
+      "gcp-secret-manager",
+      "hashicorp-vault",
+      "sops-encryption"
+    ]
+  },
+  "hardening": {
+    "kind": "subpack",
+    "parent": "security",
+    "label": "Hardening",
+    "description": "CIS, Linux, Windows, container, Kubernetes, and agent deployment hardening.",
+    "skills": [
+      "cis-benchmarks",
+      "container-hardening",
+      "kubernetes-hardening",
+      "linux-hardening",
+      "openclaw-deployment-hardening",
+      "windows-hardening"
+    ]
+  },
+  "compliance-frameworks": {
+    "kind": "subpack",
+    "parent": "compliance",
+    "label": "Compliance frameworks",
+    "description": "FedRAMP, GDPR, HIPAA, ISO 27001, PCI DSS, and SOC 2 framework guidance.",
+    "skills": [
+      "fedramp-compliance",
+      "gdpr-compliance",
+      "hipaa-compliance",
+      "iso27001-compliance",
+      "pci-dss-compliance",
+      "soc2-compliance"
+    ]
   }
 }
+
+export const ROOT_CAPABILITY_PACK_IDS = Object.keys(CAPABILITY_PACKS)
+  .filter((id) => CAPABILITY_PACKS[id].kind === "root")
+export const SUBPACK_IDS = Object.keys(CAPABILITY_PACKS)
+  .filter((id) => CAPABILITY_PACKS[id].kind === "subpack")
+export const rootCapabilitySkills = () => ROOT_CAPABILITY_PACK_IDS
+  .flatMap((id) => CAPABILITY_PACKS[id].skills)
 
 export const selectCapabilityPacks = (ids) => {
   const unknown = ids.filter((id) => !CAPABILITY_PACKS[id])

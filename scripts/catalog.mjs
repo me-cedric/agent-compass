@@ -89,6 +89,8 @@ for (const [id, pack] of Object.entries(CAPABILITY_PACKS)) {
     type: 'capability-pack',
     path: 'scripts/lib/capability-packs.mjs',
     description: pack.description,
+    kind: pack.kind,
+    parent: pack.parent || null,
     skill_count: pack.skills.length,
     skills: pack.skills,
   })

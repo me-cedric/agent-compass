@@ -7,7 +7,9 @@
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
+<!-- BEGIN GENERATED:SKILL_BADGE -->
 ![Skills](https://img.shields.io/badge/skills-196-orange)
+<!-- END GENERATED:SKILL_BADGE -->
 ![Ops Packs](https://img.shields.io/badge/ops%20packs-146-red)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
 ![Memory](https://img.shields.io/badge/projectmem-supported-success)
@@ -196,17 +198,39 @@ Agent Compass is mostly Markdown and templates:
 Agent Compass keeps broad operational knowledge opt-in. Normal project and
 global adoption stay small; choose packs only when the host needs them.
 
-| Pack | Skills | Agent learns |
-| ---- | -----: | ------------ |
-| `devops-platform` | 22 | GitHub Actions, GitLab CI, containers, Kubernetes, observability, AI pipelines, release strategies. |
-| `security` | 35 | Defensive scanning, secrets, hardening, incident response, supply chain, AI security. |
-| `infrastructure` | 70 | AWS, Azure, GCP, Cloudflare, IaC, servers, networking, databases, storage, AI infrastructure. |
-| `compliance` | 19 | SOC 2, ISO 27001, GDPR, HIPAA, PCI DSS, FedRAMP, governance, evidence, continuity. |
+<!-- BEGIN GENERATED:CAPABILITY_PACKS -->
+| Pack | Skills | Covers |
+| ---- | -----: | ------ |
+| **devops-platform** | 22 | CI/CD, containers, Kubernetes, observability, AI pipelines, developer environments, and release operations. |
+| **security** | 35 | Defensive scanning, secrets, hardening, network security, incident response, and AI security. |
+| **infrastructure** | 70 | Cloud, IaC, servers, networking, databases, storage, platforms, IT, and AI infrastructure operations. |
+| **compliance** | 19 | Framework mapping, governance, evidence, continuity, auditing, and incident management. |
+
+### Focused subpacks
+
+Use smaller packs when a host only needs one cloud, Kubernetes, observability,
+AI operations, scanning, secrets, hardening, or compliance area.
+
+| Pack | Skills | Covers |
+| ---- | -----: | ------ |
+| **aws** | 12 | AWS compute, containers, IAM, networking, data, secrets, auditing, cost, CloudFormation, and Terraform. |
+| **azure** | 9 | Azure compute, AKS, networking, SQL, functions, Key Vault, audit monitoring, ARM/Bicep, and Terraform. |
+| **gcp** | 8 | GCP compute, GKE, networking, Cloud SQL, functions, secrets, audit logs, and Terraform. |
+| **kubernetes** | 9 | Kubernetes operations, packaging, GitOps, managed clusters, GPU workloads, scaling, and hardening. |
+| **observability** | 8 | Metrics, traces, logs, alerts, audit telemetry, and cloud audit trails. |
+| **ai-ops** | 14 | AI pipelines, model serving, GPU operations, gateways, caching, cost, RAG, vector stores, and inference scaling. |
+| **security-scanning** | 7 | Dependency, source, dynamic, container, vulnerability, SBOM, and supply-chain scanning. |
+| **secrets** | 5 | Vault, cloud secret managers, and encrypted GitOps secrets. |
+| **hardening** | 6 | CIS, Linux, Windows, container, Kubernetes, and agent deployment hardening. |
+| **compliance-frameworks** | 6 | FedRAMP, GDPR, HIPAA, ISO 27001, PCI DSS, and SOC 2 framework guidance. |
+<!-- END GENERATED:CAPABILITY_PACKS -->
 
 ```bash
 # Discover packs through the unified CLI
 node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs
 node docs/agent-compass/scripts/cli.mjs catalog --type capability-pack --md
+node docs/agent-compass/scripts/cli.mjs skills --grep kubernetes --md
+node docs/agent-compass/scripts/cli.mjs skills kubernetes-ops
 
 # One pack
 node docs/agent-compass/scripts/cli.mjs skills-sync . --pack devops-platform
@@ -225,6 +249,17 @@ All 146 imported skills are pinned to an audited upstream commit, carry
 authorization/dry-run/rollback rules, and include no vendored executable
 scripts or assets. Full list: [`skills/README.md`](skills/README.md). Safety
 contract: [`operational-safety.md`](docs/guidelines/operational-safety.md).
+
+Maintainers can verify the lock and quality locally:
+
+```bash
+agent-compass upstream-skills --verify
+agent-compass check-skill-quality
+agent-compass skill-docs --check
+```
+
+Refreshing requires an explicit local upstream checkout and a reviewed
+`--refresh`; Agent Compass does not fetch or monitor upstream state.
 
 ---
 

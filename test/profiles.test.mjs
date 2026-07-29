@@ -5,7 +5,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { CAPABILITY_PACKS, selectCapabilityPacks } from '../scripts/lib/capability-packs.mjs'
+import {
+  CAPABILITY_PACKS,
+  ROOT_CAPABILITY_PACK_IDS,
+  SUBPACK_IDS,
+  rootCapabilitySkills,
+  selectCapabilityPacks,
+} from '../scripts/lib/capability-packs.mjs'
 import { CORE_PROFILE, PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from '../scripts/lib/profiles.mjs'
 import { runNode } from './helpers.mjs'
 
@@ -33,7 +39,7 @@ test('every skills/ directory is reachable from a profile or capability pack (no
   const reachable = new Set([
     ...CORE_PROFILE.skills,
     ...Object.values(PROFILES).flatMap((p) => p.skills),
-    ...Object.values(CAPABILITY_PACKS).flatMap((p) => p.skills),
+    ...rootCapabilitySkills(),
     ...STYLE_SKILLS,
   ])
   const dirs = readdirSync(join(AC, 'skills'), { withFileTypes: true })
@@ -115,7 +121,7 @@ test('selectAssets merges core with matched profiles, deduped', () => {
 
 test('capability packs expose the requested upstream skill inventory', () => {
   assert.deepEqual(
-    Object.fromEntries(Object.entries(CAPABILITY_PACKS).map(([id, pack]) => [id, pack.skills.length])),
+    Object.fromEntries(ROOT_CAPABILITY_PACK_IDS.map((id) => [id, CAPABILITY_PACKS[id].skills.length])),
     {
       'devops-platform': 22,
       security: 35,
@@ -131,6 +137,26 @@ test('capability packs expose the requested upstream skill inventory', () => {
   }
   assert.equal(new Set(selected).size, selected.length, 'packs must not overlap')
   assert.throws(() => selectCapabilityPacks(['unknown']), /Unknown capability pack/)
+
+  assert.deepEqual(
+    Object.fromEntries(SUBPACK_IDS.map((id) => [id, CAPABILITY_PACKS[id].skills.length])),
+    {
+      aws: 12,
+      azure: 9,
+      gcp: 8,
+      kubernetes: 9,
+      observability: 8,
+      'ai-ops': 14,
+      'security-scanning': 7,
+      secrets: 5,
+      hardening: 6,
+      'compliance-frameworks': 6,
+    },
+  )
+  assert.equal(CAPABILITY_PACKS.aws.parent, 'infrastructure')
+  assert.ok(selectCapabilityPacks(['kubernetes']).includes('kubernetes-ops'))
+  assert.equal(rootCapabilitySkills().length, 146)
+  assert.equal(new Set(rootCapabilitySkills()).size, 146)
 
   for (const pack of Object.values(CAPABILITY_PACKS)) {
     for (const skill of pack.skills) {
