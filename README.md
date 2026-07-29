@@ -3,7 +3,7 @@
 ### One operating system for every coding agent
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-v0.6.0-blue)
+![Version](https://img.shields.io/badge/version-v0.7.0-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
@@ -265,7 +265,7 @@ Refreshing requires an explicit local upstream checkout and a reviewed
 
 ## Status
 
-Agent Compass is usable across real projects. Current version: `0.6.0`.
+Agent Compass is usable across real projects. Current version: `0.7.0`.
 
 | Area | Current state |
 | ---- | ------------- |
@@ -509,7 +509,7 @@ node scripts/doctor-report.mjs /path/to/host --write
 node scripts/runbook.mjs /path/to/host --write
 node scripts/pr.mjs --reviewer alice --label enhancement --dry
 node scripts/pr-review.mjs 123 --out .agent/pr-123-review.md
-node scripts/release.mjs 0.6.0 --dry
+node scripts/release.mjs 0.7.0 --dry
 node scripts/upgrade-host.mjs /path/to/host docs/agent-compass --dry
 ```
 
@@ -695,12 +695,12 @@ git diff --check
 Release prep:
 
 ```bash
-node scripts/release.mjs 0.6.0 --dry
-node scripts/release.mjs 0.6.0
+node scripts/release.mjs 0.7.0 --dry
+node scripts/release.mjs 0.7.0
 npm run check
 git add package.json CHANGELOG.md
-git commit -m "chore: release v0.6.0"
-git tag -a v0.6.0 -m "v0.6.0"
+git commit -m "chore: release v0.7.0"
+git tag -a v0.7.0 -m "v0.7.0"
 npm run lint:release
 ```
 

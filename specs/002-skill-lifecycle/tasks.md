@@ -15,10 +15,10 @@ Plan: [plan.md](plan.md)
   and changelog.
 - [x] T008 Run focused/full validation and self-review.
 - [x] T009 Commit lifecycle feature.
-- [ ] T010 Prepare `0.7.0`, commit, tag, and validate release metadata.
+- [x] T010 Prepare `0.7.0`, commit, tag, and validate release metadata.
 
 ## Completion Check
 
-- [ ] All acceptance criteria are met.
-- [ ] Required validation passed.
-- [ ] Specs, docs, tests, code, lock, and release metadata agree.
+- [x] All acceptance criteria are met.
+- [x] Required validation passed.
+- [x] Specs, docs, tests, code, lock, and release metadata agree.

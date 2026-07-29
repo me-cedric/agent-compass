@@ -1,6 +1,6 @@
 # Spec: Operational Skill Lifecycle
 
-Status: Approved
+Status: Implemented
 Owner: Agent Compass maintainers
 Created: 2026-07-29
 
@@ -74,4 +74,9 @@ updates, or silent growth in dangerous examples.
 - [x] Generated README blocks are current; tampered blocks fail `--check`.
 - [x] `agent-compass skills` lists, searches, filters, and explains skills.
 - [x] `npm run check` includes new drift/quality gates and passes.
-- [ ] Version `0.7.0` metadata, commit, and annotated local tag agree.
+- [x] Version `0.7.0` metadata, commit, and annotated local tag agree.
+
+## Implementation Status
+
+Implemented, merged into `main`, and released as `0.7.0` on 2026-07-29. See
+[plan.md](plan.md) and [tasks.md](tasks.md) for exact surfaces and checks.
