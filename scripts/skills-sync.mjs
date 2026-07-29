@@ -4,6 +4,7 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { CAPABILITY_PACKS, selectCapabilityPacks } from './lib/capability-packs.mjs'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -14,22 +15,39 @@ const { values, positionals } = parseCliArgs({
   summary: `Copy or symlink Agent Compass skills into host provider dirs.
 
 Targets: agents (.agents/skills), claude (.claude/skills), codex (.agents/skills), all
-Default: --copy --target all`,
+Capability packs: ${Object.keys(CAPABILITY_PACKS).join(' | ')}
+Default: --copy --target all; capability packs stay opt-in`,
   positionals: [{ name: 'host-dir', required: false }],
   options: {
     copy: { type: 'boolean', desc: 'Copy skills into provider dirs (default).' },
     symlink: { type: 'boolean', desc: 'Symlink skills instead of copying.' },
     target: { type: 'string', value: '<name>', desc: 'Provider target: agents | claude | codex | all (default: all).' },
+    all: { type: 'boolean', desc: 'Sync every skill, including all capability packs.' },
     only: { type: 'string', value: '<a,b,c>', desc: 'Sync a fit-based subset (comma-separated skill names; see `recommend --json` assets.skills).' },
+    pack: { type: 'string', value: '<a,b,c>', desc: 'Sync one or more opt-in operational capability packs.' },
+    'list-packs': { type: 'boolean', desc: 'List capability pack names, counts, and descriptions.' },
     dry: { type: 'boolean', desc: 'Show what would sync; write nothing.' },
   },
 })
 
+if (values['list-packs']) {
+  for (const [id, pack] of Object.entries(CAPABILITY_PACKS)) {
+    console.log(`${id.padEnd(18)} ${String(pack.skills.length).padStart(3)}  ${pack.description}`)
+  }
+  process.exit(0)
+}
+
 const root = resolveRoot(positionals)
 const mode = values.symlink ? 'symlink' : 'copy'
 const target = values.target || 'all'
+const all = Boolean(values.all)
 const only = values.only?.split(',').map((s) => s.trim()).filter(Boolean) || null
+const packIds = values.pack?.split(',').map((s) => s.trim()).filter(Boolean) || null
 const dry = Boolean(values.dry)
+if ([all, Boolean(only), Boolean(packIds)].filter(Boolean).length > 1) {
+  console.error(all ? 'Use only one of --all, --only, or --pack.' : 'Use either --only or --pack, not both.')
+  process.exit(1)
+}
 const targets = {
   agents: '.agents/skills',
   codex: '.agents/skills',
@@ -39,11 +57,22 @@ const selected = target === 'all' ? Object.entries(targets) : [[target, targets[
 if (selected.some(([, dir]) => !dir)) { console.error(`Unknown target: ${target}`); process.exit(1) }
 
 let skills = readdirSync(join(AC, 'skills'), { withFileTypes: true }).filter((d) => d.isDirectory())
-if (only) {
+const capabilitySkills = new Set(Object.values(CAPABILITY_PACKS).flatMap((pack) => pack.skills))
+const requested = packIds
+  ? (() => {
+      try { return selectCapabilityPacks(packIds) } catch (error) {
+        console.error(error.message)
+        process.exit(1)
+      }
+    })()
+  : only
+if (requested) {
   const known = new Set(skills.map((d) => d.name))
-  const unknown = only.filter((name) => !known.has(name))
+  const unknown = requested.filter((name) => !known.has(name))
   if (unknown.length) { console.error(`Unknown skill(s): ${unknown.join(', ')}`); process.exit(1) }
-  skills = skills.filter((d) => only.includes(d.name))
+  skills = skills.filter((d) => requested.includes(d.name))
+} else if (!all) {
+  skills = skills.filter((d) => !capabilitySkills.has(d.name))
 }
 for (const [, relDir] of selected) {
   const dir = join(root, relDir)

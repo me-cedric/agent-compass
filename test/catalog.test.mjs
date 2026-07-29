@@ -13,7 +13,7 @@ test('catalog lists every asset type with descriptions', async () => {
   assert.equal(count, assets.length)
 
   const types = new Set(assets.map((a) => a.type))
-  for (const expected of ['skill', 'stack', 'template-group', 'workflow', 'tooling', 'guideline', 'architecture', 'instinct', 'command']) {
+  for (const expected of ['skill', 'capability-pack', 'stack', 'template-group', 'workflow', 'tooling', 'guideline', 'architecture', 'instinct', 'command']) {
     assert.ok(types.has(expected), `missing type ${expected}`)
   }
 
@@ -29,6 +29,11 @@ test('catalog lists every asset type with descriptions', async () => {
 
   // Every command in cli.mjs must be picked up.
   assert.ok(assets.filter((a) => a.type === 'command').length >= 40, 'command parsing regressed')
+
+  const security = assets.find((a) => a.id === 'security' && a.type === 'capability-pack')
+  assert.ok(security, 'security capability pack missing')
+  assert.equal(security.skill_count, 35)
+  assert.ok(security.skills.includes('ai-agent-security'))
 })
 
 test('catalog filters by type and grep, and renders markdown', async () => {

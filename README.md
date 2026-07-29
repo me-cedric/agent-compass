@@ -1,17 +1,23 @@
-# agent-compass
+# 🧭 Agent Compass
+
+### One operating system for every coding agent
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-v0.6.0-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
+![Skills](https://img.shields.io/badge/skills-196-orange)
+![Ops Packs](https://img.shields.io/badge/ops%20packs-146-red)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
 ![Memory](https://img.shields.io/badge/projectmem-supported-success)
 
-Importable operating manual for AI coding agents.
+**[Start in 30 seconds](#quick-start) · [Explore capabilities](#capability-packs) ·
+[Browse skills](skills/README.md) · [Read the contract](AGENTS.md)**
 
-Agent Compass gives Claude Code, Codex, Gemini, and GitHub Copilot the same
-project contract, quality gates, workflows, templates, and helper scripts.
+Importable operating manual for Claude Code, Codex, Gemini, and GitHub Copilot:
+one project contract, quality gates, workflows, templates, operational
+knowledge, and helper scripts.
 
 Use it as a submodule in real projects, or clone it standalone to bootstrap a
 new project from proven defaults.
@@ -24,6 +30,8 @@ Agent Compass exists for three jobs:
    and tool pointers.
 3. **Grow** safely: pull reusable knowledge out of real projects without leaking
    secrets, personal data, or project-specific facts.
+4. **Operate** systems: opt-in DevOps, security, infrastructure, and compliance
+   packs with authorization and production-safety gates.
 
 **Fastest path:** open any agent CLI (Claude Code, Codex, Gemini, Copilot, …)
 in this repo and say what you want — "set up `~/projects/foo`", "bootstrap a
@@ -35,6 +43,7 @@ through [`MISSIONS.md`](MISSIONS.md) and executes the matching playbook.
 ## Table Of Contents
 
 - [Quick Start](#quick-start)
+- [Capability Packs](#capability-packs)
 - [Status](#status)
 - [Safety Model](#safety-model)
 - [Feature Map](#feature-map)
@@ -58,6 +67,16 @@ through [`MISSIONS.md`](MISSIONS.md) and executes the matching playbook.
 ---
 
 ## Quick Start
+
+### 30-Second Route
+
+```bash
+git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+node docs/agent-compass/scripts/adopt.mjs .
+```
+
+Then tell your agent what you want. [`MISSIONS.md`](MISSIONS.md) routes setup,
+bootstrap, and Compass extension work to the right playbook.
 
 ### Add To Existing Project
 
@@ -172,6 +191,43 @@ Agent Compass is mostly Markdown and templates:
 
 ---
 
+## Capability Packs
+
+Agent Compass keeps broad operational knowledge opt-in. Normal project and
+global adoption stay small; choose packs only when the host needs them.
+
+| Pack | Skills | Agent learns |
+| ---- | -----: | ------------ |
+| `devops-platform` | 22 | GitHub Actions, GitLab CI, containers, Kubernetes, observability, AI pipelines, release strategies. |
+| `security` | 35 | Defensive scanning, secrets, hardening, incident response, supply chain, AI security. |
+| `infrastructure` | 70 | AWS, Azure, GCP, Cloudflare, IaC, servers, networking, databases, storage, AI infrastructure. |
+| `compliance` | 19 | SOC 2, ISO 27001, GDPR, HIPAA, PCI DSS, FedRAMP, governance, evidence, continuity. |
+
+```bash
+# Discover packs through the unified CLI
+node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs
+node docs/agent-compass/scripts/cli.mjs catalog --type capability-pack --md
+
+# One pack
+node docs/agent-compass/scripts/cli.mjs skills-sync . --pack devops-platform
+
+# Combined operational baseline
+node docs/agent-compass/scripts/cli.mjs skills-sync . \
+  --pack security,infrastructure,compliance
+```
+
+```text
+DISCOVER          SELECT             SYNC               ACTIVATE
+host context  →   fitting pack   →   provider skills →  agent loads one skill
+```
+
+All 146 imported skills are pinned to an audited upstream commit, carry
+authorization/dry-run/rollback rules, and include no vendored executable
+scripts or assets. Full list: [`skills/README.md`](skills/README.md). Safety
+contract: [`operational-safety.md`](docs/guidelines/operational-safety.md).
+
+---
+
 ## Status
 
 Agent Compass is usable across real projects. Current version: `0.6.0`.
@@ -185,6 +241,7 @@ Agent Compass is usable across real projects. Current version: `0.6.0`.
 | Memory | projectmem workflow, templates, policy, and MCP examples. |
 | PR workflow | GitHub PR create/review helpers and reviewer/label/base rules. |
 | Figma | MCP guidance, frontend skill, and design-system extraction worksheet. |
+| Operations | 146 opt-in DevOps, security, infrastructure, and compliance skills with safety gates. |
 | CI | Node 24, latest tracked action majors, tests, naming/index/docs/action guards. |
 | Release | Changelog/version/tag guard and release helper script. |
 
@@ -468,6 +525,8 @@ Useful groups:
   `expo-react-native-patterns`.
 - Backend: `nestjs-patterns`, `drizzle-postgres-patterns`, `bullmq-patterns`,
   `resilience-observability-patterns`, `external-service-patterns`.
+- Operations: `devops-platform`, `security`, `infrastructure`, and `compliance`
+  packs (146 skills; opt-in through `skills-sync --pack`).
 
 Full index: [`skills/README.md`](skills/README.md).
 
@@ -673,6 +732,12 @@ configuration. The repo now layers in spec-driven work, durable project memory,
 MCP/Figma design context, PR automation, agent runbooks, and release/upgrade
 helpers.
 
+Selected operational skills were adapted from
+[BagelHole/DevOps-Security-Agent-Skills](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
+under MIT at pinned commit
+`0365f57a079b1332f95cf26e31dd2d5332a8399f`. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
 Stack-specific skills may carry light illustrative naming. Keep shared guidance
 generic and move host-specific rules into the host project.
 
@@ -681,7 +746,8 @@ generic and move host-specific rules into the host project.
 AI coding agents, agent instructions, AGENTS.md, Claude Code, Codex, Gemini,
 GitHub Copilot, spec-driven development, project memory, projectmem, MCP,
 Figma MCP, PR automation, code review, TDD, documentation, quality gates,
-monorepo, pnpm, turbo, NestJS, React, Expo.
+monorepo, pnpm, turbo, NestJS, React, Expo, DevOps, Kubernetes, Docker,
+infrastructure, security, compliance, SOC 2, ISO 27001.
 
 ## License
 

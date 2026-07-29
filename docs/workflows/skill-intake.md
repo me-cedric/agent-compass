@@ -37,6 +37,11 @@ Imported or already covered:
   files in the host when installed, do not vendor upstream internals.
 - Figma frontend setup from a production React admin project: generalized in
   `figma-mcp-frontend`, design-system template, and provider capability docs.
+- `BagelHole/DevOps-Security-Agent-Skills`: 146 skills imported at pinned commit
+  `0365f57a079b1332f95cf26e31dd2d5332a8399f` after explicit user request.
+  Import is knowledge-only, split into four opt-in packs, carries a mandatory
+  operational safety gate, and excludes upstream executable scripts/assets.
+  See [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md).
 - Global config scan: keep personal defaults global; Agent Compass already ships
   generic templates for context7, fetch, sequential-thinking, Figma MCP,
   projectmem, headroom, Codex hooks, Claude hooks, and skillshare-style sync.
@@ -82,9 +87,11 @@ showed these useful buckets:
 - Worth tracking but not vendoring: Trail of Bits security skills, generic
   skill marketplaces, skill lint CLIs, and Spec Kit install helpers.
 
-Decision: import no unreviewed third-party skill wholesale. Add small generic
-skills only after extracting the reusable rule and validating it with repo
-checks. Current extracted import: `debug-loop`.
+Decision: import no unreviewed third-party skill wholesale. Default to small,
+generic extraction. Broad imports require explicit scope, pinned provenance,
+license retention, executable exclusion or audit, safety hardening, opt-in
+distribution, and content tests. Current imports: `debug-loop` and the curated
+DevOps/security/infrastructure/compliance packs above.
 
 ## Integrated Tool Patterns
 

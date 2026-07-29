@@ -32,7 +32,7 @@ source of truth and never drift.
 | `docs/` | `architecture/`, `decisions/` (ADRs), `guidelines/`, `tooling/`, `workflows/`, `agent-setup.md`. |
 | `knowledge/` | `instincts/` (distilled reusable patterns), `examples/`, `incoming/` (staging from `pull-knowledge`). |
 | `migrations/` | Ordered per-version host migrations, applied by `sync` (see Stay current). |
-| `scripts/` | All executable tooling; `cli.mjs` dispatches 46 commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `redact`). |
+| `scripts/` | All executable tooling; `cli.mjs` dispatches commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `capability-packs`, `redact`). |
 | `skills/` | Provider-portable skills (one folder per skill with `SKILL.md`). |
 | `stacks/` | Stack presets mapping a detected stack to fitting skills/templates/docs. |
 | `templates/` | Everything installable into hosts; `scripts/manifest.mjs` defines each file's destination and `seed` vs `managed` mode. |
@@ -46,7 +46,10 @@ source of truth and never drift.
 2. Wizard runs `setup-host.mjs --strict`: `install.mjs` (create missing files only) → `install --fix` → `doctor --deep`.
 3. Report suite written to host `.agent/`: context-pack, doctor-report, runbook, provider-verify, recommend, quality-gates, migration-plan, spec-validation-map, mcp-probe, failure-mine, dashboard.
 4. `spec-kit-bridge.mjs` (when answered yes).
-5. Fit-based `skills-sync.mjs`: core + detected-stack + working-style skills (selection in `scripts/lib/profiles.mjs`), copy or symlink.
+5. Fit-based `skills-sync.mjs`: core + detected-stack + working-style skills
+   (selection in `scripts/lib/profiles.mjs`), copy or symlink. Broad operational
+   skills remain opt-in through `--pack`; discover them with `--list-packs` or
+   `catalog --type capability-pack`.
 6. Optional `--policy <pack>` applies a policy via `apply-recommendations.mjs`; `agent-onboard.mjs` gates readiness. Nothing is ever overwritten or committed.
 
 **Stay current** (host follows a moving submodule):
@@ -65,7 +68,9 @@ source of truth and never drift.
 **Global** (user-level machine setup):
 
 1. `global-setup.mjs [home]` — writes `~/.agent-compass/manifest.json` and pointer files `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md` (never replaces existing entries).
-2. Copies or symlinks skills into `~/.agents/skills`, `~/.codex/skills`, `~/.claude/skills`.
+2. Copies or symlinks non-pack skills into `~/.agents/skills`,
+   `~/.codex/skills`, `~/.claude/skills`; operational packs require an explicit
+   `skills-sync --pack`.
 3. Optional `--jira` configures the Atlassian MCP for Codex + Claude; verify with `provider-verify --global`.
 
 ## Per-provider integration

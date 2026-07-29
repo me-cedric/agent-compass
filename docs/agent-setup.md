@@ -106,6 +106,14 @@ node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --copy
 node /path/to/agent-compass/scripts/global-setup.mjs "$HOME" --symlink
 ```
 
+Global setup installs non-pack skills and leaves broad operational capability
+packs opt-in:
+
+```bash
+node /path/to/agent-compass/scripts/cli.mjs skills-sync --list-packs
+node /path/to/agent-compass/scripts/cli.mjs skills-sync "$HOME" --pack security
+```
+
 Optional Jira MCP setup for Codex and Claude:
 
 ```bash

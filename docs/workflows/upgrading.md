@@ -60,6 +60,15 @@ node docs/agent-compass/scripts/policy-pack.mjs . --apply regulated-api
 node docs/agent-compass/scripts/design-importer.mjs . --source figma-export.json --write
 ```
 
+Default skill sync excludes broad operational capability packs. List and
+select packs explicitly, or use `--all` when every skill is intentional:
+
+```bash
+node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs
+node docs/agent-compass/scripts/cli.mjs skills-sync . --pack devops-platform
+node docs/agent-compass/scripts/cli.mjs skills-sync . --all
+```
+
 Global user setup is separate and non-destructive:
 
 ```bash

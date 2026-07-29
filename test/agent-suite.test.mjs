@@ -118,6 +118,7 @@ test('global setup creates user-level pointers and skills without project files'
     assert.ok(existsSync(join(home, '.agents', 'skills', 'ponytail', 'SKILL.md')))
     assert.ok(existsSync(join(home, '.codex', 'skills', 'ponytail', 'SKILL.md')))
     assert.ok(existsSync(join(home, '.claude', 'skills', 'ponytail-review', 'SKILL.md')))
+    assert.ok(!existsSync(join(home, '.agents', 'skills', 'github-actions')), 'operational packs stay opt-in')
     const verify = await runNode([script('provider-verify'), home, '--global', '--strict'], { cwd: root.pathname })
     assert.equal(verify.code, 0, verify.stderr)
   } finally {

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
+import { CAPABILITY_PACKS, selectCapabilityPacks } from '../scripts/lib/capability-packs.mjs'
 import { CORE_PROFILE, PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from '../scripts/lib/profiles.mjs'
 import { runNode } from './helpers.mjs'
 
@@ -25,13 +26,14 @@ test('every asset referenced by a profile exists in the repo', () => {
   }
 })
 
-test('every skills/ directory is reachable from a profile (no orphan skills)', () => {
+test('every skills/ directory is reachable from a profile or capability pack (no orphan skills)', () => {
   // compass-* skills are mission playbooks that run inside compass itself, and
   // STYLE_SKILLS are user-preference picks — everything else must be installable
-  // via CORE_PROFILE or some stack profile, or it can never reach a host.
+  // via CORE_PROFILE, a stack profile, or an opt-in capability pack.
   const reachable = new Set([
     ...CORE_PROFILE.skills,
     ...Object.values(PROFILES).flatMap((p) => p.skills),
+    ...Object.values(CAPABILITY_PACKS).flatMap((p) => p.skills),
     ...STYLE_SKILLS,
   ])
   const dirs = readdirSync(join(AC, 'skills'), { withFileTypes: true })
@@ -39,7 +41,7 @@ test('every skills/ directory is reachable from a profile (no orphan skills)', (
     .map((entry) => entry.name)
   assert.ok(dirs.length > 0, 'skills/ scan found nothing — wrong path?')
   for (const name of dirs) {
-    assert.ok(reachable.has(name), `orphan skill: skills/${name} is not in CORE_PROFILE, any PROFILES[*].skills, or STYLE_SKILLS`)
+    assert.ok(reachable.has(name), `orphan skill: skills/${name} is not in a profile, capability pack, or STYLE_SKILLS`)
   }
 })
 
@@ -109,6 +111,32 @@ test('selectAssets merges core with matched profiles, deduped', () => {
 
   const generic = selectAssets([])
   assert.deepEqual(generic.skills, CORE_PROFILE.skills, 'generic project gets core only')
+})
+
+test('capability packs expose the requested upstream skill inventory', () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(CAPABILITY_PACKS).map(([id, pack]) => [id, pack.skills.length])),
+    {
+      'devops-platform': 22,
+      security: 35,
+      infrastructure: 70,
+      compliance: 19,
+    },
+  )
+
+  const selected = selectCapabilityPacks(['devops-platform', 'security'])
+  assert.equal(selected.length, 57)
+  for (const skill of ['github-actions', 'kubernetes-ops', 'opentelemetry', 'ai-agent-security', 'vulnerability-scanning']) {
+    assert.ok(selected.includes(skill), `missing ${skill}`)
+  }
+  assert.equal(new Set(selected).size, selected.length, 'packs must not overlap')
+  assert.throws(() => selectCapabilityPacks(['unknown']), /Unknown capability pack/)
+
+  for (const pack of Object.values(CAPABILITY_PACKS)) {
+    for (const skill of pack.skills) {
+      assert.ok(existsSync(join(AC, 'skills', skill, 'SKILL.md')), `${pack.label}: missing skill ${skill}`)
+    }
+  }
 })
 
 test('recommend --json exposes fit-based assets and skills-sync --only accepts them', async () => {

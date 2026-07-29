@@ -15,6 +15,8 @@
   "specKitBridge": "node docs/agent-compass/scripts/spec-kit-bridge.mjs .",
   "skillsSyncCopy": "node docs/agent-compass/scripts/skills-sync.mjs . --copy",
   "skillsSyncSymlink": "node docs/agent-compass/scripts/skills-sync.mjs . --symlink",
+  "skillsListPacks": "node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs",
+  "capabilityPackCatalog": "node docs/agent-compass/scripts/cli.mjs catalog --type capability-pack --md",
   "doctorFix": "node docs/agent-compass/scripts/doctor-fix.mjs .",
   "taskLog": "node docs/agent-compass/scripts/task-log.mjs . --list --markdown",
   "recommend": "node docs/agent-compass/scripts/recommend.mjs . --write",

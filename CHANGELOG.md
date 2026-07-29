@@ -5,6 +5,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- 146 opt-in operational skills adapted from
+  `BagelHole/DevOps-Security-Agent-Skills`: 22 requested DevOps platform skills,
+  all 35 security skills, all 70 infrastructure skills, and all 19 compliance
+  skills. Every skill has pinned MIT provenance and an Agent Compass
+  authorization/dry-run/rollback safety gate; upstream executable scripts and
+  assets are excluded.
+- CLI-integrated capability packs: `skills-sync --list-packs`,
+  `skills-sync --pack`, `skills-sync --all`, and
+  `catalog --type capability-pack`, plus command-registry entries. Default
+  project/global sync excludes broad packs; explicit `--all` includes them.
+  Backed by focused inventory/content/sync/dispatch tests.
+- Operational safety contract and `plan-before-operational-change` instinct for
+  production changes, incident evidence, least privilege, rollback, and
+  compliance limitations.
+
+### Changed
+
+- README now uses a scan-friendly hero, capability map, quick route, pack
+  counts, and activation flow inspired by the upstream skills repository.
+
 ## [0.6.0] - 2026-07-28
 
 ### Changed

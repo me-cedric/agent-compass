@@ -125,7 +125,7 @@ if (!noRun) {
     const fitSkills = selectAssets(detectStacks(HOST)).skills
     const styleSkills = answers.skillScope === 'fit+style' ? STYLE_SKILLS : []
     const scoped = [...new Set([...fitSkills, ...styleSkills])]
-    const scopeArgs = answers.skillScope === 'all' ? [] : ['--only', scoped.join(',')]
+    const scopeArgs = answers.skillScope === 'all' ? ['--all'] : ['--only', scoped.join(',')]
     spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`, ...scopeArgs], { stdio: 'inherit' })
   }
   spawnSync(process.execPath, [join(AC, 'scripts', 'provider-verify.mjs'), HOST, '--write'], { stdio: 'inherit' })

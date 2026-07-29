@@ -10,14 +10,15 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseCliArgs } from './lib/args.mjs'
+import { CAPABILITY_PACKS } from './lib/capability-packs.mjs'
 
 const { values } = parseCliArgs({
   name: 'catalog',
   script: 'catalog.mjs',
   summary: `Print the agent-compass asset catalog as JSON (default) or a Markdown table.
 
-Types: skill | stack | template-group | workflow | tooling | guideline |
-       architecture | instinct | command`,
+Types: skill | capability-pack | stack | template-group | workflow | tooling |
+       guideline | architecture | instinct | command`,
   options: {
     type: { type: 'string', value: '<t>', desc: 'Only assets of one type.' },
     grep: { type: 'string', value: '<term>', desc: 'Case-insensitive match against id, title, and description.' },
@@ -78,6 +79,18 @@ for (const entry of readdirSync(join(AC, 'skills'), { withFileTypes: true })) {
     risk_level: fm.risk_level || '',
     writes_files: fm.writes_files === 'true',
     requires_tools: (fm.requires_tools || '[]').replace(/[\[\]\s]/g, '').split(',').filter(Boolean),
+  })
+}
+
+// Capability packs — broad opt-in selections, never part of automatic stack fit.
+for (const [id, pack] of Object.entries(CAPABILITY_PACKS)) {
+  assets.push({
+    id,
+    type: 'capability-pack',
+    path: 'scripts/lib/capability-packs.mjs',
+    description: pack.description,
+    skill_count: pack.skills.length,
+    skills: pack.skills,
   })
 }
 

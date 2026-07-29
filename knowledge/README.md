@@ -35,6 +35,7 @@ material humans and agents *read* and *promote from*.
   [`angular-ai-assets`](instincts/angular-ai-assets.md).
 - **Workflow & process:**
   [`commit-convention`](instincts/commit-convention.md),
+  [`plan-before-operational-change`](instincts/plan-before-operational-change.md),
   [`spec-kit-workflow`](instincts/spec-kit-workflow.md),
   [`testing-pattern`](instincts/testing-pattern.md),
   [`self-review-before-done`](instincts/self-review-before-done.md),

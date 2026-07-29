@@ -26,6 +26,8 @@
     "providerVerify": "npm run provider-verify",
     "specKitBridge": "npm run spec-kit-bridge",
     "skillsSync": "npm run skills-sync",
+    "skillsListPacks": "node scripts/cli.mjs skills-sync --list-packs",
+    "capabilityPackCatalog": "node scripts/cli.mjs catalog --type capability-pack --md",
     "doctorFix": "npm run doctor-fix",
     "taskLog": "npm run task-log",
     "recommend": "npm run recommend",

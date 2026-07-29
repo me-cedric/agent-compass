@@ -25,6 +25,7 @@ test('cli help lists grouped commands', async () => {
   assert.match(result.stdout, /provider-verify/)
   assert.match(result.stdout, /mcp-probe/)
   assert.match(result.stdout, /sync/)
+  assert.match(result.stdout, /skills-sync.*capability packs/)
   assert.match(result.stdout, /check-update/)
 })
 

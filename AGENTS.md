@@ -202,6 +202,18 @@ code unless the project has an explicit exception. See
 [tooling/env-management](docs/tooling/env-management.md) and the
 [`env-var-sync`](knowledge/instincts/env-var-sync.md) instinct.
 
+## 8c. Operational and infrastructure changes
+
+For CI/CD, containers, cloud, Kubernetes, observability, security, incident, or
+compliance work, follow
+[operational-safety](docs/guidelines/operational-safety.md). Confirm
+authorization and the exact target first; begin with read-only discovery; use
+plan/diff/dry-run modes; require explicit approval before any production write,
+deployment, deletion, credential rotation, failover, containment, or other
+irreversible action. Preserve rollback and incident evidence, use least
+privilege, verify commands against current official docs, and never represent
+agent output as certification, attestation, or legal advice.
+
 ## 9. Shared package impact
 
 When changing a shared package, identify every consumer that imports the changed

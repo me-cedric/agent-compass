@@ -98,10 +98,33 @@ command list by `npm run lint:indexes`.
 | `sync` | Update managed files from the submodule (no clobber). | `sync-into` |
 | `vendor` | Create/refresh a plain-copy vendoring with provenance. | — |
 | `spec-kit-bridge` | Install optional Spec Kit bridge files. | — |
-| `skills-sync` | Copy or symlink skills into provider dirs. | — |
+| `skills-sync` | List/sync skills and opt-in capability packs. | — |
 | `policy-pack` | List/apply setup policy packs. | — |
 | `upgrade` | Bump the submodule, sync, then doctor. | `upgrade-host` |
 | `check-update` | Cheap cached "are we behind?" check (no tokens). | — |
+
+Sync a fit-based list with `--only`, or one or more broad opt-in operational
+packs with `--pack`:
+
+```bash
+agent-compass skills-sync . --only verify-security,kubernetes-ops
+agent-compass skills-sync . --pack devops-platform
+agent-compass skills-sync . --pack security,infrastructure,compliance
+```
+
+Available packs: `devops-platform`, `security`, `infrastructure`, `compliance`.
+Default sync excludes these broad packs. Use `--pack` for selected packs or
+`--all` for every skill. `--all`, `--only`, and `--pack` are mutually
+exclusive. Global setup also excludes capability packs; sync them explicitly
+afterward when wanted.
+
+```bash
+agent-compass skills-sync --list-packs
+agent-compass catalog --type capability-pack --md
+```
+
+Command-registry names: `agentTools.skillsListPacks` and
+`agentTools.capabilityPackCatalog`.
 
 **Health**
 

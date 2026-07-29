@@ -63,6 +63,77 @@ work: audit → scope → split → detail.
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |
 | `verify-security` | Scans a path for vulnerabilities (OWASP-style).          |
 
+### Operational capability packs
+
+146 upstream-derived skills stay opt-in so normal host/global adoption remains
+small. Sync one or more packs:
+
+```bash
+node scripts/cli.mjs skills-sync --list-packs
+node scripts/cli.mjs skills-sync /path/to/host --pack devops-platform
+node scripts/cli.mjs skills-sync /path/to/host --pack security,infrastructure,compliance
+node scripts/cli.mjs catalog --type capability-pack --md
+```
+
+| Pack | Skills | Covers |
+| ---- | -----: | ------ |
+| **devops-platform** | 22 | CI/CD, containers, Kubernetes, observability, AI pipelines, developer environments, and release operations. |
+| **security** | 35 | Defensive scanning, secrets, hardening, network security, incident response, and AI security. |
+| **infrastructure** | 70 | Cloud, IaC, servers, networking, databases, storage, platforms, IT, and AI infrastructure operations. |
+| **compliance** | 19 | Framework mapping, governance, evidence, continuity, auditing, and incident management. |
+
+Every imported skill includes an Agent Compass operational safety gate and pinned MIT provenance. Upstream executable scripts and assets are not vendored.
+
+<details>
+<summary><strong>DevOps platform (22)</strong></summary>
+
+- `ai-pipeline-orchestration`, `alerting-oncall`, `argocd-gitops`, `blue-green-deploy`, `container-registries`, `devcontainers-nix`
+- `docker-compose`, `docker-management`, `feature-flags`, `git-workflow`, `github-actions`, `gitlab-ci`
+- `helm-charts`, `kubernetes-ops`, `kustomize`, `llm-caching`, `llm-cost-optimization`, `loki-logging`
+- `opentelemetry`, `podman`, `prometheus-grafana`, `semantic-versioning`
+
+</details>
+
+<details>
+<summary><strong>Security (35)</strong></summary>
+
+- `ai-agent-security`, `ai-coding-agent-guardrails`, `ai-red-teaming`, `ai-security-hardening`, `aws-secrets-manager`, `azure-keyvault`
+- `cis-benchmarks`, `container-hardening`, `container-scanning`, `dast-scanning`, `dependency-scanning`, `firewall-config`
+- `gcp-secret-manager`, `hashicorp-vault`, `incident-response`, `kubernetes-hardening`, `linux-hardening`, `llm-app-security`
+- `mcp-server-security`, `model-supply-chain-security`, `openclaw-deployment-hardening`, `penetration-testing`, `prompt-injection-defense`, `sast-scanning`
+- `sbom-supply-chain`, `security-automation`, `sops-encryption`, `ssl-tls-management`, `supply-chain-attack-response`, `threat-modeling`
+- `vpn-setup`, `vulnerability-scanning`, `waf-setup`, `windows-hardening`, `zero-trust`
+
+</details>
+
+<details>
+<summary><strong>Infrastructure (70)</strong></summary>
+
+- `ai-inference-service-mesh`, `arm-templates`, `aws-cost-optimization`, `aws-ec2`, `aws-ecs-fargate`, `aws-iam`
+- `aws-lambda`, `aws-rds`, `aws-s3`, `aws-vpc`, `azure-aks`, `azure-functions`
+- `azure-networking`, `azure-sql`, `azure-vms`, `backup-recovery`, `block-storage`, `cdn-setup`
+- `cloudflare-pages`, `cloudflare-r2`, `cloudflare-workers`, `cloudflare-zero-trust`, `cloudformation`, `convex-backend`
+- `database-backups`, `dns-management`, `firebase-app-platform`, `gcp-cloud-functions`, `gcp-cloud-sql`, `gcp-compute`
+- `gcp-gke`, `gcp-networking`, `gpu-kubernetes-operations`, `gpu-server-management`, `identity-access-management`, `linux-administration`
+- `llm-fine-tuning`, `llm-gateway`, `llm-inference-scaling`, `load-balancing`, `mac-mini-llm-lab`, `mdm-device-management`
+- `mongodb`, `multi-tenant-llm-hosting`, `mysql`, `nfs-storage`, `object-storage`, `ollama-stack`
+- `openclaw-local-mac-mini`, `openclaw-security-hardening`, `opentofu-migration`, `performance-tuning`, `planetscale`, `postgresql`
+- `rag-infrastructure`, `redis`, `reverse-proxy`, `saas-security-posture`, `service-mesh`, `ssh-configuration`
+- `startup-it-troubleshooting`, `systemd-services`, `terraform-aws`, `terraform-azure`, `terraform-gcp`, `user-management`
+- `vector-database-ops`, `vercel-deployments`, `vllm-server`, `windows-server`
+
+</details>
+
+<details>
+<summary><strong>Compliance (19)</strong></summary>
+
+- `access-review`, `asset-inventory`, `audit-logging`, `aws-cloudtrail`, `azure-monitor-audit`, `business-continuity`
+- `change-management`, `disaster-recovery`, `fedramp-compliance`, `gcp-audit-logs`, `gdpr-compliance`, `hipaa-compliance`
+- `incident-management`, `iso27001-compliance`, `pci-dss-compliance`, `policy-as-code`, `runbook-creation`, `soc2-compliance`
+- `vendor-management`
+
+</details>
+
 ### Spec Kit bridge
 
 Optional command skills for hosts that use GitHub Spec Kit. Use them with
@@ -131,3 +202,10 @@ triggers and rules are generic. Keep them current with
 [`scripts/pull-knowledge.mjs`](../scripts/pull-knowledge.mjs). Adding a skill?
 Create `skills/<name>/SKILL.md` and add a row here (see
 [CONTRIBUTING](../CONTRIBUTING.md)).
+
+The DevOps platform, security, infrastructure, and compliance packs were
+adapted from
+[BagelHole/DevOps-Security-Agent-Skills](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
+at pinned commit `0365f57a079b1332f95cf26e31dd2d5332a8399f`.
+Agent Compass adds safety metadata and rules, and does not vendor upstream
+executables. See [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).

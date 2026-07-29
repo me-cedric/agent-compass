@@ -8,6 +8,7 @@ import { createInterface } from 'node:readline/promises'
 import { Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
+import { CAPABILITY_PACKS } from './lib/capability-packs.mjs'
 import { parseCliArgs } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -114,7 +115,9 @@ Prefer project-local AGENTS.md or CLAUDE.md. If absent, use:
 ${AC}/AGENTS.md
 `)
 if (!noSkills) {
-  const skills = readdirSync(join(AC, 'skills'), { withFileTypes: true }).filter((d) => d.isDirectory())
+  const capabilitySkills = new Set(Object.values(CAPABILITY_PACKS).flatMap((pack) => pack.skills))
+  const skills = readdirSync(join(AC, 'skills'), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !capabilitySkills.has(d.name))
   for (const relDir of ['.agents/skills', '.codex/skills', '.claude/skills']) {
     const dir = join(home, relDir)
     if (!dry) mkdirSync(dir, { recursive: true })
@@ -195,6 +198,6 @@ if (jiraConfig) {
   console.log('would configure Jira MCP -> .codex/config.toml, .claude.json')
 }
 
-const manifest = { schema: 1, source: AC, mode, skills: !noSkills, updatedAt: new Date().toISOString() }
+const manifest = { schema: 1, source: AC, mode, skills: !noSkills, capabilityPacks: [], updatedAt: new Date().toISOString() }
 if (!dry) writeFileSync(join(home, '.agent-compass', 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 else console.log(JSON.stringify(manifest, null, 2))

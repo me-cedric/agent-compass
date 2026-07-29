@@ -30,7 +30,7 @@ export const COMMANDS = {
   sync: { script: 'sync.mjs', group: 'Setup', desc: 'Update managed files from the submodule (no clobber).' },
   vendor: { script: 'vendor.mjs', group: 'Setup', desc: 'Create/refresh a plain-copy vendoring with provenance.' },
   'spec-kit-bridge': { script: 'spec-kit-bridge.mjs', group: 'Setup', desc: 'Install optional Spec Kit bridge files.' },
-  'skills-sync': { script: 'skills-sync.mjs', group: 'Setup', desc: 'Copy or symlink skills into provider dirs.' },
+  'skills-sync': { script: 'skills-sync.mjs', group: 'Setup', desc: 'List/sync skills and opt-in capability packs.' },
   'policy-pack': { script: 'policy-pack.mjs', group: 'Setup', desc: 'List/apply setup policy packs.' },
   upgrade: { script: 'upgrade-host.mjs', group: 'Setup', desc: 'Bump the submodule, sync, then doctor.' },
   'check-update': { script: 'check-update.mjs', group: 'Setup', desc: 'Cheap cached "are we behind?" check (no tokens).' },
@@ -99,7 +99,7 @@ Usage: agent-compass <command> [options]
   }
   out += `\nEvery command passes its flags straight through, e.g.:
   agent-compass install --dry            agent-compass sync . --check
-  agent-compass doctor . --deep          agent-compass new skill my-thing
+  agent-compass doctor . --deep          agent-compass skills-sync --list-packs
 `
   console.log(out)
 }
