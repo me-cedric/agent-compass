@@ -48,8 +48,9 @@ Backfill/import commands are opt-in because they can create many legacy
 | Git repository | projectmem uses repository history and hooks. |
 | MCP-capable agent/client (optional) | Lets agents read summaries and warnings through tools. |
 
-For MCP, prefer `uvx --from projectmem pjm-mcp` with `cwd: "."` so shared
-examples work in every clone.
+For MCP, prefer `uvx --from projectmem --with 'mcp<2' pjm-mcp` with `cwd: "."`
+so shared examples work in every clone. The `--with 'mcp<2'` pin is required —
+see [Troubleshooting](#troubleshooting).
 
 ## Agent workflow
 
@@ -82,7 +83,7 @@ brainstorming.
 Use the upstream docs for exact client config. The portable server command is:
 
 ```bash
-uvx --from projectmem pjm-mcp
+uvx --from projectmem --with 'mcp<2' pjm-mcp
 ```
 
 For Codex, use TOML like:
@@ -90,7 +91,7 @@ For Codex, use TOML like:
 ```toml
 [mcp_servers.projectmem]
 command = "uvx"
-args = ["--from", "projectmem", "pjm-mcp"]
+args = ["--from", "projectmem", "--with", "mcp<2", "pjm-mcp"]
 cwd = "."
 ```
 
@@ -138,6 +139,27 @@ Agent Compass inverts that — share the append-only log, derive the summary loc
   writers; `merge=union` keeps both lines, but a later `pjm fix --issue`/
   `--supersedes` on that id can be ambiguous. Rare for small teams; if it bites,
   give each author a separate `PROJECTMEM_ROOT` and concatenate before regenerate.
+
+## Troubleshooting
+
+### MCP server fails to start: `ModuleNotFoundError: No module named 'mcp.server.fastmcp'`
+
+projectmem (≤ 0.2.0) pins its dependency loosely (`mcp>=0.1.0`), so `uvx`
+resolves the newest `mcp` — and **`mcp` 2.0.0 relocated FastMCP** (from
+`mcp.server.fastmcp` to `mcp.server.mcpserver`). projectmem still imports
+`from mcp.server.fastmcp import FastMCP`, so the server crashes on startup and
+the client shows projectmem as failed/never-connecting.
+
+Fix: constrain `mcp` to the 1.x line in the launch command —
+`uvx --from projectmem --with 'mcp<2' pjm-mcp` (already applied in the command
+strings above and in `templates/mcp/projectmem.example.json`). Drop the pin once
+upstream projectmem supports `mcp` 2.x.
+
+Two operational notes: an MCP server does **not** hot-reload — after fixing
+`.mcp.json` you must restart the agent session for the tools to reconnect. In the
+meantime you can still record memory through the identical `pjm` CLI
+(`pjm note`/`decision`/`fix` …), which writes the same `events.jsonl` — never
+hand-edit `.projectmem/` files.
 
 ## Export mode
 
