@@ -32,8 +32,12 @@ material humans and agents *read* and *promote from*.
 - **Config & environment:**
   [`env-var-sync`](instincts/env-var-sync.md).
 - **Frontend:**
-  [`angular-ai-assets`](instincts/angular-ai-assets.md).
+  [`angular-ai-assets`](instincts/angular-ai-assets.md),
+  [`react-query-bulk-mutation-reconcile`](instincts/react-query-bulk-mutation-reconcile.md),
+  [`entity-picker-label-source`](instincts/entity-picker-label-source.md),
+  [`frontend-shared-layer-escapes`](instincts/frontend-shared-layer-escapes.md).
 - **Workflow & process:**
+  [`mr-scope-and-green-pipeline`](instincts/mr-scope-and-green-pipeline.md),
   [`commit-convention`](instincts/commit-convention.md),
   [`plan-before-operational-change`](instincts/plan-before-operational-change.md),
   [`spec-kit-workflow`](instincts/spec-kit-workflow.md),
