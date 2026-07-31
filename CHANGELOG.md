@@ -5,6 +5,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-07-31
+
+### Added
+
+- Decision Records (ADR) support: a fuller `docs/decisions/` template (context,
+  alternatives with pros & cons, decision, consequences), the `adr-from-meeting`
+  skill (draft an ADR from a meeting transcript, rejected paths and their reasons
+  preserved), and the `decision-records` workflow. Wired into `CORE_PROFILE` and
+  `AGENTS.md`.
+- Four review instincts: `react-query-bulk-mutation-reconcile`,
+  `entity-picker-label-source`, `frontend-shared-layer-escapes`, and
+  `mr-scope-and-green-pipeline`.
+
+### Fixed
+
+- projectmem MCP: pin `mcp<2` in every launch template and the docs so `pjm-mcp`
+  starts — `mcp` 2.0.0 relocated FastMCP and broke the import. Added a
+  Troubleshooting section to `docs/tooling/projectmem.md`.
+
 ## [0.7.0] - 2026-07-29
 
 ### Added

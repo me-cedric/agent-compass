@@ -1,6 +1,6 @@
 {
   "name": "agent-compass",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "description": "Central agentic standards, guidelines, skills and bootstrap tooling for AI coding agents (Claude, Codex, Copilot).",
