@@ -33,13 +33,16 @@ Copy these from [`templates/scripts/`](../../templates/scripts/) into the projec
 ## One-time setup
 
 ```bash
-pnpm sonar:setup   # starts SonarQube, creates projects, mints USER_TOKEN, writes .env, initial scan
+pnpm sonar:setup   # starts/configures SonarQube, then runs the full sonar:do cycle
 ```
 
 `sonar:setup` is idempotent: on re-run it detects a stale `.env` token (e.g. an
 old `GLOBAL_ANALYSIS_TOKEN` that 403s on issue transitions), revokes prior
 `<project>-scanner-*` tokens, and mints a fresh `USER_TOKEN`. The token must carry
-`administerIssues` — that is what lets `bulk-close` resolve stale issues.
+`issueadmin` — that is what lets `bulk-close` resolve stale issues. Its pre-scan
+doctor skips CSV drift because the delegated `sonar:do` cycle refreshes CSVs,
+closes stale issues, and generates patched HTML reports. Standalone
+`sonar:doctor` and `sonar:do` calls remain strict.
 
 Per-project config lives in each app's `sonar-project.properties`
 ([api template](../../templates/sonar/sonar-project.api.properties),
@@ -54,8 +57,9 @@ pnpm sonar:do                # all projects
 pnpm sonar:do:api            # one project
 ```
 
-Each `sonar:do` is a 4-step pipeline per project: (1) scan with coverage, (2)
-fetch the current issue CSV from the server, (3) `bulk-close-stale-issues.mjs
+Each `sonar:do` is a 4-step pipeline per project: (1) scan with coverage and wait
+for Compute Engine processing, (2) fetch the current issue CSV from the server,
+(3) `bulk-close-stale-issues.mjs
 --apply` resolves keys no longer in the CSV, (4) regenerate the HTML and patch
 it. Both `sonar:do` and `sonar:do:<project>` run `sonar-doctor.sh` first and
 abort before any upload if a check fails; set `SONAR_SKIP_DOCTOR=1` to bypass.

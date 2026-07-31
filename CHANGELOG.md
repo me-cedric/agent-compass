@@ -5,6 +5,13 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `sonar:setup` now reuses valid tokens through the current `issueadmin` API,
+  ignores pre-scan CSV drift that its scan will refresh, and delegates to the
+  complete `sonar:do` scan/close/report cycle instead of duplicating scans.
+  `sonar:do` now waits for Compute Engine success before reading issue state.
+
 ## [0.7.1] - 2026-07-31
 
 ### Added

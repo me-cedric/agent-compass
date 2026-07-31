@@ -9,7 +9,7 @@
 # family. Single source of truth for the full Sonar flow.
 #
 # Pipeline per project (4 steps):
-#   1. scan       — `pnpm test:cov` (or vitest --coverage) + sonar-scanner
+#   1. scan       — tests + sonar-scanner + Compute Engine completion
 #   2. fetch CSV  — current server state (pre-close)
 #   3. close      — `bulk-close-stale-issues.mjs --apply` resolves stale keys
 #                   via /api/issues/bulk_change and refreshes $csv on success
@@ -31,6 +31,8 @@ if [ -f .env ]; then
   set +a
 fi
 
+SONAR_HOST="${SONAR_HOST:-http://localhost:9002}"
+
 if [ -z "${SONAR_TOKEN:-}" ]; then
   echo "[err] SONAR_TOKEN is empty. Set it in .env or export SONAR_TOKEN before running."
   exit 1
@@ -38,7 +40,7 @@ fi
 
 # ─── Pre-flight doctor hook ────────────────────────────────────────────────
 # Run scripts/sonar-doctor.sh before any scanner upload to surface config
-# issues up-front — stale .env SONAR_TOKEN lacking transition rights, missing
+# issues up-front — stale .env SONAR_TOKEN lacking issueadmin rights, missing
 # server-side sonar.scm.provider=git, CSV-vs-server drift — instead of
 # letting them surface mid-pipeline as cryptic 403s or stale CSV counts.
 # `pnpm sonar:setup` is the cure for the first two; re-running the affected
@@ -51,17 +53,10 @@ fi
 # inside an already-running 'do all' session. The `case all` branch at the
 # bottom of this script recurses into "$0 api" / "$0 backoffice" /
 # "$0 mobile" — one fresh subprocess invocation per project — and each
-# child re-runs this same pre-flight block from scratch. The just-completed
-# prior project's scanner-upload Compute Engine task is often still
-# `IN_PROGRESS` server-side for several seconds-to-minutes after the
-# upload finishes, so probe 4 ("Another SonarQube analysis is already in
-# progress") would abort the otherwise-fine pipeline between e.g. the
-# API scan finishing and the Backoffice/Doctor gate firing. The top-level
-# `pnpm sonar:do all` invocation already ran the doctor once and is the
-# only authoritative gate for that session; the recursive children's gate
-# is redundant (probe counts were captured at the top level, and the only
-# probe that could plausibly drift in <60s is probe 4, which we specifically
-# skip here). Direct single-project invocations (`pnpm sonar:do:api`,
+# child re-runs this same pre-flight block from scratch. The top-level
+# `pnpm sonar:do all` invocation already ran the authoritative gate for that
+# session, so recursive checks are redundant. Direct single-project invocations
+# (`pnpm sonar:do:api`,
 # `scripts/sonar-do.sh api`) do NOT set SONAR_DOCTOR_DONE, so they still
 # get a full per-project doctor gate.
 #
@@ -92,7 +87,7 @@ else
     echo
     echo '[err] Sonar pre-flight FAILED. The most common fixes:'
     echo
-    echo '  - administerIssues: forbidden (token is GLOBAL_ANALYSIS_TOKEN...)'
+    echo '  - issueadmin: forbidden (token is GLOBAL_ANALYSIS_TOKEN...)'
     echo '      re-run "pnpm sonar:setup" to mint a fresh USER_TOKEN.'
     echo '  - sonar.scm.provider=... (expected git)'
     echo '      re-run "pnpm sonar:setup" to enable server-side SCM auto-close.'
@@ -118,7 +113,7 @@ fetch_csv() {
   # Keeping the CSV to actionable statuses makes the diff meaningful
   # and prevents closed issues from "reappearing" on later runs.
   curl -fsS -u "${SONAR_TOKEN}:" \
-    "http://localhost:9002/api/issues/search?componentKeys=${project}&ps=500&statuses=OPEN,REOPENED,CONFIRMED" \
+    "${SONAR_HOST}/api/issues/search?componentKeys=${project}&ps=500&statuses=OPEN,REOPENED,CONFIRMED" \
     -o "/tmp/sonar-${project}.json"
   mkdir -p "$(dirname "${csv}")"
   echo "type,severity,rule,message,component,line" > "${csv}"
@@ -127,6 +122,27 @@ fetch_csv() {
     | [.type, .severity, .rule, .message, .component, (.line // "N/A")]
     | @csv
   ' "/tmp/sonar-${project}.json" >> "${csv}"
+}
+
+wait_for_ce() {
+  local task_file="$1/.scannerwork/report-task.txt" task_url status attempt=0
+  [ -f "$task_file" ] || { echo "[err] Sonar task file missing: ${task_file}"; return 1; }
+  task_url=$(sed -n 's/^ceTaskUrl=//p' "$task_file")
+  [ -n "$task_url" ] || { echo "[err] ceTaskUrl missing from ${task_file}"; return 1; }
+
+  echo "==> waiting for SonarQube analysis processing"
+  while [ "$attempt" -lt "${SONAR_CE_MAX_ATTEMPTS:-60}" ]; do
+    status=$(curl -fsS -u "${SONAR_TOKEN}:" "$task_url" 2>/dev/null \
+      | jq -r '.task.status // empty' || true)
+    case "$status" in
+      SUCCESS) echo "   ✓ SonarQube analysis processed"; return 0 ;;
+      FAILED|CANCELED) echo "[err] SonarQube analysis ${status}"; return 1 ;;
+    esac
+    attempt=$((attempt + 1))
+    sleep 1
+  done
+  echo "[err] SonarQube analysis still pending after ${SONAR_CE_MAX_ATTEMPTS:-60}s"
+  return 1
 }
 
 # run_project PROJECT APP_DIR LABEL HTML CSV TEST_CMD ...
@@ -154,6 +170,8 @@ run_project() {
   ) || scan_exit=$?
   if [ "$scan_exit" -ne 0 ]; then
     echo "[warn] ${label} scan step exited ${scan_exit} (test:cov or sonar-scanner failed); bulk-close will operate on the CSV that fetch_csv retrieves from the server"
+  else
+    wait_for_ce "${app_dir}"
   fi
 
   echo
@@ -177,7 +195,7 @@ run_project() {
   local branch
   branch="$(git rev-parse --abbrev-ref HEAD)"
   pnpm exec sonar-report \
-    --sonarurl=http://localhost:9002 \
+    --sonarurl="${SONAR_HOST}" \
     --sonarcomponent="${project}" \
     --sonartoken="${SONAR_TOKEN}" \
     --no-security-hotspot \

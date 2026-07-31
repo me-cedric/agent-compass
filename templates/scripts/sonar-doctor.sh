@@ -152,20 +152,11 @@ printf "\n── 3/4 CSV row count vs server OPEN+REOPENED+CONFIRMED count ─�
 declare -a FAILS_LOCAL=()
 for entry in "${PROJECTS[@]}"; do
   IFS=':' read -r KEY LABEL CSV <<<"$entry"
+  if [ "${SONAR_DOCTOR_FRESH_SETUP:-0}" = "1" ]; then
+    printf "  ℹ️  %s: CSV drift check skipped — setup will refresh it\n" "$LABEL"
+    continue
+  fi
   if [ ! -f "$CSV" ]; then
-    # Fresh-setup bypass: scripts/sonar-setup.sh calls us before test+scanner
-    # have ever run, so ./-csv- files naturally don't exist yet (they are
-    # written by fetch_csv in scripts/sonar-do.sh after the FIRST sonar:do
-    # run, not by setup). Without this bypass, every first-time install
-    # would be blocked at Step 6 of setup, an unreachable chicken-and-egg.
-    # Drift detection is meaningless without a CSV to compare against, so
-    # emit an informational line and skip the FAILS_LOCAL push. Set the env
-    # var from setup.sh explicitly; sonar:do callers do NOT set it, so the
-    # strict missing-CSV path below still fires for state corruption.
-    if [ "${SONAR_DOCTOR_FRESH_SETUP:-0}" = "1" ]; then
-      printf "  ℹ️  %s: CSV missing (%s) — fresh setup, drift check bypassed (run pnpm sonar:do after setup to populate)\n" "$LABEL" "$CSV"
-      continue
-    fi
     printf "  ⚠️  %s: CSV missing (%s) — run pnpm sonar:do to generate it\n" "$LABEL" "$CSV"
     FAILS_LOCAL+=("$LABEL")
     continue
