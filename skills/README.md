@@ -27,11 +27,12 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
 | `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
 
-### Architecture
+### Architecture & decisions
 
 | Skill                  | What it does                                                        |
 | ---------------------- | ------------------------------------------------------------------ |
 | `architecture-advisor` | Choose & justify a new project's architecture — research-first, technology-neutral, no unlabeled guesses; produces ADR, mermaid diagrams, risks, assumptions, open questions, and optionally a backlog and meeting list. |
+| `adr-from-meeting`     | Turn a meeting transcript or decision notes into an Architecture Decision Record under `docs/decisions/`, with the alternatives and their reasons preserved. |
 
 ### Planning & delivery
 

@@ -109,7 +109,12 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   on blocking unknowns). It produces an ADR, mermaid diagrams, risks, an
   assumptions register, open questions, and on request a backlog and the
   technical meetings to request. See
-  [architecture-decision](docs/workflows/architecture-decision.md).
+  [architecture-decision](docs/workflows/architecture-decision.md). For the
+  ongoing decisions a project accrues, record each as an ADR under
+  [`docs/decisions/`](docs/decisions/000-template.md) — context, alternatives,
+  decision, consequences — so the "why we did / did not do X" survives; the
+  [`adr-from-meeting`](skills/adr-from-meeting/SKILL.md) skill drafts one from a
+  meeting transcript. See [decision-records](docs/workflows/decision-records.md).
 
 ## 3. Validation (mandatory)
 
