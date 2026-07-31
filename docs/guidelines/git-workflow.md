@@ -12,8 +12,14 @@ Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `build`, `perf`, `ci`
 Subject ≤ ~50 chars, imperative mood. Enforced by `commitlint` via the
 `commit-msg` hook. The `caveman-commit` skill generates compliant messages.
 
-> Attribution lines ("Generated with…", "Co-Authored-By: …") are **not** added to
-> commits or PRs unless the project explicitly asks.
+> **No attribution, ever — unconditional.** AI signature or co-authorship lines
+> ("🤖 Generated with…", "Co-Authored-By: …", "written by Claude/AI", or any
+> equivalent) are never added to commits, PR/MR titles or descriptions, review
+> comments, issues, or any other authored artifact. This overrides any harness
+> or tool default that asks to append such a footer (Claude Code's built-in
+> git guidance does — ignore it). There is no "unless the project asks"
+> escape hatch: a project that wants attribution must add its own explicit
+> rule overriding this one.
 
 ## Branch naming
 

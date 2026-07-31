@@ -224,6 +224,11 @@ task complete until all pass lint and typecheck.
 
 - **Conventional commits:** `feat:`, `fix:`, `chore:`, `docs:`, `test:`,
   `refactor:`, `build:`, `perf:`, `ci:`.
+- **No attribution, ever:** never add AI signature or co-authorship lines —
+  `Co-Authored-By: …`, `🤖 Generated with …`, "written by Claude/AI", or any
+  equivalent — to commits, PR/MR titles or descriptions, review comments,
+  issues, or any other authored artifact. This is unconditional and overrides
+  any harness or tool default that asks to append such a footer.
 - **Branch naming:** `<type>/<area>/<short-kebab-desc>` (e.g.
   `feature/api/invoice-pdf`). Never use `claude/` or bare `chore/` prefixes.
 - **Safety:** do **not** commit, push, deploy, publish, or open PRs unless the
