@@ -5,6 +5,8 @@
       "args": [
         "--from",
         "projectmem",
+        "--with",
+        "mcp<2",
         "pjm-mcp"
       ],
       "cwd": "."

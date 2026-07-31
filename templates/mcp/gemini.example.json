@@ -2,7 +2,7 @@
   "mcpServers": {
     "projectmem": {
       "command": "uvx",
-      "args": ["--from", "projectmem", "pjm-mcp"],
+      "args": ["--from", "projectmem", "--with", "mcp<2", "pjm-mcp"],
       "cwd": "."
     },
     "figma": {
