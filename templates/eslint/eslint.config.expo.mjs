@@ -1,11 +1,11 @@
 // @ts-check
 
+import eslintReact from '@eslint-react/eslint-plugin';
 import eslint from '@eslint/js';
 import tanstackQueryPlugin from '@tanstack/eslint-plugin-query';
-import eslintPluginImport from 'eslint-plugin-import';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+import { createNodeResolver, importX } from 'eslint-plugin-import-x';
 import reactNative from 'eslint-plugin-react-native';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
 import globals from 'globals';
@@ -38,8 +38,11 @@ export default tseslint.config(
   eslint.configs.recommended,
   // Base TS rules (Recommended + Type Checked)
   ...tseslint.configs.recommendedTypeChecked,
-  // Prettier integration (must be the last extend/plugin to disable all formatting rules)
-  eslintPluginPrettierRecommended,
+  eslintReact.configs['recommended-typescript'],
+  eslintReact.configs['disable-dom'],
+  eslintReact.configs['disable-web-api'],
+  importX.flatConfigs.recommended,
+  eslintConfigPrettier,
   {
     languageOptions: {
       globals: {
@@ -65,11 +68,8 @@ export default tseslint.config(
   // --- React Native / TSX / JSX Configuration ---
   {
     plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooks,
       'react-native': reactNative,
       'react-you-might-not-need-an-effect': reactYouMightNotNeedAnEffect,
-      import: eslintPluginImport,
       '@tanstack/query': tanstackQueryPlugin,
     },
     languageOptions: {
@@ -86,18 +86,13 @@ export default tseslint.config(
       },
     },
     rules: {
-      // Base React Rules
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooks.configs.recommended.rules,
       ...reactNative.configs.all.rules,
       ...reactYouMightNotNeedAnEffect.configs.recommended.rules,
       // AJOUTÉ : TanStack Query Rules
       ...tanstackQueryPlugin.configs.recommended.rules,
 
       // Custom React / React Native Rules
-      'react/react-in-jsx-scope': 'off', // Not needed since React 17+ (JSX Transform)
       'react-native/no-unused-styles': 'off',
-      'react/self-closing-comp': 'error',
       eqeqeq: ['error', 'always'],
       'react-native/no-raw-text': [
         'error',
@@ -113,7 +108,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
 
       // Import Order Rules
-      'import/order': [
+      'import-x/order': [
         'error',
         {
           groups: [
@@ -147,21 +142,14 @@ export default tseslint.config(
           },
         },
       ],
+      'import-x/no-unresolved': 'error',
+      'import-x/no-nodejs-modules': 'warn',
     },
     settings: {
-      react: {
-        version: 'detect',
-      },
-      'import/resolver': {
-        alias: {
-          map: [
-            ['@', './src'],
-            ['@app', './app'],
-            ['@tests', './__tests__'],
-          ],
-          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-        },
-      },
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver(),
+        createNodeResolver(),
+      ],
     },
   },
 );

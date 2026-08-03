@@ -1,18 +1,13 @@
 // @ts-check
 
+import eslintReact from '@eslint-react/eslint-plugin';
 import eslint from '@eslint/js';
-import eslintPluginImport from 'eslint-plugin-import';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+import { createNodeResolver, importX } from 'eslint-plugin-import-x';
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect';
 import globals from 'globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export default tseslint.config(
   {
@@ -28,7 +23,9 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
+  eslintReact.configs['recommended-typescript'],
+  importX.flatConfigs.recommended,
+  eslintConfigPrettier,
   {
     languageOptions: {
       globals: {
@@ -52,10 +49,7 @@ export default tseslint.config(
   },
   {
     plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooks,
       'react-you-might-not-need-an-effect': reactYouMightNotNeedAnEffect,
-      import: eslintPluginImport,
     },
     languageOptions: {
       parserOptions: {
@@ -66,10 +60,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
       ...reactYouMightNotNeedAnEffect.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',
-      'react/self-closing-comp': 'error',
       eqeqeq: ['error', 'always'],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-unused-vars': 'error',
@@ -77,7 +68,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
-      'import/order': [
+      'import-x/order': [
         'error',
         {
           groups: [
@@ -106,26 +97,20 @@ export default tseslint.config(
           },
         },
       ],
-      'import/no-unresolved': [
+      'import-x/no-unresolved': [
         'error',
         {
           ignore: ['^@tanstack/react-devtools$', '\\.svg\\?react$'],
         },
       ],
+      'import-x/no-nodejs-modules': 'warn',
     },
     settings: {
-      react: {
-        version: 'detect',
-      },
-      'import/resolver': {
-        alias: {
-          map: [
-            ['@', path.join(__dirname, 'src')],
-          ],
-          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.svg', '.svg?react'],
-        },
-      },
-      'import/ignore': [
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver(),
+        createNodeResolver(),
+      ],
+      'import-x/ignore': [
         '^@tanstack/react-devtools$',
       ],
     },
