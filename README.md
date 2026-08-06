@@ -370,10 +370,10 @@ Important entry points:
 | [`AGENTS.md`](AGENTS.md) | Canonical agent contract. Read first. |
 | [`docs/guidelines/`](docs/guidelines/) | Coding, testing, security, docs, workflow rules. |
 | [`docs/architecture/`](docs/architecture/) | Generic architecture principles and repo-map guidance. |
-| [`docs/tooling/`](docs/tooling/) | Tool setup: prerequisites, CLI, MCP + [recommended servers](docs/tooling/mcp-servers.md), headroom, projectmem, pnpm, turbo, Docker, security. |
+| [`docs/tooling/`](docs/tooling/) | Tool setup: prerequisites, CLI, MCP + [recommended servers](docs/tooling/mcp-servers.md), headroom, projectmem, pnpm, turbo, Docker, security, [prose and terminology linting](docs/tooling/vale.md). |
 | [`docs/workflows/`](docs/workflows/) | Playbooks for project creation, specs, memory, PRs, release, upgrades. |
 | [`skills/`](skills/) | Portable agent skills for work style, review, security, stacks, Figma. |
-| [`templates/`](templates/) | Copyable config, MCP examples, PR template, specs, memory, design system. |
+| [`templates/`](templates/) | Copyable config, MCP examples, PR template, specs, memory, design system, docs-lint. |
 | [`scripts/`](scripts/) | Bootstrap, install, doctor, PR, review, release, upgrade helpers. |
 
 ---

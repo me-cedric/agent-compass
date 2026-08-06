@@ -1,0 +1,15 @@
+# Vocabulary the project is not free to change — wording agreed with legal,
+# with the client, or in a decision record. Drift here is a compliance problem
+# rather than a style problem, which is why the level is error.
+#
+# Replace these examples with the project's own table. Keep the source of the
+# obligation in a decision record and link it from the message when there is one.
+extends: substitution
+message: "Use '%s' instead of '%s' — wording fixed outside the codebase."
+level: error
+ignorecase: true
+# Left: the retired term (regex). Right: the agreed replacement.
+swap:
+  end[- ]?users?: user
+  whitelist: allowlist
+  blacklist: denylist

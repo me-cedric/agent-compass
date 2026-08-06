@@ -21,6 +21,7 @@ Concrete setup guides. Each points at runnable files in
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |
 | [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
+| [vale.md](vale.md)                             | Prose linting: imposed vocabulary, required sections, ids. |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |
 | [docker.md](docker.md)                         | Multi-stage images, local/test compose.                 |
 | [env-management.md](env-management.md)         | Env validation, examples, and local defaults kept in sync. |

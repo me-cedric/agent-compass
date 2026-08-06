@@ -1,0 +1,15 @@
+# Two H1 headings mean two documents in one file. Split it, or demote the second
+# to H2 — anything that generates a table of contents or an anchor list assumes
+# a single title.
+#
+# The counting happens over the raw file, not over `scope: heading.h1`. An
+# occurrence rule counts its token inside EACH instance of its scope, so scoping
+# to h1 headings asks "does one heading contain more than one heading", which is
+# never true: that shape reports nothing and looks like a passing rule. Verified
+# on Vale 3.17 against a document with three H1 headings — zero alerts.
+extends: occurrence
+message: "Only one H1 (#) is allowed per document."
+level: warning
+scope: raw
+token: '(?m)^# .+$'
+max: 1

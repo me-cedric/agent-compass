@@ -5,6 +5,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Prose and terminology linting: `docs/tooling/vale.md` (what Vale is worth in a
+  specification repo — imposed vocabulary, required sections, identifier formats
+  — and the measure-the-corpus-first rule for structural checks), and
+  `templates/docs-lint/` with a runnable `.vale.ini` and a starting `House`
+  style (substitution, forbidden terms, single `H1`, one required section).
+- `docs/guidelines/documentation.md` now states that vocabulary fixed outside the
+  codebase is enforced mechanically; `docs/workflows/validation-defaults.md` now
+  requires a declared documentation check to run on docs-only changes.
+
 ### Fixed
 
 - `sonar:setup` now reuses valid tokens through the current `issueadmin` API,

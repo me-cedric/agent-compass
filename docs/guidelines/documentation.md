@@ -39,6 +39,16 @@ var is added, renamed, or removed, update the validation schema and committed
 local-development env template in the same change. Never commit real `.env`.
 See [tooling/env-management.md](../tooling/env-management.md).
 
+## Imposed vocabulary
+
+Some wording is not the author's to choose: terms fixed by legal counsel, by a
+contract, or by a decision record. Where a project has such a table, it is
+recorded in the decision record that created it, and it is enforced mechanically
+— a reviewer cannot be expected to remember a retired term months later, and a
+single reintroduction can be a compliance issue rather than a style slip. Set up
+the check with [tooling/vale.md](../tooling/vale.md); a repo that declares one
+runs it on documentation changes, including docs-only ones.
+
 ## API contract sync
 
 For API changes, OpenAPI/Scalar + Bruno + Gherkin move together with the code —

@@ -1,0 +1,12 @@
+# A specification that still says "TBD" is not a specification. Placeholders are
+# how an open question survives review unnoticed; name it in an open-questions
+# section or a tracked issue instead of leaving it inline.
+extends: existence
+message: "'%s' left in a specification — resolve it or track it as an open question."
+level: error
+ignorecase: true
+tokens:
+  - TBD
+  - TODO
+  - to be defined
+  - to be confirmed

@@ -15,7 +15,9 @@ For code changes, run the smallest set that covers the changed files:
   changed
 
 For docs-only changes, no code validation is required unless commands, config,
-examples, or generated artifacts changed.
+examples, or generated artifacts changed. When the repo declares a documentation
+check — a prose or terminology linter such as
+[Vale](../tooling/vale.md) — a docs-only change runs it.
 
 ## Package Manager
 

@@ -1,0 +1,20 @@
+# One required section, one rule, one message that names the section. Do NOT
+# collapse several sections into a single rule with several tokens: Vale carries
+# one message per rule, so the author would be told only that "a section is
+# missing" and would have to diff the document against the template by hand.
+#
+# To require another section, copy this file, change the heading in the token and
+# in the message, and enable the new rule in the .vale.ini section that scopes
+# structural checks. Add one section at a time, and only after counting how many
+# existing documents already carry it.
+#
+# The token matches the whole file (scope: raw) when — and only when — the
+# negative lookahead finds no line equal to the required heading. Accept a
+# translated or alternative heading with an alternation: ^## (Intent|Purpose)$
+extends: existence
+message: "Missing required section: '## Intent'."
+level: error
+scope: raw
+nonword: true
+tokens:
+  - '(?ms)\A(?![\s\S]*^## Intent\s*$)[\s\S]+'

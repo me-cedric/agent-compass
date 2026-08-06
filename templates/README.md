@@ -26,6 +26,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `docker/`         | `Dockerfile.{nestjs,web}`, `.dockerignore`, `docker-compose.local.example.yml`  | [docker](../docs/tooling/docker.md)                  |
 | `sonar/`          | `sonar-project.{api,web}.properties`                                            | [sonarqube](../docs/tooling/sonarqube.md)            |
 | `security/`       | `.osv-scanner.toml`                                                              | [security-scanning](../docs/tooling/security-scanning.md) |
+| `docs-lint/`      | `.vale.ini`, `.vale/styles/House/{Terminology,NoPlaceholders,SingleH1,RequiredSectionIntent}.yml` | [vale](../docs/tooling/vale.md)                      |
 | `scripts/`        | `checkmarx-package.sh`, `sonar-setup.sh`, `sonar-do.sh`, `sonar-doctor.sh`, `bulk-close-stale-issues.mjs`, `patch-sonar-summary.mjs` | [security-scanning](../docs/tooling/security-scanning.md), [sonarqube](../docs/tooling/sonarqube.md) |
 | `ci/`             | `ci-backend.example.yml`, `security-scan.example.yml`, `agent-drift.example.yml` | CI starting points (GitHub Actions)                  |
 | `commands/`       | `agent-compass.commands.json`                                                    | command registry for agents                          |
