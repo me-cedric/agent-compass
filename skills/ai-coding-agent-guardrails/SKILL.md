@@ -60,7 +60,7 @@ Create a `CLAUDE.md` at the repository root to restrict Claude Code behavior:
 
 ## Restrictions
 
-- NEVER read or output contents of .env, .env.*, secrets.yaml, or any file matching *.pem, *.key
+- NEVER read or output contents of .env, .env.* (except .env.example / .env.*.example, which hold no secrets), secrets.yaml, or any file matching *.pem, *.key
 - NEVER execute `rm -rf`, `DROP TABLE`, `kubectl delete`, or `terraform destroy` commands
 - NEVER push directly to main or master branches
 - NEVER modify files in the infrastructure/, terraform/, or .github/workflows/ directories without explicit user approval
