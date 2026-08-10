@@ -254,6 +254,11 @@ az keyvault certificate download \
 az keyvault certificate list --vault-name myapp-vault-prod -o table
 ```
 
+> The Azure CLI accepts this secret only as a command-line argument, and the
+> process list is readable by every other local process. Treat any secret in
+> these commands as exposed: generate it, use it once, and rotate it as soon as
+> the operation is complete.
+
 ## Access Policies and RBAC
 
 ### RBAC (Recommended)

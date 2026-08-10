@@ -149,11 +149,19 @@ docker compose up -d
 
 # Create admin account
 docker compose exec fleet fleet prepare db
-docker compose exec fleet fleet setup \
-  --email admin@yourcompany.com \
-  --name "IT Admin" \
-  --password "${FLEET_ADMIN_PASSWORD}" \
-  --org-name "YourCompany"
+# Create the admin account in the Fleet web setup screen.
+# Open https://fleet.yourcompany.com:8080 in a browser.
+# Fleet documents this path: "You'll see the Fleet setup screen. Follow the
+# prompts to: Create your first admin account".
+# https://fleetdm.com/guides/deploy-fleet-on-docker-compose
+#
+# WARNING - do not pass the admin password on the command line.
+# fleetdm.com/docs documents no `fleet setup` command. It documents no password
+# prompt, no environment variable, and no config file for that command.
+# A command-line password is visible to every user on the host through `ps`.
+# The shell also writes it to history.
+# If you script account creation with a password flag, treat that password as
+# exposed. Rotate it after the first login.
 ```
 
 ### 3.3 Enroll a macOS host with fleetctl

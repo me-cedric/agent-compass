@@ -7,6 +7,62 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Delivery reporting and specification chain, promoted from a real project: the
+  `impact-analysis` / `delivery-digest` pair (one change, told to developers and
+  to a Product Owner, with strict redaction rules on the forwardable half),
+  `harvest-questions` (a RAID register built from what the specs leave
+  undecided), `split-tasks-by-profile` (work split across personas as validated
+  JSON, with a bundled validator), `spec-to-tickets`, and `spec-drift-triage`
+  (four drift states; a conflicted ticket is never overwritten and an orphan is
+  never deleted). All six join `CORE_PROFILE`.
+- Sketch and model conversions: `excalidraw-to-adr` (MADR), `excalidraw-to-likec4`
+  (bundled deterministic script), `likec4-to-openspec`, and `docs-to-dbml`.
+- `docs/guidelines/style-contract.md` — the opt-in always-on contract that binds
+  `ponytail`, `i-have-adhd`, `caveman` and `asd-ste100`, with the precedence rule
+  that Simplified Technical English overrides compression for durable text, and
+  the rule that a sub-agent inherits the contract only when the delegation prompt
+  restates it.
+- Two style skills to support that contract: `asd-ste100` (Simplified Technical
+  English for commits, docs, error messages and agent instructions) and
+  `i-have-adhd` (action-first output shape). Both join `STYLE_SKILLS`.
+- Ten MIT design skills vendored from `Leonxlnx/taste-skill`, split by surface so
+  a stack receives one group and never both: `high-end-visual-design`,
+  `minimalist-ui` and `redesign-existing-projects` for a dense product UI;
+  `design-taste-frontend`, `industrial-brutalist-ui` and `stitch-design-taste`
+  for marketing surfaces; `imagegen-frontend-web`, `imagegen-frontend-mobile`,
+  `image-to-code` and `brandkit` for image direction. Plus
+  `figma-tokens-to-designmd`, which turns a Figma token export into `design.md`.
+- Nine instincts. `vendored-corpus-manifest` (copy a foreign corpus verbatim, read
+  a generated manifest, gate drift with `--check`, keep the licence with the
+  content), `embedded-tree-lifecycle` (one lifecycle row per embedded tree, and
+  when to compile a tree in instead of shipping it as a resource),
+  `provisioning-state-registry` (four states over every managed file; never delete
+  an orphan), `negative-assertion-precondition` (assert the subject rendered
+  before you assert nothing survived, or the test passes on a blank page),
+  `credential-host-scoping` (bind a secret to its destination host and re-parse
+  that host from the final URL, so a crafted URL cannot redirect the token),
+  `untyped-dependency-adapter` (a dependency that returns `any` needs one narrow
+  adapter and one shape test, because the compiler cannot see the break),
+  `dev-server-route-warmup` (pre-declare lazy route entries or the first
+  navigation fails while the optimiser re-runs), `one-artifact-root` (an artifact
+  written outside the configured root produces nothing), and `e2e-gate-budget`
+  (declare which e2e subset gates a change, with its measured wall-clock).
+- Guideline and tooling additions: a rule against passing a secret in `argv` (the
+  process list is public), the three non-interactive agent permission tiers with
+  their CLI flags, a test-naming rule, a type-check-every-project rule, the two
+  `DESIGN.md` sections that are easiest to omit, a Rust toolchain row in
+  version-pinning (kept apart from the minimum supported version), release
+  behaviour when a matrix build re-uploads an asset, and the empty-selection case
+  for a capability flag.
+- Template additions: `templates/monorepo/gitattributes.tpl`, two `.gitignore`
+  pattern traps documented next to the patterns they affect, a `preinstall`
+  package-manager guard, and a packaging rule that strips OS metadata (ignoring a
+  junk file in git does not stop a packaging step from copying it).
+- `check-naming` now also denies the source-project tokens mined during a
+  knowledge pull, so the guard proves the import stayed generic.
+- `docs/tooling/rtk.md` now names the binary collision with `reachingforthejack/rtk`,
+  gives the `rtk gain` verification, and lists five token-economy habits that
+  need no tool at all.
 - Prose and terminology linting: `docs/tooling/vale.md` (what Vale is worth in a
   specification repo — imposed vocabulary, required sections, identifier formats
   — and the measure-the-corpus-first rule for structural checks), and
@@ -16,8 +72,99 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
   codebase is enforced mechanically; `docs/workflows/validation-defaults.md` now
   requires a declared documentation check to run on docs-only changes.
 
+### Changed
+
+- `caveman` and `ponytail` updated to their newer upstream revisions. `caveman`
+  gains tool-call discipline, language preservation, the negation rule, and the
+  measured claim that invented abbreviations save no tokens. `ponytail` gains a
+  reuse-first rung ("already in this codebase?"), the root-cause rule for a bug
+  fix, and the rule that the ladder shortens the solution but never the reading.
+  Both now keep their MIT `LICENSE` next to the skill.
+
 ### Fixed
 
+- **Shipped examples passed database passwords on the command line**, which the
+  new `argv` rule in [security.md](docs/guidelines/security.md) forbids: the
+  process list is readable by every other local process. Fixed in the MySQL
+  family — `database-backups` (both `mysqldump` and `xtrabackup`) and both `mysql`
+  examples now write credentials into a `0600` file inside `( umask 077; … )` and
+  pass `--defaults-extra-file` as the first option. `mysqldump` reads `[client]`
+  and `xtrabackup` reads `[xtrabackup]`, and the guideline now says so. `gcloud`
+  accepts a password only as an argument, so each `gcp-cloud-sql` command block
+  now carries the exposure-and-rotate warning. All of these are `LOCAL_OVERRIDES`,
+  so a refresh re-applies them; a test re-derives every overridden file from
+  upstream text and fails if one is silently dropped.
+
+  The rest of the corpus is now covered too, each mechanism verified against
+  official vendor documentation before it was written:
+
+  - `redis` — one `export REDISCLI_AUTH=…` replaces 18 `redis-cli -a <password>`
+    calls. The vendor recommends the variable over `-a`.
+  - `azure-vms` — omits `--admin-password`, which makes the CLI prompt.
+  - `openclaw-local-mac-mini` — a trailing `security … -w` with no value prompts
+    for the API key, so it never reaches `argv`.
+  - `mdm-device-management` — the upstream `fleet setup` command does not exist in
+    the vendor documentation, so it is replaced by the documented web setup screen
+    rather than kept as an invented command carrying a password.
+  - `azure-sql`, `azure-keyvault`, `identity-access-management` — these CLIs accept
+    a password only as an argument, so each command block now names the exposure
+    and requires rotation. `azure-sql` also records the documented Entra-only path
+    that removes the password entirely.
+
+  A test now enforces the rule as written: a skill may keep an `argv` secret only
+  while the same file documents the exposure. It iterates the override table, so a
+  future override is covered without editing the test.
+
+  **Two knowingly left alone.** The `redis` Compose healthcheck keeps its inline
+  password, because the Compose documentation does not confirm that a healthcheck
+  test sees the service `environment:`, and a guess is worse than a known gap. The
+  `requirepass` and Sentinel config values are already in their correct home — a
+  config file, not `argv`. `riskSignals` still has no argv-secret counter, so
+  nothing blocks a future import from adding one.
+- **A host that synced an imported skill never received the MIT permission
+  notice.** The 146 imported skills carry a `## Provenance` block, and the lock
+  forbids extra files in their folders, so no `LICENSE` could travel with them —
+  and `manifest.mjs` ships no notices file. `skills-sync` now writes
+  `THIRD_PARTY_NOTICES.md` beside the synced skills whenever at least one
+  imported skill is included. A skill vendored with its own `LICENSE` is
+  unaffected, because that licence already travels inside its folder.
+- **The OSV-Scanner suppression table was named wrong, so every host that copied
+  the template suppressed nothing.** The table is `IgnoredVulns`; the template
+  and the CI example both wrote `IgnoreVulns`, which the scanner rejects. Both
+  are corrected, and the template now also records that with a lockfile argument
+  the scanner does not read a root config on its own, so `--config` must be
+  explicit.
+- **`ai-coding-agent-guardrails` no longer reports as drifted, and its local fix
+  now survives a refresh.** The skill carries a deliberate narrowing: it permits
+  reading `.env.example`, because the unmodified upstream rule forbids every
+  `.env.*` file and contradicts [`env-var-sync`](knowledge/instincts/env-var-sync.md).
+  That narrowing was applied directly to the file, so the lock hash read it as an
+  accidental edit and two tests failed on a clean checkout. The narrowing moved
+  into `LOCAL_OVERRIDES` in `scripts/lib/upstream-skills.mjs`, which runs inside
+  `adaptSkill`. A later `upstream-skills --refresh` now re-applies it instead of
+  reverting it, and stops with a clear error if upstream rewords the target line.
+  The lock still catches an accidental edit. Recorded in `THIRD_PARTY_NOTICES.md`.
+- **`pull-knowledge.mjs` discovered no agent skills, which are the densest
+  reusable asset a project owns.** Against a real project it staged 16 files and
+  missed all 17 skills. It now discovers any `skills/<name>/SKILL.md` and stages
+  the whole folder — licence, scripts, references, examples — because a skill is
+  one asset and not one file. Same run now stages 61 files. Also fixed:
+  - A `skills/` tree whose parent carries a generated `manifest.json` naming an
+    upstream repository is skipped, so a project that vendors agent-compass no
+    longer re-imports the base into itself (197 files).
+  - Build output and git worktrees are ignored. One project walked 19131 files,
+    18262 of them build output, and staged 6 duplicate configs from a worktree.
+  - A digit run inside a commit hash, and a pinned version such as `6.2.1.4610`,
+    no longer read as a phone number. That false positive refused whole runs.
+  - A symlinked skill folder stages once, not twice. The target path resolves
+    through symlinks first, so a macOS `/var` path no longer escapes its own root.
+  - New categories: provider agent roles and slash commands, `docs/*.md`, module
+    docs beyond `apps/**/src`, CI pipelines, devcontainers, and style contracts.
+    Every category carries a cap, and a reached cap is reported, never silent.
+  - Staging is cleared first, so a file removed from the source cannot linger and
+    read as current. A copy failure now exits non-zero.
+  - `INDEX.md` names the base file each row compared against, and resolves a
+    skill to its real counterpart instead of the first same-named file.
 - `sonar:setup` now reuses valid tokens through the current `issueadmin` API,
   ignores pre-scan CSV drift that its scan will refresh, and delegates to the
   complete `sonar:do` scan/close/report cycle instead of duplicating scans.

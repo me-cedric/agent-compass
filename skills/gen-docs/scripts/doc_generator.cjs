@@ -340,6 +340,17 @@ function generateDesign(info) {
   L.push('<!-- List the mitigations in place: input validation, encryption, access control, ... -->');
   L.push('- **Mitigation 1**: TODO describe the mitigation');
   L.push('- **Mitigation 2**: TODO describe the mitigation', '');
+  // Cross-cutting and open questions are the two sections authors skip, and
+  // verify-module blocks delivery on both. Scaffold them so the gate is passable.
+  L.push('## Cross-cutting concerns', '');
+  L.push('<!-- Name a consequence in each of the four, or say "none, because ..." -->');
+  L.push('- **Security**: TODO — see the threat model above');
+  L.push('- **Privacy**: TODO — personal data touched, retention, and lawful basis');
+  L.push('- **Observability**: TODO — the signal that shows a new failure mode');
+  L.push('- **Cost**: TODO — what grows with traffic or storage', '');
+  L.push('## Open questions', '');
+  L.push('<!-- Decisions that are not yet made. An empty list means finished. -->');
+  L.push('- **Question 1**: TODO describe the undecided point and who decides it', '');
   L.push('## Change history', '', `### ${today} - Initial version`, '');
   L.push('**What changed**: module created', '', '**Why**: initial development', '');
   return L.join('\n');

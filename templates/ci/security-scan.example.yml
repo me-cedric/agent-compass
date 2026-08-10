@@ -165,7 +165,7 @@ jobs:
               '',
               `Date: ${new Date().toISOString().split('T')[0]}`,
               '',
-              'Fix the dependency or add an `[[IgnoreVulns]]` entry with a reason to `.osv-scanner.toml`.',
+              'Fix the dependency or add an `[[IgnoredVulns]]` entry with a reason to `.osv-scanner.toml`.',
             ].join('\n');
 
             const existing = issues.find(i => i.title === TITLE);

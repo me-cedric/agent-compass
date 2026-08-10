@@ -17,13 +17,20 @@ export const CORE_PROFILE = {
     'architecture-advisor', 'adr-from-meeting', 'long-running-task',
     'progress-audit', 'completion-plan', 'work-splitting',
     'implementation-planning',
+    // Delivery reporting and the RAID/ticket chain around the specs.
+    'impact-analysis', 'delivery-digest', 'harvest-questions',
+    'split-tasks-by-profile', 'spec-to-tickets', 'spec-drift-triage',
+    // Sketch and model conversions that feed decisions and specs.
+    'excalidraw-to-adr', 'excalidraw-to-likec4', 'likec4-to-openspec',
   ],
   templates: ['templates/specs', 'templates/intake', 'templates/commands'],
   docs: ['docs/guidelines/coding-style.md', 'docs/guidelines/testing-tdd.md', 'docs/guidelines/documentation.md'],
 }
 
-// Optional working-style skills — user preference, never auto-selected.
-export const STYLE_SKILLS = ['caveman', 'caveman-commit', 'caveman-review', 'ponytail', 'ponytail-audit', 'ponytail-review', 'ponytail-debt', 'ponytail-help']
+// Optional working-style skills — user preference, never auto-selected. The four
+// that form the opt-in style contract are `ponytail`, `i-have-adhd`, `caveman`
+// and `asd-ste100` — see docs/guidelines/style-contract.md.
+export const STYLE_SKILLS = ['caveman', 'caveman-commit', 'caveman-review', 'asd-ste100', 'i-have-adhd', 'ponytail', 'ponytail-audit', 'ponytail-review', 'ponytail-debt', 'ponytail-help']
 
 export const PROFILES = {
   'nestjs-api': {
@@ -32,33 +39,49 @@ export const PROFILES = {
     templates: ['templates/docker', 'templates/eslint'],
     docs: ['docs/architecture/api-design.md', 'docs/tooling/api-contract-sync.md', 'docs/architecture/resilience.md', 'docs/architecture/observability.md'],
   },
+  // The design skills split by surface: a dense product UI and a landing page
+  // want opposite advice, so a stack gets one group, never both.
   'angular-web': {
     label: 'Angular app',
-    skills: ['angular-patterns', 'figma-mcp-frontend'],
+    skills: [
+      'angular-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
+      'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
+    ],
     templates: ['templates/mcp'],
     docs: ['docs/tooling/mcp-servers.md'],
   },
   'react-web': {
     label: 'React app',
-    skills: ['react-admin-dashboard-patterns', 'figma-mcp-frontend'],
+    skills: [
+      'react-admin-dashboard-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
+      'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
+    ],
     templates: ['templates/design-system', 'templates/eslint'],
     docs: [],
   },
   'next-web': {
     label: 'Next.js app',
-    skills: ['figma-mcp-frontend'],
+    skills: [
+      'figma-mcp-frontend', 'figma-tokens-to-designmd',
+      'design-taste-frontend', 'industrial-brutalist-ui', 'stitch-design-taste',
+      'imagegen-frontend-web', 'image-to-code', 'brandkit',
+    ],
     templates: ['templates/design-system', 'templates/docker'],
     docs: [],
   },
   'expo-mobile': {
     label: 'Expo mobile',
-    skills: ['expo-react-native-patterns', 'figma-mcp-frontend'],
+    skills: [
+      'expo-react-native-patterns', 'figma-mcp-frontend',
+      'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
+      'imagegen-frontend-mobile',
+    ],
     templates: ['templates/eslint'],
     docs: [],
   },
   'drizzle-postgres': {
     label: 'Drizzle/Postgres',
-    skills: ['drizzle-postgres-patterns'],
+    skills: ['drizzle-postgres-patterns', 'docs-to-dbml'],
     templates: [],
     docs: [],
   },

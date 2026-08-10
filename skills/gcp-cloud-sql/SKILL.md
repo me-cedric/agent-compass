@@ -74,6 +74,11 @@ gcloud sql users create appuser --instance=prod-db \
   --password=$(openssl rand -base64 24)
 ```
 
+> `gcloud sql` accepts a password only as a command-line argument, and the
+> process list is readable by every other local process. Treat any password in
+> these commands as exposed: generate it, use it once, and rotate it through
+> Secret Manager as soon as the instance exists.
+
 ## Create a MySQL Instance
 
 ```bash
@@ -86,6 +91,11 @@ gcloud sql instances create mysql-prod \
   --database-flags=slow_query_log=on,long_query_time=2,max_connections=500 \
   --root-password=$(openssl rand -base64 24)
 ```
+
+> `gcloud sql` accepts a password only as a command-line argument, and the
+> process list is readable by every other local process. Treat any password in
+> these commands as exposed: generate it, use it once, and rotate it through
+> Secret Manager as soon as the instance exists.
 
 ## Private IP Configuration
 

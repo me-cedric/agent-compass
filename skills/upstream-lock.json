@@ -16,7 +16,7 @@
     "skillCount": 146
   },
   "transformation": {
-    "version": 1,
+    "version": 2,
     "safetyGateSha256": "e90cc261716df80d7e981df0f2f141d5141c4427330357c129966408ece6fd67"
   },
   "skills": {
@@ -53,7 +53,7 @@
       "pack": "security",
       "riskLevel": "high",
       "upstreamSha256": "0842ee19de8b1430ed092985d60f4f1ef55da0660aed0dd14ce70e3837dd2538",
-      "localSha256": "a28d92c91789f9f81d5d8a62f9437155d4efe5270ca5a466b097150d9b7616db",
+      "localSha256": "69940190d4bfc285a69fc561a56cdb83de024cf1267b8f18ce10afb52c9298b0",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 3,
@@ -361,7 +361,7 @@
       "pack": "security",
       "riskLevel": "high",
       "upstreamSha256": "e65341fb9f57a9c94bc6b1a93296c9427edf3d95af66223413e4f09e744ce9de",
-      "localSha256": "35c69e0cde67ee36f9f79ee2f2a1b13decb55e8b3b1bca0ca4770ec5a9117eac",
+      "localSha256": "784a1c017982ef38bb6909fc1192a57f10da492c4de4860a709376a0912b78ae",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 1,
@@ -403,7 +403,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "be9c84370e42f42762182f19f261c850b5d591b6a62c23d94494d6055bfe3b00",
-      "localSha256": "2021467c733822b5062b71574399c9c4c7247db766a4b120edf6a28e6414f601",
+      "localSha256": "6b02f6286f98f4d9a534e3bcf195459df66ea1d5b66184152ee6ee3c86c45ef4",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 1,
@@ -417,7 +417,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "03a9d7efd1ed7b1489b08749bdf2ee9dbac98ecf747f074bf0e22ea6f572e1c1",
-      "localSha256": "e9d621770c2e079587db55a2b8f8e649c2a34f5fbf5a4922eb52b2f20742577d",
+      "localSha256": "43aaff8bf62b9ae65bd4938236712aae59a714230b1077539bfe719d25b25c18",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 0,
@@ -669,7 +669,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "538c927bbdca120419e34a8dfd63d87f52dd373b63f1e11dc1dee9982159f591",
-      "localSha256": "448840ca72e63a4edf3bc2d8ff613eb641e08901570ab1079c2f696b9de5e0a9",
+      "localSha256": "c59c4b906b4664d608f86959a7f01dc2421aa7f98a3a1ab8d59ed397220f35c9",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 1,
@@ -851,7 +851,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "33022ce0851de9c595755ebb960a4effc766b0373c2dee92de212cc88b32bdb9",
-      "localSha256": "b337dc496585fb4b4c61c53602e79438b778c8965246fa0a1ee63852115352fc",
+      "localSha256": "65e828a1db628ba5e617b082d0f97930290703aea50d158a4f3bf3d237a673dc",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 0,
@@ -1047,7 +1047,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "f420bcc20e781d688fb7a5381c11882aa85d67f6f531b53f51cc1e3e1378870c",
-      "localSha256": "2dd777d3ce582aa036cf222d656e6d9e1f16653f642f8a53d6a79b76aa8ef88d",
+      "localSha256": "74d1e1b0fba5e9d36dcc14b6e55b12b43e8cd07003e58c21dde363a8dcf41fa4",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 2,
@@ -1313,7 +1313,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "a3883c47b1eac05b61ccf814c2e70bf419f492b87324ef4ab4d7bc8aa309e2ef",
-      "localSha256": "588279b07e494d55b7bb80400613f067fb952bda784198d8ceeb087c1148a495",
+      "localSha256": "fdafebc5019841d49aef6157c8b4aa2fe07ce693a11d4b8afd446e42ca04c9fa",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 0,
@@ -1369,7 +1369,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "0f6eeaed9eaf34388cc6a215d646b991d9f2cdc7ac836dd55a237f8c4464ee82",
-      "localSha256": "f1fc947ce59c39af75a6fa231f0908d1e759d4b2b5a3e0f93814d745921d223a",
+      "localSha256": "85a833417e7bea592f0580a3cb8aa2e2c431bad606c2006be17c1c9ea45ee235",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 1,
@@ -1439,7 +1439,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "d5340ca859f6f50c2473ee15223cd6f5ecd121495cd0ab05b2bc99f95b015ac6",
-      "localSha256": "6c9fcf20d2917d82864c9664c70b0631082774540e9edca6c724e1ba5b1da1dc",
+      "localSha256": "0eb0e0ea3664fc5a6ddf2f905b59c0c09693f7c93ae5dba057a0563f3a9c4d59",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 0,
@@ -1635,7 +1635,7 @@
       "pack": "infrastructure",
       "riskLevel": "high",
       "upstreamSha256": "eca508ac6a39cc6011921aab0c9c92ea18c804750cfac2474a35e6b537b9b800",
-      "localSha256": "37a3599d77f04477fbf5aa80a3a8e5967a718fcc69e6a87f8c2496c5c0a4e0dd",
+      "localSha256": "3eb01b784de67f921dae084b9f81c3f7f02329c057faa11b1bb0c4205fde0af5",
       "riskSignals": {
         "remoteShell": 0,
         "destructive": 0,

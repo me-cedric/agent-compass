@@ -20,12 +20,19 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 
 | Skill            | What it does                                                        |
 | ---------------- | ------------------------------------------------------------------ |
-| `caveman`        | Ultra-compressed communication (~75% fewer tokens, full accuracy). |
+| `caveman`        | Ultra-compressed communication (65% fewer output tokens, full accuracy). |
 | `caveman-commit` | Conventional-commit message generator, terse.                      |
 | `caveman-review` | One-line, actionable PR review comments.                           |
+| `asd-ste100`     | Simplified Technical English for durable text — commits, docs, errors, agent instructions. |
+| `i-have-adhd`    | Action-first output shape: numbered steps, no preamble, one concrete next step. |
 | `agent-teacher`  | Level-aware explanations and selective prompt/tool coaching.        |
 | `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
 | `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
+
+`ponytail`, `i-have-adhd`, `caveman`, and `asd-ste100` combine into one opt-in
+always-on contract — see
+[style-contract.md](../docs/guidelines/style-contract.md) for the precedence
+rules and the sub-agent propagation rule.
 
 ### Architecture & decisions
 
@@ -33,6 +40,10 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | ---------------------- | ------------------------------------------------------------------ |
 | `architecture-advisor` | Choose & justify a new project's architecture — research-first, technology-neutral, no unlabeled guesses; produces ADR, mermaid diagrams, risks, assumptions, open questions, and optionally a backlog and meeting list. |
 | `adr-from-meeting`     | Turn a meeting transcript or decision notes into an Architecture Decision Record under `docs/decisions/`, with the alternatives and their reasons preserved. |
+| `excalidraw-to-adr`    | Draft a MADR Architecture Decision Record from an Excalidraw sketch. |
+| `excalidraw-to-likec4` | Convert an Excalidraw sketch into a LikeC4 `.c4` model (bundled deterministic script). |
+| `likec4-to-openspec`   | Derive an OpenSpec change proposal — proposal, spec deltas, tasks — from a LikeC4 model. |
+| `docs-to-dbml`         | Express the data model documentation implies as a DBML (dbdiagram.io) schema. |
 
 ### Planning & delivery
 
@@ -45,13 +56,62 @@ work: audit → scope → split → detail.
 | `completion-plan`         | Turns the audit/specs into an ordered backlog of remaining work-items (plan, rules, matched ticket, deps, gates) and flags work missing from the tracker. |
 | `work-splitting`          | Splits a backlog across owners with clear separation of concern, minimal file overlap, coordination seams, and a shareable assignment brief. |
 | `implementation-planning` | Produces a detailed, production-ready, plug-and-play implementation spec per work-item that a dev or agent can one-shot. |
+| `harvest-questions`       | Turns what the specs leave undecided into a RAID register — one file per question, risk, assumption, issue, dependency. |
+| `split-tasks-by-profile`  | Splits work across the project's personas into one self-contained scope each, as validated JSON (bundled validator). |
+| `spec-to-tickets`         | Writes tracker ticket text for one spec section — summary, why, acceptance criteria from the spec's own words. |
+| `spec-drift-triage`       | Triages a spec that moved after its tickets existed: what changed, what to do, is it a change request. |
+| `impact-analysis`         | The developer half of a change report: seven impact axes, stale documents, ordered action plan. |
+| `delivery-digest`         | The Product Owner half: plain-language, forward-safe digest with strict redaction rules. |
+
+### Design & taste
+
+Anti-template design guidance. A dense product UI and a landing page want
+opposite advice, so the skills split into two groups; pick the group that matches
+the surface, not both. They back the anti-template policy in
+[design-quality](../docs/guidelines/coding-style.md) and pair with
+`templates/design-system/`.
+
+**Dense product UI** — dashboards, admin panels, data tables, multi-step forms.
+
+| Skill                        | What it does                                                        |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `high-end-visual-design`     | The fonts, spacing, shadows, card structures, and motion that make a UI feel expensive; blocks the cheap defaults. |
+| `minimalist-ui`              | Clean editorial interfaces: warm monochrome, typographic contrast, flat bento grids. |
+| `redesign-existing-projects` | Audit-first upgrade of an existing UI to premium quality without breaking behaviour. |
+
+**Marketing surfaces** — landing pages, portfolios, showcase sites.
+
+| Skill                     | What it does                                                        |
+| ------------------------- | ------------------------------------------------------------------ |
+| `design-taste-frontend`   | Anti-slop frontend flagship: infers the design direction from the brief, strict pre-flight check. |
+| `industrial-brutalist-ui` | Swiss typographic print fused with military terminal aesthetics: rigid grids, extreme type scale contrast. |
+| `stitch-design-taste`     | Generates an agent-friendly `DESIGN.md` enforcing premium UI standards (needs Google Stitch). |
+
+**Image direction** — needs a harness that can generate images.
+
+| Skill                      | What it does                                                        |
+| -------------------------- | ------------------------------------------------------------------ |
+| `imagegen-frontend-web`    | One horizontal design reference image per page section, with composition variety and a single palette. |
+| `imagegen-frontend-mobile` | Premium app-native mobile screen and flow concepts in phone mockups; images only, no code. |
+| `image-to-code`            | Generate the design reference first, analyse it, then implement the frontend to match it. |
+| `brandkit`                 | Brand-guideline boards, logo systems, and identity decks. |
+
+**From a design tool**
+
+| Skill                        | What it does                                                        |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `figma-mcp-frontend`         | Uses Figma MCP context for design-system-driven UI implementation. |
+| `figma-tokens-to-designmd`   | Converts a Figma design-token export into a `design.md` design-system file. |
+
+All ten taste skills are MIT, vendored from
+[`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) — each keeps its
+`LICENSE` and a `## Provenance` block.
 
 ### Quality gates
 
 | Skill             | What it does                                              |
 | ----------------- | -------------------------------------------------------- |
 | `gen-docs`        | Scaffolds `README.md` + `DESIGN.md` for a module.        |
-| `figma-mcp-frontend` | Uses Figma MCP context for design-system-driven UI implementation. |
 | `debug-loop`     | Builds a tight failing feedback loop before diagnosing hard bugs. |
 | `api-contract-sync` | Keeps OpenAPI/Scalar or Swagger, Bruno, Gherkin, mocks, and shared types aligned with API changes. |
 | `long-running-task` | Runs broad autonomous work with intake, checkpoints, phase loops, validation, and hard stops. |

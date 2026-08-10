@@ -24,9 +24,14 @@ out
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
+# OS metadata. The build copies the context as it is on disk, so an ignored file
+# is not an absent file — see "Strip OS metadata before packaging" in
+# templates/README.md. A bare pattern here matches the context root only, so
+# each one needs the `**/` prefix.
+**/.DS_Store
+**/._*
+**/Thumbs.db
+**/desktop.ini
 
 # Logs
 logs

@@ -19,6 +19,58 @@ secret-reading; keep network off unless the task needs it; a background/goal run
 still obeys the safety rule — no commit, push, deploy, publish, or PR without
 explicit approval (`AGENTS.md` §10).
 
+## Agent permission tiers
+
+A headless agent cannot answer an approval prompt. Each agent CLI therefore needs
+a non-interactive mode. Expose exactly three tiers, and make the safest one the
+default.
+
+| Tier | What it grants | What it gives up |
+| --- | --- | --- |
+| **Plan** | reads the working copy and proposes a change | no write, no shell |
+| **Auto** | writes files and runs ordinary commands, guardrails active | approval per write |
+| **Bypass** | every check removed | file scope, command limits, and the refusals that block a force-push, a production deploy, or a secret read |
+
+A Bypass tier removes CLI guardrails. It does not remove the contract: no commit,
+push, deploy, publish, or PR without explicit approval (`AGENTS.md` §10,
+[guidelines/operational-safety.md](../guidelines/operational-safety.md)).
+
+Rules:
+
+- Default to Plan. Persist the last chosen tier for the next session.
+- Confirm Bypass once, in a dialog that names what it removes. Do not repeat the
+  dialog on every switch; a repeated alert teaches the user to click without
+  reading.
+- Display the active tier for as long as it stays active.
+- Resolve an unknown tier value to Plan. A permission must never come from a
+  typo.
+- Test the scale. Assert that no blanket-bypass flag appears in the two lower
+  tiers, and that an unrecognized value resolves to Plan.
+
+### Flags
+
+The three tiers are the runtime surface. The five profiles above are the task-type
+selection. A read-only profile runs at the Plan tier; fast-edit and careful run at
+Auto; no profile requires Bypass.
+
+One implementation maps the three tiers onto these flags:
+
+| Tier | Claude Code | Codex | GitHub Copilot |
+| --- | --- | --- | --- |
+| Plan | `--permission-mode plan` | `--sandbox read-only` | `--allow-all-tools --deny-tool write --deny-tool shell` |
+| Auto | `--permission-mode acceptEdits` | `--full-auto` | `--allow-all-tools` |
+| Bypass | `--dangerously-skip-permissions` | `--dangerously-bypass-approvals-and-sandbox` | `--allow-all` |
+
+This mapping is version-sensitive. Verify every flag against the CLI version the
+project runs before you rely on it.
+
+A blocked tool is not an error. The CLI refuses the tool, returns the refusal to
+the model, and the run ends normally. Read the refusal, show which tool was
+refused, and offer the exact setting that would allow it.
+
+For profiles, model tiers, and the config files that set a default, see
+[tooling/agent-permissions.md](../tooling/agent-permissions.md).
+
 ## Claude Code
 
 Set defaults in `.claude/settings.json` (`permissions.defaultMode`, `allow`,

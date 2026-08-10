@@ -32,6 +32,7 @@ const TEXT = new Set(['.md', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.json', '.ym
 // are mined. Use \\b for short words to avoid matching inside other words.
 const DENY = [
   'parcus', 'velhop', 'orbility', 'eovia', 'nexterite', 'freshmile', 'monetico',
+  'konvoy', '\\bpaag\\b',
   '\\bcts\\b', 'parking[-_ ]?lots?', 'free[-_ ]?spots?', 'ev[-_ ]charging',
 ]
 const RE = new RegExp(`(${DENY.join('|')})`, 'i')

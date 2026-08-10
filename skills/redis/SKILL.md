@@ -95,11 +95,15 @@ sudo systemctl restart redis-server
 ## redis-cli Commands Reference
 
 ```bash
+# Put the password in the environment before the first command.
+# redis-cli reads REDISCLI_AUTH and keeps the password out of the command line.
+export REDISCLI_AUTH=strong_redis_password
+
 # Connect with authentication
-redis-cli -a strong_redis_password
+redis-cli
 
 # Connect to a remote host
-redis-cli -h 10.0.0.5 -p 6379 -a strong_redis_password
+redis-cli -h 10.0.0.5 -p 6379
 ```
 
 ### String Operations
@@ -242,11 +246,11 @@ Cluster mode distributes data across multiple shards automatically.
 redis-cli --cluster create \
   10.0.0.1:6379 10.0.0.2:6379 10.0.0.3:6379 \
   10.0.0.4:6379 10.0.0.5:6379 10.0.0.6:6379 \
-  --cluster-replicas 1 -a strong_redis_password
+  --cluster-replicas 1
 
 # Check cluster status
-redis-cli -c -a strong_redis_password CLUSTER INFO
-redis-cli -c -a strong_redis_password CLUSTER NODES
+redis-cli -c CLUSTER INFO
+redis-cli -c CLUSTER NODES
 
 # Add a new node
 redis-cli --cluster add-node 10.0.0.7:6379 10.0.0.1:6379
@@ -293,11 +297,11 @@ EXPIRE ratelimit:user:42 60
 
 ```bash
 # Terminal 1 — subscriber
-redis-cli -a strong_redis_password
+redis-cli
 SUBSCRIBE notifications:order-updates
 
 # Terminal 2 — publisher
-redis-cli -a strong_redis_password
+redis-cli
 PUBLISH notifications:order-updates '{"orderId":42,"status":"shipped"}'
 
 # Pattern subscription
@@ -312,7 +316,7 @@ SET lock:resource:42 "worker-abc" NX EX 30
 # Returns OK if acquired, nil if already held
 
 # Release lock (use Lua script to ensure atomicity)
-redis-cli -a strong_redis_password EVAL "
+redis-cli EVAL "
   if redis.call('get', KEYS[1]) == ARGV[1] then
     return redis.call('del', KEYS[1])
   else
@@ -372,33 +376,33 @@ volumes:
 
 ```bash
 docker compose up -d
-redis-cli -h 127.0.0.1 -a strong_redis_password ping
+redis-cli -h 127.0.0.1 ping
 ```
 
 ## Monitoring
 
 ```bash
 # Real-time stats
-redis-cli -a strong_redis_password INFO stats
-redis-cli -a strong_redis_password INFO memory
-redis-cli -a strong_redis_password INFO replication
+redis-cli INFO stats
+redis-cli INFO memory
+redis-cli INFO replication
 
 # Key metrics to watch
-redis-cli -a strong_redis_password INFO stats | grep -E "keyspace_hits|keyspace_misses"
+redis-cli INFO stats | grep -E "keyspace_hits|keyspace_misses"
 # Hit ratio = hits / (hits + misses) — aim for > 95%
 
 # Memory usage breakdown
-redis-cli -a strong_redis_password MEMORY STATS
+redis-cli MEMORY STATS
 
 # Slow log (queries > 10ms by default)
-redis-cli -a strong_redis_password SLOWLOG GET 10
-redis-cli -a strong_redis_password SLOWLOG LEN
+redis-cli SLOWLOG GET 10
+redis-cli SLOWLOG LEN
 
 # Monitor all commands in real time (debugging only — impacts performance)
-redis-cli -a strong_redis_password MONITOR
+redis-cli MONITOR
 
 # Connected clients
-redis-cli -a strong_redis_password CLIENT LIST
+redis-cli CLIENT LIST
 ```
 
 ## Troubleshooting

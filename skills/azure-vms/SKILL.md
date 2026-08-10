@@ -85,13 +85,13 @@ ssh azureuser@$(az vm show -g compute-rg -n myapp-vm -d --query publicIps -o tsv
 ### Windows VM
 
 ```bash
+# Omit --admin-password. The CLI prompts for the password at the command line.
 az vm create \
   --resource-group compute-rg \
   --name myapp-win-vm \
   --image Win2022Datacenter \
   --size Standard_D4s_v5 \
   --admin-username azureadmin \
-  --admin-password 'S3cur3P@ssw0rd!' \
   --vnet-name myapp-vnet \
   --subnet app-subnet \
   --public-ip-address "" \
@@ -99,6 +99,12 @@ az vm create \
   --storage-sku Premium_LRS \
   --zone 1
 ```
+
+> The prompt works only in an interactive terminal. A script or a CI job must
+> pass `--admin-password`, and the process list is readable by every other local
+> process. Treat a password passed that way as exposed: generate it, use it once,
+> and rotate it as soon as the VM exists. Linux images need no password at all —
+> use `--generate-ssh-keys`, as the Linux example above does.
 
 ### VM with Cloud-Init
 

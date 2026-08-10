@@ -11,6 +11,27 @@ Agent Compass retains the original knowledge, adds portable metadata,
 authorization and production-safety gates, and excludes upstream executable
 scripts and assets.
 
+Four upstream passages are narrowed at import time. Each narrowing lives in
+`LOCAL_OVERRIDES` in `scripts/lib/upstream-skills.mjs`, so a later
+`upstream-skills --refresh` re-applies it instead of reverting it.
+
+| Skill | Narrowing | Agent Compass rule |
+| ----- | --------- | ------------------ |
+| `ai-coding-agent-guardrails` | permits reading `.env.example` and `.env.*.example` | [`env-var-sync`](knowledge/instincts/env-var-sync.md) requires an agent to keep those templates in sync |
+| `database-backups` | `mysqldump` and `xtrabackup` read credentials from a `0600` defaults file | [security.md](docs/guidelines/security.md) forbids a secret in `argv` |
+| `mysql` | same, for both `xtrabackup` examples | same |
+| `redis` | one `REDISCLI_AUTH` export replaces 18 `redis-cli -a <password>` calls | same; the vendor recommends the variable over `-a` |
+| `azure-vms` | omits `--admin-password`, so the CLI prompts | same |
+| `openclaw-local-mac-mini` | trailing `security … -w` with no value, so the tool prompts | same |
+| `mdm-device-management` | replaces an invented `fleet setup` command with the documented web setup screen | same; the vendor documents no such command |
+| `gcp-cloud-sql`, `azure-sql`, `azure-keyvault`, `identity-access-management` | state that the password is exposed and must be rotated | same; these CLIs accept a password only in `argv` |
+
+This file is the notice for the imported corpus, so it travels with the copies.
+`skills-sync` writes it beside the synced skills whenever at least one imported
+skill is included, because an imported skill carries no `LICENSE` of its own. A
+skill vendored from another project keeps its own `LICENSE` inside its folder and
+needs no corpus-wide notice.
+
 MIT License
 
 Copyright (c) 2026 Toby Miller

@@ -186,7 +186,13 @@ gunzip < /backups/mydb_2025-01-15.sql.gz | mysql -u root -p mydb
 sudo apt install -y percona-xtrabackup-80
 
 # Full backup
-xtrabackup --backup --user=root --password=secret \
+# Credentials go in a 0600 file, never in argv: the process list is public.
+# Export MYSQL_ROOT_PASSWORD from your secret store first, never a literal here.
+( umask 077; printf '[xtrabackup]\nuser=root\npassword=%s\n' \
+  "$MYSQL_ROOT_PASSWORD" > "$HOME/.my-backup.cnf" )
+
+# --defaults-extra-file must be the first option on the command line.
+xtrabackup --defaults-extra-file="$HOME/.my-backup.cnf" --backup \
   --target-dir=/backups/full_$(date +%F)
 
 # Prepare the backup (apply redo logs)
@@ -204,7 +210,8 @@ sudo systemctl start mysql
 
 ```bash
 # Incremental based on the full backup
-xtrabackup --backup --user=root --password=secret \
+# Reuses the 0600 defaults file written in the full-backup step above.
+xtrabackup --defaults-extra-file="$HOME/.my-backup.cnf" --backup \
   --target-dir=/backups/inc_$(date +%F) \
   --incremental-basedir=/backups/full_2025-01-15
 

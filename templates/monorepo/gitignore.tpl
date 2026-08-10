@@ -1,13 +1,35 @@
+# Two traps of this file format. Read them before you edit a pattern.
+#
+# 1. `#` opens a comment only at the start of a line. Text after a pattern on
+#    the same line becomes part of that pattern. The pattern then matches
+#    nothing, and git reports no error. Put every comment on its own line, like
+#    this one.
+# 2. A pattern without a leading slash matches at any depth. `coverage/` below
+#    also hides `packages/api/coverage/`, with no warning. Write `/coverage/`
+#    when the pattern must match the repository root only. For the same reason,
+#    `coverage/` needs no `**/coverage/` twin.
+
 node_modules/
 .venv/
-.DS_Store
 .turbo/
 .idea/
 .vscode/settings.json
 coverage/
-**/coverage/
-**/.eslintcache
+.eslintcache
 *.log
+
+# OS metadata. Git ignores these files. A packaging step that copies the working
+# tree still copies them into the artifact, so the packaging step must strip the
+# same set — see the "Strip OS metadata before packaging" note in
+# templates/README.md. `._*` are AppleDouble sidecars: macOS writes one next to
+# every file on a filesystem that cannot hold extended attributes, such as SMB
+# and exFAT. They are the most numerous of the set.
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
 
 # Environment variables may contain secrets.
 .env
@@ -38,7 +60,6 @@ tasks/todo.md
 
 # Scanner/build outputs.
 .scannerwork/
-**/.scannerwork/
 sonar-report/
 sonar-report*.html
 sonar-issues*.csv

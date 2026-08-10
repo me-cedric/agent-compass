@@ -63,6 +63,13 @@ az sql server create \
   --enable-public-network false \
   --minimal-tls-version 1.2
 
+# The password above is visible in the process list. To remove it entirely, create
+# the server with Microsoft Entra-only authentication and no SQL admin login:
+#   az sql server create --enable-ad-only-auth \
+#     --external-admin-principal-type Group --external-admin-name "SQL Admins" \
+#     --external-admin-sid "{aad-group-object-id}" ...
+# https://learn.microsoft.com/en-us/cli/azure/sql/server#az-sql-server-create
+
 # Enable Azure AD authentication
 az sql server ad-admin create \
   --resource-group database-rg \
@@ -209,6 +216,11 @@ az sql server create \
   --admin-user sqladmin \
   --admin-password 'S3cur3P@ssw0rd!'
 
+> The Azure CLI accepts this secret only as a command-line argument, and the
+> process list is readable by every other local process. Treat any secret in
+> these commands as exposed: generate it, use it once, and rotate it as soon as
+> the operation is complete.
+
 az sql failover-group create \
   --resource-group database-rg \
   --server myapp-sqlserver \
@@ -288,6 +300,11 @@ az sql db export \
   --storage-key "{storage-account-key}" \
   --storage-uri "https://mystorageacct.blob.core.windows.net/backups/myapp-db.bacpac"
 ```
+
+> The Azure CLI accepts this secret only as a command-line argument, and the
+> process list is readable by every other local process. Treat any secret in
+> these commands as exposed: generate it, use it once, and rotate it as soon as
+> the operation is complete.
 
 ## Performance Tuning
 

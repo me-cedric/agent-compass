@@ -21,7 +21,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | Group             | Files                                                                          | Guide                                                |
 | ----------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | `agent-tools/`    | Index for provider-specific Codex, Claude, MCP, conformance, and eval templates | [agent-provider-capabilities](../docs/tooling/agent-provider-capabilities.md) |
-| `monorepo/`       | `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.prettierrc`, `.prettierignore`, `commitlint.config.js`, `.nvmrc`, `.npmrc`, `env.example.tpl`, `gitignore.tpl`, `husky/{pre-commit,pre-push,commit-msg,post-merge}` | [pnpm](../docs/tooling/pnpm.md), [turbo](../docs/tooling/turbo.md), [husky](../docs/tooling/husky.md), [version-pinning](../docs/tooling/version-pinning.md) |
+| `monorepo/`       | `README.md`, `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.prettierrc`, `.prettierignore`, `commitlint.config.js`, `.nvmrc`, `.npmrc`, `env.example.tpl`, `gitignore.tpl`, `gitattributes.tpl`, `husky/{pre-commit,pre-push,commit-msg,post-merge}` | [monorepo/README](monorepo/README.md), [pnpm](../docs/tooling/pnpm.md), [turbo](../docs/tooling/turbo.md), [husky](../docs/tooling/husky.md), [version-pinning](../docs/tooling/version-pinning.md) |
 | `eslint/`         | `eslint.config.{nestjs,react,expo}.mjs`                                         | per-stack lint                                       |
 | `docker/`         | `Dockerfile.{nestjs,web}`, `.dockerignore`, `docker-compose.local.example.yml`  | [docker](../docs/tooling/docker.md)                  |
 | `sonar/`          | `sonar-project.{api,web}.properties`                                            | [sonarqube](../docs/tooling/sonarqube.md)            |
@@ -56,3 +56,21 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 - CI files are `.example.yml` so they don't run if copied verbatim — adapt and
   rename to activate.
 - Never add real secrets. Env templates ship placeholders only.
+
+## Strip OS metadata before packaging
+
+A packaging step copies the working tree as it is on disk. `.gitignore` hides OS
+metadata from git, but it does not remove the file, so `.DS_Store`, `._*`
+AppleDouble sidecars, `Thumbs.db` and `desktop.ini` still reach the artifact. One
+Linux package build already contained a `.DS_Store` for exactly this reason.
+
+- Ignore the set in [`monorepo/gitignore.tpl`](monorepo/gitignore.tpl), and strip
+  the same set in every step that copies files into an artifact: the archive
+  step ([`scripts/checkmarx-package.sh`](scripts/checkmarx-package.sh)), the
+  image build context ([`docker/.dockerignore`](docker/.dockerignore)), and any
+  bundler that copies a resource directory.
+- Keep the lists aligned, and say so in a comment on both sides. A packaging step
+  that archives a subtree can drop `.Spotlight-V100` and `.Trashes`: macOS writes
+  those two at a volume root only. A drift in the other four is invisible until
+  someone unpacks the artifact.
+- Review hides the problem: the junk files are ignored, so no diff shows them.

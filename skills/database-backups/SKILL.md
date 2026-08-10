@@ -126,7 +126,12 @@ FILENAME="${BACKUP_DIR}/${DB_NAME}_${DATE}.sql.gz"
 
 mkdir -p "$BACKUP_DIR"
 
-mysqldump -u "$DB_USER" -p"$DB_PASS" \
+# Credentials go in a 0600 file, never in argv: the process list is public.
+# Create it with a tight umask; a chmod after the write leaves a readable window.
+( umask 077; printf '[client]\nuser=%s\npassword=%s\n' "$DB_USER" "$DB_PASS" > "$HOME/.my-dump.cnf" )
+
+# --defaults-extra-file must be the first option on the command line.
+mysqldump --defaults-extra-file="$HOME/.my-dump.cnf" \
   --single-transaction \
   --routines \
   --triggers \
@@ -145,9 +150,13 @@ set -euo pipefail
 
 BACKUP_DIR="/backups/mysql/full_$(date +%Y%m%d)"
 
-xtrabackup --backup \
-  --user=backup_user \
-  --password="${MYSQL_BACKUP_PASSWORD}" \
+# Credentials go in a 0600 file, never in argv: the process list is public.
+# Create it with a tight umask; a chmod after the write leaves a readable window.
+( umask 077; printf '[xtrabackup]\nuser=backup_user\npassword=%s\n' \
+  "${MYSQL_BACKUP_PASSWORD}" > "$HOME/.my-backup.cnf" )
+
+# --defaults-extra-file must be the first option on the command line.
+xtrabackup --defaults-extra-file="$HOME/.my-backup.cnf" --backup \
   --target-dir="$BACKUP_DIR"
 
 xtrabackup --prepare --target-dir="$BACKUP_DIR"

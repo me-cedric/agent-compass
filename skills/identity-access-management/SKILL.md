@@ -318,6 +318,11 @@ az ad group member add --group "$GROUP_OID" --member-id "$USER_OID"
 az ad group member list --group "SG-Engineering" --query '[].{name:displayName, email:userPrincipalName}' -o table
 ```
 
+> The Azure CLI accepts this secret only as a command-line argument, and the
+> process list is readable by every other local process. Treat any secret in
+> these commands as exposed: generate it, use it once, and rotate it as soon as
+> the operation is complete.
+
 ### Conditional Access Policies via Graph API
 
 ```bash
@@ -692,6 +697,11 @@ az monitor activity-log alert create \
   --condition category=Administrative and caller=breakglass1@company.onmicrosoft.com \
   --action-group "/subscriptions/SUB_ID/resourceGroups/security-rg/providers/microsoft.insights/actionGroups/SecurityTeam"
 ```
+
+> The Azure CLI accepts this secret only as a command-line argument, and the
+> process list is readable by every other local process. Treat any secret in
+> these commands as exposed: generate it, use it once, and rotate it as soon as
+> the operation is complete.
 
 ---
 

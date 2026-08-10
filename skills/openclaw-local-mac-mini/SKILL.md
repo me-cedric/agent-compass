@@ -275,8 +275,15 @@ cp .env.example .env
 
 ```bash
 # Store API keys in macOS Keychain instead of plaintext .env
-security add-generic-password -a openclaw -s "OPENAI_API_KEY" -w "sk-your-key-here"
-security add-generic-password -a openclaw -s "ANTHROPIC_API_KEY" -w "sk-ant-your-key-here"
+# Put -w last. Give it no value. `security` then prompts for the key, and no
+# secret reaches argv.
+# security(1) states: "-w password  Specify password to be added. Put at end of
+# command to be prompted (recommended)".
+# The command prompts twice: "password data for new item:" and then "retype
+# password for new item:". It reads both prompts from stdin. An unattended
+# script therefore blocks unless it pipes the value in twice.
+security add-generic-password -a openclaw -s "OPENAI_API_KEY" -w
+security add-generic-password -a openclaw -s "ANTHROPIC_API_KEY" -w
 
 # Retrieve a secret from Keychain in scripts
 OPENAI_API_KEY=$(security find-generic-password -a openclaw -s "OPENAI_API_KEY" -w)

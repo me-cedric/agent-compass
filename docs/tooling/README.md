@@ -11,7 +11,7 @@ Concrete setup guides. Each points at runnable files in
 | [headroom.md](headroom.md)                     | Session-level context compression (wrap/proxy/MCP); layers over rtk. |
 | [pnpm.md](pnpm.md)                             | Workspaces, filters, `.npmrc`, `packageManager` pin.    |
 | [turbo.md](turbo.md)                           | Task pipeline, caching, the `check` verb.               |
-| [version-pinning.md](version-pinning.md)       | `.nvmrc`, `.npmrc`, `packageManager`, engines.          |
+| [version-pinning.md](version-pinning.md)       | `.nvmrc`, `.npmrc`, `packageManager`, engines, Rust channel vs MSRV. |
 | [github-actions.md](github-actions.md)         | Required GitHub Action majors and CI template policy.   |
 | [husky.md](husky.md)                           | `pre-commit`, `pre-push`, `commit-msg` hooks.           |
 | [mcp.md](mcp.md)                               | MCP setup, projectmem, Figma design context.            |

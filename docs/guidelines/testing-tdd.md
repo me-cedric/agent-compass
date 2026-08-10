@@ -28,6 +28,25 @@ regression test, or explicitly justify why no automated test fits (docs/config
 only, external integration not mockable in unit scope). Prefer the closest unit
 test; escalate to integration/e2e only when behavior crosses module boundaries.
 
+## Name a test after the rule it defends
+
+Write the test name as a sentence that states the rule. A failure then names the
+broken rule, and not the mechanism that broke.
+
+Four names from one command-line integration module show the shape:
+
+- `only_the_bypass_tier_carries_a_blanket_bypass`
+- `an_unknown_mode_resolves_to_the_safest_tier`
+- `a_refused_permission_names_the_tool_that_was_refused`
+- `the_rate_limit_event_is_read_instead_of_guessed_from_an_error`
+
+Each name is an invariant. A reader who sees one of them in a failing run knows
+what the code must guarantee, without opening the file.
+
+Prefer this over a name that repeats the function under test (`test_parse_mode`,
+`handles_error`). Keep the ecosystem convention: `snake_case` for Rust and
+Python, and a `describe` plus `it` sentence for Jest and Vitest.
+
 ## Patterns (NestJS / TS reference)
 
 - Prefer `jest-mock-extended` + `Test.createTestingModule()`.

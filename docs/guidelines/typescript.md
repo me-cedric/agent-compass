@@ -9,6 +9,23 @@ external data at the boundary (parse, don't cast). Shared config lives in a
 `tsconfig.base.json` that apps extend — see
 [`templates/monorepo/tsconfig.base.json`](../../templates/monorepo/tsconfig.base.json).
 
+## Type-check every project, not the default one
+
+A `tsconfig.json` `include` covers the directories it names, and nothing else. A
+repository with more than one `tsconfig*.json` therefore leaves the extra
+projects unchecked until the command names each one.
+
+Count the `tsconfig*.json` files, then give the `typecheck` script one pass per
+project:
+
+```json
+"typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.e2e.json && tsc -p tsconfig.node.json"
+```
+
+E2E suites, build scripts, and config files usually live in the extra projects.
+They break silently while the default project stays green. Add a project to the
+script in the same change that adds its `tsconfig`.
+
 ## API response envelope
 
 Use one consistent envelope across services and clients:

@@ -58,7 +58,13 @@ The generated DESIGN.md includes:
 - **Technology choices** — language and dependencies auto-detected
 - **Trade-offs** — known limitations and tech-debt template
 - **Security considerations** — threat model and mitigations template
+- **Cross-cutting concerns** — security, privacy, observability, cost
+- **Open questions** — the undecided points, and who decides each
 - **Change history** — initial version entry
+
+`verify-module` blocks delivery on this section list. Change the generator, this
+list, and the [`verify-module`](../verify-module/SKILL.md) checklist in the same
+commit.
 
 ## Analysis
 

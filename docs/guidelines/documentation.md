@@ -19,10 +19,29 @@ contents:
 - **Spec locations** — where the OpenAPI/Scalar, Bruno, and Gherkin live (API modules).
 - **Test command** — how to run this module's tests.
 
-Larger or non-obvious modules add a **`DESIGN.md`** (rationale, trade-offs,
-alternatives considered). Examples:
+Examples:
 [`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md),
 [`module-readme.external-service.example.md`](../../knowledge/examples/module-readme.external-service.example.md).
+
+## DESIGN.md — one fixed section list
+
+Larger or non-obvious modules add a **`DESIGN.md`** for rationale, trade-offs and
+alternatives. Use a fixed section list, because a fixed list makes the document
+reviewable: a reviewer, or an agent, checks each section for presence and for
+strength instead of guessing what is absent.
+
+**One place owns that list.** [`gen-docs`](../../skills/gen-docs/SKILL.md)
+scaffolds the sections and [`verify-module`](../../skills/verify-module/SKILL.md)
+blocks delivery on them, so the checklist in `verify-module` is the list. Change
+it there, and change the generator in the same commit. Three copies of one
+section list always drift.
+
+Two sections are easy to omit and expensive to lack:
+
+- **Cross-cutting concerns** — security, privacy, observability, cost. A design
+  that names no consequence in any of the four has not looked for one.
+- **Open questions** — the decisions that are not yet made. A design with no open
+  questions is either finished or dishonest.
 
 ## Project README
 
@@ -38,6 +57,24 @@ Every env var the app reads appears in `.env.example` with a comment. When a
 var is added, renamed, or removed, update the validation schema and committed
 local-development env template in the same change. Never commit real `.env`.
 See [tooling/env-management.md](../tooling/env-management.md).
+
+## One language per audience
+
+A team can read one language and still want its agent-facing text in another. Do
+not leave that split implicit. Record the choice per audience, in the
+documentation index, so a writer never has to guess.
+
+Record two lists:
+
+- **Human-facing** — the documentation folder, the root README, release notes,
+  and the user-visible changelog.
+- **Agent-facing or tool-facing** — `AGENTS.md`, the per-provider pointer files,
+  the skills folder, third-party notices, and code comments.
+
+Then state the rule for new files: a new document follows the language of its
+audience. Name no default language here; the project chooses the pair. A
+mixed-language repository with no recorded rule drifts, because each author
+applies a different guess.
 
 ## Imposed vocabulary
 

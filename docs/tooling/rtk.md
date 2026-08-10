@@ -166,3 +166,41 @@ layer; rtk remains the zero-infra, offline command compactor.
 > This section lives outside the `rtk-instructions` markers above so `rtk init`
 > will not overwrite it.
 
+## Verify you installed the right binary
+
+Two different tools are published as `rtk`. This document means
+[`rtk-ai/rtk`](https://github.com/rtk-ai/rtk), the Rust Token Killer. The other
+one is `reachingforthejack/rtk`, a Rust Type Kit, and it has no command filters.
+
+Check the install:
+
+```bash
+rtk --version
+rtk gain
+```
+
+If `rtk gain` fails, you have the wrong binary.
+
+## Make it automatic
+
+An agent that must remember to type `rtk` will forget. A `PreToolUse` hook that
+rewrites a raw command to its `rtk` equivalent removes the need to remember. Run
+`rtk gain` to see what the hook saved, and `rtk discover` to find commands still
+spending full tokens.
+
+## The same economy without any tool
+
+These habits cost nothing to adopt and work in every harness:
+
+1. Read the part of a file you need, not the whole file.
+2. Delegate a broad search to a sub-agent and keep its conclusion, not the files
+   it read.
+3. Ask a command for the summary it already knows how to print, rather than
+   printing everything and reading it yourself.
+4. Reuse a result you already have in context instead of recomputing it.
+5. Prefer one precise command over three exploratory ones.
+
+The prose half of the same goal is the
+[style contract](../guidelines/style-contract.md): `caveman` for chat,
+`caveman-commit` and `caveman-review` for commits and pull request comments.
+

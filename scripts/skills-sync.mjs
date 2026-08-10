@@ -1,13 +1,26 @@
 #!/usr/bin/env node
 // skills-sync.mjs — copy or symlink Agent Compass skills into host provider dirs.
 
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
+import { cpSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CAPABILITY_PACKS, selectCapabilityPacks } from './lib/capability-packs.mjs'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
+
+// The imported operational skills are adapted from an MIT corpus. A skill folder
+// vendored from elsewhere keeps its own LICENSE, but an imported skill carries
+// only a `## Provenance` block, and the lock forbids extra files in its folder.
+// MIT asks for the copyright and permission notice in every copy, so the notices
+// file has to travel with the copies. See
+// knowledge/instincts/vendored-corpus-manifest.md, section 5.
+const NOTICES = 'THIRD_PARTY_NOTICES.md'
+const importedSkillNames = () => {
+  const lockPath = join(AC, 'skills', 'upstream-lock.json')
+  if (!existsSync(lockPath)) return new Set()
+  try { return new Set(Object.keys(JSON.parse(readFileSync(lockPath, 'utf8')).skills || {})) } catch { return new Set() }
+}
 
 const { values, positionals } = parseCliArgs({
   name: 'skills-sync',
@@ -74,6 +87,9 @@ if (requested) {
 } else if (!all) {
   skills = skills.filter((d) => !capabilitySkills.has(d.name))
 }
+const imported = importedSkillNames()
+const carriesNotices = skills.some((skill) => imported.has(skill.name))
+
 for (const [, relDir] of selected) {
   const dir = join(root, relDir)
   if (!dry) mkdirSync(dir, { recursive: true })
@@ -88,5 +104,14 @@ for (const [, relDir] of selected) {
     if (mode === 'symlink') symlinkSync(src, dest, 'dir')
     else cpSync(src, dest, { recursive: true })
   }
+  // An imported skill has no LICENSE of its own, so the notices file goes next to
+  // the synced skills. Symlink mode gets it too: the host still holds a copy.
+  if (!dry && carriesNotices && existsSync(join(AC, NOTICES))) {
+    copyFileSync(join(AC, NOTICES), join(dir, NOTICES))
+  }
 }
-if (!dry) console.log(`synced ${skills.length} skills to ${selected.map(([, d]) => d).join(', ')} (${mode})`)
+// Dry output stays one line per skill operation, so callers can count it.
+if (!dry) {
+  console.log(`synced ${skills.length} skills to ${selected.map(([, d]) => d).join(', ')} (${mode})`)
+  if (carriesNotices) console.log(`copied ${NOTICES} — imported skills are MIT and their notice travels with them`)
+}

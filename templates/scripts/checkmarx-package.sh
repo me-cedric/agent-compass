@@ -36,8 +36,15 @@ package_module() {
         return 1
     fi
     
-    # Create ZIP with only source directories
+    # Create ZIP with only source directories.
+    # The OS metadata excludes are not redundant with .gitignore: this step
+    # copies the working tree, so a gitignored .DS_Store or AppleDouble sidecar
+    # still lands in the artifact. Every packaging step needs its own strip.
     zip -r "$PROJECT_ROOT/$output_file" $source_dirs \
+        -x "*/.DS_Store" \
+        -x "*/._*" \
+        -x "*/Thumbs.db" \
+        -x "*/desktop.ini" \
         -x "*/node_modules/*" \
         -x "*/.turbo/*" \
         -x "*/dist/*" \

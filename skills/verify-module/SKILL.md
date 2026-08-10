@@ -71,11 +71,17 @@ module/
 
 ### DESIGN.md must cover
 
-- [ ] **Design goals** — the problem being solved
+- [ ] **Design goals** — the problem being solved, and the non-goals
 - [ ] **Options considered** — alternatives and why this one won
 - [ ] **Key decisions** — important technical decisions and rationale
+- [ ] **Cross-cutting concerns** — security, privacy, observability, cost
 - [ ] **Known limitations** — where the current design falls short
+- [ ] **Open questions** — decisions that are not yet made
 - [ ] **Change history** — record of major changes
+
+This checklist is the section list for a `DESIGN.md`. `gen-docs` scaffolds it and
+[documentation.md](../../docs/guidelines/documentation.md) states the rule. Change
+all three in the same commit.
 
 ## Auto-trigger moments
 

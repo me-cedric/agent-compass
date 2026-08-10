@@ -30,7 +30,11 @@ test('unified CLI lists capability packs and dispatches pack sync', async () => 
     const synced = await runNode([cli, 'skills-sync', host, '--pack', 'devops-platform', '--target', 'agents'])
     assert.equal(synced.code, 0, synced.stderr)
     assert.match(synced.stdout, /synced 22 skills/)
-    assert.equal((await readdir(join(host, '.agents', 'skills'))).length, 22)
+    const entries = await readdir(join(host, '.agents', 'skills'))
+    // The imported skills are MIT and carry no LICENSE of their own, so their
+    // notice travels next to them. It is a sibling of the skill folders.
+    assert.ok(entries.includes('THIRD_PARTY_NOTICES.md'), 'imported skills must ship their MIT notice')
+    assert.equal(entries.filter((entry) => entry !== 'THIRD_PARTY_NOTICES.md').length, 22)
     assert.ok((await readdir(join(host, '.agents', 'skills', 'github-actions'))).includes('SKILL.md'))
   } finally {
     await rm(host, { recursive: true, force: true })
@@ -73,6 +77,30 @@ test('default sync excludes capability packs and --all includes them', async () 
     const all = await runNode([script, host, '--target', 'agents', '--all', '--dry'])
     assert.equal(all.code, 0, all.stderr)
     assert.match(all.stdout, /would copy github-actions -> \.agents\/skills/)
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('the MIT notice ships only when an imported skill ships', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-skills-notice-'))
+  try {
+    // An imported skill has no LICENSE of its own, so the notice must follow it.
+    const imported = await runNode([script, host, '--only', 'container-scanning', '--target', 'agents'])
+    assert.equal(imported.code, 0, imported.stderr)
+    assert.ok((await readdir(join(host, '.agents', 'skills'))).includes('THIRD_PARTY_NOTICES.md'))
+
+    // A skill vendored with its own LICENSE needs no corpus-wide notice.
+    const own = await mkdtemp(join(tmpdir(), 'ac-skills-notice-'))
+    try {
+      const result = await runNode([script, own, '--only', 'ponytail', '--target', 'agents'])
+      assert.equal(result.code, 0, result.stderr)
+      const entries = await readdir(join(own, '.agents', 'skills'))
+      assert.deepEqual(entries, ['ponytail'])
+      assert.ok((await readdir(join(own, '.agents', 'skills', 'ponytail'))).includes('LICENSE'))
+    } finally {
+      await rm(own, { recursive: true, force: true })
+    }
   } finally {
     await rm(host, { recursive: true, force: true })
   }

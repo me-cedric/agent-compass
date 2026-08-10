@@ -44,6 +44,40 @@ node scripts/release.mjs 0.3.0 --commit --tag
 
 Do not tag an unvalidated tree.
 
+## Host projects: a release that attaches build artifacts
+
+A host project that ships binaries builds one artifact per operating system.
+Each job uploads to the **same** release tag, so the jobs race each other. One
+job creates the release. The others arrive after it. These rules keep that safe.
+
+- **Treat "release already exists" as success.** The forge answers `HTTP 409`
+  when the tag already carries a release. Catch that one status, then attach the
+  asset links to the existing release. Any other status is still a failure.
+- **Create or amend, never create only.** A job that fails on 409 makes the
+  release depend on job order. The last platform to finish then has no assets.
+- **Re-point an asset on a re-run.** A forge keeps asset names unique inside one
+  release, so a second link of the same name fails. Delete the old link first.
+- **Upload the file first, create the release second.** The release description
+  links to artifacts that already exist, so a reader never meets a dead link.
+- **Fail on a missing artifact before the upload.** Say which directory was
+  empty and which build command produces it.
+
+### Check the system build dependencies first
+
+A native build needs system libraries that `npm` or `cargo` never installs.
+Probe for them at the start of the script, and stop with the install command:
+
+```bash
+if ! pkg-config --exists <library>; then
+  echo "<library> not found. Run: <the install command for this platform>" >&2
+  exit 1
+fi
+```
+
+A missing library surfaces deep inside the compile, as a build-script or linker
+error. The reader cannot act on it. A preflight check gives one line and one
+command.
+
 ## Manual fallback
 
 1. Ensure `CHANGELOG.md` has a dated section for the release.
