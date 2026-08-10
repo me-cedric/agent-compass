@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-10
+
 ### Added
 
 - Delivery reporting and specification chain, promoted from a real project: the
