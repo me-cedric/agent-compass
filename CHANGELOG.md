@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-08-11
+
 ### Added
 
 - `ai-native-ui-patterns` — the UI skill for agent surfaces: seven behavioural
