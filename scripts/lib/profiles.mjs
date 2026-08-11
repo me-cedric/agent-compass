@@ -41,11 +41,14 @@ export const PROFILES = {
   },
   // The design skills split by surface: a dense product UI and a landing page
   // want opposite advice, so a stack gets one group, never both.
+  // `ai-native-ui-patterns` is orthogonal — it covers agent-surface behaviour,
+  // not taste, so it ships with every frontend stack alongside either group.
   'angular-web': {
     label: 'Angular app',
     skills: [
       'angular-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
+      'ai-native-ui-patterns',
     ],
     templates: ['templates/mcp'],
     docs: ['docs/tooling/mcp-servers.md'],
@@ -55,6 +58,7 @@ export const PROFILES = {
     skills: [
       'react-admin-dashboard-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
+      'ai-native-ui-patterns',
     ],
     templates: ['templates/design-system', 'templates/eslint'],
     docs: [],
@@ -65,6 +69,7 @@ export const PROFILES = {
       'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'design-taste-frontend', 'industrial-brutalist-ui', 'stitch-design-taste',
       'imagegen-frontend-web', 'image-to-code', 'brandkit',
+      'ai-native-ui-patterns',
     ],
     templates: ['templates/design-system', 'templates/docker'],
     docs: [],
@@ -74,7 +79,7 @@ export const PROFILES = {
     skills: [
       'expo-react-native-patterns', 'figma-mcp-frontend',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
-      'imagegen-frontend-mobile',
+      'imagegen-frontend-mobile', 'ai-native-ui-patterns',
     ],
     templates: ['templates/eslint'],
     docs: [],

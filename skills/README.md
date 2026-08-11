@@ -107,6 +107,13 @@ All ten taste skills are MIT, vendored from
 [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) — each keeps its
 `LICENSE` and a `## Provenance` block.
 
+**AI-native surfaces** — behaviour and structure rather than taste, so it
+combines with either taste group above.
+
+| Skill                   | What it does                                                        |
+| ----------------------- | ------------------------------------------------------------------ |
+| `ai-native-ui-patterns` | The primitives of an agent interface — streaming answers with citations, reasoning traces, tool chips, approval gates, proposed diffs — with a two-theme token layer, a motion contract, and the states each primitive must handle. |
+
 ### Quality gates
 
 | Skill             | What it does                                              |

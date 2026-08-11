@@ -5,6 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `ai-native-ui-patterns` — the UI skill for agent surfaces: seven behavioural
+  laws (no unqualified spinner, work shown but collapsed, provenance on every
+  claim, rendered uncertainty, an approval gate before any side effect, propose
+  rather than apply, output as material), a catalogue of nineteen primitives
+  with the states each must handle, the streaming mechanics that usually break
+  (reserved block, one live region, conditional autoscroll, partial text kept on
+  error), an accessibility contract, and a bundled two-theme `tokens.css` with
+  the surface/ink ladders and the motion contract. Behaviour rather than taste,
+  so it joins every frontend stack — `angular-web`, `react-web`, `next-web`,
+  `expo-mobile` — alongside either taste group.
+
 ## [0.7.2] - 2026-08-10
 
 ### Added

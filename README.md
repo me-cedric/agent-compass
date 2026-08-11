@@ -8,7 +8,7 @@
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
 <!-- BEGIN GENERATED:SKILL_BADGE -->
-![Skills](https://img.shields.io/badge/skills-220-orange)
+![Skills](https://img.shields.io/badge/skills-221-orange)
 <!-- END GENERATED:SKILL_BADGE -->
 ![Ops Packs](https://img.shields.io/badge/ops%20packs-146-red)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
