@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-08-13
+
 ### Added
 
 - `qa-review-pass` — the tester half of the delivery chain, beside
