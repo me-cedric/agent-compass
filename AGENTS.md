@@ -178,6 +178,48 @@ For every behavior change, do one of:
 Prefer the closest unit test first; use integration/e2e only when behavior
 crosses module boundaries. Target ≥ 80% coverage on changed code.
 
+**A change the user can see also owes visual proof.** A unit test that asserts a
+class name does not prove a rendered pixel. Capture the screen with Playwright
+at the project's viewport matrix and compare it against its reference — a Figma
+export, a generated HTML preview, or a mockup. See
+[`visual-regression-playwright`](skills/visual-regression-playwright/SKILL.md)
+and the [`ui-change-needs-visual-proof`](knowledge/instincts/ui-change-needs-visual-proof.md)
+instinct. Two exceptions, and you must name the one you used: code behind a flag
+that nothing renders yet, and a pure refactor whose screenshots are
+byte-identical — in that case the identical screenshots *are* the proof. When
+the project has no Playwright setup, say so in the handoff and propose adding
+it. Never skip the proof silently.
+
+**A reviewer runs the pass, not the author.** When a QA tester, a Product Owner
+or a project manager asks whether the build matches the specification, use
+[`qa-review-pass`](skills/qa-review-pass/SKILL.md). It gives every requirement
+scenario a verdict, compares every screen against its reference, and splits each
+finding into a defect or a change request. It fixes nothing.
+
+## 6b. The documentation chain
+
+Documentation is a chain, not a set of files. A change to one link leaves every
+downstream link describing last week, and no type system and no test suite
+notices.
+
+**The agent that changed the first link owns telling the user what has not
+followed.** At the end of the turn, name each downstream artifact that is now
+stale, say why, and offer to update it now. Do **not** cascade the updates
+silently in the same pass: the user has not read the first change yet, and a
+plan they did not agree to is not a plan.
+
+Every documentation change also owes two reports — the developer impact note
+([`impact-analysis`](skills/impact-analysis/SKILL.md)) and the Product Owner
+digest ([`delivery-digest`](skills/delivery-digest/SKILL.md)) — because a change
+nobody was told about is a change the team discovers at merge time.
+
+The full edge list and the end-of-turn rule live in the
+[`documentation-chain-followthrough`](knowledge/instincts/documentation-chain-followthrough.md)
+instinct.
+
+An agent can report that a source moved. It cannot decide whether a downstream
+document is still *true*. Say which of the two you did.
+
 ## 7. Module documentation (enforced)
 
 Every module/package directory carries a `README.md`, kept in sync with the code.

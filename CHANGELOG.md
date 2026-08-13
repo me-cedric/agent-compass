@@ -5,6 +5,39 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `qa-review-pass` — the tester half of the delivery chain, beside
+  `impact-analysis` and `delivery-digest`. A QA tester, a Product Owner or a
+  project manager runs one pass against three sources of truth: the
+  specifications for the behaviour, the design document and the mockups for the
+  look, the contracts for the rest. Every `#### Scenario:` gets a verdict from a
+  closed five-word vocabulary, and a requirement with no automated test is
+  reported as `not-covered` rather than as `pass`. Every finding is split into a
+  defect, which breaches what the specification already says, and a change
+  request, which is the specification being wrong or absent — the distinction
+  that stops a team arguing about blame instead of about scope. It fixes
+  nothing. A pass writes **two files with one stem**: the markdown a person
+  reads, and a JSON matrix beside it, because a coverage table an agent typed
+  cannot be counted.
+- `visual-regression-playwright` — deterministic Playwright screenshots compared
+  against a Figma export, a generated HTML preview or a mockup image. Carries the
+  viewport matrix, the six determinism fixes that decide whether the check is
+  proof or noise, the reference-versus-capture convention, and how to read a diff
+  honestly. Ships with every frontend stack.
+- `ui-change-needs-visual-proof` instinct: a change the user can see arrives with
+  a screenshot that proves it. A class-name assertion is not a rendered pixel.
+  Two named exceptions, and silence is not one of them.
+- `documentation-chain-followthrough` instinct: the chain edge list, the two
+  reports every documentation change owes, and the end-of-turn rule — name what
+  went stale, offer to update it, never cascade silently.
+
+### Changed
+
+- `AGENTS.md` §6 now requires visual proof for a change the user can see, and
+  names the reviewer skill. A new §6b states the documentation chain rule: the
+  agent that changed the first link owns telling the user what has not followed.
+
 ## [0.7.3] - 2026-08-11
 
 ### Added

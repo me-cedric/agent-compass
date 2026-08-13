@@ -62,6 +62,8 @@ work: audit → scope → split → detail.
 | `spec-drift-triage`       | Triages a spec that moved after its tickets existed: what changed, what to do, is it a change request. |
 | `impact-analysis`         | The developer half of a change report: seven impact axes, stale documents, ordered action plan. |
 | `delivery-digest`         | The Product Owner half: plain-language, forward-safe digest with strict redaction rules. |
+| `qa-review-pass`          | The tester half: every requirement scenario given a verdict, every screen compared against its reference, each finding split into a defect or a change request. |
+| `visual-regression-playwright` | Deterministic Playwright screenshots compared against a Figma export, an HTML preview or a mockup. The proof a user-interface change owes. |
 
 ### Design & taste
 

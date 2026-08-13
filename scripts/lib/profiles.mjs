@@ -20,6 +20,8 @@ export const CORE_PROFILE = {
     // Delivery reporting and the RAID/ticket chain around the specs.
     'impact-analysis', 'delivery-digest', 'harvest-questions',
     'split-tasks-by-profile', 'spec-to-tickets', 'spec-drift-triage',
+    // The review pass that closes the loop: does the build match the specs?
+    'qa-review-pass',
     // Sketch and model conversions that feed decisions and specs.
     'excalidraw-to-adr', 'excalidraw-to-likec4', 'likec4-to-openspec',
   ],
@@ -48,7 +50,7 @@ export const PROFILES = {
     skills: [
       'angular-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
-      'ai-native-ui-patterns',
+      'ai-native-ui-patterns', 'visual-regression-playwright',
     ],
     templates: ['templates/mcp'],
     docs: ['docs/tooling/mcp-servers.md'],
@@ -58,7 +60,7 @@ export const PROFILES = {
     skills: [
       'react-admin-dashboard-patterns', 'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
-      'ai-native-ui-patterns',
+      'ai-native-ui-patterns', 'visual-regression-playwright',
     ],
     templates: ['templates/design-system', 'templates/eslint'],
     docs: [],
@@ -69,7 +71,7 @@ export const PROFILES = {
       'figma-mcp-frontend', 'figma-tokens-to-designmd',
       'design-taste-frontend', 'industrial-brutalist-ui', 'stitch-design-taste',
       'imagegen-frontend-web', 'image-to-code', 'brandkit',
-      'ai-native-ui-patterns',
+      'ai-native-ui-patterns', 'visual-regression-playwright',
     ],
     templates: ['templates/design-system', 'templates/docker'],
     docs: [],
@@ -79,7 +81,7 @@ export const PROFILES = {
     skills: [
       'expo-react-native-patterns', 'figma-mcp-frontend',
       'high-end-visual-design', 'minimalist-ui', 'redesign-existing-projects',
-      'imagegen-frontend-mobile', 'ai-native-ui-patterns',
+      'imagegen-frontend-mobile', 'ai-native-ui-patterns', 'visual-regression-playwright',
     ],
     templates: ['templates/eslint'],
     docs: [],

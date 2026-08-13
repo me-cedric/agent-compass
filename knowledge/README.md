@@ -49,10 +49,12 @@ material humans and agents *read* and *promote from*.
   [`verified-progress-signal`](instincts/verified-progress-signal.md),
   [`spec-status-sync`](instincts/spec-status-sync.md),
   [`provisioning-state-registry`](instincts/provisioning-state-registry.md),
-  [`one-artifact-root`](instincts/one-artifact-root.md).
+  [`one-artifact-root`](instincts/one-artifact-root.md),
+  [`documentation-chain-followthrough`](instincts/documentation-chain-followthrough.md).
 - **Testing:**
   [`testing-pattern`](instincts/testing-pattern.md),
   [`negative-assertion-precondition`](instincts/negative-assertion-precondition.md),
+  [`ui-change-needs-visual-proof`](instincts/ui-change-needs-visual-proof.md),
   [`e2e-gate-budget`](instincts/e2e-gate-budget.md).
 - **Build & packaging:**
   [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
