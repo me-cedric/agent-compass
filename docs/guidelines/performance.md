@@ -15,7 +15,11 @@ serial awaits that could be `Promise.all`. Add an index before rewriting a query
 - **Context budget.** Read the part of a file you need, not the whole file. Avoid
   the last ~20% of the context window for large multi-file refactors. Prefer
   targeted reads and code-intelligence tooling over broad grep.
-- **Parallelize** independent reads/searches and independent sub-tasks.
+- **Parallelize** independent reads/searches and independent sub-tasks. Send
+  independent tool calls in one batch; start independent subagents together.
+- **One writer per file.** Give each parallel subagent a file set that no other
+  subagent writes. Split by non-overlapping boundaries and merge the results in
+  the main thread. Never trade correctness for speed.
 
 ## Build troubleshooting
 

@@ -16,6 +16,10 @@ A task is complete only when you report: changed files, exact validation command
 run, each result (`passed`/`failed`/`partial`/`not run`), whether failures are
 pre-existing or introduced, and remaining risks.
 
+Deliver every item the request contains. If one item is blocked, deliver the
+other items and name the exact blocker in one sentence. "Needs more
+investigation" is not a blocker.
+
 Default command choice lives in
 [`../workflows/validation-defaults.md`](../workflows/validation-defaults.md):
 lint, typecheck, relevant tests, and build when config, routing, public exports,
@@ -53,8 +57,20 @@ hard-to-reverse or outward-facing actions (push, deploy, publish, delete,
 external sends), confirm first unless explicitly authorized. Approval in one
 context doesn't carry to the next.
 
+Cheap, reversible, in-scope work needs no confirmation: research, reads,
+analysis, drafts, and refactors inside the given scope. Do the work, then
+report. Fix a defect you find inside your scope; don't hand it back to the user
+as a task.
+
 ## Asking vs. deciding
 
 Ask when a decision is genuinely the user's and you can't resolve it from the
 request, the code, or a sensible default. Otherwise pick the obvious option,
 state the assumption, and proceed. One decision per question.
+
+## Questions vs. instructions
+
+When the user asks a question, answer it. Don't implement it. "Should we use X?"
+is not "migrate to X". "What would it take to add Y?" is not "add Y". When the
+intent is unclear, treat the message as a question, answer it, and act after the
+user agrees.

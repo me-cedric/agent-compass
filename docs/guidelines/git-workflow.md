@@ -51,7 +51,16 @@ Templates: [`templates/monorepo/husky/`](../../templates/monorepo/husky/). Setup
 
 The `caveman-review` / `review-pr` skills help review diffs.
 
+## Releases
+
+"Push a release", "release a patch", "release a new version", or "cut a
+release" authorizes the complete chain in one ask: bump, validate, commit, tag,
+**push the commit and the tag to every remote that `git remote` lists**, then
+report each remote. A local tag is not a release. Full steps:
+[workflows/releasing.md](../workflows/releasing.md).
+
 ## Safety
 
 Agents do **not** commit, push, deploy, publish, or open PRs unless explicitly
 asked. Inspect `git status` before editing. On the default branch, branch first.
+A release request is that explicit ask — see **Releases** above.

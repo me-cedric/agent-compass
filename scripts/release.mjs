@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// release.mjs — bump package.json + changelog; tag after validation if requested.
+// release.mjs — bump package.json + changelog + readme; tag and push after validation if requested.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -8,12 +8,13 @@ import { parseCliArgs } from './lib/args.mjs'
 const { values, positionals } = parseCliArgs({
   name: 'release',
   script: 'release.mjs',
-  summary: 'Bump package.json and CHANGELOG.md from Unreleased to a dated release section.',
+  summary: 'Bump package.json, CHANGELOG.md, and README.md from Unreleased to a dated release section.',
   positionals: [{ name: 'version', required: true }],
   options: {
-    commit: { type: 'boolean', desc: 'Commit package.json and CHANGELOG.md.' },
+    commit: { type: 'boolean', desc: 'Commit package.json, CHANGELOG.md, and README.md.' },
     tag: { type: 'boolean', desc: 'Create annotated v<version> tag. Requires --commit or clean tree.' },
-    dry: { type: 'boolean', desc: 'Print changes, do not write, commit, or tag.' },
+    push: { type: 'boolean', desc: 'Push HEAD and the v<version> tag to every configured remote. Requires --tag.' },
+    dry: { type: 'boolean', desc: 'Print changes, do not write, commit, tag, or push.' },
   },
 })
 
@@ -23,24 +24,36 @@ if (!version || !/^\d+\.\d+\.\d+/.test(version)) {
   process.exit(1)
 }
 
+if (values.push && !values.tag) {
+  console.error('--push requires --tag')
+  process.exit(1)
+}
+
 const dry = Boolean(values.dry)
 const date = new Date().toISOString().slice(0, 10)
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+const previous = pkg.version
 pkg.version = version
 const changelog = readFileSync('CHANGELOG.md', 'utf8').replace('## [Unreleased]', `## [Unreleased]\n\n## [${version}] - ${date}`)
+// check-release.mjs requires both markers to match package.json, so bump them here.
+const readme = readFileSync('README.md', 'utf8')
+  .replaceAll(`version-v${previous}`, `version-v${version}`)
+  .replaceAll(`Current version: \`${previous}\``, `Current version: \`${version}\``)
 
 if (dry) {
   console.log(`package.json version -> ${version}`)
   console.log(`CHANGELOG.md adds ## [${version}] - ${date}`)
+  console.log(`README.md version markers ${previous} -> ${version}`)
   process.exit(0)
 }
 
 writeFileSync('package.json', `${JSON.stringify(pkg, null, 2)}\n`)
 writeFileSync('CHANGELOG.md', changelog)
+writeFileSync('README.md', readme)
 
 if (values.tag) {
   if (values.commit) {
-    execFileSync('git', ['add', 'package.json', 'CHANGELOG.md'], { stdio: 'inherit' })
+    execFileSync('git', ['add', 'package.json', 'CHANGELOG.md', 'README.md'], { stdio: 'inherit' })
     execFileSync('git', ['commit', '-m', `chore: release v${version}`], { stdio: 'inherit' })
   } else {
     try {
@@ -52,6 +65,22 @@ if (values.tag) {
     }
   }
   execFileSync('git', ['tag', '-a', `v${version}`, '-m', `v${version}`], { stdio: 'inherit' })
+}
+
+if (values.push) {
+  const remotes = execFileSync('git', ['remote'], { encoding: 'utf8' })
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  if (remotes.length === 0) {
+    console.error('--push found no git remote')
+    process.exit(1)
+  }
+  for (const remote of remotes) {
+    execFileSync('git', ['push', remote, 'HEAD'], { stdio: 'inherit' })
+    execFileSync('git', ['push', remote, `v${version}`], { stdio: 'inherit' })
+    console.log(`pushed HEAD and v${version} to ${remote}`)
+  }
 }
 
 console.log(`Prepared v${version}`)

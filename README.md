@@ -278,7 +278,7 @@ Agent Compass is usable across real projects. Current version: `0.7.4`.
 | Figma | MCP guidance, frontend skill, and design-system extraction worksheet. |
 | Operations | 146 opt-in DevOps, security, infrastructure, and compliance skills with safety gates. |
 | CI | Node 24, latest tracked action majors, tests, naming/index/docs/action guards. |
-| Release | Changelog/version/tag guard and release helper script. |
+| Release | Changelog/version/tag guard and a release helper that tags and pushes to every remote. |
 
 ## Safety Model
 

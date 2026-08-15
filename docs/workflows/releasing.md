@@ -3,9 +3,27 @@
 Use this when publishing a reviewed agent-compass state for host projects to
 pin by tag.
 
+## What a release request means
+
+"Push a release", "release a patch", "release a new version", "cut a release",
+or an equivalent phrase is the explicit ask that `AGENTS.md` §10 requires. One
+such phrase authorizes and requires the complete chain below in a single pass.
+
+- Do not stop between the steps to ask again.
+- **A local tag is not a release.** The commit and the tag must reach the
+  remotes.
+- Push to **every** remote that `git remote` lists, not to `origin` alone. Push
+  to one remote only when the user names that remote.
+- Report each remote and its result in the handoff.
+
+`scripts/run-command.mjs` blocks a command that matches `push`, `release`, or
+`publish` until the caller adds `--confirm`. The user's release request is that
+confirmation, so pass `--confirm` when the dispatcher runs the command.
+
 ## Steps
 
-1. Prepare the version:
+1. Prepare the version. This bumps `package.json`, `CHANGELOG.md`, and the two
+   `README.md` version markers that `npm run lint:release` checks:
 
 ```bash
 node scripts/release.mjs 0.3.0
@@ -18,28 +36,30 @@ npm run check
 ```
 
 3. Commit the release changes with a conventional commit.
-4. Create an annotated tag:
+4. Create an annotated tag and verify the release metadata:
 
 ```bash
 git tag -a v0.3.0 -m "v0.3.0"
 npm run lint:release
 ```
 
-5. Push the commit and tag:
+5. Push the commit and the tag to every remote:
 
 ```bash
-git push origin HEAD
-git push origin v0.3.0
+for remote in $(git remote); do
+  git push "$remote" HEAD
+  git push "$remote" v0.3.0
+done
 ```
 
 6. Tell host projects to bump their submodule using
    [`upgrading.md`](upgrading.md).
 
-Shortcut after review, if you want the script to commit and tag the release
-metadata:
+Shortcut after review and validation. This runs steps 1, 3, 4, and 5 in one
+command:
 
 ```bash
-node scripts/release.mjs 0.3.0 --commit --tag
+node scripts/release.mjs 0.3.0 --commit --tag --push
 ```
 
 Do not tag an unvalidated tree.
@@ -95,9 +115,11 @@ git tag -a v0.3.0 -m "v0.3.0"
 npm run lint:release
 ```
 
-5. Push the commit and tag:
+5. Push the commit and the tag to every remote:
 
 ```bash
-git push origin HEAD
-git push origin v0.3.0
+for remote in $(git remote); do
+  git push "$remote" HEAD
+  git push "$remote" v0.3.0
+done
 ```

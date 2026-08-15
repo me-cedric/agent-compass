@@ -5,6 +5,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **A release request means publish.** `AGENTS.md` §10 now states that "push a
+  release", "release a patch", "release a new version", or "cut a release" is
+  the explicit ask that the safety rule requires, and that it authorizes the
+  whole chain: bump, validate, commit, tag, then push the commit and the tag to
+  **every** remote that `git remote` lists. A local tag alone is not a release.
+  `scripts/release.mjs` gains `--push` to run that push in one command, and
+  `docs/workflows/releasing.md` replaces the `origin`-only push with a loop over
+  every remote.
+- Three behaviour rules in `AGENTS.md` §2 that no rule covered before: answer a
+  question instead of implementing it; act on cheap reversible in-scope work and
+  fix a defect you find rather than reporting it back; run independent work in
+  parallel with one writer per file. `AGENTS.md` §4 adds the all-items rule —
+  deliver every item, or name the exact blocker in one sentence.
+
+### Fixed
+
+- `scripts/release.mjs` now bumps the two `README.md` version markers with
+  `package.json` and `CHANGELOG.md`. `scripts/check-release.mjs` requires those
+  markers, so `npm run lint:release` used to fail on every release until a
+  person edited the file by hand.
+
 ## [0.7.4] - 2026-08-13
 
 ### Added

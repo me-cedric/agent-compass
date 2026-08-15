@@ -66,6 +66,15 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
 - **Communicate concisely.** Prefer commands, diffs, file paths, and next
   actions over long tutorials. Preserve essential reasoning, risks, and
   verification results. (Claude/Codex sessions may use the `caveman` skill.)
+- **A question is a question.** When the user asks a question, answer it. Do not
+  implement it. "Should we use X?" is not "migrate to X". "What would it take to
+  add Y?" is not "add Y". When the intent is unclear, treat the message as a
+  question, answer it, and act after the user agrees.
+- **Act on reversible work.** Do cheap, reversible, in-scope work, then report:
+  research, reads, analysis, drafts, and refactors inside the given scope. Fix a
+  defect that you find inside your scope; do not hand it back to the user as a
+  task. Ask first only for outward-facing, expensive, or irreversible actions
+  (see §8c and §10).
 - **Smallest safe change.** Fix root causes, not symptoms. Limit the diff to
   what the task needs.
 - **Reuse first.** Prefer the standard library, then an already-installed
@@ -75,6 +84,10 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   proxy, or MCP) for whole-session token reduction. Use `rtk` to compact
   individual noisy commands (build, test, git, search). Both are optional and
   degrade gracefully. See [tooling/rtk](docs/tooling/rtk.md).
+- **Run independent work in parallel.** Send independent tool calls in one batch.
+  Start independent subagents together. Give each subagent a file set that no
+  other subagent writes, then merge the results in the main thread. Never trade
+  correctness for speed. See [performance](docs/guidelines/performance.md).
 - **Never invent commands.** Use only scripts that exist in the project's
   `package.json` (or documented equivalents). If none matches, report `not run`
   with the reason.
@@ -143,6 +156,10 @@ A task is **not complete** until you report all of:
 - Result for each: `passed` / `failed` / `partial` / `not run`
 - Whether failures are pre-existing or introduced by this change
 - Remaining risks
+
+Deliver every item that the request contains. If one item is blocked, deliver
+the other items and name the exact blocker in one sentence. "Needs more
+investigation" is not a blocker.
 
 Do **not** say "done", "fixed", "complete", or "ready" when lint, typecheck, or
 relevant tests were skipped or failed. Mark the task `partial` and explain why.
@@ -281,6 +298,14 @@ task complete until all pass lint and typecheck.
 - **Safety:** do **not** commit, push, deploy, publish, or open PRs unless the
   user explicitly asks. Inspect `git status` before editing; propose a branch or
   worktree and wait for approval when recommended.
+- **A release request means publish.** "Push a release", "release a patch",
+  "release a new version", "cut a release", or an equivalent phrase is the
+  explicit ask that the Safety rule requires. One such phrase authorizes the
+  complete chain: bump the version, validate, commit, tag, **push the commit and
+  the tag to every remote that `git remote` lists**, then report. Do not stop
+  between the steps to ask again. A local tag alone is not a release. Name each
+  remote and its result in the handoff. Push to one remote only when the user
+  names that remote. See [releasing](docs/workflows/releasing.md).
 
 Full depth lives under [`docs/`](docs/). Reusable patterns live in
 [`skills/`](skills/). Copy-paste configs live in [`templates/`](templates/).
