@@ -126,7 +126,10 @@ export const indexedProjects = (bin) => {
   } catch { return null }
 }
 
-const projectPaths = (project) => [project?.path, project?.repo_path, project?.root, project?.repoPath].filter(Boolean)
+// `root_path` is what CBM 0.10.5 actually returns. The other four spellings
+// stay: this list is read against a payload we do not own, and dropping a key
+// costs a false "not indexed" that no other check contradicts.
+const projectPaths = (project) => [project?.root_path, project?.path, project?.repo_path, project?.root, project?.repoPath].filter(Boolean)
 
 export const isIndexed = (projects, root) => Array.isArray(projects)
   && projects.some((project) => projectPaths(project).some((path) => path === root))

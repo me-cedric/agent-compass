@@ -172,6 +172,9 @@ test('isIndexed matches a project path and never guesses from a null listing', (
   assert.equal(isIndexed([{ path: '/other' }], '/repo'), false)
   assert.equal(isIndexed([{ path: '/repo' }], '/repo'), true)
   assert.equal(isIndexed([{ repo_path: '/repo' }], '/repo'), true)
+  // The spelling CBM 0.10.5 returns. Without it every status read reported an
+  // indexed repository as "not indexed".
+  assert.equal(isIndexed([{ root_path: '/repo' }], '/repo'), true)
 })
 
 // --- manifest + template ---------------------------------------------------

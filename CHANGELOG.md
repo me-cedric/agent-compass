@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`code-intel status` reports an indexed repository as indexed.** The project
+  listing is read for a root path under five key names, and
+  `codebase-memory-mcp` 0.10.5 returns the one that was missing, `root_path`.
+  Every status read therefore ended on "this repository indexed: no", whatever
+  the graph held. `doctor` never read that field and was correct throughout.
+
 ## [0.7.7] - 2026-08-15
 
 ### Fixed
