@@ -12,9 +12,13 @@ import {
   codeIntelChoice,
   codeIntelSelected,
   configDrift,
+  fallbackDirs,
   graphIgnored,
+  installCbm,
+  installPlan,
   isIndexed,
   manualInstallCommand,
+  searchDirs,
 } from '../scripts/lib/codebase-memory.mjs'
 import { doctorChecks, ensureCodeIntelIgnores } from '../scripts/doctor-checks.mjs'
 import { FILE_MANIFEST } from '../scripts/manifest.mjs'
@@ -182,6 +186,73 @@ test('the MCP example is a managed manifest entry with a portable command', () =
   assert.equal(JSON.stringify(server).includes('/Users/'), false)
 })
 
+// --- platform matrix -------------------------------------------------------
+// These run the same on any host: every platform difference is a pure function
+// of (platform, env). Separators are normalised because join() follows the
+// running host, not the simulated one.
+
+const slashes = (text) => text.replace(/\\/g, '/')
+
+test('POSIX discovery falls back to the install.sh default directory', () => {
+  assert.deepEqual(fallbackDirs('linux', { HOME: '/home/dev' }), ['/home/dev/.local/bin'])
+  const dirs = searchDirs('darwin', { PATH: '/usr/bin:/usr/local/bin', HOME: '/Users/dev' })
+  assert.deepEqual(dirs, ['/usr/bin', '/usr/local/bin', '/Users/dev/.local/bin'])
+})
+
+test('Windows discovery uses LOCALAPPDATA, the ; separator, and a bin/ subdir', () => {
+  const env = { PATH: 'C:\\Windows;C:\\tools', LOCALAPPDATA: 'C:\\Users\\dev\\AppData\\Local' }
+  const dirs = searchDirs('win32', env).map(slashes)
+  assert.deepEqual(dirs.slice(0, 2), ['C:/Windows', 'C:/tools'], 'splits PATH on ; not :')
+  assert.deepEqual(dirs.slice(2), [
+    'C:/Users/dev/AppData/Local/Programs/codebase-memory-mcp',
+    'C:/Users/dev/AppData/Local/Programs/codebase-memory-mcp/bin',
+  ])
+})
+
+test('Windows discovery derives LOCALAPPDATA from USERPROFILE when unset', () => {
+  const dirs = fallbackDirs('win32', { USERPROFILE: 'C:\\Users\\dev' }).map(slashes)
+  assert.equal(dirs[0], 'C:/Users/dev/AppData/Local/Programs/codebase-memory-mcp')
+})
+
+test('both install plans keep --skip-config and never pipe the network into a shell', () => {
+  const plans = [
+    installPlan({ platform: 'darwin', script: '/tmp/i.sh', downloader: 'curl' }),
+    installPlan({ platform: 'linux', script: '/tmp/i.sh', downloader: 'wget' }),
+    installPlan({ platform: 'win32', script: 'C:\\tmp\\i.ps1', shell: 'pwsh' }),
+  ]
+  for (const plan of plans) {
+    const rendered = plan.map(([cmd, args]) => `${cmd} ${args.join(' ')}`)
+    assert.equal(rendered.length, 2, 'download, then run — never one piped step')
+    assert.ok(rendered[0].includes('install.'), 'first step downloads the installer')
+    assert.ok(rendered.some((step) => step.includes('--skip-config')), 'config ownership stays with agent-compass')
+    assert.equal(rendered.join(' ').includes('|'), false, 'no curl | bash')
+  }
+})
+
+test('the Windows plan uses the double-dash flag upstream actually parses', () => {
+  const [, run] = installPlan({ platform: 'win32', script: 'C:\\tmp\\i.ps1', shell: 'powershell' })
+  assert.ok(run[1].includes('--skip-config'))
+  // install.ps1 reads $args, so -SkipConfig would be silently ignored and the
+  // installer would rewrite every agent's config.
+  assert.equal(run[1].join(' ').includes('-SkipConfig'), false)
+  assert.equal(manualInstallCommand('win32').includes('-SkipConfig'), false)
+  assert.match(manualInstallCommand('win32'), /--skip-config/)
+})
+
+test('POSIX falls back to wget when curl is absent', () => {
+  const [download] = installPlan({ platform: 'linux', script: '/tmp/i.sh', downloader: 'wget' })
+  assert.equal(download[0], 'wget')
+})
+
+test('a host with no downloader fails clearly with the manual command', () => {
+  for (const [platform, missing] of [['linux', /curl or wget/], ['win32', /pwsh or powershell/]]) {
+    const result = installCbm({ dry: true, platform, env: { PATH: '/nonexistent' } })
+    assert.equal(result.ok, false)
+    assert.match(result.reason, missing)
+    assert.match(result.manual, /skip-config/)
+  }
+})
+
 test('the manual install command keeps upstream --skip-config', () => {
   assert.match(manualInstallCommand(), /skip-?config/i)
 })
@@ -284,4 +355,20 @@ test('install refuses to change machine state without a TTY or --yes', async () 
   assert.equal(result.code, 1)
   assert.match(result.stderr, /--yes/)
   assert.match(result.stderr, /--dry/)
+})
+
+test('mcp-probe ignores the code-intelligence example until the host opts in', async () => {
+  const probe = join(root, 'scripts', 'mcp-probe.mjs')
+  const dir = host()
+  mkdirSync(join(dir, '.mcp'), { recursive: true })
+  writeFileSync(join(dir, '.mcp', 'codebase-memory.example.json'), JSON.stringify({
+    mcpServers: { 'codebase-memory-mcp': { command: 'codebase-memory-mcp', args: [], cwd: '.' } },
+  }))
+
+  const before = await runNode([probe, dir, '--json'], { cwd: root })
+  assert.equal(JSON.parse(before.stdout).servers.length, 0, 'catalogue entry is not a readiness gap')
+
+  writeFileSync(join(dir, 'agent-compass.answers.json'), JSON.stringify({ codeIntelligence: CODE_INTEL_CHOICE }))
+  const after = await runNode([probe, dir, '--json'], { cwd: root })
+  assert.equal(JSON.parse(after.stdout).servers[0].name, 'codebase-memory-mcp')
 })

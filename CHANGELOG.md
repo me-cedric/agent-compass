@@ -5,6 +5,34 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Windows install path works.** `agent-compass code-intel install` now
+  downloads and runs `install.ps1` through `pwsh` or `powershell` instead of
+  refusing with "POSIX-only". Upstream parses `$args`, not a `param()` block, so
+  the flag is `--skip-config` on both platforms — the manual command previously
+  printed `-SkipConfig`, which PowerShell would have ignored while the installer
+  rewrote every agent's configuration.
+- Windows executable discovery looks in `%LOCALAPPDATA%\Programs\codebase-memory-mcp`
+  and its `bin\` subdirectory, the real `install.ps1` default, instead of the
+  POSIX `~/.local/bin`. `PATH` splits on `;` on Windows and `:` elsewhere. Every
+  platform difference is now a pure function of `(platform, env)` and the whole
+  matrix is tested from any host.
+- POSIX install falls back to `wget` when `curl` is absent, and a host with
+  neither fails with the missing tool named plus the exact manual command. The
+  downloaded installer is removed afterwards instead of being left in the
+  temporary directory.
+- `agent-compass mcp-probe` no longer reports the code-intelligence MCP example
+  as a readiness gap on hosts that never opted in. The example ships to every
+  host as a catalogue entry; it is probed once the host selects the layer.
+
+### Added
+
+- `docs/tooling/codebase-memory.md` gains a platform matrix, Windows
+  troubleshooting rows, and a worked false-positive example: a real
+  `detect_changes` run on this repository returned an unrelated shell function
+  among eight impacted symbols, with nothing marking the row as wrong.
+
 ## [0.7.6] - 2026-08-15
 
 ### Added

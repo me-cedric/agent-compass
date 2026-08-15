@@ -24,6 +24,7 @@ import {
   DESIRED_CONFIG,
   MCP_EXAMPLE_REL,
   configDrift,
+  fallbackDirs,
   findExecutable,
   installCbm,
   manualInstallCommand,
@@ -118,7 +119,7 @@ const runInstall = async () => {
     ;(plan.steps || [plan.manual]).forEach((step) => note(`$ ${step}`))
     return true
   }
-  const ok = await approve(`Install ${CBM_BIN} into ~/.local/bin (user-level, no sudo)?`)
+  const ok = await approve(`Install ${CBM_BIN} into ${fallbackDirs()[0]} (user-level, no sudo)?`)
   if (!ok) { console.log(`${sym.skip()} install declined. Manual command:\n  ${manualInstallCommand()}`); return false }
   const result = installCbm()
   if (!result.ok) {
@@ -127,7 +128,7 @@ const runInstall = async () => {
   }
   const bin = findExecutable()
   if (!bin) {
-    console.error(`${sym.fail()} installer finished but ${CBM_BIN} is still not on PATH.\n  Add ~/.local/bin to PATH, or run:\n  ${manualInstallCommand()}`)
+    console.error(`${sym.fail()} installer finished but ${CBM_BIN} is still not on PATH.\n  Add ${fallbackDirs()[0]} to PATH, or run:\n  ${manualInstallCommand()}`)
     return false
   }
   console.log(`${sym.ok()} installed ${bin}`)

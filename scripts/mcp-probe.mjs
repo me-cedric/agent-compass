@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { MCP_EXAMPLE_REL, codeIntelSelected } from './lib/codebase-memory.mjs'
 
 const { values, positionals } = parseCliArgs({
   name: 'mcp-probe',
@@ -30,7 +31,12 @@ const configs = [
   '.mcp/gemini.example.json',
   '.mcp/copilot-cloud.example.json',
   '.mcp/angular-cli.example.json',
-].map((path) => [path, readJson(path)]).filter(([, json]) => json)
+]
+  // The code-intelligence example ships to every host as a catalogue entry.
+  // Probing it before the host opts in would report a missing command as an
+  // issue for a tool nobody asked for.
+  .filter((path) => path !== MCP_EXAMPLE_REL || codeIntelSelected(root))
+  .map((path) => [path, readJson(path)]).filter(([, json]) => json)
 const commandExists = (cmd) => Boolean(spawnSync('sh', ['-lc', `command -v ${cmd}`], { encoding: 'utf8' }).stdout.trim())
 const localPath = (text) => /(^|["'(\s=])((?:\/(?!absolute\/path\/to(?:\/|$)|path\/to(?:\/|$))[A-Za-z0-9._-]+){2,}[^"')\s,;\]]*|[A-Za-z]:\\Users\\[^"')\s,;\]]+)/m.test(text)
 const rows = []
