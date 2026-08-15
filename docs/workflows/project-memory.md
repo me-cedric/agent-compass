@@ -40,6 +40,30 @@ Log:
 - raw customer data
 - temporary brainstorming
 - noisy todo lists that will be stale tomorrow
+- **structural facts a code graph derives for free** — "`FooService` imports
+  `BarService`", "method `X` calls `Y`", "file `A` exports `Z`". They go stale
+  the moment the code moves. Log the relationship only when the *insight* is
+  durable: that a coupling is fragile, or that a change through it broke
+  something before.
+
+## Division of labour with the code graph
+
+When the project also wires [codebase-memory](../tooling/codebase-memory.md),
+the two layers answer different questions. Ask the right one.
+
+| Before work | Code graph | projectmem |
+| ----------- | ---------- | ---------- |
+| | Where is the relevant code? | Did we already try this? |
+| | What calls it? | Why was it built this way? |
+| | What depends on it? | Is this area fragile? |
+| | What could this change affect? | What past failures matter here? |
+
+| During and after work | Code graph | projectmem |
+| --------------------- | ---------- | ---------- |
+| | Reflects the current code automatically | Record the finding, failed attempt, fix, validation, risk |
+
+Neither replaces the other. The graph is derived and always current; project
+memory is authored and remembers what the code cannot say.
 
 ## Sharing across a team
 

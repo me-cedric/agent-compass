@@ -11,3 +11,6 @@ knowledge/incoming/
 # generated bootstrap output (users keep their own copy)
 BOOTSTRAP_PROMPT.md
 agent-compass.answers.json
+
+# codebase-memory-mcp generated graph (local cache; shared artifact is opt-in)
+.codebase-memory/

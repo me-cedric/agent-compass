@@ -2,6 +2,11 @@
 // gen-depgraph.mjs — Mermaid dependency graph from local JS/TS imports, so an
 // agent sees structure and blast radius before editing a shared file. ponytail:
 // JS/TS relative imports only; not a full module resolver.
+//
+// Complements, does not compete with, codebase-memory-mcp: this writes a
+// committed human-readable snapshot and needs no binary, so it is also the
+// fallback when the code graph is not installed. See
+// docs/tooling/codebase-memory.md.
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'

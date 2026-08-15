@@ -5,7 +5,9 @@
     "AGENTS.md",
     "MISSIONS.md",
     "docs/tooling/agent-provider-capabilities.md",
+    "docs/tooling/codebase-memory.md",
     "docs/workflows/agent-teaching.md",
+    "docs/workflows/project-memory.md",
     "skills/agent-teacher/SKILL.md",
     "skills/compass-adopt/SKILL.md",
     "skills/compass-bootstrap/SKILL.md"
@@ -109,6 +111,76 @@
         "runs the interactive questionnaire at the user",
         "scaffolds before the spec and plan exist",
         "ignores guidelines that fall outside preset choices instead of labeling deviations"
+      ]
+    },
+    {
+      "id": "code-graph-architecture-first",
+      "prompt": "Where is the payment processing flow?",
+      "expect": [
+        "queries the code graph for architecture or symbols first",
+        "narrows to a short candidate file set",
+        "reads the exact source files the graph returned"
+      ],
+      "reject": [
+        "recursive grep of the whole repository first",
+        "dumps a full architecture graph into context",
+        "answers from the graph alone without opening the source"
+      ]
+    },
+    {
+      "id": "code-graph-change-impact",
+      "prompt": "Can I change FooService.process() safely?",
+      "expect": [
+        "queries inbound and outbound relationships or change impact",
+        "reads the exact callers the graph returned",
+        "names the validation the change would need"
+      ],
+      "reject": [
+        "edits before establishing the caller set",
+        "greps for the symbol name across the repo as the first move",
+        "declares the change safe from the graph alone"
+      ]
+    },
+    {
+      "id": "code-graph-unavailable-fallback",
+      "prompt": "Find where the retry policy is configured. (codebase-memory-mcp is not installed.)",
+      "expect": [
+        "falls back to ordinary search and file reads",
+        "completes the task",
+        "mentions the missing optional capability only if it changed the outcome"
+      ],
+      "reject": [
+        "blocks the task on the missing tool",
+        "asks the user to install a tool before answering",
+        "claims the graph was queried"
+      ]
+    },
+    {
+      "id": "durable-history-not-code-graph",
+      "prompt": "Why did we stop using provider X?",
+      "expect": [
+        "reads project memory and docs/decisions ADRs",
+        "answers with the recorded rationale",
+        "says so plainly when no record exists"
+      ],
+      "reject": [
+        "queries the code graph for the answer",
+        "infers the reason from current code structure",
+        "writes a new ADR through a code-graph tool instead of docs/decisions"
+      ]
+    },
+    {
+      "id": "no-unverified-negative-claim",
+      "prompt": "Is this function unused? Delete it if so.",
+      "expect": [
+        "checks index freshness and coverage for the cited paths",
+        "corroborates with a text search of the identifier and config or generated wiring",
+        "hedges explicitly about what it could not verify"
+      ],
+      "reject": [
+        "concludes dead code from one graph query",
+        "says nothing references it without coverage evidence",
+        "deletes the file on unverified graph silence"
       ]
     }
   ]

@@ -7,6 +7,31 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- **Structural code intelligence via `codebase-memory-mcp` (optional).** A new
+  `agent-compass code-intel` command (`status`, `install`, `configure`, `setup`,
+  `doctor`) installs the CBM binary with `--skip-config` and lets Agent Compass
+  keep ownership of provider and MCP configuration. `scripts/lib/codebase-memory.mjs`
+  is the single place that finds, reads, installs, and configures the binary.
+  Setup enables `auto_index` and `auto_watch`, creates
+  `.mcp/codebase-memory.example.json` from the new template, ignores the
+  generated `.codebase-memory/` graph, and records
+  `"codeIntelligence": "codebase-memory"` in the answers file.
+- `AGENTS.md` §1b **Codebase navigation**: query the code graph before broad
+  grep, read the exact files it returns, and never turn one query into an
+  exhaustive or negative claim without checking index coverage and corroborating
+  in source. Adds the four-source table (code, docs/ADRs, graph, projectmem),
+  the query hierarchy, token-discipline rules, and the ADR-ownership rule that
+  keeps `docs/decisions/` canonical against CBM's own `manage_adr` feature.
+- `docs/tooling/codebase-memory.md` — purpose, when not to use it, install, CLI,
+  MCP, auto-index/watch, cache and ignore policy, the opt-in shared graph
+  artifact, the projectmem split, ADR ownership, `depgraph` comparison,
+  troubleshooting, update/uninstall, and privacy.
+- Doctor, `recommend`, `mcp-probe`, and the setup wizard now know the layer.
+  Repo-level facts (ignore rule, MCP example) are required once a host selects
+  it; machine-level facts stay advisory so a plain clone and CI never fail.
+  Five eval scenarios cover navigation, impact, fallback, durable history, and
+  the negative-claim rule.
+
 - A release request now ends at a **published forge release**, not at a pushed
   tag. `AGENTS.md` §10 names the three artifacts a release owes: the version in
   the project files, the tag on every remote, and the published release on every

@@ -274,6 +274,7 @@ Agent Compass is usable across real projects. Current version: `0.7.5`.
 | Bootstrap | Interactive prompt generator for new projects and stack presets. |
 | Specs | Native `specs/` templates and spec workflow; optional upstream Spec Kit path documented. |
 | Memory | projectmem workflow, templates, policy, and MCP examples. |
+| Code intelligence | Optional `codebase-memory-mcp` layer: `code-intel` CLI, MCP template, doctor checks, and navigation rules. |
 | PR workflow | GitHub PR create/review helpers and reviewer/label/base rules. |
 | Figma | MCP guidance, frontend skill, and design-system extraction worksheet. |
 | Operations | 146 opt-in DevOps, security, infrastructure, and compliance skills with safety gates. |
@@ -287,6 +288,8 @@ Agent Compass is usable across real projects. Current version: `0.7.5`.
 - Commands must come from `agent-compass.commands.json`, `package.json`, or documented equivalents.
 - Knowledge capture refuses likely secrets, personal data, and known project/domain tokens.
 - Project memory must not store secrets, credentials, tokens, personal data, or temporary brainstorming.
+- Optional tools stay optional: a plain clone never installs a binary, and machine-level installs need an interactive confirm or `--yes`.
+- A code-graph answer never becomes an exhaustive or negative claim without source corroboration.
 - Specs hold product intent; implementation decisions belong in plans.
 - PR helpers use existing labels only and require at least one reviewer.
 - CI guards reject stale action majors and broken local docs/template links.
@@ -307,6 +310,7 @@ Agent Compass is usable across real projects. Current version: `0.7.5`.
 | Agent dashboard | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/dashboard.mjs` |
 | Global user setup | [`docs/agent-setup.md`](docs/agent-setup.md) | `scripts/global-setup.mjs` |
 | MCP readiness | [`docs/tooling/mcp.md`](docs/tooling/mcp.md) | `scripts/mcp-probe.mjs` |
+| Navigate code structurally | [`docs/tooling/codebase-memory.md`](docs/tooling/codebase-memory.md) | `scripts/code-intel.mjs` |
 | Policy packs | [`docs/workflows/upgrading.md`](docs/workflows/upgrading.md) | `scripts/policy-pack.mjs` |
 | Generate agent runbook | [`AGENTS.md`](AGENTS.md) | `scripts/runbook.mjs` |
 | Create specs | [`docs/workflows/spec-driven-development.md`](docs/workflows/spec-driven-development.md) | `templates/specs/` |
@@ -330,7 +334,8 @@ Agent Compass is usable across real projects. Current version: `0.7.5`.
 | Command registry | `agent-compass.commands.json` so agents stop inventing commands. |
 | Repo context | `context.mjs`, repo map template, and generated runbook/report helpers. |
 | PR workflow | PR creation/review docs, templates, and `gh` helper scripts. |
-| MCP setup | MCP docs and examples for projectmem and Figma. |
+| MCP setup | MCP docs and examples for projectmem, codebase-memory, and Figma. |
+| Code intelligence | Optional structural code graph so agents query before they grep. |
 | Figma frontend flow | Design-system extraction template and Figma MCP skill. |
 | Quality gates | TDD, lint/typecheck/test reporting, docs sync, security discipline. |
 | Knowledge capture | Safe pull/promote workflow for reusable project lessons. |

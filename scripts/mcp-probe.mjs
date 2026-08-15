@@ -23,6 +23,7 @@ const configs = [
   '.mcp.json',
   '.mcp/recommended.example.json',
   '.mcp/projectmem.example.json',
+  '.mcp/codebase-memory.example.json',
   '.mcp/figma.example.json',
   '.mcp/figma-mcp-go.example.json',
   '.mcp/headroom.example.json',

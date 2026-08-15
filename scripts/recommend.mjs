@@ -6,6 +6,7 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { CBM_BIN, MCP_EXAMPLE_REL, snapshot } from './lib/codebase-memory.mjs'
 import { detectStacks, selectAssets, stackLabels } from './lib/profiles.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -54,6 +55,20 @@ if (stackIds.includes('nestjs-api') && !has('.github/instructions/api.instructio
 if (stackIds.includes('expo-mobile') && !has('.github/instructions/mobile-app.instructions.md')) recs.push(`Install mobile-app path instructions: ${installInstructions('mobile-app')} (adjust the \`applyTo\` glob if the app is not in \`apps/mobile-app\`).`)
 if (stackIds.includes('react-web') && !has('.github/instructions/backoffice.instructions.md')) recs.push(`Install backoffice path instructions: ${installInstructions('backoffice')} (adjust the \`applyTo\` glob if the app is not in \`apps/backoffice\`).`)
 if (!scripts.check && !(scripts.lint && scripts.test)) recs.push('Add a single `check` script or fill lint/typecheck/test registry entries.')
+
+// Structural code intelligence — advisory when unselected, actionable when selected.
+// Reports run occasionally, so this one pays for the config read that
+// `agent-compass doctor` skips — auto_index=false is the drift worth naming.
+const cbm = snapshot(root, { probeIndex: false, probeConfig: true })
+if (!cbm.selected) {
+  recs.push(`\`${CBM_BIN}\` not configured. Recommended for large or multi-module repositories to reduce broad agent exploration: run \`agent-compass code-intel setup\`.`)
+} else {
+  if (!cbm.installed) recs.push(`\`${CBM_BIN}\` selected but the executable is missing. Run \`agent-compass code-intel install\`.`)
+  for (const { key, want, have } of cbm.drift) recs.push(`\`${CBM_BIN}\` \`${key}=${have}\` — agents would rebuild project understanding every session. Run \`agent-compass code-intel configure\` (want \`${key}=${want}\`).`)
+  if (!cbm.mcpExample) recs.push(`Install the code-intelligence MCP config: run \`agent-compass code-intel setup\` to create \`${MCP_EXAMPLE_REL}\`.`)
+  if (!cbm.graphIgnored) recs.push('Ignore the generated graph: add `.codebase-memory/` to `.gitignore` (or run `agent-compass code-intel setup`).')
+}
+
 if (dirs.has('apps') && !has('docs/architecture/repo-map.md')) recs.push('Generate repo map so agents choose right app/package before editing.')
 const report = `# Agent Compass Recommendations
 

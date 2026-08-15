@@ -142,6 +142,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `dashboard` | Write static `.agent/report.html` dashboard. | — |
 | `migration-plan` | Plan host upgrade against current manifest. | — |
 | `mcp-probe` | Probe MCP config readiness. | — |
+| `code-intel` | Manage `codebase-memory-mcp`: `status`, `install`, `configure`, `setup`, `doctor`. | — |
 | `spec-validation-map` | Map specs to plan/tasks/validation coverage. | — |
 | `design-importer` | Create design-system docs from Figma/token export. | — |
 | `drift` | Drift dashboard across guidance validators. | `agent-drift` |
@@ -157,7 +158,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `catalog` | Machine-readable asset catalog (skills, stacks, templates, docs). | — |
 | `skills` | Search skills, filter capability packs, and inspect exact provenance. | — |
 | `runbook` | Compact agent runbook. | — |
-| `depgraph` | Mermaid dependency graph from imports. | `gen-depgraph` |
+| `depgraph` | Mermaid dependency graph from imports (human-readable snapshot; live agent navigation uses [`code-intel`](codebase-memory.md)). | `gen-depgraph` |
 
 **Build**
 

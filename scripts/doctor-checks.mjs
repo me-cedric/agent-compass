@@ -1,5 +1,6 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, extname, join } from 'node:path'
+import { CBM_BIN, CODEBASE_MEMORY_GITIGNORE, MCP_EXAMPLE_REL, codeIntelSelected, snapshot } from './lib/codebase-memory.mjs'
 
 export const HUSKY_HOOKS = ['pre-commit', 'pre-push', 'commit-msg']
 
@@ -89,6 +90,12 @@ const localPathLeaks = (root) => sharedConfigFiles(root)
   .filter((file) => LOCAL_PATH_RE.test(readFileSync(file, 'utf8')))
   .map((file) => file.slice(root.length + 1))
 
+// Only hosts that selected the code-intelligence layer get the ignore line —
+// a plain clone must not grow ignores for a tool it does not use.
+export const ensureCodeIntelIgnores = (root, dry = false) => (codeIntelSelected(root)
+  ? appendMissingLines(root, '.gitignore', '# codebase-memory-mcp generated graph (local cache; shared artifact is opt-in)', CODEBASE_MEMORY_GITIGNORE, dry)
+  : [])
+
 export const ensureProjectmemIgnores = (root, dry = false) => ({
   gitignore: appendMissingLines(root, '.gitignore', '# projectmem regenerated projections (rebuilt by pjm regenerate)', PROJECTMEM_GITIGNORE, dry),
   gitattributes: appendMissingLines(root, '.gitattributes', '# projectmem shared event log (source of truth)', PROJECTMEM_GITATTRIBUTES, dry),
@@ -113,6 +120,13 @@ export const doctorChecks = (root, { deep = false } = {}) => {
   const gitmodulesPath = join(root, '.gitmodules')
   const mcpExample = read(root, '.mcp/projectmem.example.json')
   const leaks = localPathLeaks(root)
+  // Structural code intelligence is opt-in. Repo-level facts (ignore rule, MCP
+  // example) are required once the host selects it; machine-level facts (binary,
+  // CBM config) stay advisory so a fresh clone or CI run never fails on a tool
+  // that lives outside the repository. `agent-compass code-intel doctor` is the
+  // command that exits non-zero on those.
+  const codeIntel = codeIntelSelected(root)
+  const cbm = codeIntel ? snapshot(root, { probeIndex: false, probeConfig: false }) : null
   const required = [
     ['shared agent config has no local absolute path leaks', leaks.length === 0, leaks],
     ['projectmem MCP example avoids local absolute paths', !mcpExample || (!mcpExample.includes('/absolute/path/to/repo') && !LOCAL_PATH_RE.test(mcpExample))],
@@ -120,8 +134,20 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.gitattributes gives the projectmem event log a union merge driver', missingLines(root, '.gitattributes', PROJECTMEM_GITATTRIBUTES).length === 0],
     ['.prettierignore ignores generated projectmem files', missingLines(root, '.prettierignore', PROJECTMEM_PRETTIERIGNORE).length === 0],
     ...HUSKY_HOOKS.map((h) => [`existing .husky/${h} executable`, !existsSync(join(root, '.husky', h)) || isExecutable(join(root, '.husky', h))]),
+    ...(codeIntel ? [
+      ['.gitignore ignores the codebase-memory-mcp generated graph', missingLines(root, '.gitignore', CODEBASE_MEMORY_GITIGNORE).length === 0],
+      [`${MCP_EXAMPLE_REL} exists (host selected codebase-memory)`, cbm.mcpExample],
+    ] : []),
   ]
   const advisory = [
+    ...(codeIntel ? [
+      [`${CBM_BIN} installed (run: agent-compass code-intel install)`, cbm.installed],
+      // Deliberately always a "·": reading auto_index/auto_watch costs CBM's
+      // slow config start-up, so the dedicated command owns that check.
+      ['codebase-memory auto_index/auto_watch — not checked here, run: agent-compass code-intel doctor', false],
+    ] : [
+      ['codebase-memory not selected — optional structural code intelligence (agent-compass code-intel setup)', true],
+    ]),
     ['AGENTS.md exists', existsSync(join(root, 'AGENTS.md'))],
     ['AGENTS.md points at agent-compass', existsSync(join(root, 'AGENTS.md')) && /agent-compass|AGENTS\.md/.test(read(root, 'AGENTS.md'))],
     ['agent-compass.commands.json exists', existsSync(join(root, 'agent-compass.commands.json'))],
@@ -171,6 +197,7 @@ export const doctorChecks = (root, { deep = false } = {}) => {
     ['.gemini/settings.example.json exists', existsSync(join(root, '.gemini', 'settings.example.json'))],
     ['.mcp/headroom.example.json exists', existsSync(join(root, '.mcp', 'headroom.example.json'))],
     ['.mcp/recommended.example.json exists', existsSync(join(root, '.mcp', 'recommended.example.json'))],
+    ['.mcp/codebase-memory.example.json exists', existsSync(join(root, '.mcp', 'codebase-memory.example.json'))],
     ['.mcp/tool-contract.md exists', existsSync(join(root, '.mcp', 'tool-contract.md'))],
     ['.agent/agent-compass.lock exists (run sync to update)', existsSync(join(root, '.agent', 'agent-compass.lock'))],
   ] : []

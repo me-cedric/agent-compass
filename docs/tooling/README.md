@@ -20,6 +20,7 @@ Concrete setup guides. Each points at runnable files in
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |
+| [codebase-memory.md](codebase-memory.md)       | Structural code intelligence: query the graph before broad grep. |
 | [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
 | [vale.md](vale.md)                             | Prose linting: imposed vocabulary, required sections, ids. |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |

@@ -44,6 +44,23 @@ test, referenced by generated config, exported and consumed, or named by the
 user). Don't edit apparently-dead files unless the task is to remove/wire/revive
 them.
 
+A code graph helps you find that proof fast, but graph silence is not proof of
+absence. Before calling a file dead, check index coverage for it, then confirm
+with a text search for the identifier and a look at config or generated wiring.
+
+## Navigation before exploration
+
+When the project wires a code graph
+([codebase-memory](../tooling/codebase-memory.md)), query it before recursive
+grep, glob, or directory walks: architecture for orientation, structural search
+for symbols, a trace for callers and callees, impact analysis for blast radius.
+Then read the exact files it returned. Fall back to ordinary search tools the
+moment the graph is unavailable or does not answer — do not stall, and do not
+narrate the missing capability unless it changed the outcome.
+
+Never convert one graph query into "nothing calls this" or "this is the complete
+set". State what you verified and what you did not. Full rule: `AGENTS.md` §1b.
+
 ## Communication
 
 Concise and high-signal: commands, diffs, file paths, next actions. Keep the

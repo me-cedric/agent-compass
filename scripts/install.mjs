@@ -10,7 +10,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, chmodSync } from 'node:fs'
 import { dirname, relative, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { doctorChecks, ensureProjectmemIgnores, fixHuskyHookModes } from './doctor-checks.mjs'
+import { doctorChecks, ensureCodeIntelIgnores, ensureProjectmemIgnores, fixHuskyHookModes } from './doctor-checks.mjs'
 import { FILE_MANIFEST, LOCK_REL, TEXT_RE, isHook, sha, loadSubst, renderSource, acVersion } from './manifest.mjs'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import { c, sym } from './lib/tui.mjs'
@@ -49,9 +49,11 @@ const skipped = []
 
 const runFix = () => {
   const ignored = ensureProjectmemIgnores(HOST, dry)
+  const codeIntelIgnored = ensureCodeIntelIgnores(HOST, dry)
   const fixedHooks = fixHuskyHookModes(HOST, dry)
   console.log(`\nagent-compass fix ${dry ? '(dry run) ' : ''}→ ${HOST}\n`)
   console.log(`.gitignore projectmem lines: ${ignored.gitignore.length ? ignored.gitignore.join(', ') : 'ok'}`)
+  console.log(`.gitignore codebase-memory lines: ${codeIntelIgnored.length ? codeIntelIgnored.join(', ') : 'ok'}`)
   console.log(`.gitattributes projectmem lines: ${ignored.gitattributes.length ? ignored.gitattributes.join(', ') : 'ok'}`)
   console.log(`.prettierignore projectmem lines: ${ignored.prettierignore.length ? ignored.prettierignore.join(', ') : 'ok'}`)
   console.log(`Husky hook modes: ${fixedHooks.length ? fixedHooks.join(', ') : 'ok'}`)
@@ -187,6 +189,8 @@ if (!dry) {
 }
 
 const ignored = ensureProjectmemIgnores(HOST, dry)
+const codeIntelIgnored = ensureCodeIntelIgnores(HOST, dry)
+if (codeIntelIgnored.length) created.push(`.gitignore codebase-memory graph ignore${dry ? ' (dry)' : ''}`)
 if (ignored.gitignore.length) created.push(`.gitignore projectmem ignores${dry ? ' (dry)' : ''}`)
 if (ignored.gitattributes.length) created.push(`.gitattributes projectmem event-log merge${dry ? ' (dry)' : ''}`)
 if (ignored.prettierignore.length) created.push(`.prettierignore projectmem ignores${dry ? ' (dry)' : ''}`)

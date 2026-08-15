@@ -40,13 +40,29 @@ test('wizard --yes writes answers.json defaulting to the four providers', async 
     const run = await runNode([script, host, '--yes', '--no-run'])
     assert.equal(run.code, 0, run.stderr)
     const answers = JSON.parse(await readFile(join(host, 'agent-compass.answers.json'), 'utf8'))
-    assert.deepEqual(Object.keys(answers), ['name', 'scope', 'packageManager', 'stacks', 'providers', 'useSpecKit', 'skillSync', 'skillScope'])
+    assert.deepEqual(Object.keys(answers), ['name', 'scope', 'packageManager', 'stacks', 'providers', 'useSpecKit', 'codeIntelligence', 'skillSync', 'skillScope'])
     assert.deepEqual(answers.providers, ['claude', 'codex', 'gemini', 'copilot'])
     assert.equal(answers.name, 'fake-api')
     assert.deepEqual(answers.stacks, ['nestjs-api'])
     assert.equal(answers.useSpecKit, true)
+    // --yes must never install a machine-level dependency on its own.
+    assert.equal(answers.codeIntelligence, 'none')
     assert.equal(answers.skillSync, 'copy')
     assert.equal(answers.skillScope, 'fit+style')
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('wizard --yes preserves a previously selected code-intelligence layer', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-wizard-code-intel-'))
+  try {
+    await writeFile(join(host, 'package.json'), JSON.stringify({ name: 'fake-api' }))
+    await writeFile(join(host, 'agent-compass.answers.json'), JSON.stringify({ name: 'fake-api', codeIntelligence: 'codebase-memory' }))
+    const run = await runNode([script, host, '--yes', '--no-run'])
+    assert.equal(run.code, 0, run.stderr)
+    const answers = JSON.parse(await readFile(join(host, 'agent-compass.answers.json'), 'utf8'))
+    assert.equal(answers.codeIntelligence, 'codebase-memory')
   } finally {
     await rm(host, { recursive: true, force: true })
   }

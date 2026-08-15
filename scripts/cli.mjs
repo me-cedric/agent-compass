@@ -45,6 +45,7 @@ export const COMMANDS = {
   dashboard: { script: 'dashboard.mjs', group: 'Health', desc: 'Write static .agent/report.html dashboard.' },
   'migration-plan': { script: 'migration-plan.mjs', group: 'Health', desc: 'Plan host upgrade against current manifest.' },
   'mcp-probe': { script: 'mcp-probe.mjs', group: 'Health', desc: 'Probe MCP config readiness.' },
+  'code-intel': { script: 'code-intel.mjs', group: 'Health', desc: 'Manage codebase-memory-mcp: status, install, configure, setup, doctor.' },
   'spec-validation-map': { script: 'spec-validation-map.mjs', group: 'Health', desc: 'Map specs to plan/tasks/validation coverage.' },
   'design-importer': { script: 'design-importer.mjs', group: 'Health', desc: 'Create design-system docs from Figma/token export.' },
   drift: { script: 'agent-drift.mjs', group: 'Health', desc: 'Drift dashboard across guidance validators.' },

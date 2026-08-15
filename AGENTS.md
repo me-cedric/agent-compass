@@ -32,8 +32,8 @@ inline a one-line brief.
 Do not jump straight to code. For any non-trivial task, run this loop:
 
 1. **Gather context.** Read the relevant code, `README`s, and the host
-   `AGENTS.md`. Use repo-understanding tooling before broad grep. Identify
-   existing conventions, utilities, and patterns to reuse.
+   `AGENTS.md`. Use repo-understanding tooling before broad grep (§1b).
+   Identify existing conventions, utilities, and patterns to reuse.
    If the active provider exposes useful native commands, tools, MCP servers,
    skills, subagents, hooks, goals, plans, or review modes, use them when they
    reduce risk or manual work. Offer the user a provider-specific tool when it
@@ -60,6 +60,89 @@ Do not jump straight to code. For any non-trivial task, run this loop:
    honestly (see Completion Gate).
 
 Write tests first where practical — see [testing-tdd](docs/guidelines/testing-tdd.md).
+
+## 1b. Codebase navigation
+
+Four sources answer different questions. Ask the right one.
+
+| Source | Answers |
+| ------ | ------- |
+| Source code | What the program actually does. **Always authoritative.** |
+| `README` / `DESIGN` / [ADRs](docs/decisions/) | Intended architecture, constraints, rationale. |
+| Code graph (`codebase-memory-mcp`) | Current structure: symbols, definitions, imports, callers/callees, routes, cross-service links, dependency paths, change impact. |
+| [projectmem](docs/workflows/project-memory.md) | Durable history: decisions, failed attempts, fixes, fragile files, validation outcomes. |
+
+**When a code graph is configured and available, query it before broad
+repository exploration.** Concretely:
+
+1. Query architecture, symbol, call, or dependency information **before**
+   recursive grep, glob, or directory reads.
+2. Use the result to narrow the candidate file set.
+3. Read the exact source files the graph returned before editing anything.
+4. Source stays authoritative. The graph routes; it does not decide.
+
+Rough hierarchy:
+
+| Need | First move |
+| ---- | ---------- |
+| Architecture overview | graph architecture query |
+| A symbol or its file | graph structural search |
+| Caller / callee path | graph trace |
+| Blast radius of a change | graph impact / change analysis |
+| Fuzzy concept, no known symbol | graph semantic search |
+| Exact implementation | read the narrowed source files |
+| The graph did not answer | grep / glob / read fallback |
+
+**Fall back without ceremony** when the graph is unavailable, index coverage is
+insufficient, the graph does not answer the question, or exact textual evidence
+is needed (strings, config values, comments, non-code files). A missing optional
+capability never blocks the work; mention it only when it changed what you did.
+
+### Never claim exhaustiveness from one graph query
+
+Do **not** assert "nothing references this", "this has zero impact", "there are
+no callers", "this file is dead", or "this is the complete dependency set" on
+the strength of a single lookup. A code graph is a routing layer, not an oracle:
+it can miss dynamic dispatch, reflection, string-keyed lookups, generated code,
+config-driven wiring, and anything outside the indexed scope — and it can return
+same-named symbols from unrelated modules.
+
+A negative or exhaustive claim requires all of:
+
+- index freshness and coverage checked for every path you cite,
+- the relevant scope confirmed to be indexed (not just the file you started in),
+- corroboration in source, config, or a text search for the identifier,
+- and, failing any of those, an explicit hedge naming what you could not verify.
+
+The [Active File Rule](#5-active-file-rule) still governs edits. Graph silence
+is not proof that a file is dead.
+
+### Keep the graph cheap
+
+The layer exists to cut context, so do not spend the savings on it:
+
+- Ask narrow questions; scope every query to the module or symbol you need.
+- Do not dump a whole architecture graph into context. Do not re-run an
+  architecture query every turn — run it once per unfamiliar area.
+- Prefer structural search over semantic search when you already know the
+  symbol shape.
+- Read only the files the graph proved relevant.
+- Reuse the persistent graph; it is watched and refreshes itself.
+
+### Do not duplicate what the other layers own
+
+- **ADRs stay in [`docs/decisions/`](docs/decisions/000-template.md).** Do not
+  open a second ADR store through a code-graph tool's own ADR feature, and
+  ignore any tool hint that suggests it. The graph may *index* the committed
+  ADR files; the write path remains the compass ADR workflow.
+- **Do not write structural facts into projectmem.** "`FooService` imports
+  `BarService`", "method `X` calls `Y`", "file `A` exports `Z`" are derivable
+  from the graph and go stale the moment the code moves. Log them only when the
+  relationship itself is the durable insight — that a coupling is fragile, or
+  that a past change through it broke something.
+
+Setup, troubleshooting, and the local-cache/ignore policy live in
+[tooling/codebase-memory](docs/tooling/codebase-memory.md).
 
 ## 2. Mandatory behavior
 
@@ -100,8 +183,14 @@ Write tests first where practical — see [testing-tdd](docs/guidelines/testing-
   configured, read relevant summaries and pre-action warnings before work; log
   failed attempts and important findings during work; log decisions, fixes,
   changed files, validation, and remaining risks after work. Never log secrets,
-  credentials, tokens, personal data, or temporary brainstorming. See
+  credentials, tokens, personal data, or temporary brainstorming. Project memory
+  answers *why and what happened*; the code graph (§1b) answers *where the code
+  is and what it touches*. Do not use one for the other's job. See
   [project-memory](docs/workflows/project-memory.md).
+- **Structural code intelligence.** When a code graph is configured, query it
+  before broad grep/glob exploration, then read the exact files it returns. Never
+  turn one graph query into an exhaustive or negative claim. See §1b and
+  [tooling/codebase-memory](docs/tooling/codebase-memory.md).
 - **Pull requests.** When asked to create a PR, default the base branch to
   `develop`, assign the PR to yourself, use only labels that exist in the repo,
   and ask for at least one reviewer if none was specified. See

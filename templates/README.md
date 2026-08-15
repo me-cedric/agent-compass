@@ -41,7 +41,7 @@ Files ending `.tpl` / `.example.*` are meant to be copied and renamed (e.g.
 | `design-system/`  | `README.md`                                                                      | Figma/design-system extraction worksheet            |
 | `policies/`       | setup policy packs (`safe-local-work`, `solo-dev`, `startup-fast`, `strict-enterprise`, `regulated-api`) | `policy-pack.mjs` |
 | `agent/`          | `.github/PULL_REQUEST_TEMPLATE.md`, `.github/instructions/*.instructions.md`, `.github/prompts/*.prompt.md`, `.github/agents/*.agent.md`, `.github/ISSUE_TEMPLATE/agent-ready-task.yml` | agent rules, prompts, custom agents, intake form, PR template |
-| `mcp/`            | `README.md`, `tool-contract.md`, `figma.example.json`, `figma-mcp-go.*`, `projectmem.example.json`, provider allowlist examples | MCP setup + per-tool contracts                       |
+| `mcp/`            | `README.md`, `tool-contract.md`, `figma.example.json`, `figma-mcp-go.*`, `projectmem.example.json`, `codebase-memory.example.json`, provider allowlist examples | MCP setup + per-tool contracts                       |
 | `evals/`          | `agent-teaching-evals.json`                                                      | teaching and provider-tool offer eval fixtures       |
 | `trace/`          | `README.md`, `agent-trace.example.jsonl`                                         | agent trace/outcome log schema (no secrets)          |
 | `specs/`          | `constitution-template.md`, `spec-template.md`, `plan-template.md`, `tasks-template.md`, `checklist-template.md`, `specs-readme.md` | [spec-driven-development](../docs/workflows/spec-driven-development.md) |

@@ -9,6 +9,11 @@ repo files.
 - For ready-to-use research servers (context7, fetch, playwright,
   sequential-thinking), see [mcp-servers.md](mcp-servers.md) and
   `templates/mcp/recommended.example.json`.
+- For structural code navigation, wire `codebase-memory-mcp` with
+  `agent-compass code-intel setup` — see
+  [codebase-memory.md](codebase-memory.md). It answers *where the code is*;
+  projectmem answers *what happened and why*. Neither replaces the other, and
+  neither owns ADRs (`docs/decisions/` does).
 - Keep tokens in the client secret store or local env, never in committed files.
 - Prefer portable stdio commands (`uvx`, `npx`) plus `cwd: "."` in shared
   examples.

@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { CODE_INTEL_CHOICE } from './lib/codebase-memory.mjs'
 import { PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
 import { confirm, multiselect, select, text } from './lib/tui.mjs'
 
@@ -45,6 +46,8 @@ const detectPm = () => existsSync(join(HOST, 'pnpm-lock.yaml')) ? 'pnpm'
 
 const PROVIDERS = ['claude', 'codex', 'gemini', 'copilot']
 const detected = detectStacks(HOST)
+// A re-run must not silently downgrade a choice that drives machine state.
+const previous = readJson(join(HOST, 'agent-compass.answers.json')) || {}
 const defaults = {
   name: pkg.name || HOST.split('/').pop(),
   scope: '@scope',
@@ -52,6 +55,9 @@ const defaults = {
   stacks: detected.length ? detected : ['generic'],
   providers: PROVIDERS,
   useSpecKit: true,
+  // Opt-in structural code intelligence. `--yes` must never install a
+  // machine-level dependency on its own, so the non-interactive default is off.
+  codeIntelligence: previous.codeIntelligence || 'none',
   skillSync: 'copy',
   skillScope: 'fit+style',
 }
@@ -67,6 +73,14 @@ const promptAnswers = async () => ({
   }),
   providers: await multiselect({ message: 'Agent providers', options: PROVIDERS, initial: PROVIDERS }),
   useSpecKit: await confirm({ message: 'Install Spec Kit bridge?', initial: true }),
+  codeIntelligence: await select({
+    message: 'Enable structural code intelligence with codebase-memory-mcp?',
+    options: [
+      { value: CODE_INTEL_CHOICE, label: 'Yes', hint: 'recommended — graph queries before broad grep' },
+      { value: 'none', label: 'No', hint: 'stays an advisory recommendation' },
+    ],
+    initial: defaults.codeIntelligence === 'none' ? CODE_INTEL_CHOICE : defaults.codeIntelligence,
+  }),
   skillSync: await select({ message: 'Skill sync mode', options: ['copy', 'symlink', 'none'], initial: 'copy' }),
   skillScope: await select({
     message: 'Skill scope',
@@ -97,7 +111,8 @@ ${JSON.stringify(answers, null, 2)}
 1. Run \`${global ? 'global-setup' : 'setup-host --strict'}\`.
 2. ${answers.useSpecKit ? 'Install Spec Kit bridge files.' : 'Skip Spec Kit bridge.'}
 3. ${answers.skillSync === 'none' ? 'Skip skill sync.' : `Sync ${answers.skillScope === 'all' ? 'all skills' : answers.skillScope === 'fit+style' ? 'fit-based skills plus working-style skills' : 'fit-based skills (core + detected stacks)'} using ${answers.skillSync}.`}
-4. Run provider verification, recommendations, quality gates, and dashboard.
+4. ${answers.codeIntelligence === CODE_INTEL_CHOICE ? 'Set up codebase-memory-mcp (install binary, enable auto-index/watch, wire MCP config).' : 'Skip codebase-memory-mcp; it stays an advisory recommendation.'}
+5. Run provider verification, recommendations, quality gates, and dashboard.
 `
 
 if (dry) {
@@ -127,6 +142,11 @@ if (!noRun) {
     const scoped = [...new Set([...fitSkills, ...styleSkills])]
     const scopeArgs = answers.skillScope === 'all' ? ['--all'] : ['--only', scoped.join(',')]
     spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`, ...scopeArgs], { stdio: 'inherit' })
+  }
+  // Machine-level install: inherit stdio so an interactive run can approve it,
+  // and forward --yes as the explicit non-interactive approval.
+  if (answers.codeIntelligence === CODE_INTEL_CHOICE) {
+    spawnSync(process.execPath, [join(AC, 'scripts', 'code-intel.mjs'), 'setup', HOST, ...(yes ? ['--yes'] : [])], { stdio: 'inherit' })
   }
   spawnSync(process.execPath, [join(AC, 'scripts', 'provider-verify.mjs'), HOST, '--write'], { stdio: 'inherit' })
   spawnSync(process.execPath, [join(AC, 'scripts', 'recommend.mjs'), HOST, '--write'], { stdio: 'inherit' })

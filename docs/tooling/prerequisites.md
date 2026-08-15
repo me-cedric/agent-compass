@@ -37,8 +37,9 @@ ships guidance and templates; it does not install global agent tooling.
 | Integration | Purpose | Required locally | Verify |
 | ----------- | ------- | ---------------- | ------ |
 | projectmem | Durable local project memory and pre-action warnings | Python `>=3.10`, `uv` recommended, projectmem package | `python --version`, `pjm --help` |
+| codebase-memory-mcp | Structural code graph for navigation and change impact | `agent-compass code-intel install` (binary in `~/.local/bin`, no sudo) | `agent-compass code-intel status` |
 | GitHub Spec Kit CLI | Optional upstream spec artifact generator | Python `>=3.11`, `uv` recommended or `pipx`, `git` | `uv --version`, `specify --help` |
-| MCP clients | Let agents read projectmem through MCP | Agent/client that supports MCP, `uvx` recommended | client shows `projectmem` tools |
+| MCP clients | Let agents read projectmem and the code graph through MCP | Agent/client that supports MCP, `uvx` recommended | client shows `projectmem` and `codebase-memory-mcp` tools |
 | Figma MCP | Design context for frontend implementation | Figma Desktop or supported MCP setup, Dev/Full seat where required, MCP-capable agent | client shows Figma design context tools |
 | GitHub PR automation | Create/review PRs from agent workflows | `gh` authenticated against the repo | `gh auth status`, `gh label list` |
 

@@ -41,6 +41,8 @@
     "policyPack": "npm run policy-pack",
     "failureMine": "npm run failure-mine",
     "mcpProbe": "npm run mcp-probe",
+    "codeIntelStatus": "npm run code-intel -- status",
+    "codeIntelDoctor": "npm run code-intel -- doctor",
     "mcpFigmaGoHelp": "npm run mcp:figma-go:help",
     "specValidationMap": "npm run spec-validation-map",
     "designImporter": "npm run design-importer",
