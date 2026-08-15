@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-08-15
+
 ### Added
 
 - **A release request means publish.** `AGENTS.md` §10 now states that "push a
