@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.7] - 2026-08-15
+
 ### Fixed
 
 - **The Windows install path works.** `agent-compass code-intel install` now
