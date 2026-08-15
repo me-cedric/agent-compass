@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-08-15
+
 ### Added
 
 - **Structural code intelligence via `codebase-memory-mcp` (optional).** A new
