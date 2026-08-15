@@ -54,9 +54,18 @@ The `caveman-review` / `review-pr` skills help review diffs.
 ## Releases
 
 "Push a release", "release a patch", "release a new version", or "cut a
-release" authorizes the complete chain in one ask: bump, validate, commit, tag,
-**push the commit and the tag to every remote that `git remote` lists**, then
-report each remote. A local tag is not a release. Full steps:
+release" authorizes the complete chain in one ask:
+
+1. Bump the version in the project files.
+2. Validate.
+3. Commit, then tag.
+4. Push the commit and the tag to **every** remote that `git remote` lists.
+5. Publish the release on **every** remote forge, with the changelog section as
+   the body.
+6. Report each remote and each published release.
+
+A version bump alone, a local tag alone, or a pushed tag with no published
+release is an unfinished release. Full steps:
 [workflows/releasing.md](../workflows/releasing.md).
 
 ## Safety

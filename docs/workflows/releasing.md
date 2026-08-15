@@ -9,12 +9,21 @@ pin by tag.
 or an equivalent phrase is the explicit ask that `AGENTS.md` §10 requires. One
 such phrase authorizes and requires the complete chain below in a single pass.
 
+A release has **three** artifacts. All three must exist before the task is
+complete:
+
+1. The version in the project files — `package.json`, `CHANGELOG.md`, and the
+   two `README.md` markers.
+2. The annotated `v<version>` tag, pushed to every remote.
+3. The **published release on every remote forge**, with the changelog section
+   as the body.
+
 - Do not stop between the steps to ask again.
-- **A local tag is not a release.** The commit and the tag must reach the
-  remotes.
-- Push to **every** remote that `git remote` lists, not to `origin` alone. Push
-  to one remote only when the user names that remote.
-- Report each remote and its result in the handoff.
+- **A local tag is not a release. A pushed tag is not a release either.** A
+  reader of the forge sees the release page, not the tag.
+- Use **every** remote that `git remote` lists, not `origin` alone. Use one
+  remote only when the user names that remote.
+- Report each remote, each published release, and its result in the handoff.
 
 `scripts/run-command.mjs` blocks a command that matches `push`, `release`, or
 `publish` until the caller adds `--confirm`. The user's release request is that
@@ -52,14 +61,25 @@ for remote in $(git remote); do
 done
 ```
 
-6. Tell host projects to bump their submodule using
-   [`upgrading.md`](upgrading.md).
-
-Shortcut after review and validation. This runs steps 1, 3, 4, and 5 in one
-command:
+6. Publish the release on every forge. The body is the changelog section for
+   this version:
 
 ```bash
-node scripts/release.mjs 0.3.0 --commit --tag --push
+gh release create v0.3.0 --repo <owner>/<repo> --title v0.3.0 --notes-file <notes>
+```
+
+Repeat for each repository behind a remote. A release that already exists is
+success, not a failure — leave it and report it.
+
+7. Tell host projects to bump their submodule using
+   [`upgrading.md`](upgrading.md).
+
+Shortcut after review and validation. This runs steps 1, 3, 4, 5, and 6 in one
+command — `--release` implies `--push`, extracts the changelog section as the
+body, and skips a release that already exists:
+
+```bash
+node scripts/release.mjs 0.3.0 --commit --tag --release
 ```
 
 Do not tag an unvalidated tree.
@@ -122,4 +142,10 @@ for remote in $(git remote); do
   git push "$remote" HEAD
   git push "$remote" v0.3.0
 done
+```
+
+6. Publish the release on every forge behind those remotes:
+
+```bash
+gh release create v0.3.0 --repo <owner>/<repo> --title v0.3.0 --notes-file <notes>
 ```

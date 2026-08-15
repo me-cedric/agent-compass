@@ -186,7 +186,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | ------- | ---- | ------- |
 | `pr` | Create a PR with Agent Compass defaults. | — |
 | `pr-review` | Build or submit a PR review. | — |
-| `release` | Prepare version/changelog/readme release metadata. | `--commit`, `--tag`, `--push` (every remote), `--dry` |
+| `release` | Prepare version/changelog/readme release metadata, then tag, push, and publish. | `--commit`, `--tag`, `--push` (every remote), `--release` (publish on every forge, implies `--push`), `--dry` |
 
 ## Common flows
 

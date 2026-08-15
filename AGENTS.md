@@ -301,11 +301,14 @@ task complete until all pass lint and typecheck.
 - **A release request means publish.** "Push a release", "release a patch",
   "release a new version", "cut a release", or an equivalent phrase is the
   explicit ask that the Safety rule requires. One such phrase authorizes the
-  complete chain: bump the version, validate, commit, tag, **push the commit and
-  the tag to every remote that `git remote` lists**, then report. Do not stop
-  between the steps to ask again. A local tag alone is not a release. Name each
-  remote and its result in the handoff. Push to one remote only when the user
-  names that remote. See [releasing](docs/workflows/releasing.md).
+  complete chain: bump the version **in the project files**, validate, commit,
+  **tag**, **push the commit and the tag to every remote that `git remote`
+  lists**, and **publish the release on every remote forge** (GitHub, GitLab, …)
+  with the changelog section as the body. Then report. Do not stop between the
+  steps to ask again. A version bump alone, a local tag alone, or a pushed tag
+  with no published release is an unfinished release. Name each remote, each
+  published release, and each result in the handoff. Use one remote only when
+  the user names that remote. See [releasing](docs/workflows/releasing.md).
 
 Full depth lives under [`docs/`](docs/). Reusable patterns live in
 [`skills/`](skills/). Copy-paste configs live in [`templates/`](templates/).

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
+import { changelogSection } from '../scripts/lib/changelog.mjs'
 import { runNode } from './helpers.mjs'
 
 const script = new URL('../scripts/release.mjs', import.meta.url)
@@ -16,6 +17,17 @@ const writeFixture = async (dir) => {
   await writeFile(join(dir, 'README.md'), README)
 }
 
+test('changelogSection returns the whole section, blank lines included', () => {
+  const changelog = '# Changelog\n\n## [Unreleased]\n\n## [1.2.3] - 2026-01-01\n\n### Added\n\n- one\n\n### Fixed\n\n- two\n\n## [1.2.2] - 2025-12-01\n\n- old\n'
+
+  assert.equal(changelogSection(changelog, '1.2.3'), '### Added\n\n- one\n\n### Fixed\n\n- two')
+  assert.equal(changelogSection(changelog, '1.2.2'), '- old')
+})
+
+test('changelogSection falls back when the version has no section', () => {
+  assert.equal(changelogSection('# Changelog\n\n## [Unreleased]\n', '9.9.9'), 'Release v9.9.9')
+})
+
 test('release rejects --push without --tag', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
   try {
@@ -24,6 +36,20 @@ test('release rejects --push without --tag', async () => {
     const result = await runNode([script.pathname, '9.9.9', '--push'], { cwd: dir })
     assert.equal(result.code, 1)
     assert.match(result.stderr, /--push requires --tag/)
+    assert.equal(await readFile(join(dir, 'README.md'), 'utf8'), README)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('release rejects --release without --tag', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
+  try {
+    await writeFixture(dir)
+
+    const result = await runNode([script.pathname, '9.9.9', '--release'], { cwd: dir })
+    assert.equal(result.code, 1)
+    assert.match(result.stderr, /--release requires --tag/)
     assert.equal(await readFile(join(dir, 'README.md'), 'utf8'), README)
   } finally {
     await rm(dir, { recursive: true, force: true })

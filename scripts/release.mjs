@@ -1,9 +1,25 @@
 #!/usr/bin/env node
-// release.mjs — bump package.json + changelog + readme; tag and push after validation if requested.
+// release.mjs — bump package.json + changelog + readme; tag, push, and publish after validation if requested.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parseCliArgs } from './lib/args.mjs'
+import { changelogSection } from './lib/changelog.mjs'
+
+// git@host:owner/repo.git and https://host/owner/repo.git both yield owner/repo.
+const repoSlug = (remote) => {
+  const url = execFileSync('git', ['remote', 'get-url', remote], { encoding: 'utf8' }).trim()
+  return url.match(/[:/]([^/:]+\/[^/]+?)(?:\.git)?$/)?.[1] ?? null
+}
+
+const releaseExists = (slug, tag) => {
+  try {
+    execFileSync('gh', ['release', 'view', tag, '--repo', slug], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
 
 const { values, positionals } = parseCliArgs({
   name: 'release',
@@ -14,7 +30,8 @@ const { values, positionals } = parseCliArgs({
     commit: { type: 'boolean', desc: 'Commit package.json, CHANGELOG.md, and README.md.' },
     tag: { type: 'boolean', desc: 'Create annotated v<version> tag. Requires --commit or clean tree.' },
     push: { type: 'boolean', desc: 'Push HEAD and the v<version> tag to every configured remote. Requires --tag.' },
-    dry: { type: 'boolean', desc: 'Print changes, do not write, commit, tag, or push.' },
+    release: { type: 'boolean', desc: 'Publish the forge release on every remote after pushing. Implies --push.' },
+    dry: { type: 'boolean', desc: 'Print changes, do not write, commit, tag, push, or publish.' },
   },
 })
 
@@ -24,8 +41,9 @@ if (!version || !/^\d+\.\d+\.\d+/.test(version)) {
   process.exit(1)
 }
 
-if (values.push && !values.tag) {
-  console.error('--push requires --tag')
+const push = Boolean(values.push || values.release)
+if (push && !values.tag) {
+  console.error(`${values.release ? '--release' : '--push'} requires --tag`)
   process.exit(1)
 }
 
@@ -67,7 +85,7 @@ if (values.tag) {
   execFileSync('git', ['tag', '-a', `v${version}`, '-m', `v${version}`], { stdio: 'inherit' })
 }
 
-if (values.push) {
+if (push) {
   const remotes = execFileSync('git', ['remote'], { encoding: 'utf8' })
     .split('\n')
     .map((line) => line.trim())
@@ -80,6 +98,33 @@ if (values.push) {
     execFileSync('git', ['push', remote, 'HEAD'], { stdio: 'inherit' })
     execFileSync('git', ['push', remote, `v${version}`], { stdio: 'inherit' })
     console.log(`pushed HEAD and v${version} to ${remote}`)
+  }
+
+  if (values.release) {
+    try {
+      execFileSync('gh', ['--version'], { stdio: 'ignore' })
+    } catch {
+      console.error(`gh not found. Publish each release by hand: gh release create v${version} --repo <owner/repo>`)
+      process.exit(1)
+    }
+    const notes = changelogSection(readFileSync('CHANGELOG.md', 'utf8'), version)
+    // Two remotes can address one repository, so publish once per repository.
+    const slugs = [...new Set(remotes.map(repoSlug).filter(Boolean))]
+    if (slugs.length === 0) {
+      console.error('--release found no repository slug in the remote URLs')
+      process.exit(1)
+    }
+    for (const slug of slugs) {
+      if (releaseExists(slug, `v${version}`)) {
+        console.log(`release v${version} already exists on ${slug}`)
+        continue
+      }
+      execFileSync('gh', ['release', 'create', `v${version}`, '--repo', slug, '--title', `v${version}`, '--notes-file', '-'], {
+        input: notes,
+        stdio: ['pipe', 'inherit', 'inherit'],
+      })
+      console.log(`published release v${version} on ${slug}`)
+    }
   }
 }
 

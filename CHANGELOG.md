@@ -5,6 +5,15 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- A release request now ends at a **published forge release**, not at a pushed
+  tag. `AGENTS.md` §10 names the three artifacts a release owes: the version in
+  the project files, the tag on every remote, and the published release on every
+  remote forge. `scripts/release.mjs` gains `--release`, which implies `--push`,
+  uses the changelog section of the version as the release body, publishes once
+  per repository behind the remotes, and treats an existing release as success.
+
 ## [0.7.5] - 2026-08-15
 
 ### Added
