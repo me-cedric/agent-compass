@@ -41,6 +41,7 @@ export const COMMANDS = {
   'provider-verify': { script: 'provider-verify.mjs', group: 'Health', desc: 'Verify provider files and prompts are discoverable.' },
   recommend: { script: 'recommend.mjs', group: 'Health', desc: 'Scan host and recommend agent setup improvements.' },
   'quality-gates': { script: 'quality-gates.mjs', group: 'Health', desc: 'Run generic agent handoff quality gates.' },
+  evidence: { script: 'evidence.mjs', group: 'Health', desc: 'Build the test-evidence bundle, or a before/after change report.' },
   'check-skill-quality': { script: 'check-skill-quality.mjs', group: 'Health', desc: 'Validate imported skills against safety and provenance rules.' },
   dashboard: { script: 'dashboard.mjs', group: 'Health', desc: 'Write static .agent/report.html dashboard.' },
   'migration-plan': { script: 'migration-plan.mjs', group: 'Health', desc: 'Plan host upgrade against current manifest.' },

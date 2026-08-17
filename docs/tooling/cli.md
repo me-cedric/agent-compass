@@ -138,6 +138,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `provider-verify` | Verify provider files and prompts are discoverable. | — |
 | `recommend` | Scan host and recommend agent setup improvements. | — |
 | `quality-gates` | Run generic agent handoff quality gates. | — |
+| `evidence` | Build the test-evidence bundle, or a before/after change report. | `--run`, `--change <slug>`, `--phase start\|finish`, `--strict`, `--json` |
 | `check-skill-quality` | Validate imported skills against safety, provenance, and reviewed-risk rules. | — |
 | `dashboard` | Write static `.agent/report.html` dashboard. | — |
 | `migration-plan` | Plan host upgrade against current manifest. | — |

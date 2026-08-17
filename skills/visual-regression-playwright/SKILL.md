@@ -38,6 +38,10 @@ artifact somewhere else, use the host path and say so in the report.
 into the reference directory, each run makes a new baseline. The check then
 always passes and proves nothing. Add `test-results/` to `.gitignore` first.
 
+`agent-compass evidence` collects the captures and diffs from those paths into
+`.agent/evidence/`, so the handoff links one bundle instead of loose files. Run
+it after the visual pass and cite the bundle in the report.
+
 ## Get a reference
 
 Use the first source that is available.

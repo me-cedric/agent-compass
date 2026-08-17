@@ -61,7 +61,84 @@ Python, and a `describe` plus `it` sentence for Jest and Vitest.
 - A failing or skipped test means the task is `partial`, never "done" — see
   [agent-behavior.md](agent-behavior.md).
 
+## Screen profiles
+
+Run every reference UI journey against a fixed matrix, so a proof is
+reproducible by someone else on another machine:
+
+| Profile | Viewport |
+| --- | ---: |
+| `desktop` | 1440 × 900 |
+| `mobile` | 390 × 844 |
+
+Pin the dimensions, the locale, the timezone, the colour scheme and reduced
+motion. Never depend on a named device profile: those shift between tool
+versions, and a proof that moves is not a proof.
+
+## Two kinds of screenshot
+
+They are not interchangeable and the difference decides who may update them.
+
+1. **Execution evidence** — captured during a passing run to show what the user
+   sees. Regenerable, gitignored, collected into the bundle. An agent creates
+   these freely.
+2. **Visual baselines** — committed alongside the tests and compared
+   automatically. Updating one requires a human who looked at the diff. Never
+   auto-accept baselines in CI, and never let a healer accept one.
+
+`screenshot: 'only-on-failure'` is for diagnosis. It does not replace explicit
+evidence of the scenarios that passed.
+
+## Evidence
+
+A completion claim owes an artifact someone else can open.
+
+```bash
+agent-compass evidence --run --strict
+```
+
+That runs the configured command, then collects every JUnit report and
+screenshot into a self-contained bundle at `.agent/evidence/` — `index.html` for
+a human, `summary.md` for the pull request and for agents, plus the raw results.
+The status is binary: it is complete only when nothing failed and the promised
+screenshots exist. Declare `evidence` in `agent-compass.commands.json` — the
+command, the report paths, the screenshot directory and how many screenshots the
+project promises. Without it the tool discovers files and says so, which is a
+weaker claim.
+
+For a change with a spec under `specs/changes/<slug>.md`, record both sides:
+
+```bash
+agent-compass evidence --change <slug> --phase start --run   # before any edit
+agent-compass evidence --change <slug> --phase finish --run  # after the work
+```
+
+`finish` diffs a SHA-256 snapshot of the workspace, lists the changed and tested
+files, reads the spec's acceptance criteria, and renders the before and after
+screenshots side by side at `.agent/changes/<slug>/`. It is a gate: it exits
+non-zero unless the after-proof is complete **and** something actually changed.
+Start from [`specs/change-spec-template.md`](../../templates/specs/change-spec-template.md);
+`finish` parses two of its headings literally.
+
+A complete bundle proves the run happened. It does not prove the result looks
+right — see [definition-of-done.md](definition-of-done.md).
+
 ## Troubleshooting flaky tests
 
 Check isolation first (shared state, ordering), then mocks, then the
 implementation. Fix the implementation, not the test — unless the test is wrong.
+
+Quarantine is a decision with an owner and a date, not a place tests go to die.
+A quarantined test with no follow-up blocks Done.
+
+## Anti-patterns
+
+- a sleep or fixed timeout used to win a race — wait for the condition
+- re-running a test until it passes, with no diagnosis
+- editing a fixture so it hides a mapping defect
+- asserting on class names, hook names or React internals instead of behaviour
+- one long end-to-end test standing in for a combinatorial rule
+- disabling an accessibility rule globally to go green
+- letting a healer delete, skip or weaken a test
+- calling a real third-party API from the pull-request suite
+- reading a coverage percentage as a quality measure

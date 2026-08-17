@@ -32,6 +32,7 @@
     "task-log": "node scripts/task-log.mjs",
     "recommend": "node scripts/recommend.mjs",
     "quality-gates": "node scripts/quality-gates.mjs",
+    "evidence": "node scripts/evidence.mjs",
     "dashboard": "node scripts/dashboard.mjs",
     "migration-plan": "node scripts/migration-plan.mjs",
     "policy-pack": "node scripts/policy-pack.mjs",

@@ -31,6 +31,7 @@ export const FILE_MANIFEST = [
   ['templates/agent/.github/PULL_REQUEST_TEMPLATE.md', '.github/PULL_REQUEST_TEMPLATE.md', 'seed'],
   ['templates/specs/specs-readme.md', 'specs/README.md', 'seed'],
   ['templates/specs/constitution-template.md', 'specs/constitution.md', 'seed'],
+  ['templates/specs/change-spec-template.md', 'specs/change-spec-template.md', 'seed'],
   ['templates/memory/projectmem-readme.md', '.projectmem/README.md', 'seed'],
   ['templates/memory/projectmem-policy.md', '.projectmem/projectmem-policy.md', 'seed'],
 

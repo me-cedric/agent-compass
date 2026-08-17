@@ -36,6 +36,7 @@
     "taskLog": "npm run task-log",
     "recommend": "npm run recommend",
     "qualityGates": "npm run quality-gates",
+    "evidence": "npm run evidence",
     "dashboard": "npm run dashboard",
     "migrationPlan": "npm run migration-plan",
     "policyPack": "npm run policy-pack",

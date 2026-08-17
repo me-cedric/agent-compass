@@ -253,6 +253,11 @@ investigation" is not a blocker.
 Do **not** say "done", "fixed", "complete", or "ready" when lint, typecheck, or
 relevant tests were skipped or failed. Mark the task `partial` and explain why.
 
+Proof types, the exception procedure, the blocking conditions, and what an agent
+may never do to a test are in
+[docs/guidelines/definition-of-done.md](docs/guidelines/definition-of-done.md).
+Build the artifact with `agent-compass evidence` and link it in the handoff.
+
 ### Handoff format
 
 ```

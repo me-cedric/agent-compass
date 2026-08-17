@@ -212,7 +212,14 @@ absent or wrong, and the decision the team must take.
 | --- | --- | --- |
 
 Result is `passed` | `failed` | `partial` | `not run`.
+
+Evidence bundle: <path to .agent/evidence/index.html, or why there is none>
 ```
+
+Build that bundle with `agent-compass evidence` before writing the report, and
+put its path on the line above. It collects the test reports and the screenshots
+this pass depends on, so a reader can check a verdict instead of trusting it.
+Cite it again in the `evidence` cell of any coverage row it proves.
 
 ## Rules
 

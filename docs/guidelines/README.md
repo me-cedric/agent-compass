@@ -6,7 +6,9 @@ The enforced rules. `AGENTS.md` is the contract; these are the depth behind it.
 | ------------------------------------------------- | ------------------------------------------------------------- |
 | [coding-style.md](coding-style.md)                | Immutability, file organization, error handling, validation. |
 | [typescript.md](typescript.md)                    | TS specifics: strictness, multi-project typecheck, response envelope, repository, hooks. |
-| [testing-tdd.md](testing-tdd.md)                  | TDD loop, coverage, unit/integration/e2e, test selection, test names. |
+| [testing-tdd.md](testing-tdd.md)                  | TDD loop, coverage, unit/integration/e2e, test selection, test names, screen profiles, evidence bundle. |
+| [definition-of-done.md](definition-of-done.md)    | Proof types, completeness rule, blocking conditions, exceptions, Definition of Ready. |
+| [accessibility.md](accessibility.md)              | Structure, keyboard and focus, name/role/state, contrast, reflow, motion. |
 | [security.md](security.md)                        | Mandatory checks, secrets, argv rule, agent permission tiers, scanning, response protocol. |
 | [operational-safety.md](operational-safety.md)    | Authorization, dry-run, rollback, production, incident, and compliance gates. |
 | [git-workflow.md](git-workflow.md)                | Conventional commits, branch naming, PRs, hooks.              |

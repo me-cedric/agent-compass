@@ -39,7 +39,8 @@ material humans and agents *read* and *promote from*.
   [`react-query-bulk-mutation-reconcile`](instincts/react-query-bulk-mutation-reconcile.md),
   [`entity-picker-label-source`](instincts/entity-picker-label-source.md),
   [`frontend-shared-layer-escapes`](instincts/frontend-shared-layer-escapes.md),
-  [`dev-server-route-warmup`](instincts/dev-server-route-warmup.md).
+  [`dev-server-route-warmup`](instincts/dev-server-route-warmup.md),
+  [`keyboard-path-before-done`](instincts/keyboard-path-before-done.md).
 - **Workflow & process:**
   [`mr-scope-and-green-pipeline`](instincts/mr-scope-and-green-pipeline.md),
   [`commit-convention`](instincts/commit-convention.md),
@@ -55,7 +56,8 @@ material humans and agents *read* and *promote from*.
   [`testing-pattern`](instincts/testing-pattern.md),
   [`negative-assertion-precondition`](instincts/negative-assertion-precondition.md),
   [`ui-change-needs-visual-proof`](instincts/ui-change-needs-visual-proof.md),
-  [`e2e-gate-budget`](instincts/e2e-gate-budget.md).
+  [`e2e-gate-budget`](instincts/e2e-gate-budget.md),
+  [`evidence-outlives-the-claim`](instincts/evidence-outlives-the-claim.md).
 - **Build & packaging:**
   [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
   [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md).

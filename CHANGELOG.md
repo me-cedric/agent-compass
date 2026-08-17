@@ -5,6 +5,42 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **`agent-compass evidence` builds the artifact a completion claim owes.** It
+  collects every JUnit report and screenshot into a self-contained bundle at
+  `.agent/evidence/` — `index.html` for a human, `summary.md` for the pull
+  request — and the status is binary: complete only when nothing failed and the
+  promised screenshots exist. Configure it with the `evidence` key of
+  `agent-compass.commands.json`. Without that key it discovers the files and
+  says so in the report, because a discovered count is a weaker claim than a
+  declared one.
+- **A before/after report for a spec'd change.** `evidence --change <slug>
+  --phase start` records the proof and a SHA-256 snapshot of the workspace;
+  `--phase finish` re-runs, diffs the snapshot, lists the changed and tested
+  files, reads the acceptance criteria out of the spec, and renders the before
+  and after screenshots side by side under `.agent/changes/<slug>/`. It is a
+  gate: it exits non-zero unless the after-proof is complete **and** something
+  actually changed, so a green suite over an empty diff cannot pass.
+- **`docs/guidelines/definition-of-done.md`.** The formalism behind the
+  Completion Gate: the `AUTO` / `PR` / `REVIEW` / `N/A` proof types, the rule
+  that no level compensates another, the blocking conditions, the actions an
+  agent may never take against a test, and an exception procedure that needs an
+  owner and a deadline and then expires.
+- **`docs/guidelines/accessibility.md`**, the first accessibility rules in the
+  compass, plus the `keyboard-path-before-done` instinct. An automated audit
+  reads the rendered tree; it cannot tell you that Tab skips your new button.
+- **`specs/change-spec-template.md`**, whose `## Acceptance criteria` and
+  `## Expected proof scenarios` headings are read literally by the change
+  report, and the `evidence-outlives-the-claim` instinct.
+
+### Changed
+
+- **`docs/guidelines/testing-tdd.md` gained the proof half of testing**: a fixed
+  screen-profile matrix, the difference between regenerable execution evidence
+  and committed visual baselines that only a human may update, the evidence
+  commands, and the forbidden anti-patterns.
+
 ### Fixed
 
 - **`code-intel status` reports an indexed repository as indexed.** The project
