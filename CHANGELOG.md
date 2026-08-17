@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.8] - 2026-08-17
+
 ### Added
 
 - **`agent-compass evidence` builds the artifact a completion claim owes.** It
