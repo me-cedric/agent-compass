@@ -6,6 +6,8 @@ node_modules/
 !.env.example
 # internal build/resume note
 .agent-compass-progress.md
+.agent/evidence/
+.agent/changes/
 # staged knowledge pulls awaiting review (kept local until promoted)
 knowledge/incoming/
 # generated bootstrap output (users keep their own copy)

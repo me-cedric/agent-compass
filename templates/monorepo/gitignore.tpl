@@ -57,6 +57,10 @@ tasks/todo.md
 .agent/report.html
 .agent/spec-validation-map.md
 .agent/.update-check.json
+# Evidence bundles and change reports: regenerable, and heavy with screenshots.
+# Publish them as a CI artifact; do not commit them.
+.agent/evidence/
+.agent/changes/
 
 # Scanner/build outputs.
 .scannerwork/

@@ -5,6 +5,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **An evidence bundle no longer asks to be committed.** `.agent/evidence/` and
+  `.agent/changes/` join the generated artifacts the gitignore template already
+  lists. Both hold copied screenshots, so a host that adopted that template would
+  otherwise have carried megabytes of regenerable images into its history on the
+  first run. Publish a bundle as a CI artifact instead.
+
 ## [0.7.8] - 2026-08-17
 
 ### Added
