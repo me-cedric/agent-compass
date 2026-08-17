@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.7.9] - 2026-08-17
+
 ### Fixed
 
 - **An evidence bundle no longer asks to be committed.** `.agent/evidence/` and
