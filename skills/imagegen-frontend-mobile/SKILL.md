@@ -1472,7 +1472,7 @@ The final result should look like a high-end mobile app concept with clean hiera
 ## Provenance
 
 Vendored from [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill)
-at commit `e988add20dab0fa97d7a76781c48961c8184288e`. The upstream folder is
+at commit `dfb6f9f9e93a39f673b1827c0889cc28326d1800`. The upstream folder is
 `skills/imagegen-frontend-mobile`. The licence is MIT, © 2026 Leonxlnx. The `LICENSE` file is
 next to this file.
 

@@ -39,6 +39,7 @@ export const FILE_MANIFEST = [
   ['templates/handoff.md', 'docs/handoff-template.md', 'managed'],
   ['templates/intake/work-intake.md', 'docs/work-intake-template.md', 'managed'],
   ['templates/trace/README.md', '.agent/trace/README.md', 'managed'],
+  ['templates/agent-tools/check-agent-compass-updates.sh', '.agent/hooks/check-agent-compass-updates.sh', 'managed'],
   ['templates/agent/.github/ISSUE_TEMPLATE/agent-ready-task.yml', '.github/ISSUE_TEMPLATE/agent-ready-task.yml', 'managed'],
   ['templates/agent/.github/instructions/agent-compass.instructions.md', '.github/instructions/agent-compass.instructions.md', 'managed'],
   ['templates/agent/.github/instructions/pr-workflow.instructions.md', '.github/instructions/pr-workflow.instructions.md', 'managed'],

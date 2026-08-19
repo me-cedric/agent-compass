@@ -5,6 +5,10 @@
       "hooks": [
         {
           "type": "command",
+          "command": "test -f .agent/hooks/check-agent-compass-updates.sh && sh .agent/hooks/check-agent-compass-updates.sh || true"
+        },
+        {
+          "type": "command",
           "command": "test -f AGENTS.md && printf 'Reminder: English, caveman full, ponytail full; read AGENTS.md and agent-compass.commands.json before work.\\n' || true"
         }
       ]

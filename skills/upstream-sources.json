@@ -1,0 +1,454 @@
+{
+  "schema": 1,
+  "sources": {
+    "devops-security": {
+      "repository": "https://github.com/BagelHole/DevOps-Security-Agent-Skills",
+      "commit": "0365f57a079b1332f95cf26e31dd2d5332a8399f",
+      "strategy": "operational",
+      "license": "MIT",
+      "lock": "skills/upstream-lock.json",
+      "skills": [
+        "access-review",
+        "ai-agent-security",
+        "ai-coding-agent-guardrails",
+        "ai-inference-service-mesh",
+        "ai-pipeline-orchestration",
+        "ai-red-teaming",
+        "ai-security-hardening",
+        "alerting-oncall",
+        "argocd-gitops",
+        "arm-templates",
+        "asset-inventory",
+        "audit-logging",
+        "aws-cloudtrail",
+        "aws-cost-optimization",
+        "aws-ec2",
+        "aws-ecs-fargate",
+        "aws-iam",
+        "aws-lambda",
+        "aws-rds",
+        "aws-s3",
+        "aws-secrets-manager",
+        "aws-vpc",
+        "azure-aks",
+        "azure-functions",
+        "azure-keyvault",
+        "azure-monitor-audit",
+        "azure-networking",
+        "azure-sql",
+        "azure-vms",
+        "backup-recovery",
+        "block-storage",
+        "blue-green-deploy",
+        "business-continuity",
+        "cdn-setup",
+        "change-management",
+        "cis-benchmarks",
+        "cloudflare-pages",
+        "cloudflare-r2",
+        "cloudflare-workers",
+        "cloudflare-zero-trust",
+        "cloudformation",
+        "container-hardening",
+        "container-registries",
+        "container-scanning",
+        "convex-backend",
+        "dast-scanning",
+        "database-backups",
+        "dependency-scanning",
+        "devcontainers-nix",
+        "disaster-recovery",
+        "dns-management",
+        "docker-compose",
+        "docker-management",
+        "feature-flags",
+        "fedramp-compliance",
+        "firebase-app-platform",
+        "firewall-config",
+        "gcp-audit-logs",
+        "gcp-cloud-functions",
+        "gcp-cloud-sql",
+        "gcp-compute",
+        "gcp-gke",
+        "gcp-networking",
+        "gcp-secret-manager",
+        "gdpr-compliance",
+        "git-workflow",
+        "github-actions",
+        "gitlab-ci",
+        "gpu-kubernetes-operations",
+        "gpu-server-management",
+        "hashicorp-vault",
+        "helm-charts",
+        "hipaa-compliance",
+        "identity-access-management",
+        "incident-management",
+        "incident-response",
+        "iso27001-compliance",
+        "kubernetes-hardening",
+        "kubernetes-ops",
+        "kustomize",
+        "linux-administration",
+        "linux-hardening",
+        "llm-app-security",
+        "llm-caching",
+        "llm-cost-optimization",
+        "llm-fine-tuning",
+        "llm-gateway",
+        "llm-inference-scaling",
+        "load-balancing",
+        "loki-logging",
+        "mac-mini-llm-lab",
+        "mcp-server-security",
+        "mdm-device-management",
+        "model-supply-chain-security",
+        "mongodb",
+        "multi-tenant-llm-hosting",
+        "mysql",
+        "nfs-storage",
+        "object-storage",
+        "ollama-stack",
+        "openclaw-deployment-hardening",
+        "openclaw-local-mac-mini",
+        "openclaw-security-hardening",
+        "opentelemetry",
+        "opentofu-migration",
+        "pci-dss-compliance",
+        "penetration-testing",
+        "performance-tuning",
+        "planetscale",
+        "podman",
+        "policy-as-code",
+        "postgresql",
+        "prometheus-grafana",
+        "prompt-injection-defense",
+        "rag-infrastructure",
+        "redis",
+        "reverse-proxy",
+        "runbook-creation",
+        "saas-security-posture",
+        "sast-scanning",
+        "sbom-supply-chain",
+        "security-automation",
+        "semantic-versioning",
+        "service-mesh",
+        "soc2-compliance",
+        "sops-encryption",
+        "ssh-configuration",
+        "ssl-tls-management",
+        "startup-it-troubleshooting",
+        "supply-chain-attack-response",
+        "systemd-services",
+        "terraform-aws",
+        "terraform-azure",
+        "terraform-gcp",
+        "threat-modeling",
+        "user-management",
+        "vector-database-ops",
+        "vendor-management",
+        "vercel-deployments",
+        "vllm-server",
+        "vpn-setup",
+        "vulnerability-scanning",
+        "waf-setup",
+        "windows-hardening",
+        "windows-server",
+        "zero-trust"
+      ],
+      "assets": []
+    },
+    "taste-skill": {
+      "repository": "https://github.com/Leonxlnx/taste-skill",
+      "commit": "dfb6f9f9e93a39f673b1827c0889cc28326d1800",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "brandkit",
+        "design-taste-frontend",
+        "high-end-visual-design",
+        "image-to-code",
+        "imagegen-frontend-mobile",
+        "imagegen-frontend-web",
+        "industrial-brutalist-ui",
+        "minimalist-ui",
+        "redesign-existing-projects",
+        "stitch-design-taste"
+      ],
+      "assets": [
+        {
+          "source": "skills/brandkit/SKILL.md",
+          "target": "skills/brandkit/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/brandkit/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/taste-skill/SKILL.md",
+          "target": "skills/design-taste-frontend/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/design-taste-frontend/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/soft-skill/SKILL.md",
+          "target": "skills/high-end-visual-design/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/high-end-visual-design/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/image-to-code-skill/SKILL.md",
+          "target": "skills/image-to-code/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/image-to-code/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/imagegen-frontend-mobile/SKILL.md",
+          "target": "skills/imagegen-frontend-mobile/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/imagegen-frontend-mobile/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/imagegen-frontend-web/SKILL.md",
+          "target": "skills/imagegen-frontend-web/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/imagegen-frontend-web/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/brutalist-skill/SKILL.md",
+          "target": "skills/industrial-brutalist-ui/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/industrial-brutalist-ui/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/minimalist-skill/SKILL.md",
+          "target": "skills/minimalist-ui/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/minimalist-ui/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/redesign-skill/SKILL.md",
+          "target": "skills/redesign-existing-projects/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/redesign-existing-projects/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/stitch-skill/SKILL.md",
+          "target": "skills/stitch-design-taste/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/stitch-design-taste/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "skills/stitch-skill/DESIGN.md",
+          "target": "skills/stitch-design-taste/DESIGN.md",
+          "mode": "merge"
+        }
+      ],
+      "upstreamSha256": "0bcedc06ac205caf1f4043b9808084d91c11cce6580c74653f227d7e8ba0eb6f",
+      "localSha256": "131220949cdce3f43d21d64650a0356941b87c1ae6007cf79c1b51d57c5eb8dc"
+    },
+    "ponytail": {
+      "repository": "https://github.com/DietrichGebert/ponytail",
+      "commit": "2ed6c52c9d7e5e56942508591085fd45dea277d3",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "ponytail",
+        "ponytail-audit",
+        "ponytail-debt",
+        "ponytail-help",
+        "ponytail-review"
+      ],
+      "assets": [
+        {
+          "source": "skills/ponytail/SKILL.md",
+          "target": "skills/ponytail/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/ponytail-audit/SKILL.md",
+          "target": "skills/ponytail-audit/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/ponytail-debt/SKILL.md",
+          "target": "skills/ponytail-debt/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/ponytail-help/SKILL.md",
+          "target": "skills/ponytail-help/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/ponytail-review/SKILL.md",
+          "target": "skills/ponytail-review/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/ponytail/LICENSE",
+          "mode": "copy"
+        }
+      ],
+      "upstreamSha256": "fd046512a650de807ad1125d7a21db46324e3d128d48d0f3b519499b57c05594",
+      "localSha256": "c2cd29a912c643fb57af3a621415e40f0bcc83cf1082341cd93d790c44676957"
+    },
+    "caveman": {
+      "repository": "https://github.com/JuliusBrussee/caveman",
+      "commit": "99a9aa2f5a45097fc3563febea7d0baf64407441",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "caveman",
+        "caveman-commit",
+        "caveman-review"
+      ],
+      "assets": [
+        {
+          "source": "skills/caveman/SKILL.md",
+          "target": "skills/caveman/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/caveman-commit/SKILL.md",
+          "target": "skills/caveman-commit/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "skills/caveman-review/SKILL.md",
+          "target": "skills/caveman-review/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/caveman/LICENSE",
+          "mode": "copy"
+        }
+      ],
+      "upstreamSha256": "321ca088eed5245f3310e4656ae100fea4e8f009d6f7eb8e51e4ca5decf06182",
+      "localSha256": "616023442df96c68483e37c045f36c1c8eaa79ef871b7695766cbe903d893964"
+    },
+    "i-have-adhd": {
+      "repository": "https://github.com/ayghri/i-have-adhd",
+      "commit": "e7555fcaf612dfa1739dc86610ea926a906db614",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "i-have-adhd"
+      ],
+      "assets": [
+        {
+          "source": "skills/i-have-adhd/SKILL.md",
+          "target": "skills/i-have-adhd/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/i-have-adhd/LICENSE",
+          "mode": "copy"
+        }
+      ],
+      "upstreamSha256": "542c64139d38a449f5dca6c2ced18dd5cc167bfe35ef99461bee7755937abe56",
+      "localSha256": "1c1c8162ea494b3cb7779e3658df755bdf9b9bb8820e0fe2d8e129dbb4b04de2"
+    },
+    "asd-ste100": {
+      "repository": "https://github.com/danyuchn/asd-ste100-skill",
+      "commit": "d5ce157870cf9c41efd1d6e836706a2be3c7b9da",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "asd-ste100"
+      ],
+      "assets": [
+        {
+          "source": "SKILL.md",
+          "target": "skills/asd-ste100/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "examples/before-after.md",
+          "target": "skills/asd-ste100/examples/before-after.md",
+          "mode": "merge"
+        },
+        {
+          "source": "references/writing-rules.md",
+          "target": "skills/asd-ste100/references/writing-rules.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/asd-ste100/LICENSE",
+          "mode": "copy"
+        }
+      ],
+      "upstreamSha256": "30c695debcf914aa12770a1c9e561b9ffad6fbf09223c57f0bad8e77473979b1",
+      "localSha256": "7b9f96b3362918f686c60c69cf645ca2aeeb0bc61a3fc6b53da0f762add36ca9"
+    },
+    "anydoc": {
+      "repository": "https://github.com/firecrawl/anydoc",
+      "commit": "e754e1d33a1a540ebc9226e36f11d3f401852c9e",
+      "strategy": "merge",
+      "license": "MIT",
+      "skills": [
+        "convert-documents-to-markdown"
+      ],
+      "assets": [
+        {
+          "source": "skills/convert-documents-to-markdown/SKILL.md",
+          "target": "skills/convert-documents-to-markdown/SKILL.md",
+          "mode": "merge"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/convert-documents-to-markdown/LICENSE",
+          "mode": "copy"
+        }
+      ],
+      "version": "0.1.9",
+      "package": {
+        "name": "@firecrawl/anydoc",
+        "manifest": "node/package.json"
+      },
+      "upstreamSha256": "1a57f8a77fdc56fd4ef07d8784fb0356a073d97b33208df6593102b22bfbf0a6",
+      "localSha256": "54bf11d4423cafd84281fba64baebc0481aff00f105f28783bc726e067ab143a"
+    }
+  }
+}

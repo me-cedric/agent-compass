@@ -79,7 +79,9 @@ test('sync applies version migrations and --check detects drift', async () => {
     const migrate = await runNode([sync, host, '--target', '9.9.9'], { cwd: root.pathname })
     assert.equal(migrate.code, 0, migrate.stderr)
     assert.match(migrate.stdout, /0\.4\.0/)
+    assert.match(migrate.stdout, /0\.7\.10/)
     assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\*\.acnew/)
+    assert.match(await readFile(join(host, '.gitignore'), 'utf8'), /\.agent\/\.upstream-source-check\.json/)
 
     // Clean now → --check passes.
     const clean = await runNode([sync, host, '--check', '--target', '9.9.9'], { cwd: root.pathname })

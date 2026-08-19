@@ -3,12 +3,12 @@
 ### One operating system for every coding agent
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-v0.7.9-blue)
+![Version](https://img.shields.io/badge/version-v0.8.0-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
 <!-- BEGIN GENERATED:SKILL_BADGE -->
-![Skills](https://img.shields.io/badge/skills-223-orange)
+![Skills](https://img.shields.io/badge/skills-225-orange)
 <!-- END GENERATED:SKILL_BADGE -->
 ![Ops Packs](https://img.shields.io/badge/ops%20packs-146-red)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
@@ -73,7 +73,7 @@ through [`MISSIONS.md`](MISSIONS.md) and executes the matching playbook.
 ### 30-Second Route
 
 ```bash
-git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+git submodule add https://github.com/<owner>/agent-compass.git docs/agent-compass
 node docs/agent-compass/scripts/adopt.mjs .
 ```
 
@@ -85,7 +85,7 @@ bootstrap, and Compass extension work to the right playbook.
 From the host project root:
 
 ```bash
-git submodule add git@github.com:<owner>/agent-compass.git docs/agent-compass
+git submodule add https://github.com/<owner>/agent-compass.git docs/agent-compass
 node docs/agent-compass/scripts/adopt.mjs .
 ```
 
@@ -144,7 +144,7 @@ Use a standalone clone when the host should copy standards but not vendor this
 repo:
 
 ```bash
-git clone git@github.com:<owner>/agent-compass.git /tmp/agent-compass
+git clone https://github.com/<owner>/agent-compass.git /tmp/agent-compass
 node /tmp/agent-compass/scripts/install.mjs --dry /path/to/host
 node /tmp/agent-compass/scripts/install.mjs /path/to/host
 node /tmp/agent-compass/scripts/install.mjs --doctor --fix /path/to/host
@@ -158,7 +158,7 @@ client config.
 ### Bootstrap New Project
 
 ```bash
-git clone git@github.com:<owner>/agent-compass.git
+git clone https://github.com/<owner>/agent-compass.git
 cd agent-compass
 node scripts/bootstrap.mjs
 ```
@@ -258,14 +258,23 @@ agent-compass check-skill-quality
 agent-compass skill-docs --check
 ```
 
-Refreshing requires an explicit local upstream checkout and a reviewed
-`--refresh`; Agent Compass does not fetch or monitor upstream state.
+Agent Compass also tracks every vendored skill family in one source registry:
+
+```bash
+agent-compass check-update --remote
+agent-compass upstream-skills --update anydoc --dry
+```
+
+The cached check is read-only. Refresh is explicit, uses a temporary checkout,
+preserves local adaptations with a three-way merge, and stops on conflict.
+Remote content is never executed or merged automatically. See
+[`upstream-sources.md`](docs/tooling/upstream-sources.md).
 
 ---
 
 ## Status
 
-Agent Compass is usable across real projects. Current version: `0.7.9`.
+Agent Compass is usable across real projects. Current version: `0.8.0`.
 
 | Area | Current state |
 | ---- | ------------- |
@@ -277,6 +286,7 @@ Agent Compass is usable across real projects. Current version: `0.7.9`.
 | Code intelligence | Optional `codebase-memory-mcp` layer: `code-intel` CLI, MCP template, doctor checks, and navigation rules. |
 | PR workflow | GitHub PR create/review helpers and reviewer/label/base rules. |
 | Figma | MCP guidance, frontend skill, and design-system extraction worksheet. |
+| Documents | Pinned local anydoc extraction for office files and text PDFs, with prompt-injection and hosted-upload guardrails. |
 | Operations | 146 opt-in DevOps, security, infrastructure, and compliance skills with safety gates. |
 | CI | Node 24, latest tracked action majors, tests, naming/index/docs/action guards. |
 | Release | Changelog/version/tag guard and a release helper that tags, pushes, and publishes the forge release on every remote. |

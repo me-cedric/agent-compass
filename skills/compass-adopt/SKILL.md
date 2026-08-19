@@ -108,7 +108,12 @@ fails.
    Read `.agent/doctor-report.md` and `.agent/recommendations.md` in the host;
    fix criticals (missing pointers, empty registry, broken MCP placeholders).
 
-8. **Report** against the Completion Gate: files created, commands run,
+8. **Recover missing project knowledge.** If the host has code but no reviewed
+   specifications or architecture documents, offer `codebase-to-specs`. Keep
+   every generated document marked as inferred until a human reviews it. Do not
+   run this step when reviewed specifications already exist.
+
+9. **Report** against the Completion Gate: files created, commands run,
    verification results, skipped recommendations with reasons, and the top
    remaining follow-ups from `.agent/recommendations.md`.
 

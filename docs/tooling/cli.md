@@ -169,7 +169,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `run` | Run a registry command (refuses unknown/destructive). | `run-command` |
 | `check-companions` | Fail when source changes ship without a test. | `check-change-companions` |
 | `skill-docs` | Generate or check README skill counts and pack catalogs. | — |
-| `upstream-skills` | Verify the pinned lock or refresh from an explicit local checkout. Never fetches. | — |
+| `upstream-skills` | Verify all external pins, check remote heads, or explicitly refresh reviewed sources. | `--check-updates`, `--update <source\|all>`, `--source <dir>`, `--dry` |
 | `redact` | Scan files/staged diff for secret/PII leaks. | — |
 
 **Learning**

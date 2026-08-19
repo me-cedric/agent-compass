@@ -32,7 +32,7 @@ source of truth and never drift.
 | `docs/` | `architecture/`, `decisions/` (ADRs), `guidelines/`, `tooling/`, `workflows/`, `agent-setup.md`. |
 | `knowledge/` | `instincts/` (distilled reusable patterns), `examples/`, `incoming/` (staging from `pull-knowledge`). |
 | `migrations/` | Ordered per-version host migrations, applied by `sync` (see Stay current). |
-| `scripts/` | All executable tooling; `cli.mjs` dispatches commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `capability-packs`, `upstream-skills`, `redact`). |
+| `scripts/` | All executable tooling; `cli.mjs` dispatches commands in 6 groups (Setup, Health, Context, Build, Learning, Git) with `COMMANDS` exported as data; `lib/` shared libs (`args`, `tui`, `profiles`, `capability-packs`, `upstream-skills`, `upstream-sources`, `redact`). |
 | `skills/` | Provider-portable skills (one folder per skill with `SKILL.md`). |
 | `stacks/` | Stack presets mapping a detected stack to fitting skills/templates/docs. |
 | `templates/` | Everything installable into hosts; `scripts/manifest.mjs` defines each file's destination and `seed` vs `managed` mode. |

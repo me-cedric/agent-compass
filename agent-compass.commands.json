@@ -32,6 +32,7 @@
     "skillQuality": "node scripts/cli.mjs check-skill-quality",
     "skillDocsCheck": "node scripts/cli.mjs skill-docs --check",
     "upstreamSkillsVerify": "node scripts/cli.mjs upstream-skills --verify",
+    "upstreamSkillsCheck": "node scripts/cli.mjs upstream-skills --check-updates",
     "doctorFix": "npm run doctor-fix",
     "taskLog": "npm run task-log",
     "recommend": "npm run recommend",

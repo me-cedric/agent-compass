@@ -5,6 +5,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-19
+
+### Added
+
+- A pinned external-source registry, cached update notices, reviewed refresh
+  commands, and provider startup hooks now keep externally sourced skills
+  traceable and easy to update without automatic merges.
+- `convert-documents-to-markdown` adds a pinned, local document-ingestion
+  fallback for office files and text PDFs.
+- `codebase-to-specs` drafts explicitly inferred specifications, decision
+  records, and architecture sketches from an existing codebase for human review.
+
+### Changed
+
+- Four stale external skill sources were refreshed to their reviewed remote
+  heads while local safety metadata and guidance were preserved.
+- `diagram-to-adr` and `diagram-to-likec4` supersede the Excalidraw-only skills.
+  They add draw.io, embedded draw.io SVG, Mermaid, and appropriate BPMN support.
+
 ## [0.7.9] - 2026-08-17
 
 ### Fixed

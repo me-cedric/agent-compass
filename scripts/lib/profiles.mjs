@@ -14,16 +14,17 @@ export const CORE_PROFILE = {
     'gen-docs', 'verify-module', 'verify-quality', 'verify-change',
     'verify-security', 'spec-workflow', 'project-memory', 'pr-workflow',
     'pr-review-governance', 'debug-loop', 'agent-teacher',
-    'architecture-advisor', 'adr-from-meeting', 'long-running-task',
+    'architecture-advisor', 'adr-from-meeting', 'codebase-to-specs',
+    'long-running-task',
     'progress-audit', 'completion-plan', 'work-splitting',
-    'implementation-planning',
+    'implementation-planning', 'convert-documents-to-markdown',
     // Delivery reporting and the RAID/ticket chain around the specs.
     'impact-analysis', 'delivery-digest', 'harvest-questions',
     'split-tasks-by-profile', 'spec-to-tickets', 'spec-drift-triage',
     // The review pass that closes the loop: does the build match the specs?
     'qa-review-pass',
     // Sketch and model conversions that feed decisions and specs.
-    'excalidraw-to-adr', 'excalidraw-to-likec4', 'likec4-to-openspec',
+    'diagram-to-adr', 'diagram-to-likec4', 'likec4-to-openspec',
   ],
   templates: ['templates/specs', 'templates/intake', 'templates/commands'],
   docs: ['docs/guidelines/coding-style.md', 'docs/guidelines/testing-tdd.md', 'docs/guidelines/documentation.md'],

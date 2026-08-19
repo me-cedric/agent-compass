@@ -64,7 +64,7 @@ export const COMMANDS = {
   run: { script: 'run-command.mjs', group: 'Build', desc: 'Run a registry command (refuses unknown/destructive).' },
   'check-companions': { script: 'check-change-companions.mjs', group: 'Build', desc: 'Fail when source changes ship without a test.' },
   'skill-docs': { script: 'skill-docs.mjs', group: 'Build', desc: 'Generate or check README skill counts and pack catalogs.' },
-  'upstream-skills': { script: 'upstream-skills.mjs', group: 'Build', desc: 'Verify or refresh imported skills from a local checkout.' },
+  'upstream-skills': { script: 'upstream-skills.mjs', group: 'Build', desc: 'Verify, check, or refresh pinned external skill sources.' },
   redact: { script: 'redact.mjs', group: 'Build', desc: 'Scan files/staged diff for secret/PII leaks.' },
 
   trace: { script: 'agent-trace.mjs', group: 'Learning', desc: 'Validate a trace/outcome log (no secrets).' },

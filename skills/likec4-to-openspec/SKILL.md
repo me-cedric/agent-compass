@@ -23,7 +23,7 @@ elements and relationships.
 
 LikeC4 files (`.c4`) under `docs/diagrams/`, or one the user names. Parse the
 `model { }` block for elements (systems/containers/components) and their
-relationships. [`excalidraw-to-likec4`](../excalidraw-to-likec4/SKILL.md)
+relationships. [`diagram-to-likec4`](../diagram-to-likec4/SKILL.md)
 produces such a file from a sketch.
 
 ## Output — an OpenSpec change

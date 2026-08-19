@@ -7,10 +7,8 @@ requires_tools: []
 disable-model-invocation: true
 license: MIT
 metadata:
-  hermes:
-    tags: [ADHD, Output Style, Productivity, Formatting]
-    category: productivity
-    related_skills: []
+  tags: "ADHD, Output Style, Productivity, Formatting"
+  category: "productivity"
 ---
 
 # i-have-adhd
@@ -147,7 +145,7 @@ If yes, send.
 ## Provenance
 
 Vendored from [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd)
-at commit `2d19ad205eb1d85fc9c3968bdeba4c2116518685`, MIT License,
+at commit `e7555fcaf612dfa1739dc86610ea926a906db614`, MIT License,
 © 2026 Ayoub Ghriss. Full terms in `LICENSE` next to this file. Only the
 compass frontmatter fields (`risk_level`, `writes_files`, `requires_tools`)
 were added. No rule text was changed.

@@ -18,6 +18,8 @@ ASD-STE100 is a controlled natural language, first released in 1986 (as AECMA Do
 - Use approved words only in their approved meaning and part of speech.
 - Each word maps to exactly one meaning — don't rely on context to disambiguate a word that has several dictionary senses.
 - Prefer the plainer, shorter, more common word over a formal or rare synonym.
+- Use an approved verb for an action, not a noun derived from that verb (Rule 3.7).
+- Do not make phrasal verbs by putting a verb and a preposition together (Rule 9.3). Their meaning is not predictable from the parts, and non-native readers and translation systems both mishandle them.
 
 **Verb forms**
 - Permitted forms: infinitive, imperative, simple present, simple past, simple future, and past participle used only as an adjective.
@@ -33,6 +35,7 @@ ASD-STE100 is a controlled natural language, first released in 1986 (as AECMA Do
 - Maximum ~20 words per sentence for procedures/instructions; maximum ~25 words for descriptive text.
 - Do not omit sentence parts (verb, subject, article) just to shorten the sentence — the standard explicitly warns that this creates ambiguity rather than clarity.
 - Noun clusters (strings of nouns stacked as a modifier) are capped at 3 words.
+- Semicolons are not permitted at all (Rule 8.1): "You can use all standard English punctuation marks but not the semicolon (;)." Write separate sentences instead. Every other standard mark, including the em dash, remains permitted.
 
 **Paragraph and document structure**
 - One topic per paragraph.

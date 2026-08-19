@@ -20,8 +20,8 @@ Add a skill or workflow when all are true:
 Do not import when:
 
 - It depends on a private global path like `$HOME/.claude/...`.
-- It is a document/media utility better kept global (`pdf`, `pptx`, `xlsx`,
-  `docx`) unless a project workflow requires it.
+- It is a document creation, editing, rendering, or media utility better kept
+  global (`pdf`, `pptx`, `xlsx`, `docx`) unless a project workflow requires it.
 - It duplicates an existing Agent Compass skill with only wording changes.
 - It adds ceremony without a runnable check.
 
@@ -30,6 +30,9 @@ Do not import when:
 Imported or already covered:
 
 - `caveman`, `ponytail`: working-style defaults.
+- `convert-documents-to-markdown`: local, cross-format extraction fallback for
+  providers that cannot read an office file directly. It does not replace the
+  format-specific creation, editing, rendering, or OCR skills.
 - `diagnosing-bugs`: imported as the smaller `debug-loop` skill.
 - GSD phase/workspace ideas: covered by specs, runbook, context-pack, trace, and
   `setup-host`; do not vendor GSD because it depends on private global paths.
@@ -42,6 +45,9 @@ Imported or already covered:
   Import is knowledge-only, split into four opt-in packs, carries a mandatory
   operational safety gate, and excludes upstream executable scripts/assets.
   See [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md).
+- All external skill families: registered in `skills/upstream-sources.json` for
+  cached remote checks and explicit reviewed refresh. Remote content is never
+  executed or merged automatically.
 - Global config scan: keep personal defaults global; Agent Compass already ships
   generic templates for context7, fetch, sequential-thinking, Figma MCP,
   projectmem, headroom, Codex hooks, Claude hooks, and skillshare-style sync.

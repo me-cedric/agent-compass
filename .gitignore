@@ -8,6 +8,8 @@ node_modules/
 .agent-compass-progress.md
 .agent/evidence/
 .agent/changes/
+.agent/.update-check.json
+.agent/.upstream-source-check.json
 # staged knowledge pulls awaiting review (kept local until promoted)
 knowledge/incoming/
 # generated bootstrap output (users keep their own copy)

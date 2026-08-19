@@ -17,6 +17,8 @@ Concrete setup guides. Each points at runnable files in
 | [mcp.md](mcp.md)                               | MCP setup, projectmem, Figma design context.            |
 | [mcp-servers.md](mcp-servers.md)               | Recommended ready-to-use MCP servers (context7, fetch, playwright, …). |
 | [agent-provider-capabilities.md](agent-provider-capabilities.md) | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
+| [upstream-sources.md](upstream-sources.md)       | Pinned external skill registry, cached checks, and reviewed refresh. |
+| [document-ingestion.md](document-ingestion.md)   | Safe local office-file and PDF extraction with anydoc. |
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |

@@ -33,7 +33,8 @@ Use:
   `/skill-name` or auto-load them when relevant.
 - Subagents, agent view, agent teams, or dynamic workflows for parallel work.
 - Hooks for deterministic lifecycle actions such as formatting, blocking risky
-  edits, notifications, or reinjecting context after compaction.
+  edits, cached external-source notices, notifications, or reinjecting context
+  after compaction.
 - MCP for external systems and shared context.
 - Plugins when skills, hooks, subagents, and MCP servers need to travel together
   across repos.
@@ -61,6 +62,8 @@ Use:
 - Skills for reusable workflows and domain expertise.
 - MCP for external tools, docs, browser/Figma, GitHub, and project memory.
 - Hooks for deterministic lifecycle checks and prompt/tool guardrails.
+- The managed session-start hook for a cached Agent Compass and external-skill
+  update notice.
 - `/review` for local diff, branch, or commit review when available.
 - `~/.codex/config.toml` for personal defaults; `.codex/config.toml` for
   repo-local behavior when the team wants it versioned.

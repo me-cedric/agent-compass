@@ -132,6 +132,12 @@ It runs **automatically** from the installed `.husky/post-merge` hook after ever
 `git pull`/merge: silent when current, one line when the standards moved
 ("run sync"). It reuses `sync --check`, so it never reports a false update.
 
+Claude and Codex session-start hooks run the same cached remote mode. That mode
+also checks every external skill pin in `skills/upstream-sources.json`. It only
+prints a notice. It never refreshes source content.
+
+Sync also adds the external-source cache to `.gitignore` for existing hosts.
+
 ## CI drift check
 
 Fail CI when a host falls behind (read-only, writes nothing):

@@ -122,7 +122,7 @@ test('an argv secret is either removed or documented as exposed', () => {
   // list is readable. Some tools offer no alternative, and the guideline's escape
   // hatch is to name the exposure and require rotation. This test encodes that
   // rule: a file may keep an argv secret only while it also documents it.
-  const ARGV_SECRET = [
+  const ARGV_PATTERNS = [
     /--password[= ]("?)(?!"?\$\{?[A-Z_]*\}?"?$)[^\s\\]+/,
     /-p"\$[A-Z_]+"/,
     /redis-cli[^\n]*\s-a\s+\S/,
@@ -134,7 +134,7 @@ test('an argv secret is either removed or documented as exposed', () => {
     const text = readFileSync(join(AC, 'skills', name, 'SKILL.md'), 'utf8')
     const offenders = text.split('\n').filter((line) => {
       if (line.trimStart().startsWith('#') || line.trimStart().startsWith('>')) return false
-      return ARGV_SECRET.some((pattern) => pattern.test(line))
+      return ARGV_PATTERNS.some((pattern) => pattern.test(line))
     })
     if (!offenders.length) continue
     assert.match(
@@ -215,7 +215,7 @@ Explicit approval. Rollback. Current official documentation.
 test('live upstream lock verifies through the CLI', async () => {
   const result = await runNode([cli, 'upstream-skills', '--verify'], { cwd: AC })
   assert.equal(result.code, 0, result.stderr)
-  assert.match(result.stdout, /verified 146 locked skills/)
+  assert.match(result.stdout, /verified 146 locked skills and 7 source pins/)
 
   const lock = JSON.parse(await readFile(join(AC, 'skills', 'upstream-lock.json'), 'utf8'))
   assert.equal(Object.keys(lock.skills).length, 146)
@@ -227,6 +227,7 @@ test('skill lifecycle commands are available through the command registry', asyn
     ['agentTools.skillQuality', 'check-skill-quality'],
     ['agentTools.skillDocsCheck', 'skill-docs --check'],
     ['agentTools.upstreamSkillsVerify', 'upstream-skills --verify'],
+    ['agentTools.upstreamSkillsCheck', 'upstream-skills --check-updates'],
   ]) {
     const result = await runNode([registryRunner, name, AC, '--dry'], { cwd: AC })
     assert.equal(result.code, 0, result.stderr)

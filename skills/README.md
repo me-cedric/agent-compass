@@ -40,10 +40,16 @@ rules and the sub-agent propagation rule.
 | ---------------------- | ------------------------------------------------------------------ |
 | `architecture-advisor` | Choose & justify a new project's architecture — research-first, technology-neutral, no unlabeled guesses; produces ADR, mermaid diagrams, risks, assumptions, open questions, and optionally a backlog and meeting list. |
 | `adr-from-meeting`     | Turn a meeting transcript or decision notes into an Architecture Decision Record under `docs/decisions/`, with the alternatives and their reasons preserved. |
-| `excalidraw-to-adr`    | Draft a MADR Architecture Decision Record from an Excalidraw sketch. |
-| `excalidraw-to-likec4` | Convert an Excalidraw sketch into a LikeC4 `.c4` model (bundled deterministic script). |
+| `diagram-to-adr`       | Draft a MADR Architecture Decision Record from Excalidraw, draw.io, Mermaid, or BPMN. |
+| `diagram-to-likec4`    | Convert Excalidraw, draw.io, or Mermaid architecture diagrams into LikeC4 (bundled converter). |
 | `likec4-to-openspec`   | Derive an OpenSpec change proposal — proposal, spec deltas, tasks — from a LikeC4 model. |
 | `docs-to-dbml`         | Express the data model documentation implies as a DBML (dbdiagram.io) schema. |
+
+### Document ingestion
+
+| Skill                           | What it does                                                        |
+| ------------------------------- | ------------------------------------------------------------------ |
+| `convert-documents-to-markdown` | Extracts local Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV, and text-PDF content with pinned Firecrawl anydoc. |
 
 ### Planning & delivery
 
@@ -52,6 +58,7 @@ work: audit → scope → split → detail.
 
 | Skill                     | What it does                                                        |
 | ------------------------- | ------------------------------------------------------------------ |
+| `codebase-to-specs`       | Reverse-engineer code into explicitly inferred specifications, decision records, and an architecture sketch for human review. |
 | `progress-audit`          | Diffs specs/requirements against real code into an honest, verified per-feature + global progress matrix. |
 | `completion-plan`         | Turns the audit/specs into an ordered backlog of remaining work-items (plan, rules, matched ticket, deps, gates) and flags work missing from the tracker. |
 | `work-splitting`          | Splits a backlog across owners with clear separation of concern, minimal file overlap, coordination seams, and a shareable assignment brief. |
@@ -373,12 +380,11 @@ triggers and rules are generic. Keep them current with
 Create `skills/<name>/SKILL.md` and add a row here (see
 [CONTRIBUTING](../CONTRIBUTING.md)).
 
-The DevOps platform, security, infrastructure, and compliance packs were
-adapted from
-[BagelHole/DevOps-Security-Agent-Skills](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
-at pinned commit `0365f57a079b1332f95cf26e31dd2d5332a8399f`.
-Agent Compass adds safety metadata and rules, and does not vendor upstream
-executables. Verify the current lock with `agent-compass upstream-skills
---verify`; compare or refresh only from an explicit local checkout with
-`--source`. The command never fetches or monitors remote state. See
-[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
+Seven external repositories supply 167 skills. Their pins and selected files
+are in [`upstream-sources.json`](upstream-sources.json). Run
+`agent-compass upstream-skills --verify` for the offline integrity check. Run
+`agent-compass upstream-skills --check-updates` for the cached remote check.
+Run `agent-compass upstream-skills --update <source> --dry` before an explicit
+refresh. The command never executes upstream files or merges content
+automatically. The 146-skill operational corpus keeps its additional safety
+adapter, risk baseline, and [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).

@@ -117,6 +117,11 @@ test('selectAssets merges core with matched profiles, deduped', () => {
 
   const generic = selectAssets([])
   assert.deepEqual(generic.skills, CORE_PROFILE.skills, 'generic project gets core only')
+  for (const skill of ['codebase-to-specs', 'diagram-to-adr', 'diagram-to-likec4']) {
+    assert.ok(generic.skills.includes(skill), `generic project gets ${skill}`)
+  }
+  assert.ok(!generic.skills.includes('excalidraw-to-adr'), 'superseded diagram skill is not recommended')
+  assert.ok(!generic.skills.includes('excalidraw-to-likec4'), 'superseded converter is not recommended')
 })
 
 test('capability packs expose the requested upstream skill inventory', () => {

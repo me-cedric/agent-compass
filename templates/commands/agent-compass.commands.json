@@ -21,6 +21,7 @@
   "skillQuality": "node docs/agent-compass/scripts/cli.mjs check-skill-quality docs/agent-compass",
   "skillDocsCheck": "node docs/agent-compass/scripts/cli.mjs skill-docs docs/agent-compass --check",
   "upstreamSkillsVerify": "node docs/agent-compass/scripts/cli.mjs upstream-skills docs/agent-compass --verify",
+  "upstreamSkillsCheck": "node docs/agent-compass/scripts/cli.mjs upstream-skills docs/agent-compass --check-updates",
   "doctorFix": "node docs/agent-compass/scripts/doctor-fix.mjs .",
   "taskLog": "node docs/agent-compass/scripts/task-log.mjs . --list --markdown",
   "recommend": "node docs/agent-compass/scripts/recommend.mjs . --write",
