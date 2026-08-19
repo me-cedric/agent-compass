@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-08-19
+
 ### Fixed
 
 - **Every externally sourced skill now carries its MIT notice.** The `LICENSE`

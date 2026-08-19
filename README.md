@@ -3,7 +3,7 @@
 ### One operating system for every coding agent
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-v0.8.0-blue)
+![Version](https://img.shields.io/badge/version-v0.8.1-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
@@ -274,7 +274,7 @@ Remote content is never executed or merged automatically. See
 
 ## Status
 
-Agent Compass is usable across real projects. Current version: `0.8.0`.
+Agent Compass is usable across real projects. Current version: `0.8.1`.
 
 | Area | Current state |
 | ---- | ------------- |
