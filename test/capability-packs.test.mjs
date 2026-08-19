@@ -15,7 +15,13 @@ test('imported operational skills are knowledge-only, hardened, and attributable
 
   for (const name of names) {
     const dir = join(AC, 'skills', name)
-    assert.deepEqual(readdirSync(dir), ['SKILL.md'], `${name} must not vendor executable assets`)
+    // Prose plus the upstream MIT notice, and nothing else. The notice has to
+    // travel with a redistributed copy; an executable asset still must not.
+    assert.deepEqual(
+      readdirSync(dir).sort(),
+      ['LICENSE', 'SKILL.md'],
+      `${name} must carry its notice and must not vendor executable assets`,
+    )
 
     const text = readFileSync(join(dir, 'SKILL.md'), 'utf8')
     assert.match(text, /^license: MIT$/m, `${name}: missing upstream license`)

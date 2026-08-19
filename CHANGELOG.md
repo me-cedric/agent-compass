@@ -5,6 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Every externally sourced skill now carries its MIT notice.** The `LICENSE`
+  file reached only the first skill of each multi-skill source, and none of the
+  146 skills of the operational corpus. A host that installs one skill folder
+  therefore received MIT content without the notice the terms require. 152 skill
+  folders gained the file, and the safety gate accepts `LICENSE` beside
+  `SKILL.md` while it still refuses every executable payload.
+- **The session-start update hook finds a vendored compass again.** It searched
+  `docs/agent-compass/scripts/` alone, so a host that vendors anywhere else got
+  no notice. It now searches the common locations and honours
+  `AGENT_COMPASS_HOME`. A host that installs skill folders alone, and carries no
+  compass tree, still leaves quietly.
+- **The external source cache is ignored wherever it is written.** The
+  `.gitignore` entry held a slash, which anchors a pattern to the directory of
+  the `.gitignore`. It therefore never matched
+  `docs/agent-compass/.agent/.upstream-source-check.json`. The pattern is now
+  unanchored, and migration `0.8.1` widens it for a host that already took the
+  anchored form.
+
 ## [0.8.0] - 2026-08-19
 
 ### Added

@@ -7,7 +7,10 @@ export default {
   describe: 'Ignore the external skill-source update cache in .gitignore.',
   apply({ host, log }) {
     const gitignore = join(host, '.gitignore')
-    const wanted = '.agent/.upstream-source-check.json'
+    // Unanchored on purpose. A pattern holding a slash is anchored to the
+    // directory of the .gitignore, so the anchored form missed the cache in a
+    // host that vendors compass under docs/agent-compass/.
+    const wanted = '**/.agent/.upstream-source-check.json'
     const text = existsSync(gitignore) ? readFileSync(gitignore, 'utf8') : ''
     const have = new Set(text.split(/\r?\n/).map((entry) => entry.trim()))
     if (have.has(wanted)) return

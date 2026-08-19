@@ -326,10 +326,30 @@
           "source": "LICENSE",
           "target": "skills/ponytail/LICENSE",
           "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/ponytail-audit/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/ponytail-debt/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/ponytail-help/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/ponytail-review/LICENSE",
+          "mode": "copy"
         }
       ],
-      "upstreamSha256": "fd046512a650de807ad1125d7a21db46324e3d128d48d0f3b519499b57c05594",
-      "localSha256": "c2cd29a912c643fb57af3a621415e40f0bcc83cf1082341cd93d790c44676957"
+      "upstreamSha256": "2ee4bcbf915fdbe76f7eb44bef1ab2f1b81e28491bc1ebd0812f7b8549735df1",
+      "localSha256": "bbfe77113fe3b8d4f12bed7402cfd77ae702d050aa2e11ef9b5b3e9e27dd23b3"
     },
     "caveman": {
       "repository": "https://github.com/JuliusBrussee/caveman",
@@ -361,10 +381,20 @@
           "source": "LICENSE",
           "target": "skills/caveman/LICENSE",
           "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/caveman-commit/LICENSE",
+          "mode": "copy"
+        },
+        {
+          "source": "LICENSE",
+          "target": "skills/caveman-review/LICENSE",
+          "mode": "copy"
         }
       ],
-      "upstreamSha256": "321ca088eed5245f3310e4656ae100fea4e8f009d6f7eb8e51e4ca5decf06182",
-      "localSha256": "616023442df96c68483e37c045f36c1c8eaa79ef871b7695766cbe903d893964"
+      "upstreamSha256": "424b1939557b62c6057d0b6607a5bd71a4b69f1212511993c70d95afae1b757a",
+      "localSha256": "68cace4288d5be51e3290146afe825a953c49ef9d85bbb56df364a0dff371711"
     },
     "i-have-adhd": {
       "repository": "https://github.com/ayghri/i-have-adhd",

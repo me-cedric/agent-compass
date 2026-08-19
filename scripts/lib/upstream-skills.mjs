@@ -10,6 +10,9 @@ import {
 
 export const UPSTREAM_REPOSITORY = 'https://github.com/BagelHole/DevOps-Security-Agent-Skills'
 
+/** Files an operational skill folder may hold beside its prose. */
+export const ALLOWED_SKILL_FILES = new Set(['SKILL.md', 'LICENSE'])
+
 export const SAFETY_GATE = `## Agent Compass safety gate
 
 - Confirm authorization and exact target: environment, account, cluster, namespace, repository, and data classification.
@@ -343,7 +346,10 @@ export const verifyLocalLock = (root, lock, expectedNames = rootCapabilitySkills
       hits.push(`${name}: missing local SKILL.md`)
       continue
     }
-    const extras = readdirSync(dir).filter((item) => item !== 'SKILL.md')
+    // The gate keeps an operational skill to prose: no script can ride along.
+    // `LICENSE` is the one exception, because it is inert text that the MIT
+    // terms require to travel with every redistributed copy.
+    const extras = readdirSync(dir).filter((item) => !ALLOWED_SKILL_FILES.has(item))
     if (extras.length) hits.push(`${name}: executable/extra payloads present: ${extras.join(', ')}`)
     const text = readFileSync(file, 'utf8')
     if (sha256(text) !== entry.localSha256) hits.push(`${name}: local hash drift`)
