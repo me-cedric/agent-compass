@@ -7,7 +7,12 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.9.0] - 2026-08-23
 
-## [0.9.0] - 2026-08-23
+### Fixed
+
+- `release` is idempotent. A second run for the same version inserted a second,
+  empty `## [<version>]` heading, and the changelog extractor then matched the
+  empty one — so every forge release got a `Release v<version>` placeholder body
+  instead of the notes. It now leaves an existing section alone.
 
 ### Changed
 

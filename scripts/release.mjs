@@ -52,7 +52,14 @@ const date = new Date().toISOString().slice(0, 10)
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
 const previous = pkg.version
 pkg.version = version
-const changelog = readFileSync('CHANGELOG.md', 'utf8').replace('## [Unreleased]', `## [Unreleased]\n\n## [${version}] - ${date}`)
+// Idempotent: a second run for the same version must not insert a second (and
+// empty) section heading, because `changelogSection` would then match the empty
+// one and every forge release would get a placeholder body instead of the notes.
+const changelogSource = readFileSync('CHANGELOG.md', 'utf8')
+const alreadyReleased = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\]`, 'm').test(changelogSource)
+const changelog = alreadyReleased
+  ? changelogSource
+  : changelogSource.replace('## [Unreleased]', `## [Unreleased]\n\n## [${version}] - ${date}`)
 // check-release.mjs requires both markers to match package.json, so bump them here.
 const readme = readFileSync('README.md', 'utf8')
   .replaceAll(`version-v${previous}`, `version-v${version}`)
@@ -60,7 +67,9 @@ const readme = readFileSync('README.md', 'utf8')
 
 if (dry) {
   console.log(`package.json version -> ${version}`)
-  console.log(`CHANGELOG.md adds ## [${version}] - ${date}`)
+  console.log(alreadyReleased
+    ? `CHANGELOG.md already has ## [${version}] — left as is`
+    : `CHANGELOG.md adds ## [${version}] - ${date}`)
   console.log(`README.md version markers ${previous} -> ${version}`)
   process.exit(0)
 }
