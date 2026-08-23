@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-23
+
 ### Fixed
 
 - **A stale install is no longer silent.** An install is a snapshot of a pin, so
