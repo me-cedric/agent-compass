@@ -14,9 +14,11 @@ import {
   COPILOT_INSTRUCTIONS,
   PROJECT_TARGETS,
   USER_TARGETS,
+  installDrift,
+  installExternalSkills,
+  manifestPath,
   referenceSources,
   stageExternalSkills,
-  writeExternalSkills,
 } from './lib/external-install.mjs'
 import { readSourceRegistry } from './lib/upstream-sources.mjs'
 
@@ -31,6 +33,8 @@ copy is made here. Nothing upstream is executed.`,
   positionals: [{ name: 'host-dir', required: false }],
   options: {
     list: { type: 'boolean', desc: 'List every tracked source with its licence and skill count.' },
+    check: { type: 'boolean', desc: 'Report installs whose pin has moved since they were written.' },
+    upgrade: { type: 'boolean', desc: 'Re-install every recorded source at the current pin.' },
     source: { type: 'string', value: '<id>', desc: 'Tracked source id (see --list).' },
     skill: { type: 'string', value: '<a,b,c>', desc: 'Install these upstream skills.' },
     recommended: { type: 'boolean', desc: 'Install the skills Agent Compass recommends from this source.' },
@@ -39,6 +43,8 @@ copy is made here. Nothing upstream is executed.`,
     global: { type: 'boolean', desc: "Install into the current user's config instead of a project." },
     'allow-scripts': { type: 'boolean', desc: 'Also install executable payloads (refused by default).' },
     dry: { type: 'boolean', desc: 'Show what would be installed; write nothing.' },
+    strict: { type: 'boolean', desc: 'With --check, exit 1 when an install is stale.' },
+    json: { type: 'boolean', desc: 'With --check, print a machine-readable result.' },
   },
 })
 
@@ -57,15 +63,97 @@ if (values.list) {
   }
   console.log('\nInstall:   agent-compass external-skills [host-dir] --source <id> --recommended')
   console.log('User-wide: agent-compass external-skills --source <id> --recommended --global')
+  console.log('Drift:     agent-compass external-skills [host-dir] --check')
+  console.log('Upgrade:   agent-compass external-skills [host-dir] --upgrade')
   console.log('\nA fit-based adoption pulls the right ones on its own:')
   console.log('  agent-compass recommend <host> --json   -> assets.skills')
   console.log('  agent-compass skills-sync <host> --only <that list>')
   process.exit(0)
 }
 
+// --check and --upgrade work from the install manifest, so neither needs --source.
+if (values.check || values.upgrade) {
+  const scopeRoot = values.global ? homedir() : resolve(positionals[0] || '.')
+  const drift = installDrift(scopeRoot, registry, Boolean(values.global))
+  const recorded = Object.keys(drift.manifest.sources || {})
+
+  if (values.check) {
+    if (values.json) {
+      console.log(JSON.stringify({ schema: 1, root: scopeRoot, recorded, ...drift }, null, 2))
+    } else if (!recorded.length) {
+      console.log(`no external skills recorded at ${manifestPath(scopeRoot, Boolean(values.global))}`)
+    } else if (!drift.stale.length && !drift.unknown.length) {
+      console.log(`${recorded.length} recorded source(s); every install matches its pin`)
+    } else {
+      for (const item of drift.stale) {
+        // The adapter note matters: for the operational corpus a moved pin means
+        // the safety gate and the narrowings were regenerated upstream of here.
+        const gate = item.adapter === 'operational' ? ' — safety gate and narrowings were regenerated since' : ''
+        console.log(`${item.id}: installed ${item.installed.slice(0, 7)}, pinned ${item.pinned.slice(0, 7)} (${item.skills.length} skills)${gate}`)
+        if (item.removedUpstream.length) {
+          console.log(`${item.id}: gone from the source, will fail re-install: ${item.removedUpstream.join(', ')}`)
+        }
+      }
+      for (const item of drift.unknown) {
+        console.log(`${item.id}: installed here but no longer a tracked source — remove it or re-register the source`)
+      }
+      console.log(`run: agent-compass external-skills ${values.global ? '--global ' : `${scopeRoot} `}--upgrade`)
+    }
+    if (values.strict && (drift.stale.length || drift.unknown.length)) process.exit(1)
+    process.exit(0)
+  }
+
+  if (!recorded.length) {
+    console.log(`nothing to upgrade: no external skills recorded at ${manifestPath(scopeRoot, Boolean(values.global))}`)
+    process.exit(0)
+  }
+  const sourcesById = referenceSources(registry)
+  const now = new Date().toISOString()
+  let upgraded = 0
+  for (const [sourceId, entry] of Object.entries(drift.manifest.sources)) {
+    const source = sourcesById[sourceId]
+    if (!source) {
+      console.error(`${sourceId}: installed here but no longer a tracked source; skipped`)
+      continue
+    }
+    if (source.commit === entry.commit) continue
+    const names = (entry.skills || []).filter((skillName) => source.upstreamSkills.includes(skillName))
+    const dropped = (entry.skills || []).filter((skillName) => !source.upstreamSkills.includes(skillName))
+    if (dropped.length) console.error(`${sourceId}: no longer in the source, not re-installed: ${dropped.join(', ')}`)
+    if (!names.length) continue
+    if (values.dry) {
+      console.log(`would re-install ${names.length} skill(s) from ${sourceId} at ${source.commit.slice(0, 7)} -> ${entry.targets.join(', ')}`)
+      continue
+    }
+    let staged
+    try {
+      staged = stageExternalSkills({ id: sourceId, source, names, allowScripts: values['allow-scripts'] })
+    } catch (error) {
+      console.error(`${sourceId}: ${error.message}`)
+      process.exit(1)
+    }
+    installExternalSkills({
+      root: scopeRoot,
+      relDirs: entry.targets,
+      id: sourceId,
+      source,
+      staged: staged.staged,
+      wantsCopilot: entry.targets.includes('.agents/skills'),
+      global: Boolean(values.global),
+      now,
+    })
+    const corrected = source.adapter === 'operational' ? ', safety gate re-applied' : ''
+    console.log(`re-installed ${staged.staged.length} skill(s) from ${sourceId} @ ${source.commit.slice(0, 7)}${corrected}`)
+    upgraded += 1
+  }
+  if (values.dry) console.log('dry-run: no files written')
+  else console.log(upgraded ? `upgraded ${upgraded} source(s)` : 'every recorded install already matches its pin')
+  process.exit(0)
+}
+
 const id = values.source
 if (!id) {
-  console.error('Pass --source <id>, or --list to see the tracked sources.')
+  console.error('Pass --source <id>, --check, --upgrade, or --list.')
   process.exit(1)
 }
 const source = sources[id]
@@ -129,7 +217,16 @@ if (values.dry) {
   process.exit(0)
 }
 
-writeExternalSkills({ root, relDirs, id, source, staged: result.staged, wantsCopilot })
+installExternalSkills({
+  root,
+  relDirs,
+  id,
+  source,
+  staged: result.staged,
+  wantsCopilot,
+  global: Boolean(values.global),
+  now: new Date().toISOString(),
+})
 
 console.log(`installed ${result.staged.length} skill(s) from ${id} @ ${source.commit.slice(0, 7)} to ${relDirs.join(', ')}${values.global ? ' (user-wide)' : ''}`)
 if (wantsCopilot) console.log(`wrote ${COPILOT_INSTRUCTIONS} so Copilot sees them`)

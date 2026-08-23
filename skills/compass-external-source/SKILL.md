@@ -191,6 +191,21 @@ add the source row to `THIRD_PARTY_NOTICES.md` and
 Then install it for real into a scratch directory and read one installed file.
 An inventory that verifies is not proof that an install produces usable text.
 
+## Step 8 — If the source drives a published package, track its version
+
+A skill that tells the agent to run `npx <pkg>@<version>` pins a version in prose.
+The commit pin will not catch that going stale — the repository can move without
+the package moving, and the package can move without the text noticing. Record it:
+
+```json
+"package": { "name": "@scope/pkg", "manifest": "path/to/package.json" },
+"version": "<version at the pinned commit>"
+```
+
+`--verify` then fails when any local file pins a different version (including a
+`tool_version` frontmatter field), and `--update` rewrites every occurrence when
+the pin moves. Never hand-edit such a version; refresh the source.
+
 ## Refreshing and removing
 
 ```bash
@@ -199,10 +214,18 @@ agent-compass upstream-skills --update <source-id> --dry
 agent-compass upstream-skills --update <source-id>
 ```
 
-A refresh moves the pin, re-reads the inventory, rewrites the generated block,
-and prints added and removed upstream skills. It copies nothing. A removed
-upstream skill that is still in `recommended` fails `--verify` — that is the
-signal to re-curate, not to force the pin.
+A refresh moves the pin, re-reads the inventory, rewrites the generated block and
+any tracked package version, and prints added and removed upstream skills. It
+copies nothing. A removed upstream skill that is still in `recommended` fails
+`--verify` — that is the signal to re-curate, not to force the pin.
+
+A refresh also makes every existing install stale, because an install is a
+snapshot of a pin. Say so in the handoff, and give the command:
+
+```bash
+agent-compass external-skills . --check      # which installs are behind
+agent-compass external-skills . --upgrade    # re-install at the current pin
+```
 
 To remove a source: delete its registry entry, its pointer sections, its router
 skill if nothing else uses it, its `profiles.mjs` entries, and its notice row.

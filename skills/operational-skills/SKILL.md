@@ -110,8 +110,16 @@ agent-compass upstream-skills --check-updates
 agent-compass upstream-skills --update devops-security --dry
 ```
 
-When the pin moves, re-run your install so the corrected text is regenerated from
-the new commit. An install is a snapshot; the pin is the source of truth.
+An install is a snapshot of a pin, so it is recorded in
+`.agent/external-skills.json`. When the compass pin moves, the corrected text you
+installed is out of date — and here that includes the safety gate and the
+narrowings. You do not have to remember: the session-start check, `recommend`,
+and `install --doctor` all report it.
+
+```bash
+agent-compass external-skills . --check      # offline; which installs are behind
+agent-compass external-skills . --upgrade    # re-install them at the current pin
+```
 
 ## Related
 

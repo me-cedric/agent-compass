@@ -9,7 +9,7 @@ description: >
 risk_level: medium
 writes_files: true
 requires_tools: [node, npx]
-tool_version: "0.1.9"
+tool_version: "0.2.3"
 ---
 
 # Convert documents to Markdown
@@ -32,9 +32,9 @@ tool_version: "0.1.9"
 Run the anydoc CLI. It needs Node.js 20 or later and no permanent install:
 
 ```bash
-npx -y @firecrawl/anydoc@0.1.9 <file>              # Markdown to stdout
-npx -y @firecrawl/anydoc@0.1.9 <file> -o out.md    # write to a file
-npx -y @firecrawl/anydoc@0.1.9 - --format csv < f  # read stdin
+npx -y @firecrawl/anydoc@0.2.3 <file>              # Markdown to stdout
+npx -y @firecrawl/anydoc@0.2.3 <file> -o out.md    # write to a file
+npx -y @firecrawl/anydoc@0.2.3 - --format csv < f  # read stdin
 ```
 
 Rules:
@@ -76,6 +76,6 @@ agent-compass upstream-skills --check-updates
 agent-compass upstream-skills --update anydoc --dry
 ```
 
-Bump `tool_version` and the `npx` commands above together when the pin moves. A
-version in prose that disagrees with the frontmatter is the bug this skill is
-most likely to grow.
+A refresh moves `tool_version` and every `npx` command above at the same time,
+and `upstream-skills --verify` fails when any of them disagrees with the recorded
+version. Do not edit a version here by hand — refresh the source instead.

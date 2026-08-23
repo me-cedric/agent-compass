@@ -171,6 +171,31 @@ const verifyReferenceSource = (root, id, source) => {
     hits.push(`${id}: reference source needs an inventoryDoc`)
     return hits
   }
+  // A source whose skill drives a published package pins that version in prose.
+  // Nothing else would notice the version going stale, so the pin is part of the
+  // verified contract: every `<pkg>@<version>` written locally must be the
+  // recorded one.
+  if (source.package?.name && source.version) {
+    const escaped = source.package.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const anyVersion = new RegExp(`${escaped}@(\\d[\\w.-]*)`, 'g')
+    for (const pointer of [source.inventoryDoc, ...(source.pointers || [])]) {
+      const file = join(root, pointer)
+      if (!existsSync(file)) continue
+      const text = readFileSync(file, 'utf8')
+      const wrong = [...text.matchAll(anyVersion)]
+        .map((match) => match[1])
+        .filter((version) => version !== source.version)
+      if (wrong.length) {
+        hits.push(`${id}: ${pointer} pins ${source.package.name}@${[...new Set(wrong)].join(', ')} but the source records ${source.version}`)
+      }
+      if (/^tool_version:\s*"([^"]+)"/m.test(text)) {
+        const declared = text.match(/^tool_version:\s*"([^"]+)"/m)[1]
+        if (declared !== source.version) {
+          hits.push(`${id}: ${pointer} declares tool_version ${declared} but the source records ${source.version}`)
+        }
+      }
+    }
+  }
   for (const pointer of [source.inventoryDoc, ...(source.pointers || [])]) {
     const file = join(root, pointer)
     if (!existsSync(file)) {
@@ -390,18 +415,47 @@ export const planReferenceSourceUpdate = ({ root, id, source, latest }) => {
     const added = slugs.filter((slug) => !before.has(slug))
     const removed = recorded.filter((slug) => !after.has(slug))
 
+    // A tracked published package moves independently of the skill text, so read
+    // the new version and carry it into every place the pin is written.
+    let nextVersion = source.version || null
+    if (source.package?.manifest) {
+      nextVersion = JSON.parse(gitShow(checkout.root, latest, source.package.manifest)).version
+      if (!nextVersion) throw new Error(`${source.package.manifest}: missing package version`)
+    }
+
     const outputs = new Map()
-    const file = join(root, source.inventoryDoc)
-    const text = readFileSync(file, 'utf8')
-    const applied = applyGeneratedBlock(text, inventoryBlockKey(id), renderInventory(slugs))
-    if (applied === null) throw new Error(`${source.inventoryDoc}: no ${inventoryBlockKey(id)} block`)
-    if (applied !== text) outputs.set(source.inventoryDoc, applied)
+    const rewritePin = (text) => {
+      if (!source.package?.name || !source.version || nextVersion === source.version) return text
+      const escaped = source.package.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return text
+        .replace(new RegExp(`${escaped}@${source.version.replace(/\./g, '\\.')}`, 'g'), `${source.package.name}@${nextVersion}`)
+        .replace(/^tool_version:\s*"[^"]+"/m, `tool_version: "${nextVersion}"`)
+    }
+
+    for (const pointer of [source.inventoryDoc, ...(source.pointers || [])]) {
+      const file = join(root, pointer)
+      if (!existsSync(file)) continue
+      const text = readFileSync(file, 'utf8')
+      let next = rewritePin(text)
+      if (pointer === source.inventoryDoc) {
+        const applied = applyGeneratedBlock(next, inventoryBlockKey(id), renderInventory(slugs))
+        if (applied === null) throw new Error(`${source.inventoryDoc}: no ${inventoryBlockKey(id)} block`)
+        next = applied
+      }
+      if (next !== text) outputs.set(pointer, next)
+    }
 
     return {
       outputs,
       added,
       removed,
-      source: { ...source, commit: latest, upstreamSkills: slugs },
+      version: nextVersion,
+      source: {
+        ...source,
+        commit: latest,
+        upstreamSkills: slugs,
+        ...(nextVersion ? { version: nextVersion } : {}),
+      },
     }
   } finally {
     checkout.cleanup()

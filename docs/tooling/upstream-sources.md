@@ -185,3 +185,34 @@ The installer writes `.claude/skills/` and `.agents/skills/`, adds
 writes the source's licence notice beside the install, and refuses executable
 payloads unless `--allow-scripts` is passed. The operational corpus is corrected
 on the way through — see [operational-skills.md](operational-skills.md).
+
+## An Install Is A Snapshot, So It Is Recorded
+
+Every install writes `.agent/external-skills.json` (or
+`~/.agent-compass/external-skills.json` for `--global`) recording the source, the
+**commit it came from**, the skills, and the target directories.
+
+That record is what makes staleness visible. When a pin moves, the text a host
+installed earlier is out of date — and for the operational corpus that includes
+the safety gate and the argv-secret narrowings, so it is not cosmetic:
+
+```bash
+agent-compass external-skills . --check              # offline; reports every stale install
+agent-compass external-skills . --check --strict     # exit 1 when stale (for CI)
+agent-compass external-skills . --upgrade --dry      # show the re-install plan
+agent-compass external-skills . --upgrade            # re-install every record at the current pin
+```
+
+The check is offline and cheap, so it runs on three paths without being asked:
+the session-start hook (`check-update`), `recommend`, and `install --doctor`. An
+upgrade re-installs exactly what the manifest records, at the current pin, into
+the same targets, and reports any skill that has since disappeared upstream
+rather than failing the whole run.
+
+## A Tracked Package Version Is Part Of The Contract
+
+A source whose skill drives a published package records `package` and `version`.
+`--verify` then fails when any local file pins a different version — including a
+`tool_version` frontmatter field — and `--update` rewrites every occurrence when
+the pin moves. Before this, a version written in prose could rot unnoticed while
+the commit pin looked current; it did, once, and the check exists because of it.

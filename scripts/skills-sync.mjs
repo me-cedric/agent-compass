@@ -8,10 +8,10 @@ import { CAPABILITY_PACKS } from './lib/capability-packs.mjs'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import {
   PROJECT_TARGETS,
+  installExternalSkills,
   partitionSkills,
   referenceSources,
   stageExternalSkills,
-  writeExternalSkills,
 } from './lib/external-install.mjs'
 import { readSourceRegistry } from './lib/upstream-sources.mjs'
 
@@ -142,13 +142,14 @@ if (externalPlan.size) {
       console.error(`${id}: ${error.message}`)
       process.exit(1)
     }
-    writeExternalSkills({
+    installExternalSkills({
       root,
       relDirs,
       id,
       source,
       staged: result.staged,
       wantsCopilot: relDirs.includes('.agents/skills'),
+      now: new Date().toISOString(),
     })
     const corrected = source.adapter === 'operational' ? ', safety gate applied' : ''
     console.log(`fetched ${result.staged.length} skill(s) from ${id} @ ${source.commit.slice(0, 7)}${corrected}`)

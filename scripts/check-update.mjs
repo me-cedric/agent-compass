@@ -12,6 +12,8 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { acVersion } from './manifest.mjs'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
+import { installDrift } from './lib/external-install.mjs'
+import { readSourceRegistry } from './lib/upstream-sources.mjs'
 
 const { values, positionals } = parseCliArgs({
   name: 'check-update',
@@ -63,6 +65,20 @@ if (!force && isFresh) {
       messages.push(`${count ? count[1] : 'some'} managed file(s) behind — run: node ${syncCmd} .`)
     }
   }
+
+  // Offline and cheap: an install this host made is a snapshot of a pin. When the
+  // compass pin has since moved, the installed text is stale — and for the
+  // operational corpus that includes the safety gate and the argv-secret
+  // narrowings, so it is worth a session-start notice rather than silence.
+  try {
+    const drift = installDrift(HOST, readSourceRegistry(AC))
+    if (drift.stale.length) {
+      behind = true
+      const gated = drift.stale.filter((item) => item.adapter === 'operational').length
+      const names = drift.stale.map((item) => item.id).join(', ')
+      messages.push(`${drift.stale.length} external skill install(s) behind their pin (${names})${gated ? ' — safety corrections regenerated since' : ''} — run: external-skills . --upgrade`)
+    }
+  } catch {}
 
   if (remote) {
     const ls = spawnSync('git', ['-C', AC, 'ls-remote', '--tags', '--refs', 'origin'], { encoding: 'utf8' })

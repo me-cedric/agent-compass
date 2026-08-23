@@ -331,7 +331,7 @@
     },
     "taste-skill": {
       "repository": "https://github.com/Leonxlnx/taste-skill",
-      "commit": "dfb6f9f9e93a39f673b1827c0889cc28326d1800",
+      "commit": "72e299530e2eb31ed8da06181bc19f6c18a00821",
       "strategy": "reference",
       "license": "MIT",
       "licenseHolder": "Leonxlnx",
@@ -402,7 +402,7 @@
     },
     "caveman": {
       "repository": "https://github.com/JuliusBrussee/caveman",
-      "commit": "99a9aa2f5a45097fc3563febea7d0baf64407441",
+      "commit": "7bb71309e8749a4f112aacd3a54b3941d8689905",
       "strategy": "reference",
       "license": "MIT",
       "licenseHolder": "JuliusBrussee",
@@ -444,7 +444,7 @@
     },
     "i-have-adhd": {
       "repository": "https://github.com/ayghri/i-have-adhd",
-      "commit": "e7555fcaf612dfa1739dc86610ea926a906db614",
+      "commit": "b42a45a068e080294924bfba19a7a2e8944c48ff",
       "strategy": "reference",
       "license": "MIT",
       "licenseHolder": "ayghri",
@@ -485,7 +485,7 @@
     },
     "anydoc": {
       "repository": "https://github.com/firecrawl/anydoc",
-      "commit": "e754e1d33a1a540ebc9226e36f11d3f401852c9e",
+      "commit": "bf3d33e61731580d1ee1c6a85e56093d715a21a6",
       "strategy": "reference",
       "license": "MIT",
       "licenseHolder": "Firecrawl",
@@ -500,7 +500,12 @@
       ],
       "upstreamSkills": [
         "convert-documents-to-markdown"
-      ]
+      ],
+      "version": "0.2.3",
+      "package": {
+        "name": "@firecrawl/anydoc",
+        "manifest": "node/package.json"
+      }
     },
     "android-skills": {
       "repository": "https://github.com/android/skills",

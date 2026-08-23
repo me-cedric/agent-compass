@@ -5,6 +5,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A stale install is no longer silent.** An install is a snapshot of a pin, so
+  it now records one: `.agent/external-skills.json` (or
+  `~/.agent-compass/external-skills.json` for `--global`) holds the source, the
+  commit it came from, the skills, and the targets. `external-skills --check`
+  compares that against the current pins offline, and `--upgrade` re-installs
+  every record at the current pin. The check runs on three paths without being
+  asked — the session-start hook, `recommend`, and `install --doctor` — because
+  for the operational corpus a moved pin means the safety gate and the
+  argv-secret narrowings were regenerated, which is not cosmetic.
+- **A tracked package version is now part of the verified contract.** `anydoc`
+  had moved `0.1.9` → `0.2.3` while its commit pin looked current, leaving the
+  `convert-documents-to-markdown` skill telling agents to run a version four
+  releases old. A reference source can now declare `package` and `version`:
+  `--verify` fails when any local file (including a `tool_version` frontmatter
+  field) pins a different version, and `--update` rewrites every occurrence when
+  the pin moves.
+- Refreshed the four stale source pins — `taste-skill`, `caveman`,
+  `i-have-adhd`, and `anydoc`. All nine sources are now current, and the anydoc
+  package pin advanced to `0.2.3` in the skill along with it.
+
+
 ## [0.9.0] - 2026-08-23
 
 ### Fixed

@@ -29,6 +29,64 @@ export const USER_TARGETS = {
   agents: ['.agents/skills'],
 }
 export const COPILOT_INSTRUCTIONS = '.github/instructions/external-skills.instructions.md'
+// An install is a snapshot of a pin. Recording which pin it came from is what
+// makes staleness detectable later: without it, a host silently keeps the
+// corrected text of an older commit and nothing can tell.
+export const PROJECT_MANIFEST = '.agent/external-skills.json'
+export const USER_MANIFEST = '.agent-compass/external-skills.json'
+
+export const manifestPath = (root, global = false) => join(root, global ? USER_MANIFEST : PROJECT_MANIFEST)
+
+export const readInstallManifest = (root, global = false) => {
+  try {
+    const data = JSON.parse(readFileSync(manifestPath(root, global), 'utf8'))
+    return data?.schema === 1 ? data : { schema: 1, sources: {} }
+  } catch { return { schema: 1, sources: {} } }
+}
+
+export const recordInstall = ({ root, global = false, id, source, names, relDirs, now }) => {
+  const manifest = readInstallManifest(root, global)
+  const previous = manifest.sources[id]
+  manifest.sources[id] = {
+    repository: source.repository,
+    commit: source.commit,
+    ...(source.adapter ? { adapter: source.adapter } : {}),
+    // A later install of one more skill must not drop what is already there.
+    skills: [...new Set([...(previous?.skills || []), ...names])].sort(),
+    targets: [...new Set([...(previous?.targets || []), ...relDirs])].sort(),
+    installedAt: now,
+  }
+  manifest.updatedAt = now
+  const file = manifestPath(root, global)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`)
+  return manifest
+}
+
+// Compare what a host installed against what Agent Compass now pins. A moved pin
+// means the installed text is stale — for the operational corpus that includes
+// the safety gate and the argv-secret narrowings, so it is not cosmetic.
+export const installDrift = (root, registry, global = false) => {
+  const manifest = readInstallManifest(root, global)
+  const sources = referenceSources(registry)
+  const stale = []
+  const unknown = []
+  for (const [id, entry] of Object.entries(manifest.sources || {})) {
+    const source = sources[id]
+    if (!source) { unknown.push({ id, commit: entry.commit }); continue }
+    if (source.commit === entry.commit) continue
+    const gone = (entry.skills || []).filter((name) => !source.upstreamSkills.includes(name))
+    stale.push({
+      id,
+      installed: entry.commit,
+      pinned: source.commit,
+      skills: entry.skills || [],
+      adapter: entry.adapter || null,
+      removedUpstream: gone,
+    })
+  }
+  return { stale, unknown, manifest }
+}
 
 // A skill is documentation. An executable payload is a different risk class.
 const TEXT_FILE = /\.(md|markdown|txt|json|ya?ml|toml)$/i
@@ -147,7 +205,7 @@ export const noticeText = ({ id, source, names }) => [
 
 // Write the staged skills into every provider directory, plus the licence notice
 // and, when Copilot is a target, the instructions file that tells it they exist.
-export const writeExternalSkills = ({ root, relDirs, id, source, staged, wantsCopilot }) => {
+export const writeExternalSkills = ({ root, relDirs, id, source, staged, wantsCopilot, global = false, now }) => {
   for (const relDir of relDirs) {
     for (const { name, payload } of staged) {
       const dest = join(root, relDir, name)
@@ -206,4 +264,18 @@ export const writeExternalSkills = ({ root, relDirs, id, source, staged, wantsCo
     '',
     section,
   ].join('\n'))
+}
+
+// One entry point so no caller can write skills and forget the manifest.
+export const installExternalSkills = ({ root, relDirs, id, source, staged, wantsCopilot, global = false, now }) => {
+  writeExternalSkills({ root, relDirs, id, source, staged, wantsCopilot, global, now })
+  return recordInstall({
+    root,
+    global,
+    id,
+    source,
+    names: staged.map(({ name }) => name),
+    relDirs,
+    now,
+  })
 }

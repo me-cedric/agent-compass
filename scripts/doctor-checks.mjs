@@ -1,6 +1,9 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, extname, join } from 'node:path'
 import { CBM_BIN, CODEBASE_MEMORY_GITIGNORE, MCP_EXAMPLE_REL, codeIntelSelected, snapshot } from './lib/codebase-memory.mjs'
+import { fileURLToPath } from 'node:url'
+import { installDrift } from './lib/external-install.mjs'
+import { readSourceRegistry } from './lib/upstream-sources.mjs'
 
 export const HUSKY_HOOKS = ['pre-commit', 'pre-push', 'commit-msg']
 
@@ -113,6 +116,8 @@ export const fixHuskyHookModes = (root, dry = false) => {
   return fixed
 }
 
+const AC_ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
+
 export const doctorChecks = (root, { deep = false } = {}) => {
   let pkg = {}
   try { pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) } catch {}
@@ -139,7 +144,18 @@ export const doctorChecks = (root, { deep = false } = {}) => {
       [`${MCP_EXAMPLE_REL} exists (host selected codebase-memory)`, cbm.mcpExample],
     ] : []),
   ]
+  // An external skill install is a snapshot of a pin. Advisory rather than
+  // required: a host may deliberately hold an older pin, but it should never be
+  // unaware that it is holding one.
+  const externalDrift = (() => {
+    try { return installDrift(root, readSourceRegistry(AC_ROOT)).stale } catch { return [] }
+  })()
   const advisory = [
+    ...(externalDrift.length ? [[
+      `external skill installs match their pin (run: agent-compass external-skills . --upgrade)`,
+      false,
+      externalDrift.map((item) => `${item.id}: installed ${item.installed.slice(0, 7)}, pinned ${item.pinned.slice(0, 7)}`),
+    ]] : []),
     ...(codeIntel ? [
       [`${CBM_BIN} installed (run: agent-compass code-intel install)`, cbm.installed],
       // Deliberately always a "·": reading auto_index/auto_watch costs CBM's

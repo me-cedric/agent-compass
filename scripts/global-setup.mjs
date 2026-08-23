@@ -12,9 +12,9 @@ import { CAPABILITY_PACKS } from './lib/capability-packs.mjs'
 import {
   USER_TARGETS,
   externalSkillIndex,
+  installExternalSkills,
   referenceSources,
   stageExternalSkills,
-  writeExternalSkills,
 } from './lib/external-install.mjs'
 import { STYLE_EXTERNAL_SKILLS } from './lib/profiles.mjs'
 import { readSourceRegistry } from './lib/upstream-sources.mjs'
@@ -164,7 +164,10 @@ if (withStyle) {
     }
     try {
       const { staged, skipped } = stageExternalSkills({ id, source: sources[id], names })
-      writeExternalSkills({ root: home, relDirs, id, source: sources[id], staged, wantsCopilot: true })
+      installExternalSkills({
+        root: home, relDirs, id, source: sources[id], staged, wantsCopilot: true,
+        global: true, now: new Date().toISOString(),
+      })
       console.log(`fetched ${staged.length} style skill(s) from ${id} @ ${sources[id].commit.slice(0, 7)}`)
       if (skipped.length) console.log(`skipped ${skipped.length} executable payload(s) from ${id}`)
     } catch (error) {

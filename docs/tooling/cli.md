@@ -99,7 +99,7 @@ command list by `npm run lint:indexes`.
 | `vendor` | Create/refresh a plain-copy vendoring with provenance. | — |
 | `spec-kit-bridge` | Install optional Spec Kit bridge files. | — |
 | `skills-sync` | List/sync skills and opt-in capability packs. | — |
-| `external-skills` | Install skills from a tracked external source into a project or the current user's config (Claude, Codex, Copilot). | `--list`, `--source <id>`, `--recommended`, `--all`, `--skill <a,b>`, `--target`, `--global`, `--dry` |
+| `external-skills` | Install skills from a tracked external source into a project or the current user's config (Claude, Codex, Copilot); report and repair installs whose pin has moved. | `--list`, `--source <id>`, `--recommended`, `--all`, `--skill <a,b>`, `--check`, `--upgrade`, `--target`, `--global`, `--strict`, `--json`, `--dry` |
 | `policy-pack` | List/apply setup policy packs. | — |
 | `upgrade` | Bump the submodule, sync, then doctor. | `upgrade-host` |
 | `check-update` | Cheap cached "are we behind?" check (no tokens). | — |

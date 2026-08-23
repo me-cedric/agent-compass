@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import { CBM_BIN, MCP_EXAMPLE_REL, snapshot } from './lib/codebase-memory.mjs'
 import { detectStacks, selectAssets, stackLabels } from './lib/profiles.mjs'
+import { installDrift } from './lib/external-install.mjs'
+import { readSourceRegistry } from './lib/upstream-sources.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -53,6 +55,10 @@ if (has('specs') && !has('.agent/spec-validation-map.md')) recs.push('Run `agent
 if ((stackIds.includes('react-web') || stackIds.includes('next-web')) && !has('docs/design')) recs.push('Add design-system docs before UI-heavy work; use Figma MCP when Figma is source of truth.')
 if (stackIds.includes('nestjs-api') && !has('.github/instructions/api.instructions.md')) recs.push(`Install API path instructions for contract sync and targeted validation: ${installInstructions('api')} (adjust the \`applyTo\` glob if the API is not in \`apps/api\`).`)
 if (stackIds.includes('expo-mobile') && !has('.github/instructions/mobile-app.instructions.md')) recs.push(`Install mobile-app path instructions: ${installInstructions('mobile-app')} (adjust the \`applyTo\` glob if the app is not in \`apps/mobile-app\`).`)
+const externalStale = (() => {
+  try { return installDrift(root, readSourceRegistry(AC)).stale } catch { return [] }
+})()
+if (externalStale.length) recs.push(`${externalStale.length} external skill install(s) are behind their pin (${externalStale.map((item) => item.id).join(', ')}). The installed text — including the operational safety corrections — is a snapshot: run \`agent-compass external-skills . --upgrade\`.`)
 if (stackIds.includes('android-compose') || stackIds.includes('swift-ios')) recs.push('Native mobile detected: install the `native-mobile-skills` skill, then pull the matching tracked vendor skill per task — see `docs/tooling/native-mobile-skills.md`.')
 if (stackIds.includes('react-web') && !has('.github/instructions/backoffice.instructions.md')) recs.push(`Install backoffice path instructions: ${installInstructions('backoffice')} (adjust the \`applyTo\` glob if the app is not in \`apps/backoffice\`).`)
 if (!scripts.check && !(scripts.lint && scripts.test)) recs.push('Add a single `check` script or fill lint/typecheck/test registry entries.')
