@@ -3,12 +3,12 @@
 ### One operating system for every coding agent
 
 [![CI](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/me-cedric/agent-compass/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-v0.8.1-blue)
+![Version](https://img.shields.io/badge/version-v0.9.0-blue)
 ![Node](https://img.shields.io/badge/node-24-339933)
 ![License](https://img.shields.io/badge/license-internal-lightgrey)
 ![Agents](https://img.shields.io/badge/agents-Claude%20%7C%20Codex%20%7C%20Gemini%20%7C%20Copilot-purple)
 <!-- BEGIN GENERATED:SKILL_BADGE -->
-![Skills](https://img.shields.io/badge/skills-225-orange)
+![Skills](https://img.shields.io/badge/skills-64-orange)
 <!-- END GENERATED:SKILL_BADGE -->
 ![Ops Packs](https://img.shields.io/badge/ops%20packs-146-red)
 ![Specs](https://img.shields.io/badge/specs-enabled-success)
@@ -226,55 +226,78 @@ AI operations, scanning, secrets, hardening, or compliance area.
 <!-- END GENERATED:CAPABILITY_PACKS -->
 
 ```bash
-# Discover packs through the unified CLI
+# Discover packs and skills through the unified CLI
 node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs
-node docs/agent-compass/scripts/cli.mjs catalog --type capability-pack --md
+node docs/agent-compass/scripts/cli.mjs skills --pack devops-platform
 node docs/agent-compass/scripts/cli.mjs skills --grep kubernetes --md
 node docs/agent-compass/scripts/cli.mjs skills kubernetes-ops
 
-# One pack
-node docs/agent-compass/scripts/cli.mjs skills-sync . --pack devops-platform
+# Install one pack's skills from the pin, safety gate applied
+node docs/agent-compass/scripts/cli.mjs external-skills . \
+  --source devops-security --skill kubernetes-ops,helm-charts,argocd-gitops
 
-# Combined operational baseline
-node docs/agent-compass/scripts/cli.mjs skills-sync . \
-  --pack security,infrastructure,compliance
+# The whole curated operational baseline
+node docs/agent-compass/scripts/cli.mjs external-skills . \
+  --source devops-security --recommended
 ```
 
 ```text
-DISCOVER          SELECT             SYNC               ACTIVATE
-host context  →   fitting pack   →   provider skills →  agent loads one skill
+DISCOVER          SELECT             INSTALL              ACTIVATE
+host context  →   fitting pack   →   fetch + harden   →   agent loads one skill
 ```
 
-All 146 imported skills are pinned to an audited upstream commit, carry
-authorization/dry-run/rollback rules, and include no vendored executable
-scripts or assets. Full list: [`skills/README.md`](skills/README.md). Safety
-contract: [`operational-safety.md`](docs/guidelines/operational-safety.md).
+All 146 curated operational skills are pinned to an audited upstream commit and
+carry authorization/dry-run/rollback rules. Agent Compass stores **none** of
+them: `external-skills` fetches them from the pin and applies the safety gate and
+the argv-secret narrowings on the way in, so the corrected text is what lands in
+your project. Executable payloads are refused unless you allow them. Full list:
+[`skills/README.md`](skills/README.md). Safety contract:
+[`operational-safety.md`](docs/guidelines/operational-safety.md).
 
-Maintainers can verify the lock and quality locally:
+### Every external source is tracked, never copied
+
+All nine external skill sources — the operational corpus, Google's Android
+skills, an Apple-platform corpus, and the style/design/document sources — are
+pinned in one registry with `"strategy": "reference"`. Agent Compass records the
+pin, the licence, the full upstream inventory, and which skills it endorses. It
+copies nothing.
 
 ```bash
-agent-compass upstream-skills --verify
-agent-compass check-skill-quality
-agent-compass skill-docs --check
+agent-compass external-skills --list                 # every tracked source
+agent-compass upstream-skills --verify               # offline: pins, pointers, inventories
+agent-compass check-update --remote                  # cached remote-head check
+agent-compass upstream-skills --update caveman --dry
 ```
 
-Agent Compass also tracks every vendored skill family in one source registry:
+Installing is the same command whether a skill is local or tracked, for a project
+or for the user, across Claude Code, Codex, and Copilot:
 
 ```bash
-agent-compass check-update --remote
-agent-compass upstream-skills --update anydoc --dry
+# Fit-based adoption resolves both kinds from one list
+agent-compass recommend /path/to/host --json          # → assets.skills
+agent-compass skills-sync /path/to/host --only <that list>
+
+# Or name a source directly
+agent-compass external-skills /path/to/host --source devops-security --recommended
+agent-compass external-skills --source ponytail --recommended --global
 ```
 
-The cached check is read-only. Refresh is explicit, uses a temporary checkout,
-preserves local adaptations with a three-way merge, and stops on conflict.
-Remote content is never executed or merged automatically. See
-[`upstream-sources.md`](docs/tooling/upstream-sources.md).
+`skills-sync` writes `.claude/skills/` for Claude Code and `.agents/skills/` for
+Codex and Copilot, adds a `.github/instructions/` file so Copilot — which has no
+skills directory — is told the tree exists, and drops the source's licence notice
+beside the install. The cached update check is read-only, refresh is explicit, and
+remote content is never executed. See
+[`upstream-sources.md`](docs/tooling/upstream-sources.md),
+[`operational-skills.md`](docs/tooling/operational-skills.md),
+[`native-mobile-skills.md`](docs/tooling/native-mobile-skills.md),
+[`style-and-design-skills.md`](docs/tooling/style-and-design-skills.md), and
+[ADR 002](docs/decisions/002-tracked-external-reference-sources.md).
 
 ---
 
 ## Status
 
-Agent Compass is usable across real projects. Current version: `0.8.1`.
+Agent Compass is usable across real projects. Current version: `0.9.0`.
 
 | Area | Current state |
 | ---- | ------------- |

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import { CODE_INTEL_CHOICE } from './lib/codebase-memory.mjs'
-import { PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
+import { PROFILES, STYLE_EXTERNAL_SKILLS, STYLE_SKILLS, detectStacks, selectAssets } from './lib/profiles.mjs'
 import { confirm, multiselect, select, text } from './lib/tui.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -138,7 +138,7 @@ if (!noRun) {
   if (answers.useSpecKit) spawnSync(process.execPath, [join(AC, 'scripts', 'spec-kit-bridge.mjs'), HOST], { stdio: 'inherit' })
   if (answers.skillSync !== 'none') {
     const fitSkills = selectAssets(detectStacks(HOST)).skills
-    const styleSkills = answers.skillScope === 'fit+style' ? STYLE_SKILLS : []
+    const styleSkills = answers.skillScope === 'fit+style' ? [...STYLE_SKILLS, ...STYLE_EXTERNAL_SKILLS] : []
     const scoped = [...new Set([...fitSkills, ...styleSkills])]
     const scopeArgs = answers.skillScope === 'all' ? ['--all'] : ['--only', scoped.join(',')]
     spawnSync(process.execPath, [join(AC, 'scripts', 'skills-sync.mjs'), HOST, `--${answers.skillSync}`, ...scopeArgs], { stdio: 'inherit' })

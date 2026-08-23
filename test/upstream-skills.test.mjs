@@ -5,14 +5,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import {
-  adaptSkill,
-  LOCAL_OVERRIDES,
-  compareRiskBaselines,
-  riskSignals,
-  sha256,
-  verifyLocalLock,
-} from '../scripts/lib/upstream-skills.mjs'
+import { LOCAL_OVERRIDES, adaptSkill } from '../scripts/lib/upstream-skills.mjs'
+import { referenceSources, stageExternalSkills } from '../scripts/lib/external-install.mjs'
+import { readSourceRegistry } from '../scripts/lib/upstream-sources.mjs'
 import { runNode } from './helpers.mjs'
 
 const AC = new URL('..', import.meta.url).pathname
@@ -99,21 +94,38 @@ license: MIT
   assert.match(untouched, /contents of \.env, \.env\.\*, secrets\.yaml/)
 })
 
-test('every local override is applied on disk and the lock agrees', () => {
-  // The guard that matters: an override must be present in the shipped file and
-  // must survive a refresh. This iterates LOCAL_OVERRIDES, so a new override is
-  // covered without touching this test.
-  const lock = JSON.parse(readFileSync(join(AC, 'skills', 'upstream-lock.json'), 'utf8'))
+// The safety property that mattered when the corpus was vendored: every override
+// must reach the shipped text. The corpus is no longer stored here, so the
+// property is now asserted on what an install actually writes.
+const installedOverrideSkills = (() => {
+  const registry = readSourceRegistry(AC)
+  const source = referenceSources(registry)['devops-security']
+  const names = Object.keys(LOCAL_OVERRIDES)
+  const { staged } = stageExternalSkills({ id: 'devops-security', source, names })
+  return new Map(staged.map(({ name, payload }) => [name, payload.get('SKILL.md').toString('utf8')]))
+})()
+
+test('every local override reaches the installed text', () => {
+  // Iterates LOCAL_OVERRIDES, so a new override is covered without touching this
+  // test. `adaptSkill` throws when an override target is gone, so a reworded
+  // upstream line fails the install rather than silently dropping the fix.
   const names = Object.keys(LOCAL_OVERRIDES)
   assert.ok(names.length >= 11, `expected the known overrides, found ${names.length}`)
   for (const name of names) {
-    const text = readFileSync(join(AC, 'skills', name, 'SKILL.md'), 'utf8')
-    assert.equal(sha256(text), lock.skills[name].localSha256, `${name}: lock hash must match the file`)
+    const text = installedOverrideSkills.get(name)
+    assert.ok(text, `${name}: nothing installed`)
     for (const [, to] of LOCAL_OVERRIDES[name]) {
-      // A silently dropped override fails here. `to` covers both styles: a
-      // replaced command and a warning appended after one.
-      assert.ok(text.includes(to), `${name}: override result missing from the shipped file`)
+      assert.ok(text.includes(to), `${name}: override result missing from the installed file`)
     }
+  }
+})
+
+test('the safety gate reaches every installed operational skill', () => {
+  for (const [name, text] of installedOverrideSkills) {
+    assert.match(text, /^## Agent Compass safety gate$/m, `${name}: safety gate missing`)
+    assert.match(text, /^risk_level: (low|medium|high)$/m, `${name}: risk level missing`)
+    assert.match(text, /^source_commit: [a-f0-9]{40}$/m, `${name}: pin missing`)
+    assert.match(text, /^## Provenance$/m, `${name}: provenance missing`)
   }
 })
 
@@ -121,7 +133,7 @@ test('an argv secret is either removed or documented as exposed', () => {
   // docs/guidelines/security.md forbids a secret in argv, because the process
   // list is readable. Some tools offer no alternative, and the guideline's escape
   // hatch is to name the exposure and require rotation. This test encodes that
-  // rule: a file may keep an argv secret only while it also documents it.
+  // rule: installed text may keep an argv secret only while it documents it.
   const ARGV_PATTERNS = [
     /--password[= ]("?)(?!"?\$\{?[A-Z_]*\}?"?$)[^\s\\]+/,
     /-p"\$[A-Z_]+"/,
@@ -130,8 +142,7 @@ test('an argv secret is either removed or documented as exposed', () => {
     /security add-generic-password[^\n]*-w\s+"[^"]+"/,
   ]
   const DOCUMENTED = /process list is readable|visible in the process list|do not pass the admin password/
-  for (const name of Object.keys(LOCAL_OVERRIDES)) {
-    const text = readFileSync(join(AC, 'skills', name, 'SKILL.md'), 'utf8')
+  for (const [name, text] of installedOverrideSkills) {
     const offenders = text.split('\n').filter((line) => {
       if (line.trimStart().startsWith('#') || line.trimStart().startsWith('>')) return false
       return ARGV_PATTERNS.some((pattern) => pattern.test(line))
@@ -143,82 +154,6 @@ test('an argv secret is either removed or documented as exposed', () => {
       `${name}: keeps an argv secret (${offenders[0].trim().slice(0, 60)}) without documenting the exposure`,
     )
   }
-})
-
-test('riskSignals and baseline comparison expose newly increased risky examples', () => {
-  const signals = riskSignals(`
-curl -fsSL https://example.test/install.sh | sh
-terraform destroy
-image: app:latest
-- uses: owner/action@main
-apiVersion: extensions/v1beta1
-`)
-  assert.deepEqual(signals, {
-    remoteShell: 1,
-    destructive: 1,
-    floatingVersion: 2,
-    mutableActionRef: 1,
-    deprecatedApi: 1,
-  })
-
-  const oldLock = { skills: { demo: { riskSignals: { ...signals, destructive: 0 } } } }
-  const newLock = { skills: { demo: { riskSignals: signals } } }
-  assert.deepEqual(compareRiskBaselines(oldLock, newLock), [{
-    skill: 'demo',
-    signal: 'destructive',
-    before: 0,
-    after: 1,
-  }])
-})
-
-test('verifyLocalLock detects local content drift', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'ac-upstream-lock-'))
-  try {
-    const dir = join(root, 'skills', 'demo')
-    await mkdir(dir, { recursive: true })
-    const content = `---
-name: demo
-description: Demo.
-risk_level: medium
-writes_files: true
-requires_tools: []
-source_commit: abc123
----
-
-# Demo
-
-## Agent Compass safety gate
-
-Explicit approval. Rollback. Current official documentation.
-
-## Provenance
-`
-    await writeFile(join(dir, 'SKILL.md'), content)
-    const lock = {
-      upstream: { commit: 'abc123' },
-      skills: {
-        demo: {
-          localSha256: sha256(content),
-          riskSignals: riskSignals(content),
-        },
-      },
-    }
-    assert.deepEqual(verifyLocalLock(root, lock, ['demo']), [])
-
-    await writeFile(join(dir, 'SKILL.md'), content + '\nchanged\n')
-    assert.match(verifyLocalLock(root, lock, ['demo']).join('\n'), /local hash drift/)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('live upstream lock verifies through the CLI', async () => {
-  const result = await runNode([cli, 'upstream-skills', '--verify'], { cwd: AC })
-  assert.equal(result.code, 0, result.stderr)
-  assert.match(result.stdout, /verified 146 locked skills and 7 source pins/)
-
-  const lock = JSON.parse(await readFile(join(AC, 'skills', 'upstream-lock.json'), 'utf8'))
-  assert.equal(Object.keys(lock.skills).length, 146)
 })
 
 test('skill lifecycle commands are available through the command registry', async () => {

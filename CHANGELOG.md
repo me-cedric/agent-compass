@@ -5,6 +5,107 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-23
+
+## [0.9.0] - 2026-08-23
+
+### Changed
+
+- **No external skill is stored in this repository any more.** All nine sources
+  moved to `"strategy": "reference"`, which removed 166 vendored skill folders
+  and `skills/upstream-lock.json`. The registry keeps the pin, the licence, the
+  full upstream inventory, and a new `recommended` field holding Agent Compass's
+  own curation — 146 of 163 operational skills, 3 of 20 caveman skills, 10 of 13
+  design skills. Nothing about the update lifecycle changed: one cached
+  `--check-updates` covers all nine, and `--verify` still runs offline.
+- **The operational safety adapter moved from vendoring time to install time.**
+  The corpus was vendored so Agent Compass could rewrite it — a safety gate on
+  every skill and eight passages with the secret taken out of `argv`. Tracking it
+  would have lost that, so `scripts/lib/upstream-skills.mjs` now runs inside the
+  installer instead. No uncorrected copy exists anywhere, an override whose
+  upstream target was reworded still fails rather than being dropped, and the
+  guarantee is now asserted against install output for all 146 skills.
+- **One install path for local and tracked skills.** `skills-sync --only` routes
+  each requested name to the local copy or the tracked source automatically, and
+  stack profiles name external skills in an `external` field that `selectAssets`
+  merges into `skills`. `recommend`, `adopt`, and `setup-wizard` therefore behave
+  exactly as they did when the skills were vendored — a caller passes one list and
+  never needs to know which kind a name is. `global-setup --style` does the same
+  user-wide.
+- **`skills` answers for a tracked skill.** `agent-compass skills <name>` reports
+  the source, pin, licence, pack membership, and install command for a skill that
+  is not on disk; `--grep` matches a hyphenated slug from a spaced query
+  ("github actions" finds `github-actions`); `--pack <id>` reports the pack and
+  how to install it.
+- `convert-documents-to-markdown` is now compass-authored guidance for the pinned
+  `@firecrawl/anydoc` CLI rather than a copy of the upstream skill. The `anydoc`
+  source stays tracked so the version pin remains visible.
+- Retired `check-skill-quality` and the `lint:skill-quality` gate. What they
+  guarded is now covered by `upstream-skills --verify` plus the install-output
+  tests.
+
+### Added
+
+- **`external-skills` — one installer for Claude Code, Codex, and Copilot.**
+  Fetches a tracked source at its pin and writes `.claude/skills/` and
+  `.agents/skills/`, plus a `.github/instructions/` file because Copilot has no
+  skills directory. `--global` installs user-wide, `--recommended` takes the
+  compass curation, `--skill <a,b>` or `--all` take a selection, `--dry` shows the
+  plan. Executable payloads are refused unless `--allow-scripts` is passed, and
+  each source's licence notice — including PolyForm's verbatim `Required Notice`
+  line — is written beside the install.
+- Compass-authored routers replacing the deleted copies:
+  [`operational-skills`](skills/operational-skills/SKILL.md),
+  [`design-taste-skills`](skills/design-taste-skills/SKILL.md), and
+  [`working-style-skills`](skills/working-style-skills/SKILL.md) — each carrying
+  the curation reasoning that used to be implicit in which folders existed.
+- Pointer documents: [operational-skills.md](docs/tooling/operational-skills.md)
+  (the eight narrowings in full) and
+  [style-and-design-skills.md](docs/tooling/style-and-design-skills.md).
+- **`compass-external-source` mission skill.** The guided path for adding,
+  listing, curating, refreshing, or removing a tracked source: the licence gate
+  runs first (no licence means refuse; a use restriction is escalated, not
+  absorbed), then the registry entry, the computed inventory, the pointer
+  document, the narrowings, the fit wiring, and the tests. Routed from
+  [`MISSIONS.md`](MISSIONS.md).
+
+- **Native mobile coverage, tracked instead of copied.** Two published skill
+  corpora are now registered in `skills/upstream-sources.json`:
+  [`android/skills`](https://github.com/android/skills) (21 skills, Apache-2.0,
+  Google LLC) and
+  [`dpearson2699/swift-ios-skills`](https://github.com/dpearson2699/swift-ios-skills)
+  (86 skills, PolyForm Perimeter 1.0.0). Neither is vendored. The Apple corpus
+  carries a noncompete term, and Agent Compass redistributes skills to host
+  projects, so copying it would engage that term; the Android corpus ships its
+  own installer and keeps its mirrored documentation fresher than a mirror would.
+  See [ADR 002](docs/decisions/002-tracked-external-reference-sources.md).
+- **A third source strategy, `reference`.** A reference source is pinned,
+  update-checked, and documented, but owns no local file. It records an `install`
+  command, an `inventoryRoot`, an `inventoryDoc`, `pointers`, and the
+  `upstreamSkills` inventory at the pinned commit. `upstream-skills --verify`
+  fails offline when a pointer disappears, stops naming its repository, or when
+  the generated inventory block drifts. `upstream-skills --update <id>` re-reads
+  the inventory from the new tree with `git ls-tree` and `git show`, moves the
+  pin, rewrites the inventory block, and prints added and removed upstream
+  skills — copying nothing and executing nothing. Both new sources join the
+  existing cached `--check-updates` path with no separate command.
+- **`native-mobile-skills` skill.** Routes a native Android or Apple-platform
+  task to the vendor skill that covers it, installs it with the vendor's own
+  installer, and keeps the compass gates in force: validation on the real
+  toolchain, an emulator or simulator screenshot for a screen change, and no
+  third-party skill relaxing §4. Self-contained, so it still routes after
+  `skills-sync` copies it into a host without the compass tree.
+- **`android-compose` and `swift-ios` stack presets**, with detection.
+  `detectStacks` now recognises an Android Gradle plugin, `AndroidManifest.xml`,
+  an Xcode project or workspace, `Package.swift`, and `Podfile` — and holds back
+  when Expo, React Native, or Flutter is present, because those toolkits generate
+  the `android/` and `ios/` trees rather than owning them. A Gradle build only
+  counts as Android when a build file applies an Android plugin, so a Kotlin
+  service does not match.
+- **`platform-skill-before-memory` instinct.** Why recall fails on a
+  yearly-release platform, and which of the two failure modes reaches review.
+
+
 ## [0.8.1] - 2026-08-19
 
 ### Fixed

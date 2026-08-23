@@ -99,6 +99,7 @@ command list by `npm run lint:indexes`.
 | `vendor` | Create/refresh a plain-copy vendoring with provenance. | — |
 | `spec-kit-bridge` | Install optional Spec Kit bridge files. | — |
 | `skills-sync` | List/sync skills and opt-in capability packs. | — |
+| `external-skills` | Install skills from a tracked external source into a project or the current user's config (Claude, Codex, Copilot). | `--list`, `--source <id>`, `--recommended`, `--all`, `--skill <a,b>`, `--target`, `--global`, `--dry` |
 | `policy-pack` | List/apply setup policy packs. | — |
 | `upgrade` | Bump the submodule, sync, then doctor. | `upgrade-host` |
 | `check-update` | Cheap cached "are we behind?" check (no tokens). | — |
@@ -108,8 +109,9 @@ packs with `--pack`:
 
 ```bash
 agent-compass skills-sync . --only verify-security,kubernetes-ops
-agent-compass skills-sync . --pack devops-platform
-agent-compass skills-sync . --pack security,infrastructure,compliance
+agent-compass skills-sync --list-packs
+agent-compass external-skills . --source devops-security --recommended
+agent-compass external-skills --source ponytail --recommended --global
 ```
 
 Root packs: `devops-platform`, `security`, `infrastructure`, `compliance`.
@@ -139,7 +141,6 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `recommend` | Scan host and recommend agent setup improvements. | — |
 | `quality-gates` | Run generic agent handoff quality gates. | — |
 | `evidence` | Build the test-evidence bundle, or a before/after change report. | `--run`, `--change <slug>`, `--phase start\|finish`, `--strict`, `--json` |
-| `check-skill-quality` | Validate imported skills against safety, provenance, and reviewed-risk rules. | — |
 | `dashboard` | Write static `.agent/report.html` dashboard. | — |
 | `migration-plan` | Plan host upgrade against current manifest. | — |
 | `mcp-probe` | Probe MCP config readiness. | — |

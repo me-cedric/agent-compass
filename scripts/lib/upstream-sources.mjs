@@ -9,7 +9,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 export const SOURCE_REGISTRY_REL = 'skills/upstream-sources.json'
@@ -44,6 +44,69 @@ export const registrySkillNames = (registry) => new Set(
   Object.values(registry?.sources || {}).flatMap((source) => source.skills || []),
 )
 
+const gitShow = (checkout, commit, path) => runGitRaw(['-C', checkout, 'show', `${commit}:${path}`])
+
+export const SKILL_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
+
+export const inventoryBlockKey = (id) => `${id}-inventory`
+
+const frontmatterName = (text) => {
+  const block = text.match(/^---\n([\s\S]*?)\n---/)
+  if (!block) return null
+  const name = block[1].match(/^name:\s*(.+)$/m)?.[1]
+  return name ? name.trim().replace(/^["']|["']$/g, '') : null
+}
+
+// List every file in a Git tree under one prefix. Metadata only — nothing is
+// checked out into the working tree and nothing upstream is executed.
+export const treeFiles = (checkout, commit, prefix = '') => runGitRaw(
+  ['-C', checkout, 'ls-tree', '-r', '--name-only', commit],
+).split('\n').map((line) => line.trim()).filter((line) => line && line.startsWith(prefix))
+
+const inventoryPrefix = (inventoryRoot) => (
+  inventoryRoot === '.' || !inventoryRoot ? '' : `${inventoryRoot.replace(/\/$/, '')}/`
+)
+
+// Map each upstream skill to its slug and its directory. The slug is the
+// frontmatter `name` when it is a usable slug, because that is the name an agent
+// harness keys the skill by; the directory name is the fallback.
+export const inventoryEntriesFromTree = (checkout, commit, inventoryRoot = '.') => {
+  const prefix = inventoryPrefix(inventoryRoot)
+  const entries = new Map()
+  for (const path of treeFiles(checkout, commit, prefix)) {
+    if (basename(path) !== 'SKILL.md') continue
+    const declared = frontmatterName(gitShow(checkout, commit, path))
+    const slug = declared && SKILL_SLUG_RE.test(declared) ? declared : basename(dirname(path))
+    // A repository whose SKILL.md sits at the root has no directory to name it.
+    const dir = dirname(path) === '.' ? '' : dirname(path)
+    if (!entries.has(slug)) entries.set(slug, { slug, dir, file: path })
+  }
+  return [...entries.values()].sort((left, right) => left.slug.localeCompare(right.slug))
+}
+
+export const inventoryFromTree = (checkout, commit, inventoryRoot = '.') => inventoryEntriesFromTree(
+  checkout, commit, inventoryRoot,
+).map((entry) => entry.slug)
+
+// The inventory body written into a pointer document. Six slugs per row keeps
+// the diff readable when one upstream skill is added or renamed.
+export const renderInventory = (slugs) => {
+  const rows = []
+  for (let index = 0; index < slugs.length; index += 6) {
+    rows.push(`- ${slugs.slice(index, index + 6).map((slug) => `\`${slug}\``).join(', ')}`)
+  }
+  return `${slugs.length} tracked skill${slugs.length === 1 ? '' : 's'}:\n\n${rows.join('\n')}`
+}
+
+export const applyGeneratedBlock = (text, key, body) => {
+  const start = `<!-- BEGIN GENERATED:${key} -->`
+  const end = `<!-- END GENERATED:${key} -->`
+  const from = text.indexOf(start)
+  const to = text.indexOf(end)
+  if (from === -1 || to === -1 || to < from) return null
+  return `${text.slice(0, from + start.length)}\n${body}\n${text.slice(to)}`
+}
+
 export const hashLocalAssets = (root, source, contents = null) => treeHash(
   (source.assets || []).map((asset) => {
     const value = contents?.get(asset.target) ?? readFileSync(join(root, asset.target))
@@ -51,7 +114,6 @@ export const hashLocalAssets = (root, source, contents = null) => treeHash(
   }),
 )
 
-const gitShow = (checkout, commit, path) => runGitRaw(['-C', checkout, 'show', `${commit}:${path}`])
 
 export const hashUpstreamAssets = (checkout, source, commit = source.commit) => treeHash(
   (source.assets || []).map((asset) => {
@@ -81,6 +143,52 @@ const externalSkillNames = (root) => {
   return names
 }
 
+// A reference source is tracked, never copied. Nothing upstream lands in the
+// tree, so the local contract is the pointer set: the documents that tell an
+// agent the source exists, how to install from it, and what it currently holds.
+const verifyReferenceSource = (root, id, source) => {
+  const hits = []
+  if (source.assets?.length) hits.push(`${id}: reference source must not declare assets`)
+  if (source.skills?.length) hits.push(`${id}: reference source must use upstreamSkills, not skills`)
+  if (!source.install) hits.push(`${id}: reference source needs an install command`)
+  const slugs = source.upstreamSkills || []
+  if (!slugs.length) hits.push(`${id}: reference source has no upstreamSkills`)
+  const invalid = slugs.filter((slug) => !SKILL_SLUG_RE.test(slug))
+  if (invalid.length) hits.push(`${id}: invalid upstream skill slug ${invalid.join(', ')}`)
+  if (JSON.stringify(slugs) !== JSON.stringify([...slugs].sort())) {
+    hits.push(`${id}: upstreamSkills must be sorted`)
+  }
+  // `recommended` is Agent Compass's own curation of a source that holds more
+  // than Agent Compass endorses. It must stay a subset of what the pin records,
+  // so a skill that disappears upstream cannot keep being recommended.
+  const recommended = source.recommended || []
+  const unknown = recommended.filter((slug) => !slugs.includes(slug))
+  if (unknown.length) hits.push(`${id}: recommended skill not in inventory: ${unknown.join(', ')}`)
+  if (JSON.stringify(recommended) !== JSON.stringify([...recommended].sort())) {
+    hits.push(`${id}: recommended must be sorted`)
+  }
+  if (!source.inventoryDoc) {
+    hits.push(`${id}: reference source needs an inventoryDoc`)
+    return hits
+  }
+  for (const pointer of [source.inventoryDoc, ...(source.pointers || [])]) {
+    const file = join(root, pointer)
+    if (!existsSync(file)) {
+      hits.push(`${id}: missing pointer ${pointer}`)
+      continue
+    }
+    const text = readFileSync(file, 'utf8')
+    if (!text.includes(source.repository)) {
+      hits.push(`${id}: pointer ${pointer} does not name ${source.repository}`)
+    }
+    if (pointer !== source.inventoryDoc) continue
+    const applied = applyGeneratedBlock(text, inventoryBlockKey(id), renderInventory(slugs))
+    if (applied === null) hits.push(`${id}: ${pointer} has no ${inventoryBlockKey(id)} block`)
+    else if (applied !== text) hits.push(`${id}: ${pointer} inventory block is stale`)
+  }
+  return hits
+}
+
 export const verifySourceRegistry = (root, registry) => {
   const hits = []
   if (registry?.schema !== 1) hits.push('source registry schema must be 1')
@@ -93,7 +201,7 @@ export const verifySourceRegistry = (root, registry) => {
       hits.push(`${id}: invalid repository`)
     }
     if (!/^[a-f0-9]{40}$/i.test(source.commit || '')) hits.push(`${id}: invalid commit`)
-    if (!['merge', 'operational'].includes(source.strategy)) hits.push(`${id}: invalid strategy`)
+    if (!['merge', 'operational', 'reference'].includes(source.strategy)) hits.push(`${id}: invalid strategy`)
     for (const name of source.skills || []) {
       if (skillOwners.has(name)) hits.push(`${id}: duplicate skill ${name} (also ${skillOwners.get(name)})`)
       skillOwners.set(name, id)
@@ -116,6 +224,9 @@ export const verifySourceRegistry = (root, registry) => {
         const actual = hashLocalAssets(root, source)
         if (actual !== source.localSha256) hits.push(`${id}: local tree hash drift`)
       }
+    }
+    if (source.strategy === 'reference') {
+      hits.push(...verifyReferenceSource(root, id, source))
     }
     if (source.strategy === 'operational') {
       const lockPath = join(root, source.lock || '')
@@ -256,6 +367,42 @@ export const planMergeSourceUpdate = ({ root, source, latest }) => {
     nextSource.upstreamSha256 = hashLocalAssets(root, nextSource, upstream)
     nextSource.localSha256 = hashLocalAssets(root, nextSource, outputs)
     return { outputs, conflicts, source: nextSource }
+  } finally {
+    checkout.cleanup()
+  }
+}
+
+// Refresh a tracked source without copying it. The pin moves, the recorded
+// inventory is re-read from the new tree, and the pointer document's generated
+// block is rewritten. No upstream file is written into the repository.
+export const planReferenceSourceUpdate = ({ root, id, source, latest }) => {
+  const checkout = checkoutSource(source.repository, [source.commit, latest])
+  try {
+    const pinned = inventoryFromTree(checkout.root, source.commit, source.inventoryRoot)
+    const recorded = source.upstreamSkills || []
+    if (JSON.stringify(pinned) !== JSON.stringify(recorded)) {
+      throw new Error(`pinned inventory drift: ${recorded.length} recorded, ${pinned.length} in ${source.commit.slice(0, 7)}`)
+    }
+    const slugs = inventoryFromTree(checkout.root, latest, source.inventoryRoot)
+    if (!slugs.length) throw new Error(`no SKILL.md found under ${source.inventoryRoot || '.'} at ${latest.slice(0, 7)}`)
+    const before = new Set(recorded)
+    const after = new Set(slugs)
+    const added = slugs.filter((slug) => !before.has(slug))
+    const removed = recorded.filter((slug) => !after.has(slug))
+
+    const outputs = new Map()
+    const file = join(root, source.inventoryDoc)
+    const text = readFileSync(file, 'utf8')
+    const applied = applyGeneratedBlock(text, inventoryBlockKey(id), renderInventory(slugs))
+    if (applied === null) throw new Error(`${source.inventoryDoc}: no ${inventoryBlockKey(id)} block`)
+    if (applied !== text) outputs.set(source.inventoryDoc, applied)
+
+    return {
+      outputs,
+      added,
+      removed,
+      source: { ...source, commit: latest, upstreamSkills: slugs },
+    }
   } finally {
     checkout.cleanup()
   }

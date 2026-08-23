@@ -1,12 +1,21 @@
 # External Skill Sources
 
-Agent Compass tracks each vendored skill source in
-[`skills/upstream-sources.json`](../../skills/upstream-sources.json). The
+Agent Compass tracks every external skill source in
+[`skills/upstream-sources.json`](../../skills/upstream-sources.json). **No
+external skill is stored in this repository.** Every source uses
+`"strategy": "reference"`: the registry holds the pin, the licence, the upstream
+inventory, and Agent Compass's own curation, and
+[`external-skills`](#install-from-a-tracked-source) installs on request. The
 registry makes source freshness visible without executing remote content.
+
+The `merge` and `operational` strategies remain implemented for a source that
+genuinely has to be copied, but nothing uses them today. Prefer `reference`.
 
 ## Safety Model
 
 - A check reads remote Git commit identifiers only.
+- A reference source copies nothing. It records a pin, an inventory, and the
+  local documents that route to it.
 - A check changes no tracked content or source pin. It can write an ignored
   local cache.
 - A refresh runs only after an explicit maintainer command.
@@ -76,30 +85,103 @@ agent-compass upstream-skills --source /path/to/checkout --dry
 agent-compass upstream-skills --source /path/to/checkout --refresh
 ```
 
+## Reference Sources (Tracked, Not Copied)
+
+A `reference` source is pinned and checked like any other source, but no
+upstream file enters the repository. Use it when copying is wrong: a licence
+that restricts redistribution, a corpus large enough that a mirror ages badly,
+or a vendor that ships its own per-skill installer.
+
+A reference source records:
+
+- `repository`, `commit`, and `license` — the pin and its terms;
+- `install` — the vendor command that pulls one skill into a host project;
+- `inventoryRoot` — where `SKILL.md` files live in the upstream tree;
+- `inventoryDoc` — the local document that carries the generated inventory;
+- `pointers` — other local files that must keep naming this source;
+- `upstreamSkills` — the sorted skill inventory at the pinned commit.
+
+It declares no `assets` and no `skills`, because it owns no local file.
+
+`--verify` runs offline and fails when a pointer is missing, when a pointer
+stops naming the repository, or when the generated inventory block drifts from
+`upstreamSkills`. That is what keeps a pointer document from quietly describing
+last year's corpus.
+
+`--update` re-reads the inventory from the new tree with `git ls-tree` and
+`git show` — metadata and file contents only, nothing checked out into the
+working tree and nothing executed. It then moves the pin, rewrites the generated
+inventory block, and prints the added and removed upstream skills. A refresh
+aborts when the recorded inventory does not match the pinned commit, so a
+hand-edited registry cannot advance.
+
+```bash
+agent-compass upstream-skills --update android-skills --dry
+agent-compass upstream-skills --update swift-ios-skills
+```
+
+The tracked native mobile corpora and their routing layer are documented in
+[native-mobile-skills.md](native-mobile-skills.md). The reasoning is
+[ADR 002](../decisions/002-tracked-external-reference-sources.md).
+
 ## Registry Contract
 
 Each source records:
 
 - repository and pinned commit;
-- merge or operational transformation strategy;
-- selected skill names;
-- upstream-file to local-file mappings;
+- strategy: `merge`, `operational`, or `reference`;
+- selected skill names, or the tracked upstream inventory for a reference source;
+- upstream-file to local-file mappings, for a source that is copied;
 - source-tree and local-tree hashes for merge sources;
+- install command, inventory root, and pointer files for reference sources;
 - license and optional package version data.
 
 Add a source only after license review, content review, and an explicit file
 selection. Do not register an entire repository when Agent Compass needs one
-skill. Keep local safety changes in the selected target. The three-way refresh
+skill. When the license forbids redistribution, or a mirror would age faster
+than the vendor's own installer, register the source as `reference` and copy
+nothing. Keep local safety changes in the selected target. The three-way refresh
 preserves those changes and stops when it cannot merge them safely.
 
 ## Registered Sources
 
-| Source ID | Repository | Selected skills | Strategy |
-| --------- | ---------- | --------------: | -------- |
-| `devops-security` | `BagelHole/DevOps-Security-Agent-Skills` | 146 | Safety adapter and operational lock |
-| `taste-skill` | `Leonxlnx/taste-skill` | 10 | Three-way text merge |
-| `ponytail` | `DietrichGebert/ponytail` | 5 | Three-way text merge |
-| `caveman` | `JuliusBrussee/caveman` | 3 | Three-way text merge |
-| `i-have-adhd` | `ayghri/i-have-adhd` | 1 | Three-way text merge |
-| `asd-ste100` | `danyuchn/asd-ste100-skill` | 1 | Three-way text merge |
-| `anydoc` | `firecrawl/anydoc` | 1 | Three-way text merge and package pin |
+| Source ID | Repository | Inventory | Curated | Licence |
+| --------- | ---------- | --------: | ------: | ------- |
+| `devops-security` | `BagelHole/DevOps-Security-Agent-Skills` | 163 | 146 | MIT |
+| `android-skills` | `android/skills` | 21 | 21 | Apache-2.0 |
+| `swift-ios-skills` | `dpearson2699/swift-ios-skills` | 86 | 86 | PolyForm Perimeter 1.0.0 |
+| `taste-skill` | `Leonxlnx/taste-skill` | 13 | 10 | MIT |
+| `ponytail` | `DietrichGebert/ponytail` | 6 | 5 | MIT |
+| `caveman` | `JuliusBrussee/caveman` | 20 | 3 | MIT |
+| `i-have-adhd` | `ayghri/i-have-adhd` | 1 | 1 | MIT |
+| `asd-ste100` | `danyuchn/asd-ste100-skill` | 1 | 1 | MIT |
+| `anydoc` | `firecrawl/anydoc` | 1 | 1 | MIT |
+
+Per-corpus detail: [operational-skills.md](operational-skills.md),
+[native-mobile-skills.md](native-mobile-skills.md), and
+[style-and-design-skills.md](style-and-design-skills.md).
+
+## Install From A Tracked Source
+
+One command covers Claude Code, Codex, and Copilot, for a project or the user:
+
+```bash
+agent-compass external-skills --list
+agent-compass external-skills /path/to/host --source <id> --recommended
+agent-compass external-skills --source <id> --recommended --global
+agent-compass external-skills /path/to/host --source <id> --skill <a,b>
+```
+
+A fit-based adoption needs no source id at all — `skills-sync --only` routes each
+name to the local copy or the tracked source automatically:
+
+```bash
+agent-compass recommend /path/to/host --json      # → assets.skills
+agent-compass skills-sync /path/to/host --only <that list>
+```
+
+The installer writes `.claude/skills/` and `.agents/skills/`, adds
+`.github/instructions/external-skills.instructions.md` so Copilot sees the tree,
+writes the source's licence notice beside the install, and refuses executable
+payloads unless `--allow-scripts` is passed. The operational corpus is corrected
+on the way through — see [operational-skills.md](operational-skills.md).

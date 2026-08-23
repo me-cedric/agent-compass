@@ -1,5 +1,8 @@
-// Opt-in operational capability packs. Kept separate from auto-detected
-// application-stack profiles so hosts receive this broad knowledge only when asked.
+// Opt-in operational capability packs — Agent Compass's curation of the tracked
+// operational corpus (BagelHole/DevOps-Security-Agent-Skills). These skills are
+// NOT stored in this repository: `external-skills` installs them from the pinned
+// commit with the safety gate applied. A pack is therefore a selection to install,
+// not a directory to copy. See docs/tooling/operational-skills.md.
 
 export const CAPABILITY_PACKS = {
   "devops-platform": {

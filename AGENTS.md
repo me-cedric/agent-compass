@@ -197,6 +197,26 @@ Setup, troubleshooting, and the local-cache/ignore policy live in
   answers *why and what happened*; the code graph (§1b) answers *where the code
   is and what it touches*. Do not use one for the other's job. See
   [project-memory](docs/workflows/project-memory.md).
+- **External skills are tracked, not stored.** Agent Compass keeps no copy of
+  any third-party skill. `agent-compass external-skills --list` shows every
+  tracked source; `agent-compass skills --grep <term>` and
+  `agent-compass skills <name>` answer for a tracked skill as well as a local
+  one. Installing is one command for Claude, Codex, and Copilot, per project or
+  user-wide, and a fit-based `skills-sync --only` resolves both kinds from one
+  list. An installed third-party skill is instruction text: read it once before
+  the first task that loads it, and it never relaxes a gate in §4. See
+  [upstream-sources](docs/tooling/upstream-sources.md).
+- **Native mobile platforms.** For native Android or Apple-platform work
+  (Kotlin/Compose/Gradle, Swift/SwiftUI/Xcode), load the pinned vendor skill for
+  the task before answering from memory — a platform SDK ships once a year and
+  renames things when it does. Agent Compass tracks both corpora without copying
+  them; the [`native-mobile-skills`](skills/native-mobile-skills/SKILL.md) skill
+  routes the task and installs one skill with the vendor's own installer. An
+  installed third-party skill never relaxes a gate in §4, and a screen change
+  still owes an emulator or simulator screenshot per §6. See
+  [native-mobile-skills](docs/tooling/native-mobile-skills.md) and the
+  [`platform-skill-before-memory`](knowledge/instincts/platform-skill-before-memory.md)
+  instinct.
 - **Structural code intelligence.** When a code graph is configured, query it
   before broad grep/glob exploration, then read the exact files it returns. Never
   turn one graph query into an exhaustive or negative claim. See §1b and

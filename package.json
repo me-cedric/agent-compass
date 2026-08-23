@@ -1,6 +1,6 @@
 {
   "name": "agent-compass",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "description": "Central agentic standards, guidelines, skills and bootstrap tooling for AI coding agents (Claude, Codex, Copilot).",
@@ -61,12 +61,11 @@
     "vendor-into": "node scripts/vendor.mjs",
     "check-update": "node scripts/check-update.mjs",
     "test": "node --test",
-    "check": "npm test && npm run agent-conformance -- --strict && npm run agent-evals && npm run lint:actions && npm run lint:naming && npm run lint:indexes && npm run lint:docs && npm run lint:skill-quality && npm run lint:skill-docs",
+    "check": "npm test && npm run agent-conformance -- --strict && npm run agent-evals && npm run lint:actions && npm run lint:naming && npm run lint:indexes && npm run lint:docs && npm run lint:skill-docs",
     "lint:actions": "node scripts/check-actions.mjs",
     "lint:naming": "node scripts/check-naming.mjs",
     "lint:indexes": "node scripts/check-indexes.mjs",
     "lint:docs": "node scripts/check-docs.mjs",
-    "lint:skill-quality": "node scripts/check-skill-quality.mjs",
     "lint:skill-docs": "node scripts/skill-docs.mjs --check",
     "lint:release": "node scripts/check-release.mjs"
   },

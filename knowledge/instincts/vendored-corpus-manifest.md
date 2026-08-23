@@ -8,6 +8,15 @@ source: local-repo-analysis
 
 # Vendor a foreign corpus behind a generated manifest
 
+> **Agent Compass no longer vendors.** It moved every external skill source to a
+> tracked pin plus an install-time fetch — see
+> [ADR 002](../../docs/decisions/002-tracked-external-reference-sources.md). This
+> instinct still holds for the case where copying *is* the right answer: an
+> offline requirement, a source with no stable host, or content you must be able
+> to review in your own diff. Sections 4, 5, and 6 apply either way — normalize
+> at the boundary, keep the licence with the content, and keep host-added
+> enforcement outside the foreign tree.
+
 An application that ships another repository's content has three problems: the
 copy drifts from its source, the reader has to understand the source's own
 tooling, and the licence notice gets lost. One pattern solves all three.

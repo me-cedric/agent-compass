@@ -20,24 +20,37 @@ test('skills info searches descriptions and reports pack membership', async () =
   assert.ok(kubernetes.packs.includes('kubernetes'))
 })
 
-test('skills info filters one focused pack', async () => {
+test('skills info reports one focused pack and how to install it', async () => {
   const result = await runNode([script, '--pack', 'aws', '--json'], { cwd: AC })
   assert.equal(result.code, 0, result.stderr)
   const payload = JSON.parse(result.stdout)
   assert.equal(payload.count, CAPABILITY_PACKS.aws.skills.length)
-  assert.deepEqual(payload.skills.map((skill) => skill.name), [...CAPABILITY_PACKS.aws.skills].sort())
+  assert.deepEqual(payload.skills, CAPABILITY_PACKS.aws.skills)
+  // The pack is a selection to install from the tracked source, not local content.
+  assert.equal(payload.source, 'devops-security')
+  assert.match(payload.install, /external-skills .* --source devops-security --skill /)
 })
 
-test('skills info shows one skill with pinned provenance', async () => {
+test('skills info answers for a tracked skill that is not stored here', async () => {
   const result = await runNode([script, 'github-actions', '--json'], { cwd: AC })
   assert.equal(result.code, 0, result.stderr)
   const payload = JSON.parse(result.stdout)
   assert.equal(payload.name, 'github-actions')
-  assert.equal(payload.risk_level, 'medium')
-  assert.equal(payload.writes_files, true)
+  assert.equal(payload.tracked, 'devops-security')
+  assert.equal(payload.recommended, true)
+  assert.equal(payload.license, 'MIT')
   assert.match(payload.source, /BagelHole/)
   assert.match(payload.source_commit, /^[a-f0-9]{40}$/)
-  assert.equal(payload.path, 'skills/github-actions/SKILL.md')
+  assert.match(payload.install, /--source devops-security --skill github-actions/)
+  assert.ok(payload.packs.includes('devops-platform'))
+})
+
+test('a local skill wins a name collision with a tracked one', async () => {
+  const result = await runNode([script, 'convert-documents-to-markdown', '--json'], { cwd: AC })
+  assert.equal(result.code, 0, result.stderr)
+  const payload = JSON.parse(result.stdout)
+  assert.equal(payload.path, 'skills/convert-documents-to-markdown/SKILL.md')
+  assert.equal(payload.tracked, undefined, 'the local skill is what an agent actually loads')
 })
 
 test('unified CLI dispatches skills search and rejects unknown packs', async () => {

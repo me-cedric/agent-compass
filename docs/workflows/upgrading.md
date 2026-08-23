@@ -65,7 +65,7 @@ select packs explicitly, or use `--all` when every skill is intentional:
 
 ```bash
 node docs/agent-compass/scripts/cli.mjs skills-sync --list-packs
-node docs/agent-compass/scripts/cli.mjs skills-sync . --pack devops-platform
+node docs/agent-compass/scripts/cli.mjs external-skills . --source devops-security --recommended
 node docs/agent-compass/scripts/cli.mjs skills-sync . --all
 ```
 

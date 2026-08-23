@@ -34,6 +34,8 @@ material humans and agents *read* and *promote from*.
   [`scalar-bruno-gherkin-sync`](instincts/scalar-bruno-gherkin-sync.md).
 - **Config & environment:**
   [`env-var-sync`](instincts/env-var-sync.md).
+- **Platform & SDK freshness:**
+  [`platform-skill-before-memory`](instincts/platform-skill-before-memory.md).
 - **Frontend:**
   [`angular-ai-assets`](instincts/angular-ai-assets.md),
   [`react-query-bulk-mutation-reconcile`](instincts/react-query-bulk-mutation-reconcile.md),

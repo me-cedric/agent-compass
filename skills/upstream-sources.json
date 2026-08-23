@@ -4,10 +4,18 @@
     "devops-security": {
       "repository": "https://github.com/BagelHole/DevOps-Security-Agent-Skills",
       "commit": "0365f57a079b1332f95cf26e31dd2d5332a8399f",
-      "strategy": "operational",
+      "strategy": "reference",
       "license": "MIT",
-      "lock": "skills/upstream-lock.json",
-      "skills": [
+      "licenseHolder": "Toby Miller",
+      "licenseNote": "Agent Compass injects its safety gate and eight argv-secret narrowings at install time; see the corrections table in the pointer document.",
+      "install": "agent-compass external-skills --source devops-security --recommended",
+      "adapter": "operational",
+      "inventoryRoot": ".",
+      "inventoryDoc": "docs/tooling/operational-skills.md",
+      "pointers": [
+        "skills/operational-skills/SKILL.md"
+      ],
+      "recommended": [
         "access-review",
         "ai-agent-security",
         "ai-coding-agent-guardrails",
@@ -155,14 +163,186 @@
         "windows-server",
         "zero-trust"
       ],
-      "assets": []
+      "upstreamSkills": [
+        "access-review",
+        "agent-evals",
+        "agent-observability",
+        "ai-agent-security",
+        "ai-coding-agent-guardrails",
+        "ai-inference-service-mesh",
+        "ai-pipeline-orchestration",
+        "ai-red-teaming",
+        "ai-security-hardening",
+        "ai-sre-incident-response",
+        "alerting-oncall",
+        "argocd-gitops",
+        "arm-templates",
+        "asset-inventory",
+        "audit-logging",
+        "aws-cloudtrail",
+        "aws-cost-optimization",
+        "aws-ec2",
+        "aws-ecs-fargate",
+        "aws-iam",
+        "aws-lambda",
+        "aws-rds",
+        "aws-s3",
+        "aws-secrets-manager",
+        "aws-vpc",
+        "azure-aks",
+        "azure-devops",
+        "azure-functions",
+        "azure-keyvault",
+        "azure-monitor-audit",
+        "azure-networking",
+        "azure-sql",
+        "azure-vms",
+        "backup-recovery",
+        "block-storage",
+        "blue-green-deploy",
+        "business-continuity",
+        "cdn-setup",
+        "change-management",
+        "circleci",
+        "cis-benchmarks",
+        "cloudflare-pages",
+        "cloudflare-r2",
+        "cloudflare-workers",
+        "cloudflare-zero-trust",
+        "cloudformation",
+        "container-hardening",
+        "container-registries",
+        "container-scanning",
+        "convex-backend",
+        "dast-scanning",
+        "database-backups",
+        "datadog",
+        "dependency-scanning",
+        "devcontainers-nix",
+        "disaster-recovery",
+        "dns-management",
+        "docker-compose",
+        "docker-management",
+        "ebpf-observability",
+        "elk-stack",
+        "feature-flags",
+        "fedramp-compliance",
+        "firebase-app-platform",
+        "firewall-config",
+        "gcp-audit-logs",
+        "gcp-cloud-functions",
+        "gcp-cloud-sql",
+        "gcp-compute",
+        "gcp-gke",
+        "gcp-networking",
+        "gcp-secret-manager",
+        "gdpr-compliance",
+        "git-workflow",
+        "github-actions",
+        "gitlab-ci",
+        "gpu-kubernetes-operations",
+        "gpu-server-management",
+        "hashicorp-vault",
+        "helm-charts",
+        "hipaa-compliance",
+        "identity-access-management",
+        "incident-management",
+        "incident-response",
+        "iso27001-compliance",
+        "jenkins",
+        "kubernetes-hardening",
+        "kubernetes-ops",
+        "kustomize",
+        "linux-administration",
+        "linux-hardening",
+        "llm-app-security",
+        "llm-caching",
+        "llm-cost-optimization",
+        "llm-fine-tuning",
+        "llm-gateway",
+        "llm-inference-scaling",
+        "llmops-platform-engineering",
+        "load-balancing",
+        "loki-logging",
+        "mac-mini-llm-lab",
+        "mcp-server-security",
+        "mdm-device-management",
+        "model-registry-governance",
+        "model-serving-kubernetes",
+        "model-supply-chain-security",
+        "mongodb",
+        "multi-tenant-llm-hosting",
+        "mysql",
+        "new-relic",
+        "nfs-storage",
+        "object-storage",
+        "ollama-stack",
+        "openclaw-deployment-hardening",
+        "openclaw-local-mac-mini",
+        "openclaw-security-hardening",
+        "openshift",
+        "opentelemetry",
+        "opentofu-migration",
+        "pci-dss-compliance",
+        "penetration-testing",
+        "performance-tuning",
+        "planetscale",
+        "platform-engineering",
+        "podman",
+        "policy-as-code",
+        "postgresql",
+        "prometheus-grafana",
+        "prompt-injection-defense",
+        "rag-infrastructure",
+        "rag-observability-evals",
+        "redis",
+        "reverse-proxy",
+        "runbook-creation",
+        "saas-security-posture",
+        "sast-scanning",
+        "sbom-supply-chain",
+        "security-automation",
+        "semantic-versioning",
+        "service-mesh",
+        "soc2-compliance",
+        "sops-encryption",
+        "sre-dashboards",
+        "ssh-configuration",
+        "ssl-tls-management",
+        "startup-it-troubleshooting",
+        "supply-chain-attack-response",
+        "systemd-services",
+        "terraform-aws",
+        "terraform-azure",
+        "terraform-gcp",
+        "threat-modeling",
+        "user-management",
+        "vector-database-ops",
+        "vendor-management",
+        "vercel-deployments",
+        "vllm-server",
+        "vpn-setup",
+        "vulnerability-scanning",
+        "waf-setup",
+        "windows-hardening",
+        "windows-server",
+        "zero-trust"
+      ]
     },
     "taste-skill": {
       "repository": "https://github.com/Leonxlnx/taste-skill",
       "commit": "dfb6f9f9e93a39f673b1827c0889cc28326d1800",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "Leonxlnx",
+      "install": "agent-compass external-skills --source taste-skill --recommended",
+      "vendorInstall": "/plugin marketplace add Leonxlnx/taste-skill",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/design-taste-skills/SKILL.md"
+      ],
+      "recommended": [
         "brandkit",
         "design-taste-frontend",
         "high-end-visual-design",
@@ -174,311 +354,296 @@
         "redesign-existing-projects",
         "stitch-design-taste"
       ],
-      "assets": [
-        {
-          "source": "skills/brandkit/SKILL.md",
-          "target": "skills/brandkit/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/brandkit/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/taste-skill/SKILL.md",
-          "target": "skills/design-taste-frontend/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/design-taste-frontend/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/soft-skill/SKILL.md",
-          "target": "skills/high-end-visual-design/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/high-end-visual-design/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/image-to-code-skill/SKILL.md",
-          "target": "skills/image-to-code/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/image-to-code/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/imagegen-frontend-mobile/SKILL.md",
-          "target": "skills/imagegen-frontend-mobile/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/imagegen-frontend-mobile/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/imagegen-frontend-web/SKILL.md",
-          "target": "skills/imagegen-frontend-web/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/imagegen-frontend-web/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/brutalist-skill/SKILL.md",
-          "target": "skills/industrial-brutalist-ui/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/industrial-brutalist-ui/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/minimalist-skill/SKILL.md",
-          "target": "skills/minimalist-ui/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/minimalist-ui/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/redesign-skill/SKILL.md",
-          "target": "skills/redesign-existing-projects/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/redesign-existing-projects/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/stitch-skill/SKILL.md",
-          "target": "skills/stitch-design-taste/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/stitch-design-taste/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "skills/stitch-skill/DESIGN.md",
-          "target": "skills/stitch-design-taste/DESIGN.md",
-          "mode": "merge"
-        }
-      ],
-      "upstreamSha256": "0bcedc06ac205caf1f4043b9808084d91c11cce6580c74653f227d7e8ba0eb6f",
-      "localSha256": "131220949cdce3f43d21d64650a0356941b87c1ae6007cf79c1b51d57c5eb8dc"
+      "upstreamSkills": [
+        "brandkit",
+        "design-taste-frontend",
+        "design-taste-frontend-v1",
+        "full-output-enforcement",
+        "gpt-taste",
+        "high-end-visual-design",
+        "image-to-code",
+        "imagegen-frontend-mobile",
+        "imagegen-frontend-web",
+        "industrial-brutalist-ui",
+        "minimalist-ui",
+        "redesign-existing-projects",
+        "stitch-design-taste"
+      ]
     },
     "ponytail": {
       "repository": "https://github.com/DietrichGebert/ponytail",
       "commit": "2ed6c52c9d7e5e56942508591085fd45dea277d3",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "DietrichGebert",
+      "install": "agent-compass external-skills --source ponytail --recommended",
+      "vendorInstall": "/plugin marketplace add DietrichGebert/ponytail",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/working-style-skills/SKILL.md",
+        "docs/guidelines/style-contract.md"
+      ],
+      "recommended": [
         "ponytail",
         "ponytail-audit",
         "ponytail-debt",
         "ponytail-help",
         "ponytail-review"
       ],
-      "assets": [
-        {
-          "source": "skills/ponytail/SKILL.md",
-          "target": "skills/ponytail/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/ponytail-audit/SKILL.md",
-          "target": "skills/ponytail-audit/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/ponytail-debt/SKILL.md",
-          "target": "skills/ponytail-debt/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/ponytail-help/SKILL.md",
-          "target": "skills/ponytail-help/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/ponytail-review/SKILL.md",
-          "target": "skills/ponytail-review/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/ponytail/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/ponytail-audit/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/ponytail-debt/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/ponytail-help/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/ponytail-review/LICENSE",
-          "mode": "copy"
-        }
-      ],
-      "upstreamSha256": "2ee4bcbf915fdbe76f7eb44bef1ab2f1b81e28491bc1ebd0812f7b8549735df1",
-      "localSha256": "bbfe77113fe3b8d4f12bed7402cfd77ae702d050aa2e11ef9b5b3e9e27dd23b3"
+      "upstreamSkills": [
+        "ponytail",
+        "ponytail-audit",
+        "ponytail-debt",
+        "ponytail-gain",
+        "ponytail-help",
+        "ponytail-review"
+      ]
     },
     "caveman": {
       "repository": "https://github.com/JuliusBrussee/caveman",
       "commit": "99a9aa2f5a45097fc3563febea7d0baf64407441",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "JuliusBrussee",
+      "install": "agent-compass external-skills --source caveman --recommended",
+      "vendorInstall": "/plugin marketplace add JuliusBrussee/caveman",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/working-style-skills/SKILL.md",
+        "docs/guidelines/style-contract.md"
+      ],
+      "recommended": [
         "caveman",
         "caveman-commit",
         "caveman-review"
       ],
-      "assets": [
-        {
-          "source": "skills/caveman/SKILL.md",
-          "target": "skills/caveman/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/caveman-commit/SKILL.md",
-          "target": "skills/caveman-commit/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "skills/caveman-review/SKILL.md",
-          "target": "skills/caveman-review/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/caveman/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/caveman-commit/LICENSE",
-          "mode": "copy"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/caveman-review/LICENSE",
-          "mode": "copy"
-        }
-      ],
-      "upstreamSha256": "424b1939557b62c6057d0b6607a5bd71a4b69f1212511993c70d95afae1b757a",
-      "localSha256": "68cace4288d5be51e3290146afe825a953c49ef9d85bbb56df364a0dff371711"
+      "upstreamSkills": [
+        "cavecrew",
+        "caveman",
+        "caveman-commit",
+        "caveman-compress",
+        "caveman-discover",
+        "caveman-evidence-review",
+        "caveman-explore",
+        "caveman-help",
+        "caveman-learn",
+        "caveman-manage",
+        "caveman-optimize",
+        "caveman-review",
+        "caveman-setup",
+        "caveman-stats",
+        "investigate-first",
+        "lean-build",
+        "migration",
+        "safe-refactor",
+        "surgical-patch",
+        "verify-and-stop"
+      ]
     },
     "i-have-adhd": {
       "repository": "https://github.com/ayghri/i-have-adhd",
       "commit": "e7555fcaf612dfa1739dc86610ea926a906db614",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "ayghri",
+      "install": "agent-compass external-skills --source i-have-adhd --recommended",
+      "vendorInstall": "/plugin marketplace add ayghri/i-have-adhd",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/working-style-skills/SKILL.md",
+        "docs/guidelines/style-contract.md"
+      ],
+      "recommended": [
         "i-have-adhd"
       ],
-      "assets": [
-        {
-          "source": "skills/i-have-adhd/SKILL.md",
-          "target": "skills/i-have-adhd/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/i-have-adhd/LICENSE",
-          "mode": "copy"
-        }
-      ],
-      "upstreamSha256": "542c64139d38a449f5dca6c2ced18dd5cc167bfe35ef99461bee7755937abe56",
-      "localSha256": "1c1c8162ea494b3cb7779e3658df755bdf9b9bb8820e0fe2d8e129dbb4b04de2"
+      "upstreamSkills": [
+        "i-have-adhd"
+      ]
     },
     "asd-ste100": {
       "repository": "https://github.com/danyuchn/asd-ste100-skill",
       "commit": "d5ce157870cf9c41efd1d6e836706a2be3c7b9da",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "Dustin Yuchen Teng",
+      "install": "agent-compass external-skills --source asd-ste100 --recommended",
+      "inventoryRoot": ".",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/working-style-skills/SKILL.md",
+        "docs/guidelines/style-contract.md"
+      ],
+      "recommended": [
         "asd-ste100"
       ],
-      "assets": [
-        {
-          "source": "SKILL.md",
-          "target": "skills/asd-ste100/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "examples/before-after.md",
-          "target": "skills/asd-ste100/examples/before-after.md",
-          "mode": "merge"
-        },
-        {
-          "source": "references/writing-rules.md",
-          "target": "skills/asd-ste100/references/writing-rules.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/asd-ste100/LICENSE",
-          "mode": "copy"
-        }
-      ],
-      "upstreamSha256": "30c695debcf914aa12770a1c9e561b9ffad6fbf09223c57f0bad8e77473979b1",
-      "localSha256": "7b9f96b3362918f686c60c69cf645ca2aeeb0bc61a3fc6b53da0f762add36ca9"
+      "upstreamSkills": [
+        "asd-ste100"
+      ]
     },
     "anydoc": {
       "repository": "https://github.com/firecrawl/anydoc",
       "commit": "e754e1d33a1a540ebc9226e36f11d3f401852c9e",
-      "strategy": "merge",
+      "strategy": "reference",
       "license": "MIT",
-      "skills": [
+      "licenseHolder": "Firecrawl",
+      "install": "agent-compass external-skills --source anydoc --recommended",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/style-and-design-skills.md",
+      "pointers": [
+        "skills/convert-documents-to-markdown/SKILL.md"
+      ],
+      "recommended": [
         "convert-documents-to-markdown"
       ],
-      "assets": [
-        {
-          "source": "skills/convert-documents-to-markdown/SKILL.md",
-          "target": "skills/convert-documents-to-markdown/SKILL.md",
-          "mode": "merge"
-        },
-        {
-          "source": "LICENSE",
-          "target": "skills/convert-documents-to-markdown/LICENSE",
-          "mode": "copy"
-        }
+      "upstreamSkills": [
+        "convert-documents-to-markdown"
+      ]
+    },
+    "android-skills": {
+      "repository": "https://github.com/android/skills",
+      "commit": "6685cac2923e3ccc7e5c385019464374699cda95",
+      "strategy": "reference",
+      "license": "Apache-2.0",
+      "licenseHolder": "Google LLC",
+      "install": "agent-compass external-skills --source android-skills --all",
+      "inventoryRoot": ".",
+      "inventoryDoc": "docs/tooling/native-mobile-skills.md",
+      "pointers": [
+        "skills/native-mobile-skills/SKILL.md",
+        "stacks/android-compose.md"
       ],
-      "version": "0.1.9",
-      "package": {
-        "name": "@firecrawl/anydoc",
-        "manifest": "node/package.json"
-      },
-      "upstreamSha256": "1a57f8a77fdc56fd4ef07d8784fb0356a073d97b33208df6593102b22bfbf0a6",
-      "localSha256": "54bf11d4423cafd84281fba64baebc0481aff00f105f28783bc726e067ab143a"
+      "upstreamSkills": [
+        "adaptive",
+        "agp-9-upgrade",
+        "android-cli",
+        "android-intent-security",
+        "android-profiler",
+        "appfunctions",
+        "camerax",
+        "display-glasses-with-jetpack-compose-glimmer",
+        "edge-to-edge",
+        "engage-sdk-integration",
+        "leanback-to-compose-tv-migration",
+        "media3-cast-integration",
+        "migrate-xml-views-to-jetpack-compose",
+        "navigation-3",
+        "play-billing-library-version-upgrade",
+        "play-policy-insights",
+        "r8-analyzer",
+        "styles",
+        "testing-setup",
+        "verified-email",
+        "wear-compose-m3"
+      ],
+      "vendorInstall": "android skills add --skill=<skill> --project=."
+    },
+    "swift-ios-skills": {
+      "repository": "https://github.com/dpearson2699/swift-ios-skills",
+      "commit": "8d90fd121a263355a4fb44fd082af1416a5c1c2a",
+      "strategy": "reference",
+      "license": "PolyForm-Perimeter-1.0.0",
+      "licenseHolder": "dpearson2699",
+      "licenseNote": "Source-available with a noncompete term. Not redistributed by Agent Compass.",
+      "install": "agent-compass external-skills --source swift-ios-skills --all",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/native-mobile-skills.md",
+      "pointers": [
+        "skills/native-mobile-skills/SKILL.md",
+        "stacks/swift-ios.md"
+      ],
+      "upstreamSkills": [
+        "accessorysetupkit",
+        "activitykit",
+        "adattributionkit",
+        "alarmkit",
+        "app-clips",
+        "app-intents",
+        "app-store-optimization",
+        "app-store-review",
+        "apple-on-device-ai",
+        "appmigrationkit",
+        "audioaccessorykit",
+        "authentication",
+        "avkit",
+        "background-processing",
+        "browserenginekit",
+        "callkit",
+        "carplay",
+        "cloudkit",
+        "contacts-framework",
+        "core-bluetooth",
+        "core-data",
+        "core-motion",
+        "core-nfc",
+        "coreml",
+        "cryptokit",
+        "cryptotokenkit",
+        "debugging-instruments",
+        "device-integrity",
+        "dockkit",
+        "energykit",
+        "eventkit",
+        "financekit",
+        "focus-engine",
+        "gamekit",
+        "healthkit",
+        "homekit",
+        "ios-accessibility",
+        "ios-ettrace-performance",
+        "ios-localization",
+        "ios-memgraph-analysis",
+        "ios-networking",
+        "ios-simulator",
+        "mapkit",
+        "metrickit",
+        "musickit",
+        "natural-language",
+        "paperkit",
+        "passkit",
+        "pdfkit",
+        "pencilkit",
+        "permissionkit",
+        "photokit",
+        "push-notifications",
+        "realitykit",
+        "relevancekit",
+        "scenekit",
+        "sensorkit",
+        "shareplay-activities",
+        "speech-recognition",
+        "spritekit",
+        "storekit",
+        "swift-api-design-guidelines",
+        "swift-architecture",
+        "swift-charts",
+        "swift-codable",
+        "swift-concurrency",
+        "swift-formatstyle",
+        "swift-language",
+        "swift-security",
+        "swift-testing",
+        "swiftdata",
+        "swiftlint",
+        "swiftui-animation",
+        "swiftui-gestures",
+        "swiftui-layout-components",
+        "swiftui-liquid-glass",
+        "swiftui-navigation",
+        "swiftui-patterns",
+        "swiftui-performance",
+        "swiftui-uikit-interop",
+        "swiftui-webkit",
+        "tabletopkit",
+        "tipkit",
+        "vision-framework",
+        "weatherkit",
+        "widgetkit"
+      ],
+      "requiredNotice": "Required Notice: Copyright (c) 2025 dpearson2699 (https://github.com/dpearson2699)",
+      "vendorInstall": "npx skills add dpearson2699/swift-ios-skills --skill <skill>"
     }
   }
 }

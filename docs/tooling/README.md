@@ -19,6 +19,9 @@ Concrete setup guides. Each points at runnable files in
 | [agent-provider-capabilities.md](agent-provider-capabilities.md) | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
 | [upstream-sources.md](upstream-sources.md)       | Pinned external skill registry, cached checks, and reviewed refresh. |
 | [document-ingestion.md](document-ingestion.md)   | Safe local office-file and PDF extraction with anydoc. |
+| [native-mobile-skills.md](native-mobile-skills.md) | Tracked Android and Apple-platform skill corpora: routing, install, licence posture. |
+| [operational-skills.md](operational-skills.md) | Tracked DevOps/security/infra/compliance corpus: install-time safety gate and the eight narrowings. |
+| [style-and-design-skills.md](style-and-design-skills.md) | Tracked style, design, and document-extraction sources: curation, install routes, inventories. |
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |

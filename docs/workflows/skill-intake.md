@@ -40,14 +40,21 @@ Imported or already covered:
   files in the host when installed, do not vendor upstream internals.
 - Figma frontend setup from a production React admin project: generalized in
   `figma-mcp-frontend`, design-system template, and provider capability docs.
-- `BagelHole/DevOps-Security-Agent-Skills`: 146 skills imported at pinned commit
-  `0365f57a079b1332f95cf26e31dd2d5332a8399f` after explicit user request.
-  Import is knowledge-only, split into four opt-in packs, carries a mandatory
-  operational safety gate, and excludes upstream executable scripts/assets.
-  See [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md).
-- All external skill families: registered in `skills/upstream-sources.json` for
-  cached remote checks and explicit reviewed refresh. Remote content is never
-  executed or merged automatically.
+- `BagelHole/DevOps-Security-Agent-Skills`: 146 of its 163 skills curated at
+  pinned commit `0365f57a079b1332f95cf26e31dd2d5332a8399f`, split into four
+  opt-in packs, and corrected at install time with a mandatory operational
+  safety gate. See [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md).
+- All external skill sources: tracked in `skills/upstream-sources.json` with
+  `"strategy": "reference"` — pinned, curated, update-checked, and installed on
+  request. **Agent Compass stores no third-party skill.** Remote content is never
+  executed, and nothing is copied into this repository.
+
+## Adding One
+
+This document decides *whether* a capability belongs here. To actually add an
+external source — the licence gate, the registry entry, the inventory, the
+pointer document, the curation, and the tests — follow
+[`compass-external-source`](../../skills/compass-external-source/SKILL.md).
 - Global config scan: keep personal defaults global; Agent Compass already ships
   generic templates for context7, fetch, sequential-thinking, Figma MCP,
   projectmem, headroom, Codex hooks, Claude hooks, and skillshare-style sync.

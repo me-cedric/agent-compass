@@ -15,24 +15,22 @@ Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../
 | `compass-adopt`     | Wire agent-compass into an existing project end-to-end with minimal input. |
 | `compass-bootstrap` | Bootstrap a new project from architecture guidelines, spec-first.        |
 | `compass-extend`    | Add a skill/instinct/template/stack/script to compass with full wiring.  |
+| `compass-external-source` | Add, list, curate, refresh, or remove a tracked external skill source — licence gate first. |
 
 ### Working style
 
-| Skill            | What it does                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| `caveman`        | Ultra-compressed communication (65% fewer output tokens, full accuracy). |
-| `caveman-commit` | Conventional-commit message generator, terse.                      |
-| `caveman-review` | One-line, actionable PR review comments.                           |
-| `asd-ste100`     | Simplified Technical English for durable text — commits, docs, errors, agent instructions. |
-| `i-have-adhd`    | Action-first output shape: numbered steps, no preamble, one concrete next step. |
-| `agent-teacher`  | Level-aware explanations and selective prompt/tool coaching.        |
-| `ponytail`       | Forces the laziest solution that actually works (YAGNI, reuse-first). |
-| `ponytail-audit` / `ponytail-review` / `ponytail-debt` / `ponytail-help` | Ponytail variants for auditing/reviewing/tracking simplification debt. |
+| Skill                  | What it does                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| `working-style-skills` | Routes a "be terse / build less / no preamble / unambiguous text" request to the tracked skill that does it, and applies the precedence rules when several are on. |
+| `agent-teacher`        | Level-aware explanations and selective prompt/tool coaching.        |
 
-`ponytail`, `i-have-adhd`, `caveman`, and `asd-ste100` combine into one opt-in
-always-on contract — see
+The four skills it routes to — `ponytail`, `caveman`, `i-have-adhd`,
+`asd-ste100` — live in tracked external sources and are installed on request.
+They combine into one opt-in always-on contract; see
 [style-contract.md](../docs/guidelines/style-contract.md) for the precedence
-rules and the sub-agent propagation rule.
+rules and the sub-agent propagation rule, and
+[style-and-design-skills.md](../docs/tooling/style-and-design-skills.md) for the
+install routes.
 
 ### Architecture & decisions
 
@@ -80,41 +78,22 @@ the surface, not both. They back the anti-template policy in
 [design-quality](../docs/guidelines/coding-style.md) and pair with
 `templates/design-system/`.
 
-**Dense product UI** — dashboards, admin panels, data tables, multi-step forms.
-
-| Skill                        | What it does                                                        |
-| ---------------------------- | ------------------------------------------------------------------ |
-| `high-end-visual-design`     | The fonts, spacing, shadows, card structures, and motion that make a UI feel expensive; blocks the cheap defaults. |
-| `minimalist-ui`              | Clean editorial interfaces: warm monochrome, typographic contrast, flat bento grids. |
-| `redesign-existing-projects` | Audit-first upgrade of an existing UI to premium quality without breaking behaviour. |
-
-**Marketing surfaces** — landing pages, portfolios, showcase sites.
-
-| Skill                     | What it does                                                        |
-| ------------------------- | ------------------------------------------------------------------ |
-| `design-taste-frontend`   | Anti-slop frontend flagship: infers the design direction from the brief, strict pre-flight check. |
-| `industrial-brutalist-ui` | Swiss typographic print fused with military terminal aesthetics: rigid grids, extreme type scale contrast. |
-| `stitch-design-taste`     | Generates an agent-friendly `DESIGN.md` enforcing premium UI standards (needs Google Stitch). |
-
-**Image direction** — needs a harness that can generate images.
-
 | Skill                      | What it does                                                        |
 | -------------------------- | ------------------------------------------------------------------ |
-| `imagegen-frontend-web`    | One horizontal design reference image per page section, with composition variety and a single palette. |
-| `imagegen-frontend-mobile` | Premium app-native mobile screen and flow concepts in phone mockups; images only, no code. |
-| `image-to-code`            | Generate the design reference first, analyse it, then implement the frontend to match it. |
-| `brandkit`                 | Brand-guideline boards, logo systems, and identity decks. |
+| `design-taste-skills`      | Names the surface, picks the one tracked design skill that fits it, installs it, and keeps the visual-proof gate in force. |
+| `figma-mcp-frontend`       | Uses Figma MCP context for design-system-driven UI implementation. |
+| `figma-tokens-to-designmd` | Converts a Figma design-token export into a `design.md` design-system file. |
+| `visual-regression-playwright` | Deterministic Playwright screenshots compared against a reference. |
 
-**From a design tool**
-
-| Skill                        | What it does                                                        |
-| ---------------------------- | ------------------------------------------------------------------ |
-| `figma-mcp-frontend`         | Uses Figma MCP context for design-system-driven UI implementation. |
-| `figma-tokens-to-designmd`   | Converts a Figma design-token export into a `design.md` design-system file. |
-
-All ten taste skills are MIT, vendored from
-[`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) — each keeps its
-`LICENSE` and a `## Provenance` block.
+The ten design skills themselves are MIT and tracked at
+[`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) — Agent Compass
+pins them and installs on request rather than keeping copies. `design-taste-skills`
+holds the by-surface routing: `high-end-visual-design` / `minimalist-ui` /
+`redesign-existing-projects` for a dense product UI, `design-taste-frontend` /
+`industrial-brutalist-ui` / `stitch-design-taste` for a marketing surface,
+`imagegen-frontend-web` / `imagegen-frontend-mobile` / `image-to-code` /
+`brandkit` for image direction. Install routes and the tracked inventory are in
+[style-and-design-skills.md](../docs/tooling/style-and-design-skills.md).
 
 **AI-native surfaces** — behaviour and structure rather than taste, so it
 combines with either taste group above.
@@ -140,17 +119,29 @@ combines with either taste group above.
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |
 | `verify-security` | Scans a path for vulnerabilities (OWASP-style).          |
 
+### Operations, security & compliance
+
+| Skill                | What it does                                                        |
+| -------------------- | ------------------------------------------------------------------ |
+| `operational-skills` | Installs the pinned operational skill for the task with the Agent Compass safety gate and the argv-secret narrowings applied, then holds the authorization and production-write rules in force. |
+
+The 146 curated operational skills are **not stored here**. They are tracked at
+[`BagelHole/DevOps-Security-Agent-Skills`](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
+and corrected at install time — see
+[operational-skills.md](../docs/tooling/operational-skills.md).
+
 <!-- BEGIN GENERATED:OPERATIONAL_SKILLS -->
 ### Operational capability packs
 
-146 upstream-derived skills stay opt-in so normal host/global adoption remains
-small. Sync one or more root packs or focused subpacks:
+146 skills of a tracked external corpus, curated into packs. They are **not
+stored in this repository** — `external-skills` installs them from the pinned commit
+with the Agent Compass safety gate applied. List a pack, then install it:
 
 ```bash
 node scripts/cli.mjs skills-sync --list-packs
-node scripts/cli.mjs skills-sync /path/to/host --pack devops-platform
-node scripts/cli.mjs skills-sync /path/to/host --pack aws,kubernetes,observability
-node scripts/cli.mjs catalog --type capability-pack --md
+node scripts/cli.mjs skills --pack devops-platform
+node scripts/cli.mjs external-skills /path/to/host --source devops-security --recommended
+node scripts/cli.mjs external-skills --source devops-security --recommended --global
 ```
 
 #### Root packs
@@ -177,7 +168,7 @@ node scripts/cli.mjs catalog --type capability-pack --md
 | **hardening** | 6 | CIS, Linux, Windows, container, Kubernetes, and agent deployment hardening. |
 | **compliance-frameworks** | 6 | FedRAMP, GDPR, HIPAA, ISO 27001, PCI DSS, and SOC 2 framework guidance. |
 
-Every imported skill includes an Agent Compass operational safety gate and pinned MIT provenance. Upstream executable scripts and assets are not vendored.
+Every installed skill gains the Agent Compass operational safety gate, the argv-secret narrowings, and pinned MIT provenance. Upstream executable payloads are refused unless explicitly allowed. See [operational-skills.md](../docs/tooling/operational-skills.md).
 
 #### Root-pack contents
 
@@ -349,6 +340,12 @@ a repo has `.specify/`.
 | `angular-patterns`             | Standalone components, signals, native control flow, inject() DI. |
 | `react-admin-dashboard-patterns` | TanStack Router, MUI, MVVM, RBAC, React Query CRUD. |
 | `expo-react-native-patterns`   | Expo Router, MVVM, Zustand auth, React Query, theming. |
+| `native-mobile-skills`         | Routes native Android / Apple-platform work to the pinned vendor skill that holds current platform guidance, then keeps the compass validation and screenshot gates in force. |
+
+Native platform guidance itself lives in two external corpora that Agent Compass
+**tracks but never copies** — see
+[native-mobile-skills.md](../docs/tooling/native-mobile-skills.md) and
+[ADR 002](../docs/decisions/002-tracked-external-reference-sources.md).
 
 ## Using them
 

@@ -5,17 +5,28 @@ itself as explicitly invoked, so none of them turns on by itself. A project that
 wants them always on needs a contract that says so. This file is that contract,
 and a host project adopts it by pointing its `AGENTS.md` at this file.
 
-The contract is opt-in. Compass installs the four skills; it does not force them
-on. Adopt the whole contract, adopt one skill, or adopt none.
+The contract is opt-in. Compass tracks the four skills and installs them on
+request; it does not force them on. Adopt the whole contract, adopt one skill, or
+adopt none.
+
+The four skills come from four tracked external sources —
+[`DietrichGebert/ponytail`](https://github.com/DietrichGebert/ponytail),
+[`JuliusBrussee/caveman`](https://github.com/JuliusBrussee/caveman),
+[`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd), and
+[`danyuchn/asd-ste100-skill`](https://github.com/danyuchn/asd-ste100-skill) —
+which Agent Compass pins but does not copy. The precedence rules below are Agent
+Compass's own and are what makes four independent skills into one contract.
+[`working-style-skills`](../../skills/working-style-skills/SKILL.md) carries the
+routing procedure for an agent.
 
 ## The four skills
 
 | Skill | Governs | Setting when adopted |
 | --- | --- | --- |
-| [`ponytail`](../../skills/ponytail/SKILL.md) | What you build | Level **full** |
-| [`i-have-adhd`](../../skills/i-have-adhd/SKILL.md) | The shape of every answer | Always on |
-| [`caveman`](../../skills/caveman/SKILL.md) | Word-level compression of prose | Always on |
-| [`asd-ste100`](../../skills/asd-ste100/SKILL.md) | Text that must survive without you | Durable text only |
+| `ponytail` | What you build | Level **full** |
+| `i-have-adhd` | The shape of every answer | Always on |
+| `caveman` | Word-level compression of prose | Always on |
+| `asd-ste100` | Text that must survive without you | Durable text only |
 
 ### ponytail — full
 
@@ -120,12 +131,29 @@ contract off — not a long session, not a topic change, not a new sub-agent.
 
 Add a `## Style contract` section to the host `AGENTS.md` that names the four
 skills, their levels, and the sub-agent rule, and links to this file for the
-detail. Sync the four skills into the project so the detail is local:
+detail. Then install the skills themselves from their tracked sources, so the
+detail is local to the project or to the user:
 
 ```bash
-node scripts/skills-sync.mjs /path/to/host --only ponytail,i-have-adhd,caveman,asd-ste100
+# Per project — writes .claude/skills, .agents/skills, and a Copilot instructions file
+agent-compass external-skills /path/to/host --source ponytail --recommended
+agent-compass external-skills /path/to/host --source caveman --recommended
+agent-compass external-skills /path/to/host --source i-have-adhd --recommended
+agent-compass external-skills /path/to/host --source asd-ste100 --recommended
+
+# Or user-wide, which usually fits better: a style preference follows the person
+agent-compass external-skills --source ponytail --recommended --global
+```
+
+Also install the compass router so an agent knows the contract exists:
+
+```bash
+node scripts/skills-sync.mjs /path/to/host --only working-style-skills
 ```
 
 Two more token-economy skills pair with these: `caveman-commit` and
-`caveman-review`. See [../tooling/rtk.md](../tooling/rtk.md) for the command-level
-half of the same goal.
+`caveman-review`, both in the `caveman` source. See
+[../tooling/rtk.md](../tooling/rtk.md) for the command-level half of the same
+goal, and
+[../tooling/style-and-design-skills.md](../tooling/style-and-design-skills.md)
+for the tracked inventories.

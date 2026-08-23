@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -16,6 +16,18 @@ import { CORE_PROFILE, PROFILES, STYLE_SKILLS, detectStacks, selectAssets } from
 import { runNode } from './helpers.mjs'
 
 const AC = new URL('..', import.meta.url).pathname
+
+test('no capability-pack skill is stored locally — the pack is an install selection', () => {
+  // Vendoring these was replaced by install-time fetching, so a pack name landing
+  // back in skills/ would mean the corpus crept into the repository again.
+  for (const name of rootCapabilitySkills()) {
+    assert.equal(
+      existsSync(join(AC, 'skills', name, 'SKILL.md')),
+      false,
+      `skills/${name} is a tracked operational skill and must not be vendored`,
+    )
+  }
+})
 
 test('every asset referenced by a profile exists in the repo', () => {
   const all = [CORE_PROFILE, ...Object.values(PROFILES)]
@@ -35,12 +47,13 @@ test('every asset referenced by a profile exists in the repo', () => {
 test('every skills/ directory is reachable from a profile or capability pack (no orphan skills)', () => {
   // compass-* skills are mission playbooks that run inside compass itself, and
   // STYLE_SKILLS are user-preference picks — everything else must be installable
-  // via CORE_PROFILE, a stack profile, or an opt-in capability pack.
+  // via CORE_PROFILE or a stack profile. `operational-skills` is the router for
+  // the tracked operational corpus, so it is reachable by name, not by profile.
   const reachable = new Set([
     ...CORE_PROFILE.skills,
     ...Object.values(PROFILES).flatMap((p) => p.skills),
-    ...rootCapabilitySkills(),
     ...STYLE_SKILLS,
+    'operational-skills',
   ])
   const dirs = readdirSync(join(AC, 'skills'), { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !entry.name.startsWith('compass-'))
@@ -163,9 +176,15 @@ test('capability packs expose the requested upstream skill inventory', () => {
   assert.equal(rootCapabilitySkills().length, 146)
   assert.equal(new Set(rootCapabilitySkills()).size, 146)
 
+  // Pack membership is a selection to install from the tracked source, so every
+  // named skill must exist in that source's recorded inventory — not on disk.
+  const inventory = new Set(
+    JSON.parse(readFileSync(join(AC, 'skills', 'upstream-sources.json'), 'utf8'))
+      .sources['devops-security'].upstreamSkills,
+  )
   for (const pack of Object.values(CAPABILITY_PACKS)) {
     for (const skill of pack.skills) {
-      assert.ok(existsSync(join(AC, 'skills', skill, 'SKILL.md')), `${pack.label}: missing skill ${skill}`)
+      assert.ok(inventory.has(skill), `${pack.label}: ${skill} is not in the tracked devops-security inventory`)
     }
   }
 })

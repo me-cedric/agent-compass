@@ -67,11 +67,11 @@ test('skills-sync supports copy and symlink modes', async () => {
   try {
     const copy = await runNode([script('skills-sync'), host, '--copy', '--target', 'agents'], { cwd: root.pathname })
     assert.equal(copy.code, 0, copy.stderr)
-    assert.ok(existsSync(join(host, '.agents', 'skills', 'caveman', 'SKILL.md')))
+    assert.ok(existsSync(join(host, '.agents', 'skills', 'working-style-skills', 'SKILL.md')))
 
     const link = await runNode([script('skills-sync'), host, '--symlink', '--target', 'claude'], { cwd: root.pathname })
     assert.equal(link.code, 0, link.stderr)
-    assert.ok((await lstat(join(host, '.claude', 'skills', 'caveman'))).isSymbolicLink())
+    assert.ok((await lstat(join(host, '.claude', 'skills', 'working-style-skills'))).isSymbolicLink())
   } finally {
     await rm(host, { recursive: true, force: true })
   }
@@ -80,14 +80,14 @@ test('skills-sync supports copy and symlink modes', async () => {
 test('skills-sync dry-run preserves existing skill copies', async () => {
   const host = await mkdtemp(join(tmpdir(), 'ac-skills-dry-'))
   try {
-    const skillDir = join(host, '.agents', 'skills', 'caveman')
+    const skillDir = join(host, '.agents', 'skills', 'working-style-skills')
     const skillFile = join(skillDir, 'SKILL.md')
     await mkdir(skillDir, { recursive: true })
     await writeFile(skillFile, 'sentinel')
 
-    const dry = await runNode([script('skills-sync'), host, '--dry', '--target', 'agents', '--only', 'caveman'], { cwd: root.pathname })
+    const dry = await runNode([script('skills-sync'), host, '--dry', '--target', 'agents', '--only', 'working-style-skills'], { cwd: root.pathname })
     assert.equal(dry.code, 0, dry.stderr)
-    assert.match(dry.stdout, /would copy caveman -> \.agents\/skills/)
+    assert.match(dry.stdout, /would copy working-style-skills -> \.agents\/skills/)
     assert.equal(await readFile(skillFile, 'utf8'), 'sentinel')
   } finally {
     await rm(host, { recursive: true, force: true })
@@ -110,14 +110,20 @@ test('task-log appends and renders markdown', async () => {
 test('global setup creates user-level pointers and skills without project files', async () => {
   const home = await mkdtemp(join(tmpdir(), 'ac-global-'))
   try {
-    const result = await runNode([script('global-setup'), home, '--copy'], { cwd: root.pathname })
+    // --style also fetches the tracked working-style skills, so a user-wide setup
+    // lands the same skills whether or not they are stored in this repository.
+    const result = await runNode([script('global-setup'), home, '--copy', '--style'], { cwd: root.pathname })
     assert.equal(result.code, 0, result.stderr)
     assert.ok(existsSync(join(home, '.agent-compass', 'manifest.json')))
     assert.ok(existsSync(join(home, '.codex', 'AGENTS.md')))
-    assert.ok(existsSync(join(home, '.agents', 'skills', 'caveman', 'SKILL.md')))
+    assert.ok(existsSync(join(home, '.agents', 'skills', 'working-style-skills', 'SKILL.md')))
     assert.ok(existsSync(join(home, '.agents', 'skills', 'ponytail', 'SKILL.md')))
     assert.ok(existsSync(join(home, '.codex', 'skills', 'ponytail', 'SKILL.md')))
     assert.ok(existsSync(join(home, '.claude', 'skills', 'ponytail-review', 'SKILL.md')))
+    assert.ok(
+      existsSync(join(home, '.agents', 'skills', 'THIRD_PARTY_NOTICES.ponytail.md')),
+      'a fetched skill ships its source notice',
+    )
     assert.ok(!existsSync(join(home, '.agents', 'skills', 'github-actions')), 'operational packs stay opt-in')
     const verify = await runNode([script('provider-verify'), home, '--global', '--strict'], { cwd: root.pathname })
     assert.equal(verify.code, 0, verify.stderr)

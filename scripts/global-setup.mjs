@@ -9,6 +9,15 @@ import { Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
 import { CAPABILITY_PACKS } from './lib/capability-packs.mjs'
+import {
+  USER_TARGETS,
+  externalSkillIndex,
+  referenceSources,
+  stageExternalSkills,
+  writeExternalSkills,
+} from './lib/external-install.mjs'
+import { STYLE_EXTERNAL_SKILLS } from './lib/profiles.mjs'
+import { readSourceRegistry } from './lib/upstream-sources.mjs'
 import { parseCliArgs } from './lib/args.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -22,6 +31,7 @@ const { values, positionals } = parseCliArgs({
     copy: { type: 'boolean', desc: 'Copy skills into user-level skill dirs (default).' },
     symlink: { type: 'boolean', desc: 'Symlink skills instead of copying.' },
     'no-skills': { type: 'boolean', desc: 'Skip syncing skills.' },
+    style: { type: 'boolean', desc: 'Also install the tracked working-style skills (ponytail, caveman, i-have-adhd, asd-ste100) user-wide.' },
     jira: { type: 'boolean', desc: 'Configure mcp-atlassian globally for Codex and Claude.' },
     'jira-url': { type: 'string', value: '<url>', desc: 'Jira base URL; prompted when omitted. The Jira personal token is always prompted and never echoed.' },
     dry: { type: 'boolean', desc: 'Print what would change; write nothing.' },
@@ -33,6 +43,7 @@ const home = resolve(positionals[0] || process.env.HOME || process.cwd())
 const dry = Boolean(values.dry)
 const mode = values.symlink ? 'symlink' : 'copy'
 const noSkills = Boolean(values['no-skills'])
+const withStyle = Boolean(values.style) && !noSkills
 const jira = Boolean(values.jira)
 
 const collectJiraConfig = async () => {
@@ -128,6 +139,37 @@ if (!noSkills) {
       if (dry) console.log(`would ${mode} ${skill.name} -> ${relDir}`)
       else if (mode === 'symlink') symlinkSync(src, dest, 'dir')
       else cpSync(src, dest, { recursive: true })
+    }
+  }
+}
+
+// The working-style skills live in four tracked sources, so a user-wide setup that
+// wants them fetches them here rather than copying from this repository.
+if (withStyle) {
+  const registry = readSourceRegistry(AC)
+  const sources = referenceSources(registry)
+  const index = externalSkillIndex(registry)
+  const bySource = new Map()
+  for (const name of STYLE_EXTERNAL_SKILLS) {
+    const id = index.get(name)
+    if (!id) continue
+    if (!bySource.has(id)) bySource.set(id, [])
+    bySource.get(id).push(name)
+  }
+  const relDirs = [...new Set(Object.values(USER_TARGETS).flat())]
+  for (const [id, names] of bySource) {
+    if (dry) {
+      console.log(`would fetch ${names.join(', ')} from ${id} -> ${relDirs.join(', ')}`)
+      continue
+    }
+    try {
+      const { staged, skipped } = stageExternalSkills({ id, source: sources[id], names })
+      writeExternalSkills({ root: home, relDirs, id, source: sources[id], staged, wantsCopilot: true })
+      console.log(`fetched ${staged.length} style skill(s) from ${id} @ ${sources[id].commit.slice(0, 7)}`)
+      if (skipped.length) console.log(`skipped ${skipped.length} executable payload(s) from ${id}`)
+    } catch (error) {
+      console.error(`${id}: ${error.message}`)
+      process.exit(1)
     }
   }
 }

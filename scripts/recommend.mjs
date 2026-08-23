@@ -53,6 +53,7 @@ if (has('specs') && !has('.agent/spec-validation-map.md')) recs.push('Run `agent
 if ((stackIds.includes('react-web') || stackIds.includes('next-web')) && !has('docs/design')) recs.push('Add design-system docs before UI-heavy work; use Figma MCP when Figma is source of truth.')
 if (stackIds.includes('nestjs-api') && !has('.github/instructions/api.instructions.md')) recs.push(`Install API path instructions for contract sync and targeted validation: ${installInstructions('api')} (adjust the \`applyTo\` glob if the API is not in \`apps/api\`).`)
 if (stackIds.includes('expo-mobile') && !has('.github/instructions/mobile-app.instructions.md')) recs.push(`Install mobile-app path instructions: ${installInstructions('mobile-app')} (adjust the \`applyTo\` glob if the app is not in \`apps/mobile-app\`).`)
+if (stackIds.includes('android-compose') || stackIds.includes('swift-ios')) recs.push('Native mobile detected: install the `native-mobile-skills` skill, then pull the matching tracked vendor skill per task — see `docs/tooling/native-mobile-skills.md`.')
 if (stackIds.includes('react-web') && !has('.github/instructions/backoffice.instructions.md')) recs.push(`Install backoffice path instructions: ${installInstructions('backoffice')} (adjust the \`applyTo\` glob if the app is not in \`apps/backoffice\`).`)
 if (!scripts.check && !(scripts.lint && scripts.test)) recs.push('Add a single `check` script or fill lint/typecheck/test registry entries.')
 

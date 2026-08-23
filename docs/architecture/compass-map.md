@@ -99,7 +99,7 @@ column is what `install.mjs` places into a *host* (see `scripts/manifest.mjs`).
 | `agent-evals` | Invalid teaching / tool-offer eval fixtures. |
 | `check-actions` | Unsupported GitHub Action major versions. |
 | `check-change-companions` | Source change shipped without its test companion (host-facing gate). |
-| `check-skill-quality` | Imported-skill lock, safety gate, metadata, provenance, payload, link, and risk-baseline drift. |
+| `upstream-skills --verify` | External-source pins, pointer documents, and recorded inventories (offline). |
 | `skill-docs --check` | README skill badge and root/focused capability-pack catalog drift. |
 | `ci.yml` | Runs script syntax check + tests + the lint guards on every push/PR. |
 | `agent-drift.yml` | Weekly read-only drift dashboard (`agent-drift --strict`) across all validators. |

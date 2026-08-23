@@ -60,10 +60,13 @@ ${skillLines(pack.skills)}
 </details>`
 }).join('\n\n')
 
+// The curated operational selection recorded on the tracked source, so the
+// README count follows the registry rather than a second list.
 const importedCount = (() => {
-  const lockFile = join(ROOT, 'skills', 'upstream-lock.json')
-  if (!existsSync(lockFile)) return new Set(rootCapabilitySkills()).size
-  return Object.keys(JSON.parse(readFileSync(lockFile, 'utf8')).skills || {}).length
+  try {
+    const registry = JSON.parse(readFileSync(join(ROOT, 'skills', 'upstream-sources.json'), 'utf8'))
+    return registry.sources['devops-security'].recommended.length
+  } catch { return new Set(rootCapabilitySkills()).size }
 })()
 
 const totalSkillCount = readdirSync(join(ROOT, 'skills'), { withFileTypes: true })
@@ -82,14 +85,15 @@ AI operations, scanning, secrets, hardening, or compliance area.
 ${packTable(SUBPACK_IDS)}`,
   OPERATIONAL_SKILLS: `### Operational capability packs
 
-${importedCount} upstream-derived skills stay opt-in so normal host/global adoption remains
-small. Sync one or more root packs or focused subpacks:
+${importedCount} skills of a tracked external corpus, curated into packs. They are **not
+stored in this repository** — \`external-skills\` installs them from the pinned commit
+with the Agent Compass safety gate applied. List a pack, then install it:
 
 \`\`\`bash
 node scripts/cli.mjs skills-sync --list-packs
-node scripts/cli.mjs skills-sync /path/to/host --pack devops-platform
-node scripts/cli.mjs skills-sync /path/to/host --pack aws,kubernetes,observability
-node scripts/cli.mjs catalog --type capability-pack --md
+node scripts/cli.mjs skills --pack devops-platform
+node scripts/cli.mjs external-skills /path/to/host --source devops-security --recommended
+node scripts/cli.mjs external-skills --source devops-security --recommended --global
 \`\`\`
 
 #### Root packs
@@ -100,7 +104,7 @@ ${packTable(ROOT_CAPABILITY_PACK_IDS)}
 
 ${packTable(SUBPACK_IDS)}
 
-Every imported skill includes an Agent Compass operational safety gate and pinned MIT provenance. Upstream executable scripts and assets are not vendored.
+Every installed skill gains the Agent Compass operational safety gate, the argv-secret narrowings, and pinned MIT provenance. Upstream executable payloads are refused unless explicitly allowed. See [operational-skills.md](../docs/tooling/operational-skills.md).
 
 #### Root-pack contents
 

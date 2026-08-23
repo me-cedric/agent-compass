@@ -6,15 +6,10 @@ description: >
   GitHub-Flavored Markdown. Use when a task needs the contents of an office
   document, spreadsheet, presentation, ebook, or PDF that the active provider
   cannot read directly.
-license: MIT
 risk_level: medium
 writes_files: true
 requires_tools: [node, npx]
-source: https://github.com/firecrawl/anydoc
-source_commit: e754e1d33a1a540ebc9226e36f11d3f401852c9e
-source_version: "0.1.9"
-metadata:
-  author: firecrawl
+tool_version: "0.1.9"
 ---
 
 # Convert documents to Markdown
@@ -60,13 +55,27 @@ Rules:
    process: `@firecrawl/anydoc` on npm, `firecrawl-anydoc` on PyPI, or `anydoc`
    on crates.io. Each provides the same `to_markdown` or `toMarkdown` API.
 
-## Provenance
+## The tool this skill drives
 
-Adapted from
-[`firecrawl/anydoc`](https://github.com/firecrawl/anydoc/blob/e754e1d33a1a540ebc9226e36f11d3f401852c9e/skills/convert-documents-to-markdown/SKILL.md)
-at commit `e754e1d33a1a540ebc9226e36f11d3f401852c9e`, package version
-`0.1.9`. The source is MIT licensed, © 2026 Sideguide Technologies Inc.
+This skill is Agent Compass guidance for the **anydoc** CLI, published by
+Firecrawl (Sideguide Technologies Inc.) under the MIT License. The tool is at
+<https://github.com/firecrawl/anydoc> and on npm as `@firecrawl/anydoc`. Agent
+Compass carries no copy of the tool or of its own skill file; it pins the package
+version above and tracks the repository so the pin stays visible.
 
-Agent Compass added its frontmatter contract, pinned the package version, and
-added the guardrails above. The format list and conversion behavior are from the
-upstream skill. The full license is in `LICENSE` next to this file.
+Everything on this page — the guardrails, the exit-code handling, the
+context-budget rule, and the hosted-upload restriction — is Agent Compass's, and
+follows [security.md](../../docs/guidelines/security.md) and
+[document-ingestion.md](../../docs/tooling/document-ingestion.md). The supported
+format list and the conversion behaviour are properties of the tool.
+
+Check the pin, or move it after review:
+
+```bash
+agent-compass upstream-skills --check-updates
+agent-compass upstream-skills --update anydoc --dry
+```
+
+Bump `tool_version` and the `npx` commands above together when the pin moves. A
+version in prose that disagrees with the frontmatter is the bug this skill is
+most likely to grow.

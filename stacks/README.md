@@ -12,6 +12,8 @@ and the validation commands — so the **same answers yield the same project**.
 | [react-admin.md](react-admin.md)    | Admin/back-office SPA (Vite + React + MUI).       |
 | [next-web.md](next-web.md)          | Next.js web app (App Router + React).             |
 | [expo-mobile.md](expo-mobile.md)    | Mobile app (Expo Router + React Native).          |
+| [android-compose.md](android-compose.md) | Native Android app (Kotlin + Jetpack Compose + Gradle). |
+| [swift-ios.md](swift-ios.md)        | Native Apple-platform app (Swift + SwiftUI + Xcode). |
 
 Presets compose: a typical product is `turbo-monorepo` + one or more apps.
 Adding a preset? Document it here **and** wire it into `scripts/bootstrap.mjs`

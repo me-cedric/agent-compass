@@ -1,6 +1,10 @@
 # ADR 001: Track External Skills In One Source Registry
 
-Status: Accepted
+Status: Accepted — partially superseded by
+[ADR 002](002-tracked-external-reference-sources.md), which replaced vendoring
+and `skills/upstream-lock.json` with tracked sources and install-time
+adaptation. The registry, the cached read-only check, and the explicit-refresh
+model decided here all remain in force.
 Date: 2026-08-19
 
 ## Recommendation
