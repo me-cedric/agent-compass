@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-08-31
+
 ### Added
 
 - **OpenSpec is a first-class layout.** The compass documented the spec-kit
