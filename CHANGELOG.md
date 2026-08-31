@@ -5,6 +5,61 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **OpenSpec is a first-class layout.** The compass documented the spec-kit
+  quartet (`spec`, `plan`, `tasks`, `checklist`) and said nothing about OpenSpec,
+  so a host whose contract lives in `docs/openspec/` got guidance for a layout it
+  does not use — and `spec-validation-map` reported every one of its capabilities
+  as missing a plan, which is the wrong question rather than a finding.
+  [`docs/workflows/openspec.md`](docs/workflows/openspec.md) is the reference: the
+  twelve workflows, the status gate, the vocabulary mapped onto spec-kit's, and
+  the nine rules. `spec-driven-development.md` now resolves the layout before the
+  first write instead of assuming one.
+- **`openspec-guard`** enforces the chain that `openspec validate` cannot see.
+  Validate asks whether the files present are well-formed; the guard asks whether
+  the files that should be present are. Eight checks — `root`, `config`, `chain`,
+  `deltas`, `stale`, `workflows`, `ready`, `orphans` — plus a
+  `.openspec-guard.json` ratchet for changes that predate a gate, where an entry
+  that now passes is itself a failure. Three of them come from real faults found
+  in a host on the first run: a change that had held a proposal and nothing else
+  for four days while the gate reported `23 passed`, an empty second root left by
+  a move that made the CLI answer `No changes exist` on six active changes, and
+  six of the twelve agent workflows never installed — `verify`, the pre-archive
+  gate, among them.
+- **`openspec-lifecycle` skill** and an `openspec` profile, detected from the
+  resolved root, so a host with an OpenSpec root gets the procedure and the gate
+  and a host without one gets neither.
+- **`templates/specs/openspec-config.example.yaml`.** A rule in the root's
+  `config.yaml` reaches the agent through `openspec instructions` at the moment it
+  writes that artifact, which lands where the same sentence in `AGENTS.md` does
+  not. The template shows the `rules.<artifact>` and `operations.<op>.guidance`
+  shape — and the guard checks it, because an unquoted `": "` in a list item makes
+  the whole document fail to parse and the CLI then reports an empty project.
+- **Nine knowledge instincts**, harvested from two host projects:
+  [`openspec-artifact-chain`](knowledge/instincts/openspec-artifact-chain.md),
+  [`cap-as-ratchet-with-baseline`](knowledge/instincts/cap-as-ratchet-with-baseline.md),
+  [`generated-file-whole-run`](knowledge/instincts/generated-file-whole-run.md),
+  [`build-success-needs-an-artifact`](knowledge/instincts/build-success-needs-an-artifact.md),
+  [`evidence-needs-a-control`](knowledge/instincts/evidence-needs-a-control.md),
+  [`untrusted-text-inside-a-fence`](knowledge/instincts/untrusted-text-inside-a-fence.md),
+  [`no-undo-write-needs-a-receipt`](knowledge/instincts/no-undo-write-needs-a-receipt.md),
+  [`test-proves-presence-not-truth`](knowledge/instincts/test-proves-presence-not-truth.md),
+  [`worktree-base-before-work`](knowledge/instincts/worktree-base-before-work.md),
+  [`parallel-locale-artifacts`](knowledge/instincts/parallel-locale-artifacts.md),
+  and [`changelog-entry-in-the-same-task`](knowledge/instincts/changelog-entry-in-the-same-task.md).
+
+### Changed
+
+- **`spec-validation-map` detects its layout and says which one it read.** On an
+  OpenSpec root it reports one row per active change and a capability
+  traceability table; on a spec-kit layout it reports the quartet as before.
+  `--spec-kit` forces the old reading.
+- One resolver for the OpenSpec root, in `scripts/lib/openspec.mjs`, read by the
+  guard, the map and profile detection. The declaration in
+  `agent-compass.commands.json` (`paths.openspec`) wins over convention; the
+  commands template now carries a `paths` block for it.
+
 ## [0.9.1] - 2026-08-23
 
 ### Fixed

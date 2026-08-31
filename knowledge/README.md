@@ -31,7 +31,9 @@ material humans and agents *read* and *promote from*.
 - **API contract & security:**
   [`api-security-edge-cases`](instincts/api-security-edge-cases.md),
   [`credential-host-scoping`](instincts/credential-host-scoping.md),
-  [`scalar-bruno-gherkin-sync`](instincts/scalar-bruno-gherkin-sync.md).
+  [`scalar-bruno-gherkin-sync`](instincts/scalar-bruno-gherkin-sync.md),
+  [`untrusted-text-inside-a-fence`](instincts/untrusted-text-inside-a-fence.md),
+  [`no-undo-write-needs-a-receipt`](instincts/no-undo-write-needs-a-receipt.md).
 - **Config & environment:**
   [`env-var-sync`](instincts/env-var-sync.md).
 - **Platform & SDK freshness:**
@@ -53,16 +55,25 @@ material humans and agents *read* and *promote from*.
   [`spec-status-sync`](instincts/spec-status-sync.md),
   [`provisioning-state-registry`](instincts/provisioning-state-registry.md),
   [`one-artifact-root`](instincts/one-artifact-root.md),
+  [`openspec-artifact-chain`](instincts/openspec-artifact-chain.md),
+  [`cap-as-ratchet-with-baseline`](instincts/cap-as-ratchet-with-baseline.md),
+  [`worktree-base-before-work`](instincts/worktree-base-before-work.md),
+  [`changelog-entry-in-the-same-task`](instincts/changelog-entry-in-the-same-task.md),
+  [`parallel-locale-artifacts`](instincts/parallel-locale-artifacts.md),
   [`documentation-chain-followthrough`](instincts/documentation-chain-followthrough.md).
 - **Testing:**
   [`testing-pattern`](instincts/testing-pattern.md),
   [`negative-assertion-precondition`](instincts/negative-assertion-precondition.md),
   [`ui-change-needs-visual-proof`](instincts/ui-change-needs-visual-proof.md),
   [`e2e-gate-budget`](instincts/e2e-gate-budget.md),
-  [`evidence-outlives-the-claim`](instincts/evidence-outlives-the-claim.md).
+  [`evidence-outlives-the-claim`](instincts/evidence-outlives-the-claim.md),
+  [`evidence-needs-a-control`](instincts/evidence-needs-a-control.md),
+  [`test-proves-presence-not-truth`](instincts/test-proves-presence-not-truth.md).
 - **Build & packaging:**
   [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
-  [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md).
+  [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md),
+  [`generated-file-whole-run`](instincts/generated-file-whole-run.md),
+  [`build-success-needs-an-artifact`](instincts/build-success-needs-an-artifact.md).
 
 ## What an "instinct" is
 

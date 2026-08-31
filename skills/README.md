@@ -114,6 +114,7 @@ combines with either taste group above.
 | `pr-review-governance` | Deep PR/MR review checklist for specs, security, repo rules, docs sync, UI evidence, summary, and inline comments. |
 | `pr-workflow`     | Creates PRs, reviews PRs, and implements review fixes.   |
 | `spec-workflow`   | Guides idea → spec → clarify → plan → tasks → docs sync. |
+| `openspec-lifecycle` | Drives and enforces the OpenSpec change lifecycle: one root, the status gate, verify before archive. |
 | `verify-module`   | Checks module structure/doc completeness.                |
 | `verify-quality`  | Complexity, code smells, naming, function length.        |
 | `verify-change`   | Analyzes a diff's impact and doc-sync status.            |

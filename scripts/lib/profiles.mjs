@@ -6,6 +6,7 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { findRoots } from './openspec.mjs'
 
 // Assets every host benefits from, regardless of stack.
 export const CORE_PROFILE = {
@@ -147,6 +148,14 @@ export const PROFILES = {
     templates: ['templates/spec-kit'],
     docs: ['docs/workflows/spec-driven-development.md'],
   },
+  // An OpenSpec root answers "which artifact is missing" through its own CLI, so
+  // the assets here are the lifecycle procedure and the gate that enforces it.
+  openspec: {
+    label: 'OpenSpec',
+    skills: ['openspec-lifecycle'],
+    templates: ['templates/specs'],
+    docs: ['docs/workflows/openspec.md'],
+  },
 }
 
 const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.turbo', '.venv'])
@@ -220,6 +229,9 @@ export const detectStacks = (root) => {
     (deps.has('bullmq') || deps.has('@nestjs/bullmq')) && 'bullmq',
     (deps.has('turbo') || markers.has('turbo.json')) && 'turbo-monorepo',
     markers.has('.specify') && 'spec-kit',
+    // Resolved through the shared resolver, so the declaration in
+    // agent-compass.commands.json wins over the conventional locations.
+    findRoots(root, null).length > 0 && 'openspec',
   ].filter(Boolean)
 }
 

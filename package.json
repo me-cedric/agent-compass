@@ -41,6 +41,7 @@
     "code-intel": "node scripts/code-intel.mjs",
     "mcp:figma-go:help": "npx -y @vkhanhqui/figma-mcp-go@latest --help",
     "spec-validation-map": "node scripts/spec-validation-map.mjs",
+    "openspec-guard": "node scripts/openspec-guard.mjs",
     "design-importer": "node scripts/design-importer.mjs",
     "context-pack": "node scripts/context-pack.mjs",
     "run-command": "node scripts/run-command.mjs",

@@ -1,0 +1,61 @@
+# OpenSpec root configuration — copy to <openspec>/config.yaml and edit.
+#
+# This file is the highest-leverage place to put a rule about how artifacts are
+# written, because `openspec instructions <artifact> --change <name> --json` hands
+# `context` and `rules.<artifact>` to the agent at the moment it writes that
+# artifact. The same sentence in AGENTS.md is read once, at session start, and
+# competes with everything else in the file.
+#
+# Reference: docs/workflows/openspec.md
+
+# The workflow schema. `spec-driven` (proposal → specs → design → tasks) ships
+# with the CLI. A project schema lives at <openspec>/schemas/<name>/schema.yaml —
+# create one with `openspec schema fork spec-driven <name>` when you need an
+# extra artifact, such as a reviewed checklist before implementation.
+schema: spec-driven
+
+# Handed to the agent as required prompt input for every artifact. Put the facts
+# a proposal must not contradict here — not a description of the product.
+context: |
+  <One paragraph: what this project is, and the file to read before proposing.>
+
+  Hard constraints on every proposal:
+  - <A constraint that has already been decided, with the ADR that decided it.>
+  - <A platform or runtime floor, stated as a version.>
+  - <What the product does not do — no backend, no telemetry, no account.>
+  - Requirements describe user-observable behaviour, not implementation. Put
+    library and API choices in design.md, never in spec.md.
+
+  Language: en
+  All artifacts must be written in en.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+# One list per artifact id in the schema. Short, checkable sentences — each one is
+# read at the moment that artifact is written.
+rules:
+  proposal:
+    - State which surfaces or platforms the change affects. "All" is an answer; silence is not.
+    - Include a Non-goals section.
+  specs:
+    - Requirements describe user-observable behaviour. No class, framework or library names.
+    - Every requirement needs at least one scenario covering the failure or offline path.
+    - Write "[NEEDS CLARIFICATION: question]" for an unknown. Never guess one.
+  design:
+    - Name the concrete library or API with its version, and label anything unverified as Assumed.
+    - State the accessibility consequence of the design, not only the happy path.
+  tasks:
+    - Put the test task before the implementation task.
+    - Name the file or the command each task touches.
+    - A task that changes a screen owes a real device or browser screenshot, not a preview.
+
+# Advisory guidance for an operation, handed to the agent as `operationGuidance`.
+operations:
+  apply:
+    guidance:
+      - Run the lint, typecheck and test commands from agent-compass.commands.json — the smallest set that covers the change.
+      - Tick a task in tasks.md as soon as its validation passes, not at the end.
+      - Report validation honestly against the Completion Gate in AGENTS.md.
+  archive:
+    guidance:
+      - Run the verify workflow first. A ticked task list is a claim, not a check.
+      - Archiving is what updates the main specs. Never hand-edit a main spec.

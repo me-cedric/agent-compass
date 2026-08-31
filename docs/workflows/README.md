@@ -9,6 +9,7 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [decision-records.md](decision-records.md)     | Recording ongoing structuring decisions as ADRs (incl. from a meeting transcript). |
 | [new-module.md](new-module.md)                 | Adding a module/feature to an existing project. |
 | [spec-driven-development.md](spec-driven-development.md) | Turning ideas into specs, plans, tasks, and synced docs. |
+| [openspec.md](openspec.md)                     | Driving the OpenSpec change lifecycle: artifact chain, status gate, enforcement. |
 | [project-memory.md](project-memory.md)         | Reading and writing durable agent memory during work. |
 | [agent-teaching.md](agent-teaching.md)          | Teaching users without coaching every prompt. |
 | [agent-improvement-loop.md](agent-improvement-loop.md) | Turning repeated friction into instructions, skills, prompts, hooks, MCP, and checks. |

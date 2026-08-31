@@ -21,7 +21,25 @@ implementation.
 7. **Converge** - Compare code, tests, docs, and specs. Update whichever artifact
    is stale.
 
-## Artifact layout
+## Pick the layout before you write
+
+The flow above is the same in every layout. Where the artifacts live is not, and
+an artifact written into the wrong root is read by nothing — see the
+[`one-artifact-root`](../../knowledge/instincts/one-artifact-root.md) instinct.
+
+| The project has | Layout | Read |
+| --------------- | ------ | ---- |
+| An `openspec/` or `docs/openspec/` root, or `paths.openspec` in `agent-compass.commands.json` | **OpenSpec** — artifacts belong to a *change*, and a CLI answers which one is missing | [openspec.md](openspec.md) |
+| A `.specify/` directory or the `specify` CLI | **Upstream Spec Kit** | *Optional upstream Spec Kit*, below |
+| Neither | **Compass native** — the spec-kit layout below | this document |
+
+Resolve it with one command before the first write:
+
+```bash
+agent-compass spec-validation-map .    # prints the layout it detected
+```
+
+## Artifact layout (compass native)
 
 Use `specs/<id-slug>/` for project and feature artifacts:
 
@@ -55,7 +73,7 @@ features and changes.
 
 ## Brownfield rule
 
-For existing features, search `specs/` first. Update or link the existing spec
+For existing features, search the resolved spec root first. Update or link the existing spec
 instead of creating disconnected truth. If behavior changes, add a new numbered
 change spec and reference the older spec it supersedes or extends.
 

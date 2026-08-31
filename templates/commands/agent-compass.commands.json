@@ -1,6 +1,9 @@
 {
   "schema": 1,
   "packageManager": "<PM>",
+  "paths": {
+    "openspec": "<path>"
+  },
   "install": "<PM> install",
   "check": "<PM> check",
   "agentConformance": "node docs/agent-compass/scripts/agent-conformance.mjs --root . --write",

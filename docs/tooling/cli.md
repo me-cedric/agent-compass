@@ -146,6 +146,7 @@ Command-registry names: `agentTools.skillsListPacks` and
 | `mcp-probe` | Probe MCP config readiness. | — |
 | `code-intel` | Manage `codebase-memory-mcp`: `status`, `install`, `configure`, `setup`, `doctor`. | — |
 | `spec-validation-map` | Map specs to plan/tasks/validation coverage. | — |
+| `openspec-guard` | Enforce the OpenSpec change lifecycle and artifact chain. | — |
 | `design-importer` | Create design-system docs from Figma/token export. | — |
 | `drift` | Drift dashboard across guidance validators. | `agent-drift` |
 | `conformance` | Provider customization + smoke prompts. | `agent-conformance` |
