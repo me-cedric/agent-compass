@@ -76,7 +76,7 @@ const fixture = async ({ conflict = false, packageUpdate = false } = {}) => {
 
 test('live registry covers every pinned external skill family', () => {
   const registry = readSourceRegistry(AC)
-  assert.equal(Object.keys(registry.sources).length, 9)
+  assert.equal(Object.keys(registry.sources).length, 10)
   // Every source is tracked, so no source owns a local skill folder any more.
   assert.equal(registrySkillNames(registry).size, 0)
   assert.deepEqual(

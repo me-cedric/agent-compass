@@ -1,10 +1,11 @@
 # Native Mobile Skills (Android and Apple)
 
-Agent Compass **tracks** two external skill corpora for native mobile work
-without copying them. Google publishes Android skills, and a third party
-publishes Apple-platform skills. Both ship their own installer. This document
-is the local contract: what each source holds, how to install one skill from it,
-and which Agent Compass rules still apply after it lands.
+Agent Compass **tracks** three external skill corpora for native mobile work
+without copying them. Google publishes Android skills, a third party publishes a
+broad Apple-platform framework reference, and a shipping iOS developer publishes
+a narrow SwiftUI craft corpus. This document is the local contract: what each
+source holds, how to install one skill from it, and which Agent Compass rules
+still apply after it lands.
 
 The pinned commits, licences, and skill inventories live in
 [`skills/upstream-sources.json`](../../skills/upstream-sources.json) with
@@ -12,16 +13,17 @@ The pinned commits, licences, and skill inventories live in
 [upstream-sources.md](upstream-sources.md#reference-sources-tracked-not-copied)
 for what that strategy guarantees, and
 [ADR 002](../decisions/002-tracked-external-reference-sources.md) for why these
-two sources are tracked rather than vendored.
+sources are tracked rather than vendored.
 
-## Why These Two Are Not Vendored
+## Why These Are Not Vendored
 
 | Reason | Detail |
 | ------ | ------ |
 | Licence | `dpearson2699/swift-ios-skills` uses the PolyForm Perimeter 1.0.0 licence. That licence forbids using the work to provide a competing product. Agent Compass redistributes skills to host projects, so wholesale copying carries a real noncompete risk. Tracking removes the risk because nothing is copied. |
-| Size | The two corpora hold about 9 MB across roughly 420 files. Most of that weight is mirrored vendor documentation that the vendor already keeps current. |
-| Vendor installer | Both projects ship a first-party installer that resolves one skill on demand. A copy inside Agent Compass would compete with that installer and age faster than it. |
-| Release cadence | Both corpora follow yearly platform releases. A pin plus a cached remote check reports staleness. A copy hides it. |
+| Size | The Android and Apple framework corpora hold about 9 MB across roughly 420 files. Most of that weight is mirrored vendor documentation that the vendor already keeps current. |
+| Vendor installer | The Android and Apple framework projects ship a first-party installer that resolves one skill on demand. A copy inside Agent Compass would compete with that installer and age faster than it. |
+| Release cadence | All three corpora follow yearly platform releases. A pin plus a cached remote check reports staleness. A copy hides it. |
+| Authorship | `Dimillian/Skills` is one practitioner's working corpus, revised as the author ships his own apps. A copy freezes an opinion that is meant to move. |
 
 ## Install One Skill
 
@@ -48,6 +50,28 @@ licence before you install: it is source-available, not open source, and its
 noncompete term binds the installing project too. The
 [`Required Notice`](https://github.com/dpearson2699/swift-ios-skills/blob/main/LICENSE)
 line must travel with any copy.
+
+### SwiftUI craft — `Dimillian/Skills` (MIT, Thomas Ricouard)
+
+```bash
+agent-compass external-skills . --source dimillian-skills --recommended
+agent-compass external-skills . --source dimillian-skills --skill swiftui-liquid-glass
+```
+
+The repository is <https://github.com/Dimillian/Skills>. It ships no installer of
+its own — its README says to drop a folder into `$CODEX_HOME/skills` — so Agent
+Compass's own `external-skills` installer does the copy, from the pinned commit,
+into whichever provider directories the host uses.
+
+It is a practitioner corpus, not a vendor one. Where `swift-ios-skills` answers
+"which API", this one answers "how a shipping SwiftUI app is actually
+structured": tab architecture, search placement, split views, matched
+transitions, Liquid Glass containers. Prefer it for composition and design
+questions and `swift-ios-skills` for framework coverage.
+
+**Name collision.** Both Apple corpora publish a `swiftui-liquid-glass` skill.
+They install to the same directory name, so installing both overwrites one.
+Choose one per host project and record which in the handoff.
 
 ## Route The Task To A Skill
 
@@ -76,6 +100,11 @@ budget: one corpus holds 86 skills.
 | Accessibility audit | Apple | `ios-accessibility` |
 | Memory growth or a leak | Apple | `ios-memgraph-analysis` |
 | Startup or hang profiling | Apple | `ios-ettrace-performance` |
+| Tab bar, sidebar, search placement, iPad columns | SwiftUI craft | `swiftui-ui-patterns` |
+| Liquid Glass containers, morphing, toolbars | SwiftUI craft | `swiftui-liquid-glass` |
+| A view file grown too large or too stateful | SwiftUI craft | `swiftui-view-refactor` |
+| Scroll jank in a grid or a carousel | SwiftUI craft | `swiftui-performance-audit` |
+| Swift 6.2 concurrency errors in a feature | SwiftUI craft | `swift-concurrency-expert` |
 
 The [`native-mobile-skills`](../../skills/native-mobile-skills/SKILL.md) skill
 carries this routing procedure for an agent. The full inventories are below.
@@ -107,13 +136,14 @@ third party a voice in the agent's decisions.
 
 ## Check And Refresh The Pins
 
-Both sources join the ordinary external-source lifecycle:
+All three sources join the ordinary external-source lifecycle:
 
 ```bash
 agent-compass upstream-skills --check-updates      # cached 24h, remote heads only
 agent-compass upstream-skills --verify             # offline; pins, pointers, inventories
 agent-compass upstream-skills --update android-skills --dry
 agent-compass upstream-skills --update swift-ios-skills
+agent-compass upstream-skills --update dimillian-skills
 ```
 
 A refresh of a reference source moves the pinned commit and rewrites the
@@ -125,12 +155,12 @@ skills are printed, so a new platform skill is visible the same day it lands.
 Source: <https://github.com/android/skills>
 
 <!-- BEGIN GENERATED:android-skills-inventory -->
-21 tracked skills:
+22 tracked skills:
 
 - `adaptive`, `agp-9-upgrade`, `android-cli`, `android-intent-security`, `android-profiler`, `appfunctions`
 - `camerax`, `display-glasses-with-jetpack-compose-glimmer`, `edge-to-edge`, `engage-sdk-integration`, `leanback-to-compose-tv-migration`, `media3-cast-integration`
-- `migrate-xml-views-to-jetpack-compose`, `navigation-3`, `play-billing-library-version-upgrade`, `play-policy-insights`, `r8-analyzer`, `styles`
-- `testing-setup`, `verified-email`, `wear-compose-m3`
+- `migrate-xml-views-to-jetpack-compose`, `navigation-3`, `play-billing-library-version-upgrade`, `play-policy-insights`, `r8-analyzer`, `restore-credentials`
+- `styles`, `testing-setup`, `verified-email`, `wear-compose-m3`
 <!-- END GENERATED:android-skills-inventory -->
 
 ## Tracked Inventory — Apple Platforms
@@ -156,3 +186,15 @@ Source: <https://github.com/dpearson2699/swift-ios-skills>
 - `swiftui-performance`, `swiftui-uikit-interop`, `swiftui-webkit`, `tabletopkit`, `tipkit`, `vision-framework`
 - `weatherkit`, `widgetkit`
 <!-- END GENERATED:swift-ios-skills-inventory -->
+
+## Tracked Inventory — SwiftUI Craft
+
+Source: <https://github.com/Dimillian/Skills>
+
+<!-- BEGIN GENERATED:dimillian-skills-inventory -->
+16 tracked skills:
+
+- `app-store-changelog`, `bug-hunt-swarm`, `github`, `ios-debugger-agent`, `macos-menubar-tuist-app`, `macos-spm-app-packaging`
+- `orchestrate-batch-refactor`, `project-skill-audit`, `react-component-performance`, `review-and-simplify-changes`, `review-swarm`, `swift-concurrency-expert`
+- `swiftui-liquid-glass`, `swiftui-performance-audit`, `swiftui-ui-patterns`, `swiftui-view-refactor`
+<!-- END GENERATED:dimillian-skills-inventory -->

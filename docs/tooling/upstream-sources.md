@@ -148,8 +148,9 @@ preserves those changes and stops when it cannot merge them safely.
 | Source ID | Repository | Inventory | Curated | Licence |
 | --------- | ---------- | --------: | ------: | ------- |
 | `devops-security` | `BagelHole/DevOps-Security-Agent-Skills` | 163 | 146 | MIT |
-| `android-skills` | `android/skills` | 21 | 21 | Apache-2.0 |
+| `android-skills` | `android/skills` | 22 | 22 | Apache-2.0 |
 | `swift-ios-skills` | `dpearson2699/swift-ios-skills` | 86 | 86 | PolyForm Perimeter 1.0.0 |
+| `dimillian-skills` | `Dimillian/Skills` | 16 | 5 | MIT |
 | `taste-skill` | `Leonxlnx/taste-skill` | 13 | 10 | MIT |
 | `ponytail` | `DietrichGebert/ponytail` | 6 | 5 | MIT |
 | `caveman` | `JuliusBrussee/caveman` | 20 | 3 | MIT |

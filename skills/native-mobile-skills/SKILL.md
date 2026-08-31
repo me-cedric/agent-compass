@@ -20,11 +20,17 @@ finds the vendor skill that does.
 
 | Corpus | Covers | Licence |
 | ------ | ------ | ------- |
-| <https://github.com/android/skills> | 21 skills: Compose, navigation, AGP, R8, profiling, insets, intents, Wear, TV, XR, Play | Apache-2.0, Google LLC |
+| <https://github.com/android/skills> | 22 skills: Compose, navigation, AGP, R8, profiling, insets, intents, credentials, Wear, TV, XR, Play | Apache-2.0, Google LLC |
 | <https://github.com/dpearson2699/swift-ios-skills> | 86 skills: SwiftUI, Swift language and concurrency, SwiftData, Apple frameworks, App Store, profiling | PolyForm Perimeter 1.0.0, source-available with a noncompete term |
+| <https://github.com/Dimillian/Skills> | 16 skills, of which 5 are Apple craft: SwiftUI composition patterns, Liquid Glass, view refactoring, performance audit, Swift 6.2 concurrency | MIT, Thomas Ricouard |
 
-Neither corpus is copied into Agent Compass, so a skill is installed from its
-vendor when a task needs it. This file carries everything needed to do that. The
+The third corpus is a practitioner's, not a vendor's: it answers "how a shipping
+SwiftUI app is structured" where the second answers "which API". Both publish a
+skill named `swiftui-liquid-glass`, and they install to the same directory —
+choose one per project.
+
+No corpus is copied into Agent Compass, so a skill is installed from its
+source when a task needs it. This file carries everything needed to do that. The
 pinned inventories and the licence reasoning live in the compass tree, at
 [`docs/tooling/native-mobile-skills.md`](../../docs/tooling/native-mobile-skills.md)
 — useful when you have that tree, not required to use this skill.
@@ -80,6 +86,11 @@ context window, and a corpus loaded wholesale buries the one file that mattered.
 | App Store submission and review | Apple | `app-store-review`, `app-store-optimization` |
 | Security review, keychain, crypto | Apple | `swift-security`, `cryptokit` |
 | On-device model use | Apple | `apple-on-device-ai`, `coreml` |
+| Tab bar, search placement, iPad columns | SwiftUI craft | `swiftui-ui-patterns` |
+| Liquid Glass containers and toolbars | SwiftUI craft | `swiftui-liquid-glass` |
+| A view file grown too large or too stateful | SwiftUI craft | `swiftui-view-refactor` |
+| Scroll jank in a grid or a carousel | SwiftUI craft | `swiftui-performance-audit` |
+| Swift 6.2 concurrency errors in a feature | SwiftUI craft | `swift-concurrency-expert` |
 
 If no row matches, list the upstream corpus before concluding it has no answer:
 browse the repository at the pinned commit, or run the installer without a
@@ -97,8 +108,11 @@ Inside the Agent Compass repository, the full pinned inventories are in
 # Android — needs the Android CLI
 android skills add --skill=<skill> --project=.
 
-# Apple platforms
+# Apple platforms — framework coverage
 npx skills add dpearson2699/swift-ios-skills --skill <skill>
+
+# Apple platforms — SwiftUI craft (no vendor installer; Agent Compass copies it)
+agent-compass external-skills . --source dimillian-skills --skill <skill>
 ```
 
 Install into the project that needs the skill. Do not copy skill files into
@@ -171,6 +185,7 @@ Agent Compass:
 ```bash
 agent-compass upstream-skills --update android-skills --dry
 agent-compass upstream-skills --update swift-ios-skills
+agent-compass upstream-skills --update dimillian-skills
 ```
 
 A refresh moves the pin and rewrites the recorded inventory. It copies no file.

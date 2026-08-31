@@ -509,7 +509,7 @@
     },
     "android-skills": {
       "repository": "https://github.com/android/skills",
-      "commit": "6685cac2923e3ccc7e5c385019464374699cda95",
+      "commit": "ea05a53683d1fb1fc701c3ad91f494d25d4fc7c6",
       "strategy": "reference",
       "license": "Apache-2.0",
       "licenseHolder": "Google LLC",
@@ -538,6 +538,7 @@
         "play-billing-library-version-upgrade",
         "play-policy-insights",
         "r8-analyzer",
+        "restore-credentials",
         "styles",
         "testing-setup",
         "verified-email",
@@ -649,6 +650,45 @@
       ],
       "requiredNotice": "Required Notice: Copyright (c) 2025 dpearson2699 (https://github.com/dpearson2699)",
       "vendorInstall": "npx skills add dpearson2699/swift-ios-skills --skill <skill>"
+    },
+    "dimillian-skills": {
+      "repository": "https://github.com/Dimillian/Skills",
+      "commit": "05ba982bfeb0d77d3c97d4542b0ee15034d05f84",
+      "strategy": "reference",
+      "license": "MIT",
+      "licenseHolder": "Thomas Ricouard",
+      "licenseNote": "Practitioner corpus, not a vendor corpus. It carries current SwiftUI and iOS 26 design guidance the framework vendors do not publish as skills.",
+      "install": "agent-compass external-skills --source dimillian-skills --recommended",
+      "inventoryRoot": ".",
+      "inventoryDoc": "docs/tooling/native-mobile-skills.md",
+      "pointers": [
+        "skills/native-mobile-skills/SKILL.md"
+      ],
+      "recommended": [
+        "swift-concurrency-expert",
+        "swiftui-liquid-glass",
+        "swiftui-performance-audit",
+        "swiftui-ui-patterns",
+        "swiftui-view-refactor"
+      ],
+      "upstreamSkills": [
+        "app-store-changelog",
+        "bug-hunt-swarm",
+        "github",
+        "ios-debugger-agent",
+        "macos-menubar-tuist-app",
+        "macos-spm-app-packaging",
+        "orchestrate-batch-refactor",
+        "project-skill-audit",
+        "react-component-performance",
+        "review-and-simplify-changes",
+        "review-swarm",
+        "swift-concurrency-expert",
+        "swiftui-liquid-glass",
+        "swiftui-performance-audit",
+        "swiftui-ui-patterns",
+        "swiftui-view-refactor"
+      ]
     }
   }
 }
