@@ -5,6 +5,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`openspec-guard` reads the chain a project actually declares.** The `chain`
+  gate hard-coded the default spec-driven quartet whenever the OpenSpec CLI was
+  absent, so a host on its own schema was judged by a chain it does not use.
+A host whose schema writes no `design.md` and keeps
+  `tasks.md` beside each capability spec had both reported missing on every
+  complete change — an error it could never clear. The offline fallback now reads
+  `<openspec>/schemas/<name>/schema.yaml` when the root declares exactly one, and
+  resolves each artifact's `generates` path, including a `specs/**/<file>`
+  pattern. Two declared schemas is a `config` warning and falls back to the
+  default rather than guessing.
+
 ## [0.9.2] - 2026-08-31
 
 ### Added

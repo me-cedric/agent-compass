@@ -155,3 +155,94 @@ test('openspec-guard treats a stale grandfather entry as a failure', async () =>
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+// The chain gate used to hard-code the default spec-driven quartet, so a host on
+// its own schema — one that writes no design.md and puts tasks.md beside each
+// capability spec — got two errors it could never clear.
+const PER_CAPABILITY = [
+  'name: per-capability',
+  'version: 1',
+  'artifacts:',
+  '  - id: proposal',
+  '    generates: "proposal.md"',
+  '  - id: spec',
+  '    generates: "specs/**/spec.md"',
+  '  - id: plan',
+  '    generates: "specs/**/plan.md"',
+  '  - id: checklist',
+  '    generates: "specs/**/checklist.md"',
+  '  - id: tasks',
+  '    generates: "specs/**/tasks.md"',
+].join('\n') + '\n'
+
+const declareSchema = async (dir, name, body) => {
+  const schemaDir = join(dir, 'openspec', 'schemas', name)
+  await mkdir(schemaDir, { recursive: true })
+  await writeFile(join(schemaDir, 'schema.yaml'), body)
+}
+
+const quartet = {
+  'proposal.md': '# Why\n',
+  'specs/thing/spec.md': '# Spec\n',
+  'specs/thing/plan.md': '# How\n',
+  'specs/thing/checklist.md': '- [x] reviewed\n',
+  'specs/thing/tasks.md': '- [ ] do the thing\n',
+}
+
+test('openspec-guard reads the chain from the schema the root declares', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'osg-schema-'))
+  try {
+    await workflows(dir)
+    await change(dir, 'quartet', quartet)
+
+    // Without a declaration the default chain applies, and it is wrong here.
+    let report = JSON.parse((await runNode([script.pathname, dir, '--json'], { cwd: root.pathname })).stdout)
+    assert.deepEqual(report.changes[0].missing, ['design', 'tasks'])
+
+    await declareSchema(dir, 'per-capability', PER_CAPABILITY)
+    const result = await runNode([script.pathname, dir, '--json'], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+    report = JSON.parse(result.stdout)
+    assert.deepEqual(report.changes[0].missing, [])
+    assert.match(report.changes[0].schema, /^per-capability/)
+    assert.ok(!report.findings.some((f) => f.code === 'chain'))
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('openspec-guard reports two declared schemas rather than picking one', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'osg-two-schemas-'))
+  try {
+    await workflows(dir)
+    await change(dir, 'quartet', quartet)
+    await declareSchema(dir, 'other', 'name: other\nartifacts:\n  - id: proposal\n    generates: "proposal.md"\n')
+    await declareSchema(dir, 'per-capability', PER_CAPABILITY)
+
+    const result = await runNode([script.pathname, dir], { cwd: root.pathname })
+    assert.match(result.stdout, /schemas\/ declares 2 schemas: other, per-capability/)
+    // Fallen back to the default chain, which is what makes the warning matter.
+    assert.match(result.stdout, /\[chain\]/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('openspec-guard still honours skip_specs under a declared schema', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'osg-schema-skip-'))
+  try {
+    await workflows(dir)
+    await change(dir, 'no-delta', {
+      'proposal.md': '# Why\n',
+      '.openspec.yaml': '# Implements requirements already written in the main specs.\nskip_specs: true\n',
+    })
+    await declareSchema(dir, 'per-capability', PER_CAPABILITY)
+
+    const result = await runNode([script.pathname, dir, '--json'], { cwd: root.pathname })
+    const report = JSON.parse(result.stdout)
+    assert.deepEqual(report.changes[0].missing, [])
+    assert.ok(!report.findings.some((f) => f.code === 'deltas'))
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})

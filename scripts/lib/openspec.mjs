@@ -75,11 +75,82 @@ export const taskProgress = (changeDir) => {
   return { total, done }
 }
 
-// Which artifacts the change has on disk, for the default spec-driven chain.
-// The CLI is authoritative when it is installed — see cliStatus in
-// openspec-guard.mjs — so this is the offline fallback, and it reports only what
-// it can see rather than inventing a schema requirement.
-export const fileArtifacts = (changeDir) => {
+// The `id` and `generates` of every entry under `artifacts:`, in order.
+//
+// Read with line regexes, like the config readers further down. This corpus has
+// no dependencies, and one YAML parser for a list of two fields is not worth
+// being the first.
+export const schemaArtifacts = (text) => {
+  const out = []
+  let inArtifacts = false
+  for (const line of text.split('\n')) {
+    if (/^artifacts:\s*$/.test(line)) { inArtifacts = true; continue }
+    if (!inArtifacts) continue
+    // A non-empty line at column zero ends the block.
+    if (line.trim() && !/^\s/.test(line)) break
+    const id = line.match(/^\s*-\s*id:\s*(\S+)\s*$/)
+    if (id) { out.push({ id: unquote(id[1]), generates: '' }); continue }
+    const generates = line.match(/^\s*generates:\s*(\S.*?)\s*$/)
+    if (generates && out.length) out[out.length - 1].generates = unquote(generates[1])
+  }
+  // An entry with no `generates` writes no file, so nothing on disk can satisfy
+  // it and reporting it `ready` for ever would be worse than not reporting it.
+  return out.filter((a) => a.id && a.generates)
+}
+
+const unquote = (value) => value.replace(/^["']|["']$/g, '')
+
+// The schema declared under the root, when exactly one is declared.
+//
+// `<root>/schemas/<name>/schema.yaml` is how a host states a chain other than
+// the default one — for example `proposal.md` plus a spec, plan, checklist and
+// tasks quartet under `specs/<capability>/`. Without this, the fallback below
+// reported `design` and a change-root `tasks.md` missing on every such change,
+// for ever — an error no host could ever clear.
+//
+// Two schemas is not resolved here. `reason` says why nothing came back and the
+// caller reports it: guessing which chain is in force is the one answer worse
+// than falling back to the default.
+export const declaredSchema = (openspecDir) => {
+  const dir = join(openspecDir, 'schemas')
+  const names = dirNames(dir).filter((name) => existsSync(join(dir, name, 'schema.yaml')))
+  if (names.length === 0) return { schema: null, reason: '' }
+  if (names.length > 1) return { schema: null, reason: `schemas/ declares ${names.length} schemas: ${names.join(', ')}. Keep one, or the chain gate cannot tell which is in force.` }
+  const [name] = names
+  const artifacts = schemaArtifacts(readText(join(dir, name, 'schema.yaml')))
+  if (artifacts.length === 0) return { schema: null, reason: `schemas/${name}/schema.yaml declares no artifact with a \`generates\` path.` }
+  return { schema: { name, artifacts }, reason: '' }
+}
+
+// Whether one `generates` pattern is satisfied inside a change directory.
+//
+// Two shapes, which is every shape a schema uses: a plain relative path, and
+// `<dir>/**/<file>` for an artifact written once per capability.
+const generated = (changeDir, pattern) => {
+  const perCapability = pattern.match(/^(.*)\/\*\*\/([^/]+)$/)
+  if (!perCapability) return existsSync(join(changeDir, pattern))
+  const [, dir, file] = perCapability
+  return dirNames(join(changeDir, dir)).some((name) => existsSync(join(changeDir, dir, name, file)))
+}
+
+// Which artifacts the change has on disk. The CLI is authoritative when it is
+// installed — see cliStatus in openspec-guard.mjs — so this is the offline
+// fallback, and it reports only what it can see rather than inventing a schema
+// requirement.
+//
+// `schema` comes from [declaredSchema]. Without one the chain is the default
+// spec-driven quartet, unchanged.
+export const fileArtifacts = (changeDir, schema = null) => {
+  if (schema) {
+    return schema.artifacts.map(({ id, generates }) => {
+      if (generated(changeDir, generates)) return { id, status: 'done' }
+      // The delta is the one artifact a change may legitimately not have, and
+      // `skip_specs` is how it says so. Recognised by where it is written, not
+      // by its id: a schema is free to call it `spec` or `specs`.
+      if (generates.startsWith('specs/') && skipsSpecs(changeDir)) return { id, status: 'skipped' }
+      return { id, status: 'ready' }
+    })
+  }
   const hasSpecs = dirNames(join(changeDir, 'specs')).length > 0
   return [
     { id: 'proposal', status: existsSync(join(changeDir, 'proposal.md')) ? 'done' : 'ready' },

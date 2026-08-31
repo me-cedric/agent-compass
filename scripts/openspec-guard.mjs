@@ -11,6 +11,8 @@
 //   root       — exactly one OpenSpec root, resolved and printed
 //   config     — config.yaml parses, and every rules group is a real artifact id
 //   chain      — every active change has the artifacts its schema requires
+//                (from the CLI when installed, else from the schema the root
+//                 declares under schemas/, else the default spec-driven chain)
 //   deltas     — a change with no delta specs declares skip_specs, with a reason
 //   stale      — tasks.md is not older (in git) than the proposal or the specs
 //   workflows  — every workflow the installed CLI ships is installed for an agent
@@ -26,9 +28,9 @@ import { existsSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { parseCliArgs, resolveRoot } from './lib/args.mjs'
 import {
-  activeChanges, configListFaults, configRuleGroups, dirNames, fileArtifacts,
-  findRoots, isDir, readJson, readText, skipReason, skipsSpecs, taskProgress,
-  touchedCapabilities,
+  activeChanges, configListFaults, configRuleGroups, declaredSchema, dirNames,
+  fileArtifacts, findRoots, isDir, readJson, readText, skipReason, skipsSpecs,
+  taskProgress, touchedCapabilities,
 } from './lib/openspec.mjs'
 
 const { values, positionals } = parseCliArgs({
@@ -109,13 +111,22 @@ const audit = (root, override) => {
   const changesDir = join(openspecDir, 'changes')
   const specsDir = join(openspecDir, 'specs')
   const baseline = readJson(join(root, '.openspec-guard.json'))?.grandfathered || {}
+  // Resolved once, before the loop: every change under one root follows the same
+  // chain, and reading the schema per change would report the same fault N times.
+  const { schema, reason: schemaFault } = declaredSchema(openspecDir)
+  if (schemaFault) add('warn', 'config', schemaFault)
   const usedBaseline = new Set()
   const changes = []
 
   for (const name of activeChanges(openspecDir)) {
     const changeDir = join(changesDir, name)
     const status = cliStatus(root, openspec, name)
-      || { schemaName: 'spec-driven (assumed — CLI unavailable)', artifacts: fileArtifacts(changeDir) }
+      || {
+        schemaName: schema
+          ? `${schema.name} (from ${openspec}/schemas, CLI unavailable)`
+          : 'spec-driven (assumed — CLI unavailable)',
+        artifacts: fileArtifacts(changeDir, schema),
+      }
     const missing = status.artifacts.filter((a) => a.status !== 'done' && a.status !== 'skipped').map((a) => a.id)
     const progress = taskProgress(changeDir)
     const exempt = Object.prototype.hasOwnProperty.call(baseline, name)
@@ -239,6 +250,48 @@ const selfTest = async () => {
     result = audit(dir, 'openspec')
     cases.push(['an unquoted colon in a config list item is an error', result.findings.some((f) => f.code === 'config' && f.severity === 'error')])
     cases.push(['a rules group that is not an artifact id is a warning', result.findings.some((f) => f.code === 'config' && f.severity === 'warn')])
+
+    // A root that declares its own chain: no `design.md`, and `tasks.md` beside
+    // each capability spec. The default chain reported two artifacts missing on a
+    // change that was in fact complete.
+    const declared = mkdtempSync(join(tmpdir(), 'openspec-guard-schema-'))
+    try {
+      const quartet = join(declared, 'openspec', 'changes', 'full-quartet', 'specs', 'thing')
+      mkdirSync(quartet, { recursive: true })
+      writeFileSync(join(declared, 'openspec', 'changes', 'full-quartet', 'proposal.md'), '# Why\n')
+      for (const file of ['spec.md', 'plan.md', 'checklist.md', 'tasks.md']) writeFileSync(join(quartet, file), '- [x] done\n')
+
+      const before = audit(declared, 'openspec')
+      cases.push(['the default chain still fails a change with no design.md', before.findings.some((f) => f.code === 'chain' && f.severity === 'error')])
+
+      const schemaDir = join(declared, 'openspec', 'schemas', 'per-capability')
+      mkdirSync(schemaDir, { recursive: true })
+      writeFileSync(join(schemaDir, 'schema.yaml'), [
+        'name: per-capability',
+        'version: 1',
+        'artifacts:',
+        '  - id: proposal',
+        '    generates: "proposal.md"',
+        '  - id: spec',
+        '    generates: "specs/**/spec.md"',
+        '  - id: plan',
+        '    generates: "specs/**/plan.md"',
+        '  - id: checklist',
+        '    generates: "specs/**/checklist.md"',
+        '  - id: tasks',
+        '    generates: "specs/**/tasks.md"',
+      ].join('\n') + '\n')
+
+      const after = audit(declared, 'openspec')
+      cases.push(['a declared schema decides the chain', !after.findings.some((f) => f.code === 'chain')])
+      cases.push(['the declared schema is named in the report', after.changes[0]?.schema.startsWith('per-capability')])
+
+      // Two schemas: reported, and the chain falls back rather than guessing.
+      mkdirSync(join(declared, 'openspec', 'schemas', 'other'), { recursive: true })
+      writeFileSync(join(declared, 'openspec', 'schemas', 'other', 'schema.yaml'), 'name: other\nartifacts:\n  - id: proposal\n    generates: "proposal.md"\n')
+      const ambiguous = audit(declared, 'openspec')
+      cases.push(['two declared schemas are a warning', ambiguous.findings.some((f) => f.code === 'config' && f.severity === 'warn')])
+    } finally { rmSync(declared, { recursive: true, force: true }) }
 
     // No root at all: silence, not a failure.
     const empty = mkdtempSync(join(tmpdir(), 'openspec-guard-empty-'))

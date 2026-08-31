@@ -132,8 +132,15 @@ spec yourself**; the delta becomes unmergeable and the history is lost.
 agent-compass openspec-guard . --strict
 ```
 
-`root`, `chain`, `deltas`, `stale`, `workflows`, `ready`, `orphans`, `baseline`.
-Put it beside `openspec validate --all` in the contract gate — not instead of it.
+`root`, `config`, `chain`, `deltas`, `stale`, `workflows`, `ready`, `orphans`,
+`baseline`. Put it beside `openspec validate --all` in the contract gate — not
+instead of it.
+
+`chain` asks the CLI first. Without the CLI it reads the schema the root declares
+at `<openspec>/schemas/<name>/schema.yaml`, and only falls back to the default
+spec-driven chain when the root declares none. So a project on its own schema is
+judged by its own artifacts — check that the declaration is there before you
+treat a `chain` error as real.
 Grandfather anything that predates a new gate in `.openspec-guard.json`, with a
 reason and a closing date; an entry that now passes fails the guard, so the file
 drains.

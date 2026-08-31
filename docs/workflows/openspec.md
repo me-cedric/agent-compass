@@ -192,6 +192,25 @@ agent-compass openspec-guard . --json
 | `orphans` | A main spec is named by no change, active or archived. |
 | `baseline` | A grandfathered change now passes — the entry is stale. |
 
+### Where `chain` gets its list of artifacts
+
+Three sources, in order:
+
+1. **`openspec status --json`**, when the CLI is installed. It is authoritative.
+2. **The schema the root declares**, when `<openspec>/schemas/<name>/schema.yaml`
+   holds exactly one. Each artifact's `generates` path is resolved against the
+   change directory, and a `specs/**/<file>` pattern is satisfied by any
+   capability that holds that file. A host on its own schema is therefore judged
+   by its own chain: a schema that writes no `design.md` and keeps `tasks.md`
+   beside each capability spec used to have both reported missing on a change
+   that was in fact complete.
+3. **The default spec-driven chain** — proposal, delta specs, design, tasks — when
+   the root declares no schema.
+
+Two declared schemas is a `config` warning and falls back to the default. The
+guard does not pick one: guessing which chain is in force is the one answer worse
+than saying it cannot tell.
+
 Wire it beside `openspec validate --all` in the contract gate, not instead of it:
 
 ```json
