@@ -188,3 +188,56 @@ test('pull-knowledge accepts documentation emails and bare ISO dates', async () 
     await rm(staged, { recursive: true, force: true })
   }
 })
+
+test('pull-knowledge harvests a host that installed the compass, with its hooks and its request templates', async () => {
+  const target = join(tmpdir(), `ac-source-${Date.now()}`)
+  const staged = join(root.pathname, 'knowledge', 'incoming', basename(target))
+  try {
+    await mkdir(join(target, '.claude', 'hooks'), { recursive: true })
+    await mkdir(join(target, '.gitlab', 'merge_request_templates'), { recursive: true })
+    await mkdir(join(target, '.github'), { recursive: true })
+    // An installed host carries these two markers at its root. They must not
+    // make the root read as a vendored corpus.
+    await writeFile(join(target, 'MISSIONS.md'), '# Missions\n')
+    await writeFile(join(target, 'agent-compass.commands.json'), '{}\n')
+    await writeFile(join(target, 'AGENTS.md'), '# Agent guide\n')
+    await writeFile(join(target, '.claude', 'hooks', 'protect.sh'), '#!/usr/bin/env bash\nexit 0\n')
+    await writeFile(join(target, '.claude', 'settings.json'), '{"hooks":{}}\n')
+    await writeFile(join(target, '.gitlab', 'merge_request_templates', 'default.md'), '# MR body\n')
+    await writeFile(join(target, '.github', 'PULL_REQUEST_TEMPLATE.md'), '# PR body\n')
+
+    const result = await runNode([script.pathname, target], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+
+    const index = await readFile(join(staged, 'INDEX.md'), 'utf8')
+    assert.match(index, /agent-config/)
+    assert.match(index, /agent-hook/)
+    assert.match(index, /request-template/)
+    assert.match(index, /\.claude\/settings\.json/)
+    assert.match(index, /merge_request_templates\/default\.md/)
+  } finally {
+    await rm(target, { recursive: true, force: true })
+    await rm(staged, { recursive: true, force: true })
+  }
+})
+
+test('pull-knowledge still skips a vendored compass copy inside the host', async () => {
+  const target = join(tmpdir(), `ac-source-${Date.now()}`)
+  const staged = join(root.pathname, 'knowledge', 'incoming', basename(target))
+  try {
+    const vendored = join(target, 'docs', 'agent-compass')
+    await mkdir(join(vendored, '.claude', 'hooks'), { recursive: true })
+    await writeFile(join(target, 'AGENTS.md'), '# Agent guide\n')
+    await writeFile(join(vendored, 'MISSIONS.md'), '# Missions\n')
+    await writeFile(join(vendored, '.claude', 'hooks', 'theirs.sh'), '#!/usr/bin/env bash\nexit 0\n')
+
+    const result = await runNode([script.pathname, target], { cwd: root.pathname })
+    assert.equal(result.code, 0, result.stderr)
+
+    const index = await readFile(join(staged, 'INDEX.md'), 'utf8')
+    assert.doesNotMatch(index, /theirs\.sh/)
+  } finally {
+    await rm(target, { recursive: true, force: true })
+    await rm(staged, { recursive: true, force: true })
+  }
+})

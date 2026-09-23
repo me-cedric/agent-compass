@@ -63,6 +63,8 @@ const CAPS = {
   ci: 20,
   devcontainer: 15,
   'style-contract': 5,
+  'agent-hook': 20,
+  'request-template': 10,
 }
 const MAX_DOC_BYTES = 64 * 1024
 const MAX_SKILL_FILES = 20
@@ -177,8 +179,13 @@ const isVendorManifest = (file) => {
 const vendoredRoots = []
 walk(target, 0, (f) => {
   const name = basename(f)
-  if (name === 'MISSIONS.md' || name === 'agent-compass.commands.json') vendoredRoots.push(dirname(f))
-  else if (name === 'manifest.json' && isVendorManifest(f)) vendoredRoots.push(dirname(f))
+  // The target root itself is never a vendored corpus. A host project that
+  // installed the compass carries the same marker files at its root, and
+  // treating the root as vendored excludes the whole project from the harvest.
+  const dir = dirname(f)
+  if (dir === target) return
+  if (name === 'MISSIONS.md' || name === 'agent-compass.commands.json' || name === '.vendor.json') vendoredRoots.push(dir)
+  else if (name === 'manifest.json' && isVendorManifest(f)) vendoredRoots.push(dir)
 }, 5)
 const isVendored = (full) => vendoredRoots.some((root) => full === root || full.startsWith(`${root}/`))
 
@@ -242,6 +249,32 @@ walk(target, 0, (f) => { if (CONFIG.test(f)) add(f, 'config') }, 4)
 const huskyDir = join(target, '.husky')
 // A dangling hook symlink must not kill the run, so guard the stat.
 if (existsSync(huskyDir)) walk(huskyDir, 0, (f) => !f.includes('/_/') && existsSync(f) && add(f, 'hook'), 2)
+
+// 4b) Agent hooks. A hook script enforces a rule the prose only asks for, and
+// the settings file carries the wiring that makes the script run. The script
+// without its wiring is inert, so both travel.
+const claudeHooksDir = join(target, '.claude', 'hooks')
+if (existsSync(claudeHooksDir) && !isVendored(claudeHooksDir)) {
+  walk(claudeHooksDir, 0, (f) => existsSync(f) && add(f, 'agent-hook'), 2)
+}
+for (const f of ['settings.json', 'settings.example.json']) {
+  const full = join(target, '.claude', f)
+  if (existsSync(full) && !isVendored(full)) add(full, 'agent-hook')
+}
+
+// 4c) Merge and pull request templates. A template is the body contract in its
+// enforceable form: the rule prose says what a description must carry, and the
+// template is what the forge shows the author.
+for (const f of ['.github/PULL_REQUEST_TEMPLATE.md', '.gitlab/merge_request_templates']) {
+  const full = join(target, f)
+  if (!existsSync(full) || isVendored(full)) continue
+  if (isDir(full)) walk(full, 0, (g) => g.endsWith('.md') && add(g, 'request-template'), 2)
+  else add(full, 'request-template')
+}
+for (const sub of [['.github', 'PULL_REQUEST_TEMPLATE'], ['.github', 'ISSUE_TEMPLATE']]) {
+  const dir = join(target, ...sub)
+  if (existsSync(dir) && !isVendored(dir)) walk(dir, 0, (f) => /\.(md|ya?ml)$/.test(f) && add(f, 'request-template'), 2)
+}
 
 // 5) Pipelines carry the verify, security, and release job shapes.
 for (const f of ['.gitlab-ci.yml', '.gitlab-ci.yaml']) {

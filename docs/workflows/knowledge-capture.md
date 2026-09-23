@@ -23,6 +23,8 @@ staging:
 | `skill` + `skill-payload` | any `skills/<name>/SKILL.md`, plus that folder's `LICENSE`, `DESIGN.md`, `references/`, `scripts/`, `examples/`, `assets/` |
 | `agent-role` | `.claude/agents/`, `.claude/commands/`, `.github/agents/`, `.github/prompts/`, `.github/instructions/` |
 | `instinct` | `.claude/instincts/*.md` |
+| `agent-hook` | `.claude/hooks/*`, plus `.claude/settings.json` and `.claude/settings.example.json` for the wiring |
+| `request-template` | `.github/PULL_REQUEST_TEMPLATE.md` (or its directory), `.gitlab/merge_request_templates/*.md`, `.github/ISSUE_TEMPLATE/*` |
 | `doc` | `docs/*.md` (depth 1, under 64 KB) |
 | `module-doc` | any `README.md`, `DESIGN.md`, `RESOURCES.md` below the root |
 | `ci` | `.gitlab-ci.yml`, `.gitlab/ci/*.yml`, `.github/workflows/*` |
@@ -30,11 +32,17 @@ staging:
 | `config` | turbo, pnpm, tsconfig, eslint, commitlint, prettier, osv-scanner, sonar, rust-toolchain, gitattributes, Dockerfile |
 | `hook` | `.husky/*` |
 
+A hook script and its wiring travel together. The script alone is inert, because
+the settings file is what makes the harness run it.
+
 Two exclusions keep the output honest:
 
 - **Build output and worktrees** never stage. A git worktree duplicates the whole
   repository at a stale commit, and a build tree can hold tens of thousands of
   copied files.
+- **The target root is never a vendored corpus.** A host project that installed
+  the compass carries the same marker files at its root, so treating the root as
+  vendored excludes the whole project and the harvest reports nothing.
 - **A vendored corpus never stages.** A `skills/` tree whose parent carries a
   generated `manifest.json` naming an upstream repository belongs to that
   upstream. Without this rule, a project that vendors agent-compass re-imports
