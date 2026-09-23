@@ -133,7 +133,11 @@ const sdk = new NodeSDK({
       '@opentelemetry/instrumentation-http': { enabled: true },
       '@opentelemetry/instrumentation-pg': {
         enabled: true,
-        enhancedDatabaseReporting: true,
+        // Keep this false. It adds the bound parameter VALUES to the span
+        // (`db.postgresql.values`), so any query over personal data copies
+        // that data into telemetry. The statement stays available either
+        // way: the instrumentation always sets `db.query.text`.
+        enhancedDatabaseReporting: false,
       },
     }),
   ],
