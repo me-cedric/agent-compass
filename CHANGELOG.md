@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-09-23
+
 ### Added
 
 - **One register holds every open decision.**
