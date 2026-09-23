@@ -26,7 +26,11 @@ execute — grounded in the repo's real conventions.
 ## Method
 
 1. **Start from the gaps.** Use the audit's per-subfeature "missing" findings (or
-   the specs directly) as the raw backlog.
+   the specs directly) as the raw backlog. Read the audit's per-requirement rows,
+   not its prose report: the rows carry the status, the evidence and the date, and
+   they are the source of every estimate. Check the date — a row established
+   three months ago may be stale, and `progress-audit` can refresh only what
+   moved.
 2. **Read the repo's conventions first** — its module patterns, resilience,
    security, contract-sync, testing, and env rules — so every item's plan and
    "rules" reference the *actual* standards, not generic advice.

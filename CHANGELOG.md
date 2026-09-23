@@ -5,6 +5,122 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **One register holds every open decision.**
+  [`docs/workflows/open-questions.md`](docs/workflows/open-questions.md) carries
+  the rule the compass had no home for: exactly one register, a structure that is
+  a template rather than a guideline, three counts that must agree per decision,
+  three whole options with exactly one recommended, business language only
+  because the decider does not read the codebase, a residues table that carries
+  no action count, and a three-state retirement for a superseded register —
+  pointer, then deletion once no inbound link remains, and a verbatim archive
+  that is never deleted. A question leaves the register only after its choice is
+  written into the decision record and cascaded into the specs; striking it first
+  loses the decision. The per-finding files of `harvest-questions` and a spec's
+  clarification markers feed the register and do not compete with it.
+  [`templates/questions/check-questions.mjs`](templates/questions/check-questions.mjs)
+  runs the four checks, three of them arithmetic, and fails on each separately.
+- **The merge-request body is a contract, not prose.**
+  [`docs/workflows/pull-requests.md`](docs/workflows/pull-requests.md) now covers
+  GitLab as well as GitHub, and states the body contract: no fabricated evidence,
+  no duplicated fact, one language throughout, a mandatory gate result in one of
+  two forms, per-ticket sections in one of two forms with a switch at six items,
+  every conditional section with the condition that makes it appear, and a scale
+  table. Labels and the assignee are set on creation **and** on every update — on
+  update the assignee needs a `+` prefix, because a bare `--assignee` replaces
+  the whole list and silently drops whoever was there.
+  [`templates/gitlab/merge_request_templates/default.md`](templates/gitlab/merge_request_templates/default.md)
+  carries the skeleton.
+- **A backlog of arbitrations or audit findings is worked in reviewed waves.**
+  [`docs/workflows/wave-workflow.md`](docs/workflows/wave-workflow.md) orders the
+  waves by dependency, gives each wave disjoint file clusters with one writer per
+  file, reviews each finished wave as an external reviewer, fixes every finding
+  inside the wave it came from, and opens the request only when every wave is
+  done. It also carries the two mechanical checks that catch the most corruption
+  in a markdown edit: bag-of-words containment per changed line, and
+  rectangularity of every touched table.
+- **Documentation hygiene is an obligation of the change, not a later pass.**
+  [`docs/guidelines/documentation.md`](docs/guidelines/documentation.md) adds the
+  question to ask before every commit — *what did this change just make wrong,
+  and what did it make spent?* — a trigger table that pairs each situation with
+  what it obliges in the same change, the list of what is never spent, and the
+  rule against ever opening a task called "clean up the docs".
+- **A subagent's report is a claim, not a result.**
+  [`docs/tooling/model-routing.md`](docs/tooling/model-routing.md) now requires
+  the model and the reasoning effort on every call, because an omitted parameter
+  inherits silently and the tier you assumed is not the tier that ran. It adds
+  the review the spawning agent owes before it uses the work: re-run the gates,
+  verify the load-bearing claim against the code, treat a declared blocker as a
+  finding to verify rather than an excuse to accept, verify instead of picking
+  when two agents disagree, and read every file a subagent wrote before
+  committing it. Read the refusals first. The four Claude agent templates now
+  carry `model: sonnet` in their frontmatter, so a caller who forgets still gets
+  a named model, and the reviewer routes through `pr-review-governance` before it
+  posts.
+- **`pr-review-governance` carries the procedure a real review needs.** The skill
+  was a 155-line axis list. It is now the nine-step procedure a host project
+  matured on live merge requests: take the diff from the forge's own head
+  revision, freeze the acceptance criteria at the base revision before reading
+  the code — a request that edits the specs ships its own criteria — route the
+  axes from the changed paths, and label every verdict with its evidence tier.
+  Executed, code read, and claimed are three different verdicts, and a code read
+  is never "verified". It adds the boundary-parsing class that mocked tests
+  cannot catch, design values read as measured values rather than judged by eye
+  (with `scripts/probe-design-values.js`), device widths instead of declared
+  breakpoints, the Storybook duplicated-DOM trap, cross-branch compatibility with
+  the other open requests, spec realignment, a mandatory correction plan, and
+  posting only after confirmation. Both forges are covered, `glab` and `gh`, with
+  every silent API trap the host hit.
+- **`progress-audit` refreshes an audit instead of re-running it.** A full audit
+  is expensive, and most requirements do not move between two runs. The skill now
+  re-audits only what the diff made doubtful and carries every other row forward
+  with its original date. It scopes at the requirement and never at the document,
+  because one pivot file — an application module, a router, a shared schema — puts
+  hundreds of settled requirements back in scope for a reason as small as
+  registering a module. It adds the discovery pass that a `gap` row needs: a `gap`
+  carries no evidence, so no cited file changes when new code finally implements
+  it, and without the pass the row stays `gap` for ever and the report drifts into
+  false pessimism. The run is priced and stated in one line before the fan-out,
+  and it waits for an explicit yes — the same request can cost two agents or
+  ninety. Nothing in scope means say so and stop, never spend agents to confirm
+  that nothing moved. The per-requirement rows are named as the deliverable and as
+  the source of every percentage and every estimate, so `completion-plan` now
+  reads the rows and their dates rather than the prose report. The mechanical
+  guardrails travel with it: a verifier may only lower a status, a positive claim
+  with no `file:line` evidence falls back to `gap`, aggregation with holes is
+  refused, and the state is snapshotted before anything dated is published —
+  otherwise the publisher stamps the previous run's date on the current run's
+  numbers and the page never says so. It closes with the requirement-extraction
+  traps that make a naive denominator wrong, and the sources that must never serve
+  as one.
+- **A review prompt for the request review.**
+  [`templates/agent/.github/prompts/review-mr.prompt.md`](templates/agent/.github/prompts/review-mr.prompt.md)
+  drives the `pr-review-governance` skill with the rules that matter on a real
+  request: take the diff from the forge's head, freeze the acceptance criteria at
+  the base revision, and label every verdict with its evidence tier.
+
+### Fixed
+
+- **`pull-knowledge` found nothing in a host that had installed the compass.**
+  Any directory holding `MISSIONS.md` or `agent-compass.commands.json` read as a
+  vendored corpus, and an installed host carries both at its root — so the whole
+  project was excluded and the harvest reported "no reusable signal". The target
+  root is now never a vendored corpus, while a vendored copy inside the host
+  still stages nothing. `.vendor.json` joins the markers. Two regression tests
+  pin both directions.
+- **`pull-knowledge` never looked at the agent hooks or the request templates.**
+  A hook script enforces a rule that prose only asks for, and a request template
+  is the body contract in its enforceable form. Both now stage, as `agent-hook`
+  (with `.claude/settings.json`, because a script without its wiring is inert)
+  and `request-template`.
+- **The telemetry recipe copied personal data into spans.**
+  `resilience-observability-patterns` recommended
+  `enhancedDatabaseReporting: true` for the Postgres instrumentation, which adds
+  the bound parameter **values** to the span, so any query over personal data
+  writes that data to the trace backend. It is now `false`, with the reason
+  inline: the statement text stays available either way.
+
 ## [0.9.3] - 2026-08-31
 
 ### Fixed

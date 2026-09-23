@@ -46,6 +46,7 @@ export const FILE_MANIFEST = [
   ['templates/agent/.github/prompts/explain-project.prompt.md', '.github/prompts/explain-project.prompt.md', 'managed'],
   ['templates/agent/.github/prompts/prompt-upgrade.prompt.md', '.github/prompts/prompt-upgrade.prompt.md', 'managed'],
   ['templates/agent/.github/prompts/choose-architecture.prompt.md', '.github/prompts/choose-architecture.prompt.md', 'managed'],
+  ['templates/agent/.github/prompts/review-mr.prompt.md', '.github/prompts/review-mr.prompt.md', 'managed'],
   ['templates/agent/.github/agents/agent-compass-teacher.agent.md', '.github/agents/agent-compass-teacher.agent.md', 'managed'],
   ['templates/agent/.github/agents/architecture-advisor.agent.md', '.github/agents/architecture-advisor.agent.md', 'managed'],
   ['templates/codex/.codex/config.toml', '.codex/config.toml', 'managed'],

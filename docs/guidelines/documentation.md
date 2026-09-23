@@ -96,3 +96,69 @@ see [tooling/api-contract-sync.md](../tooling/api-contract-sync.md).
 When you touch code, update: the module README, the project README (if setup
 changed), `.env.example` (if env changed), and the API specs (if the contract
 changed). The `verify-change` skill flags doc drift against a diff.
+
+## Documentation hygiene — same change as the work, never a later pass
+
+**A finished item leaves no stale document behind it.** Updating the documents a
+change makes wrong, and retiring what it makes spent, is part of the change — the
+same rule class as the API contract sync above. A change that leaves its
+documentation stale is incomplete, even when the code is right and the tests are
+green.
+
+**Why this is a rule and not a preference.** A document directory grows because
+every pass adds and no pass subtracts. The cost is not disk: a reader cannot tell
+a live count from a dead one, a residue gets claimed to live in a register that
+never held it, and a shipped code comment cites a file for a rule that file never
+carried. **A periodic cleanup is how that accumulates.** Subtracting as you go is
+how it does not.
+
+### The question to ask before every commit
+
+> **What did this change just make wrong, and what did it make spent?**
+
+Ask it about documents, not only code. Then act on the answer in the same commit.
+The two are different: *wrong* needs correcting, *spent* needs removing.
+
+### The triggers, and what each one obliges
+
+| When you… | …in the same change |
+| --- | --- |
+| Record an answer to an open question | Write it into the decision record, cascade it into the affected rule rows, **then** strike the question. In that order — striking first loses the decision. See [open-questions](../workflows/open-questions.md). |
+| Deliver a requirement | Update its spec and the feature's row in the status ledger. A ledger row that still calls it a gap is now a false gate. |
+| Take a deliberate shortcut in user-facing copy or an unspecified rule | Mark it in the code **and** add the line to the open register. A marker in code is invisible to the person who must arbitrate it. |
+| Discover that a document's claim is false | Correct it **in place, preserving the original wording**, and date the correction. Never rewrite history cells or dated banners — a blanket replace misattributes a decision to the wrong person and the wrong date. |
+| Find that a gap was reported the wrong way round | Say which side is stale, in the document, in one sentence. **A divergence whose direction is wrong gets fixed on the wrong surface.** |
+| Move the last fact a file was the only home of | Retire the file through its three states. Do not leave it "just in case": you have just proved there is no case. |
+| Push a commit that changes what the branch delivers | Update the request's **title and description**. They are documentation of the branch and they go stale exactly like a spec. Check the title even when you only touched the body. See [pull requests](../workflows/pull-requests.md). |
+| Delete or rename any document | Repoint every inbound reference **first**, found by a real search, and say so. A deletion that leaves dangling links has moved the mess, not cleared it. |
+
+### What must move out before a file may go
+
+Name the facts, one by one, and their new home. If you cannot name where a fact
+went, it has not moved and the file stays. "It is probably covered elsewhere" is
+not a migration. Verify supersession mechanically where you can — comparing
+requirement identifiers against the specification corpus beats reading a README's
+claim that the file is redundant.
+
+### What is never spent
+
+- A **verbatim archive** of answers as they were written.
+- A **decision trail**: why a choice was made, why a proposed deletion was
+  refused, why an audit finding was wrong.
+- A **live open question**, however old.
+- A fact **verified true today** that no other document carries. Verify before
+  assuming it moved; a finding from an old audit can still be live.
+
+### What is spent the moment its content lands elsewhere
+
+A per-requirement ledger, a feature-by-feature dump, an endpoint inventory, a
+batch or progress record, a duration estimate, a status snapshot. These are
+working material. Their numbers age badly and silently.
+
+### Do not batch this
+
+Never open a task called "clean up the docs". By the time it is worth opening,
+the directory is already unreadable and the cleanup needs a full re-verification
+pass to be safe — which is exactly the expensive thing the rule prevents. If you
+notice spent documentation outside the scope of your current change, and removing
+it is not cheap, record it where it will be seen rather than leaving it silent.

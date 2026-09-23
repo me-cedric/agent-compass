@@ -57,7 +57,7 @@ work: audit → scope → split → detail.
 | Skill                     | What it does                                                        |
 | ------------------------- | ------------------------------------------------------------------ |
 | `codebase-to-specs`       | Reverse-engineer code into explicitly inferred specifications, decision records, and an architecture sketch for human review. |
-| `progress-audit`          | Diffs specs/requirements against real code into an honest, verified per-feature + global progress matrix. |
+| `progress-audit`          | Diffs specs/requirements against real code into an honest, verified per-feature + global progress matrix; refreshes an earlier audit by re-auditing only what moved. |
 | `completion-plan`         | Turns the audit/specs into an ordered backlog of remaining work-items (plan, rules, matched ticket, deps, gates) and flags work missing from the tracker. |
 | `work-splitting`          | Splits a backlog across owners with clear separation of concern, minimal file overlap, coordination seams, and a shareable assignment brief. |
 | `implementation-planning` | Produces a detailed, production-ready, plug-and-play implementation spec per work-item that a dev or agent can one-shot. |

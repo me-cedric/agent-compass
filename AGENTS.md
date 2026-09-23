@@ -174,6 +174,13 @@ Setup, troubleshooting, and the local-cache/ignore policy live in
   Start independent subagents together. Give each subagent a file set that no
   other subagent writes, then merge the results in the main thread. Never trade
   correctness for speed. See [performance](docs/guidelines/performance.md).
+- **Pass the model and the reasoning effort on every subagent call**, because an
+  omitted parameter inherits silently. **A subagent's report is a claim, not a
+  result:** re-run the gates yourself, verify the load-bearing claim against the
+  code, treat a declared blocker as a finding to verify, and read every file a
+  subagent wrote that you are about to commit. Read the refusals first. What a
+  finding means, and what gets committed, is never delegated. See
+  [tooling/model-routing](docs/tooling/model-routing.md).
 - **Never invent commands.** Use only scripts that exist in the project's
   `package.json` (or documented equivalents). If none matches, report `not run`
   with the reason.
@@ -415,6 +422,20 @@ irreversible action. Preserve rollback and incident evidence, use least
 privilege, verify commands against current official docs, and never represent
 agent output as certification, attestation, or legal advice.
 
+## 8d. Documentation hygiene and open decisions
+
+**A finished item leaves no stale document behind it.** Ask before every commit:
+*what did this change just make wrong, and what did it make spent?* Correct what
+is wrong and remove what is spent, in the same change — not in a later cleanup
+pass. The trigger table lives in
+[documentation](docs/guidelines/documentation.md).
+
+**One register holds every open decision.** Never open a second one. A question
+leaves the register only after its choice is written into the decision record and
+cascaded into the specs — decision record first, rule rows second, question last.
+Striking it first loses the decision. See
+[open-questions](docs/workflows/open-questions.md).
+
 ## 9. Shared package impact
 
 When changing a shared package, identify every consumer that imports the changed
@@ -446,6 +467,16 @@ task complete until all pass lint and typecheck.
   with no published release is an unfinished release. Name each remote, each
   published release, and each result in the handoff. Use one remote only when
   the user names that remote. See [releasing](docs/workflows/releasing.md).
+
+- **A request body is evidence, not prose.** Write a section only when its
+  evidence was produced; omit it otherwise. Never write a guessed count or a
+  guessed verdict. State each fact once. Use one language throughout the title,
+  the prose and the section names. Set the labels and the assignee on creation
+  **and** on every update. Update the title and the description whenever a push
+  changes what the branch delivers. See
+  [pull-requests](docs/workflows/pull-requests.md).
+- **A backlog of findings is worked in reviewed waves,** one at a time, with one
+  writer per file. See [wave-workflow](docs/workflows/wave-workflow.md).
 
 Full depth lives under [`docs/`](docs/). Reusable patterns live in
 [`skills/`](skills/). Copy-paste configs live in [`templates/`](templates/).

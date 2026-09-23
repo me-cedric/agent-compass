@@ -16,7 +16,9 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [agent-value-expansion.md](agent-value-expansion.md) | Extra automation and precision ideas beyond the current baseline. |
 | [long-running-task.md](long-running-task.md) | Safe autonomous multi-phase implementation loops. |
 | [validation-defaults.md](validation-defaults.md) | Default lint/typecheck/test/build selection when a repo leaves details open. |
-| [pull-requests.md](pull-requests.md)           | Creating PRs with base, labels, assignee, and reviewers. |
+| [pull-requests.md](pull-requests.md)           | Creating PRs and MRs: the body contract, base, labels, assignee, reviewers. |
+| [open-questions.md](open-questions.md)         | Holding every open decision in one register, and retiring a spent one. |
+| [wave-workflow.md](wave-workflow.md)           | Working a backlog of arbitrations or audit findings, one reviewed wave at a time. |
 | [pr-review.md](pr-review.md)                   | Local/GitHub PR reviews and implementing review fixes. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
 | [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |

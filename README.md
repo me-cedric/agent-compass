@@ -351,6 +351,8 @@ Agent Compass is usable across real projects. Current version: `0.9.3`.
 | Wire MCP tools | [`docs/tooling/mcp.md`](docs/tooling/mcp.md) | `templates/mcp/` |
 | Build from Figma | [`skills/figma-mcp-frontend/SKILL.md`](skills/figma-mcp-frontend/SKILL.md) | `templates/design-system/` |
 | Create a PR | [`docs/workflows/pull-requests.md`](docs/workflows/pull-requests.md) | `scripts/pr.mjs` |
+| Hold the open decisions | [`docs/workflows/open-questions.md`](docs/workflows/open-questions.md) | `templates/questions/check-questions.mjs` |
+| Work a backlog in waves | [`docs/workflows/wave-workflow.md`](docs/workflows/wave-workflow.md) | — |
 | Review a PR | [`docs/workflows/pr-review.md`](docs/workflows/pr-review.md) | `scripts/pr-review.mjs` |
 | Capture reusable knowledge | [`docs/workflows/knowledge-capture.md`](docs/workflows/knowledge-capture.md) | `scripts/pull-knowledge.mjs` |
 | Release Agent Compass | [`docs/workflows/releasing.md`](docs/workflows/releasing.md) | `scripts/release.mjs` |
@@ -478,7 +480,9 @@ Other tools: point a rule file at `AGENTS.md`.
 | [`new-module.md`](docs/workflows/new-module.md) | Adding a feature/module to existing code. |
 | [`spec-driven-development.md`](docs/workflows/spec-driven-development.md) | Turning ideas into specs, plans, tasks, and synced docs. |
 | [`project-memory.md`](docs/workflows/project-memory.md) | Reading/writing durable project memory during work. |
-| [`pull-requests.md`](docs/workflows/pull-requests.md) | Creating GitHub PRs with sane defaults. |
+| [`pull-requests.md`](docs/workflows/pull-requests.md) | Creating a GitHub PR or a GitLab MR: the body contract, labels, assignee. |
+| [`open-questions.md`](docs/workflows/open-questions.md) | Holding every open decision in one register, and retiring a spent one. |
+| [`wave-workflow.md`](docs/workflows/wave-workflow.md) | Working a backlog of arbitrations or audit findings, one reviewed wave at a time. |
 | [`pr-review.md`](docs/workflows/pr-review.md) | Local/GitHub PR reviews and implementing submitted review fixes. |
 | [`agent-teaching.md`](docs/workflows/agent-teaching.md) | Teaching users without coaching every prompt. |
 | [`agent-improvement-loop.md`](docs/workflows/agent-improvement-loop.md) | Turning repeated friction into reusable agent artifacts. |
