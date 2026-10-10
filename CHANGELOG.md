@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-10-10
+
 ### Changed
 
 - **The mobile visual check draws the largest text size as a snapshot.**
