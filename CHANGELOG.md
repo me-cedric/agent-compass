@@ -5,6 +5,8 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-10-10
+
 ### Added
 
 - **Mobile visual check.** [`docs/workflows/mobile-visual-check.md`](docs/workflows/mobile-visual-check.md)
