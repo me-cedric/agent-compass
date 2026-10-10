@@ -31,8 +31,13 @@ size, and fix what is wrong before you commit.
   --foreground` prints an accessibility snapshot with refs, `settings appearance
   dark` switches the appearance, `snapshot -i` gives element bounds, `screenshot
   <path>` saves a small image.
-- Take light and dark at the default text size only. The largest text size is
-  checked by the tests below, not by a stored screenshot.
+- Take light and dark at the default text size. Add one snapshot per screen in
+  light at the largest text size (iOS `.dynamicTypeSize(.accessibility5)`,
+  Android font scale 2.0, for example `RuntimeEnvironment.setFontScale(2f)` under
+  Robolectric) and look at it too. It costs seconds and finds what the default
+  size hides: on its first run in one host it found seven layout faults (labels
+  one letter per line, a button split over three lines, titles cut to one line).
+  No device screenshot is needed for it.
 
 ## 2. Machines check the guidelines
 
@@ -42,9 +47,20 @@ accessibility check. A new screen adds its entry.
 
 The checks fail the test on a hit target under 44 x 44 pt (iOS) or 48 x 48 dp
 (Android), a clickable element with no label, and text under 4.5:1 against what
-is behind it. **Prove each check can fail** with one target that is too small:
-the platform checks are lenient (see
+is behind it. **Prove each check can fail** with one target that is too small
+and one label that is too faint: the platform checks are lenient (see
 [platform-a11y-audit-is-lenient](../../knowledge/instincts/platform-a11y-audit-is-lenient.md)).
+
+- Fail on a finding that names an element. Print a finding that names none, or
+  one on an element that a bar covers or the window cuts.
+- Put a real fault you cannot fix now on a per-element known-fault list with its
+  reason. A listed fault that no longer occurs fails the test, so the list drains
+  (see [cap-as-ratchet-with-baseline](../../knowledge/instincts/cap-as-ratchet-with-baseline.md)).
+  Mark a finding that comes and goes between clean runs as not steady, so the
+  gate does not fail at random.
+- Run the checks in CI with the fixtures they need (seed the corpus in a step of
+  its own). Keep the pixel comparison out of CI when its references belong to a
+  local renderer.
 
 ## 3. What to look for in each image
 

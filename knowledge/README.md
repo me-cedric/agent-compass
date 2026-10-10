@@ -72,12 +72,15 @@ material humans and agents *read* and *promote from*.
   [`evidence-needs-a-control`](instincts/evidence-needs-a-control.md),
   [`test-proves-presence-not-truth`](instincts/test-proves-presence-not-truth.md),
   [`platform-a11y-audit-is-lenient`](instincts/platform-a11y-audit-is-lenient.md),
-  [`snapshot-references-are-os-bound`](instincts/snapshot-references-are-os-bound.md).
+  [`snapshot-references-are-os-bound`](instincts/snapshot-references-are-os-bound.md),
+  [`shell-refusal-goes-to-stderr`](instincts/shell-refusal-goes-to-stderr.md).
 - **Build & packaging:**
   [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
   [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md),
   [`generated-file-whole-run`](instincts/generated-file-whole-run.md),
-  [`build-success-needs-an-artifact`](instincts/build-success-needs-an-artifact.md).
+  [`build-success-needs-an-artifact`](instincts/build-success-needs-an-artifact.md),
+  [`declare-every-imported-module`](instincts/declare-every-imported-module.md),
+  [`swift-type-check-budget`](instincts/swift-type-check-budget.md).
 
 ## What an "instinct" is
 

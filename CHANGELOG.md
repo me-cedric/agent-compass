@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The mobile visual check draws the largest text size as a snapshot.**
+  [`docs/workflows/mobile-visual-check.md`](docs/workflows/mobile-visual-check.md)
+  now asks for one light snapshot per screen at the largest text size (iOS AX5,
+  Android font scale 2.0). In the host project it came from, the first run found
+  seven layout faults that the default size hid. The checks fail on a finding
+  that names an element, keep a known-fault list that drains, and run in CI with
+  their fixtures.
+
+### Added
+
+- **Three instincts from making that host's CI green:**
+  [`shell-refusal-goes-to-stderr`](knowledge/instincts/shell-refusal-goes-to-stderr.md),
+  [`declare-every-imported-module`](knowledge/instincts/declare-every-imported-module.md)
+  and [`swift-type-check-budget`](knowledge/instincts/swift-type-check-budget.md).
+
 ## [0.9.5] - 2026-10-10
 
 ### Added
