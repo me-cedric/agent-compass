@@ -20,6 +20,7 @@ Concrete setup guides. Each points at runnable files in
 | [upstream-sources.md](upstream-sources.md)       | Pinned external skill registry, cached checks, and reviewed refresh. |
 | [document-ingestion.md](document-ingestion.md)   | Safe local office-file and PDF extraction with anydoc. |
 | [native-mobile-skills.md](native-mobile-skills.md) | Tracked Android and Apple-platform skill corpora: routing, install, licence posture. |
+| [device-automation.md](device-automation.md)   | agent-device: drive and inspect a running app on a simulator, emulator or device (CLI, MCP). |
 | [operational-skills.md](operational-skills.md) | Tracked DevOps/security/infra/compliance corpus: install-time safety gate and the eight narrowings. |
 | [style-and-design-skills.md](style-and-design-skills.md) | Tracked style, design, and document-extraction sources: curation, install routes, inventories. |
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |

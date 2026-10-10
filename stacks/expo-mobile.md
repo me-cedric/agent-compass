@@ -34,3 +34,15 @@ app/_layout.tsx   (provider stack)
 ```bash
 pnpm --filter @scope/mobile-app lint && pnpm --filter @scope/mobile-app typecheck && pnpm --filter @scope/mobile-app test
 ```
+
+## Visual check and device automation
+
+A screen change is looked at by the one who made it: snapshot tests first, the
+running app where a snapshot cannot draw the screen, and machine accessibility
+checks over a screen catalogue. See
+[mobile-visual-check](../docs/workflows/mobile-visual-check.md). Drive the
+running app with [agent-device](https://github.com/callstack/agent-device)
+(Callstack, MIT; [setup](../docs/tooling/device-automation.md)), pinned to one
+version, for example `npx -y agent-device@0.21.22`.
+
+React Native has no host renderer for native views: use agent-device screenshots on a simulator or emulator, kept as replayable `.ad` scripts, and its React Native component tree.

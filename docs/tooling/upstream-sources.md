@@ -157,9 +157,11 @@ preserves those changes and stops when it cannot merge them safely.
 | `i-have-adhd` | `ayghri/i-have-adhd` | 1 | 1 | MIT |
 | `asd-ste100` | `danyuchn/asd-ste100-skill` | 1 | 1 | MIT |
 | `anydoc` | `firecrawl/anydoc` | 1 | 1 | MIT |
+| `agent-device` | `callstack/agent-device` | 4 | 4 | MIT |
 
 Per-corpus detail: [operational-skills.md](operational-skills.md),
-[native-mobile-skills.md](native-mobile-skills.md), and
+[native-mobile-skills.md](native-mobile-skills.md),
+[device-automation.md](device-automation.md), and
 [style-and-design-skills.md](style-and-design-skills.md).
 
 ## Install From A Tracked Source

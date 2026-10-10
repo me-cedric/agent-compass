@@ -44,7 +44,8 @@ material humans and agents *read* and *promote from*.
   [`entity-picker-label-source`](instincts/entity-picker-label-source.md),
   [`frontend-shared-layer-escapes`](instincts/frontend-shared-layer-escapes.md),
   [`dev-server-route-warmup`](instincts/dev-server-route-warmup.md),
-  [`keyboard-path-before-done`](instincts/keyboard-path-before-done.md).
+  [`keyboard-path-before-done`](instincts/keyboard-path-before-done.md),
+  [`hit-region-keeps-drawn-size`](instincts/hit-region-keeps-drawn-size.md).
 - **Workflow & process:**
   [`mr-scope-and-green-pipeline`](instincts/mr-scope-and-green-pipeline.md),
   [`commit-convention`](instincts/commit-convention.md),
@@ -60,7 +61,8 @@ material humans and agents *read* and *promote from*.
   [`worktree-base-before-work`](instincts/worktree-base-before-work.md),
   [`changelog-entry-in-the-same-task`](instincts/changelog-entry-in-the-same-task.md),
   [`parallel-locale-artifacts`](instincts/parallel-locale-artifacts.md),
-  [`documentation-chain-followthrough`](instincts/documentation-chain-followthrough.md).
+  [`documentation-chain-followthrough`](instincts/documentation-chain-followthrough.md),
+  [`subagent-worktree-fence`](instincts/subagent-worktree-fence.md).
 - **Testing:**
   [`testing-pattern`](instincts/testing-pattern.md),
   [`negative-assertion-precondition`](instincts/negative-assertion-precondition.md),
@@ -68,7 +70,9 @@ material humans and agents *read* and *promote from*.
   [`e2e-gate-budget`](instincts/e2e-gate-budget.md),
   [`evidence-outlives-the-claim`](instincts/evidence-outlives-the-claim.md),
   [`evidence-needs-a-control`](instincts/evidence-needs-a-control.md),
-  [`test-proves-presence-not-truth`](instincts/test-proves-presence-not-truth.md).
+  [`test-proves-presence-not-truth`](instincts/test-proves-presence-not-truth.md),
+  [`platform-a11y-audit-is-lenient`](instincts/platform-a11y-audit-is-lenient.md),
+  [`snapshot-references-are-os-bound`](instincts/snapshot-references-are-os-bound.md).
 - **Build & packaging:**
   [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
   [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md),

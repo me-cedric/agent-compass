@@ -28,6 +28,13 @@ matrix. Compare each screenshot against the stored reference. Attach the changed
 images, or the diff, to the handoff. The `visual-regression-playwright` skill
 holds the commands and the folder layout.
 
+## On iOS, Android and React Native
+
+The proof is the screen as a user sees it, looked at by the one who changed it:
+a snapshot test for each screen state, and a device screenshot only where a
+snapshot cannot draw the screen. The method, the fault list and the tools are in
+[mobile-visual-check](../../docs/workflows/mobile-visual-check.md).
+
 ## Why a class-name assertion is not proof
 
 A test that asserts `toHaveClass('btn-primary')` still passes after somebody

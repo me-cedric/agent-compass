@@ -201,3 +201,14 @@ A refresh moves the pin and rewrites the recorded inventory. It copies no file.
   skill in.
 - [`visual-regression-playwright`](../visual-regression-playwright/SKILL.md) —
   the web equivalent of step 6, for the project's web surfaces.
+
+## Seeing the running app
+
+To look at a screen you changed, follow
+[mobile-visual-check](../../docs/workflows/mobile-visual-check.md): snapshot
+tests first, then the running app driven by
+[agent-device](https://github.com/callstack/agent-device) (tracked reference
+source `agent-device`, installed with
+`agent-compass external-skills --source agent-device --recommended`, CLI pinned
+to `agent-device@0.21.22`). Prove an accessibility check can fail before you
+trust it as a gate.

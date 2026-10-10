@@ -689,6 +689,40 @@
         "swiftui-ui-patterns",
         "swiftui-view-refactor"
       ]
+    },
+    "agent-device": {
+      "repository": "https://github.com/callstack/agent-device",
+      "commit": "202585240f0c1289642885b5df645cbc25114272",
+      "strategy": "reference",
+      "license": "MIT",
+      "licenseHolder": "Callstack",
+      "install": "agent-compass external-skills --source agent-device --recommended",
+      "inventoryRoot": "skills",
+      "inventoryDoc": "docs/tooling/device-automation.md",
+      "pointers": [
+        "skills/native-mobile-skills/SKILL.md",
+        "docs/workflows/mobile-visual-check.md",
+        "stacks/expo-mobile.md",
+        "stacks/swift-ios.md",
+        "stacks/android-compose.md"
+      ],
+      "recommended": [
+        "agent-device",
+        "android-emulator",
+        "dogfood",
+        "ios-simulator"
+      ],
+      "upstreamSkills": [
+        "agent-device",
+        "android-emulator",
+        "dogfood",
+        "ios-simulator"
+      ],
+      "package": {
+        "name": "agent-device",
+        "manifest": "package.json"
+      },
+      "version": "0.21.22"
     }
   }
 }

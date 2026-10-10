@@ -72,3 +72,15 @@ Use `swift test` when the change is confined to a package with no app target.
 A screen change also owes a screenshot from a booted simulator
 (`xcrun simctl io booted screenshot screen.png`) — a SwiftUI `#Preview` is not
 proof.
+
+## Visual check and device automation
+
+A screen change is looked at by the one who made it: snapshot tests first, the
+running app where a snapshot cannot draw the screen, and machine accessibility
+checks over a screen catalogue. See
+[mobile-visual-check](../docs/workflows/mobile-visual-check.md). Drive the
+running app with [agent-device](https://github.com/callstack/agent-device)
+(Callstack, MIT; [setup](../docs/tooling/device-automation.md)), pinned to one
+version, for example `npx -y agent-device@0.21.22`.
+
+Snapshots: swift-snapshot-testing in an app-hosted test bundle on one pinned simulator.

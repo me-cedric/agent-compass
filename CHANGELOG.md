@@ -5,6 +5,32 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mobile visual check.** [`docs/workflows/mobile-visual-check.md`](docs/workflows/mobile-visual-check.md)
+  replaces a frames phase after each merge with a check by the one who built the
+  screen: snapshot tests first (swift-snapshot-testing in an app-hosted bundle,
+  Roborazzi on Robolectric), the running app only where a snapshot cannot draw
+  the screen, light and dark at the default text size, machine accessibility
+  checks over a screen catalogue that are proved to fail, and a list of faults to
+  look for, crowded row actions and the other platform's idiom among them.
+  `AGENTS.md` §6 points mobile hosts at it. Promoted from a host project, where
+  it removed two agents and 2 to 5 hours from each wave.
+- **agent-device as a tracked reference source.** [`callstack/agent-device`](https://github.com/callstack/agent-device)
+  (MIT), pinned at v0.21.22 with its four skills, documented in
+  [`docs/tooling/device-automation.md`](docs/tooling/device-automation.md), with an
+  MCP example in `templates/mcp/agent-device.example.json`. A CLI, so a fenced
+  subagent can call it; it claims a device per worktree.
+- **Four instincts:** [`platform-a11y-audit-is-lenient`](knowledge/instincts/platform-a11y-audit-is-lenient.md),
+  [`hit-region-keeps-drawn-size`](knowledge/instincts/hit-region-keeps-drawn-size.md),
+  [`snapshot-references-are-os-bound`](knowledge/instincts/snapshot-references-are-os-bound.md)
+  and [`subagent-worktree-fence`](knowledge/instincts/subagent-worktree-fence.md).
+
+### Changed
+
+- The native-mobile rule in `AGENTS.md` no longer asks for a device screenshot of
+  every screen change; it asks for the visual check of §6.
+
 ## [0.9.4] - 2026-09-23
 
 ### Added

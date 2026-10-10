@@ -233,7 +233,8 @@ Setup, troubleshooting, and the local-cache/ignore policy live in
   them; the [`native-mobile-skills`](skills/native-mobile-skills/SKILL.md) skill
   routes the task and installs one skill with the vendor's own installer. An
   installed third-party skill never relaxes a gate in §4, and a screen change
-  still owes an emulator or simulator screenshot per §6. See
+  still owes the visual check of §6 (a snapshot, or a
+  device screenshot where a snapshot cannot draw the screen). See
   [native-mobile-skills](docs/tooling/native-mobile-skills.md) and the
   [`platform-skill-before-memory`](knowledge/instincts/platform-skill-before-memory.md)
   instinct.
@@ -350,6 +351,16 @@ that nothing renders yet, and a pure refactor whose screenshots are
 byte-identical — in that case the identical screenshots *are* the proof. When
 the project has no Playwright setup, say so in the handoff and propose adding
 it. Never skip the proof silently.
+
+**On iOS, Android and React Native, the one who made the change looks at it.**
+Follow [mobile-visual-check](docs/workflows/mobile-visual-check.md): snapshot
+tests first (swift-snapshot-testing, Roborazzi), the running app driven by
+[agent-device](docs/tooling/device-automation.md) only where a snapshot cannot
+draw the screen, light and dark at the default text size, and machine
+accessibility checks over a screen catalogue that you proved can fail. Check
+each image for the faults that page lists — crowded actions on one row and the
+other platform's idiom are faults, not remarks. No separate frames phase, and no
+photo per task.
 
 **A reviewer runs the pass, not the author.** When a QA tester, a Product Owner
 or a project manager asks whether the build matches the specification, use

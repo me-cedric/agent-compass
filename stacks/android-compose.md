@@ -69,3 +69,15 @@ gradle/libs.versions.toml  (single source of dependency versions)
 Widen to `./gradlew lint test` only when the change crosses modules. A screen
 change also owes a screenshot from a booted emulator
 (`adb exec-out screencap -p > screen.png`) — a Compose `@Preview` is not proof.
+
+## Visual check and device automation
+
+A screen change is looked at by the one who made it: snapshot tests first, the
+running app where a snapshot cannot draw the screen, and machine accessibility
+checks over a screen catalogue. See
+[mobile-visual-check](../docs/workflows/mobile-visual-check.md). Drive the
+running app with [agent-device](https://github.com/callstack/agent-device)
+(Callstack, MIT; [setup](../docs/tooling/device-automation.md)), pinned to one
+version, for example `npx -y agent-device@0.21.22`.
+
+Snapshots: Roborazzi on Robolectric (`@GraphicsMode(NATIVE)`); the Accessibility Test Framework checks nothing there, so read the Compose semantics tree.

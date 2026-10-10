@@ -19,6 +19,7 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [pull-requests.md](pull-requests.md)           | Creating PRs and MRs: the body contract, base, labels, assignee, reviewers. |
 | [open-questions.md](open-questions.md)         | Holding every open decision in one register, and retiring a spent one. |
 | [wave-workflow.md](wave-workflow.md)           | Working a backlog of arbitrations or audit findings, one reviewed wave at a time. |
+| [mobile-visual-check.md](mobile-visual-check.md) | iOS, Android and React Native: the builder looks at its own screens (snapshots, agent-device), machine accessibility checks, a fault list. |
 | [pr-review.md](pr-review.md)                   | Local/GitHub PR reviews and implementing review fixes. |
 | [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
 | [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |
