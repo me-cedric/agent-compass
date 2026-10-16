@@ -2,12 +2,15 @@
 // ac — the agent-compass engine CLI. No prompts. Exit 0: success. Exit 1: errors or drift. Exit 2: usage error.
 
 import { spawnSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { CONFIG } from '../engine/config.mjs'
 import { checkDocs } from '../engine/docs.mjs'
 import { doctor } from '../engine/doctor.mjs'
 import { pinTag } from '../engine/git.mjs'
+import { migrateLegacy } from '../engine/legacy.mjs'
 import { migrateDocs, stageSpecs } from '../engine/migrate.mjs'
 import { syncHost } from '../engine/sync.mjs'
 import { hostRoot } from '../engine/util.mjs'
@@ -26,7 +29,10 @@ Commands:
            compass files, keys and blocks into the project.
   check    Compare the project with the compass state and check the docs layout. Write nothing.
   doctor   Check the tools, the configuration and the ownership rules.
-  migrate  With --docs: move spec-kit specs, a root specs/ folder and single-file question
+  migrate  Move a compass 0.4–0.9 install to 1.0: delete the 0.x files that have the same
+           bytes, move an edited file that 1.0 writes to migrated/, keep and list the others,
+           convert agent-compass.answers.json, then sync.
+           With --docs: move spec-kit specs, a root specs/ folder and single-file question
            registers to the Konvoy layout. Each source moves under migrated/.
   env      check | export | import | run: check the env catalog, templates, code reads and
            local files; share values encrypted with age; start a command with the values.
@@ -48,7 +54,7 @@ Options:
   --frozen       With check: exit 1 if the project is different from the lock.
   --to <tag>     With sync: check out this compass tag, then sync with it.
   --tokens       With doctor: measure the always-on context and check the budgets.
-  --docs         With check: check only the docs layout. With migrate: necessary.
+  --docs         With check: check only the docs layout. With migrate: migrate the docs layout.
   --from-specs <dir>
                  With init: create the docs layout and copy the documents in <dir> into
                  the OpenSpec inbox. Then run the spec-flow skill.
@@ -83,6 +89,26 @@ const printMigrate = (result, opts, root) => {
   const count = (a) => result.items.filter((i) => i.action === a).length
   console.log(result.items.length ? `${count('migrate')} change(s), ${count('move')} move(s), ${count('manual')} manual item(s).` : 'Nothing to migrate.')
   if (opts.dry && result.items.some((i) => i.action !== 'manual')) console.log('Run without --dry to apply. Sources move under migrated/; nothing is deleted.')
+  if (result.sync) console.log(`Sync: ${result.sync.changes.length} change(s).`)
+}
+
+const printLegacy = (r, opts, root) => {
+  console.log(`ac migrate${opts.dry ? ' (dry)' : ''} → ${root}`)
+  const d = r.detected
+  const found = [d.lock && `0.x lock ${d.lock.version ?? ''}`, d.submodule && `submodule ${d.submodule.path}`,
+    d.vendored && `vendored copy ${d.vendored.path ?? ''}`, d.answers && 'answers file', d.doubleSkills?.length && `${d.doubleSkills.length} double skill copies`,
+    d.gemini?.length && `${d.gemini.length} Gemini file(s)`, d.konvoy && 'Konvoy ledger'].filter(Boolean)
+  if (found.length) console.log(`  found   ${found.join(', ')}`)
+  for (const p of r.deleted) console.log(`  delete  ${p}`)
+  for (const m of r.moved) console.log(`  move    ${m.path} → ${m.to}  (${m.note})`)
+  for (const k of r.kept) console.log(`  keep    ${k.path}  (${k.note})`)
+  for (const x of r.excluded ?? []) console.log(`  exclude ${x.id}  (${x.reason === 'konvoy' ? 'Konvoy owns it' : 'the host value stays'})`)
+  for (const w of r.warnings) console.log(`  warn    ${w}`)
+  for (const e of r.errors) console.error(`error: ${e}`)
+  if (!r.ok) return
+  console.log(`${r.deleted.length} delete(s), ${r.moved.length} move(s), ${r.kept.length} kept.${r.sync ? ` Sync: ${r.sync.changes.length} change(s).` : ''}`)
+  if (opts.dry && (r.deleted.length || r.moved.length)) console.log('Run without --dry to apply. Each deleted file has the bytes of compass 0.x; an edited file is never deleted.')
+  if (r.excluded?.length) console.log('Compass does not manage an excluded item. Remove its entry from "exclude" in .agents/compass.json and run "ac sync" to take the compass value.')
 }
 
 const print = (command, opts, result, failed, root) => {
@@ -90,7 +116,7 @@ const print = (command, opts, result, failed, root) => {
     console.log(JSON.stringify({ command, dry: Boolean(opts.dry) || command === 'check', ...result, ok: !failed }, null, 2))
     return
   }
-  if (command === 'migrate') return printMigrate(result, opts, root)
+  if (command === 'migrate') return result.legacy ? printLegacy(result, opts, root) : printMigrate(result, opts, root)
   if (result.docsOnly) {
     console.log(`ac check --docs → ${root}`)
     return printDocs(result.docs)
@@ -156,7 +182,6 @@ const main = async () => {
   if (opts.to !== undefined && command !== 'sync') return usage('--to applies to sync only.')
   if (opts.tokens && command !== 'doctor') return usage('--tokens applies to doctor only.')
   if (opts.docs && !['check', 'migrate'].includes(command)) return usage('--docs applies to check and migrate only.')
-  if (command === 'migrate' && !opts.docs) return usage('migrate needs --docs.')
   if (opts.docs && opts.frozen) return usage('--frozen does not apply with --docs.')
   if (opts['from-specs'] !== undefined && command !== 'init') return usage('--from-specs applies to init only.')
   if (opts['from-specs'] === '') return usage('--from-specs needs a folder.')
@@ -187,7 +212,12 @@ const main = async () => {
   const apply = command !== 'check' && !opts.dry
   let result
   if (command === 'doctor') result = doctor({ AC, root, tokens: Boolean(opts.tokens) })
-  else if (command === 'migrate') result = migrateDocs({ AC, root, apply })
+  else if (command === 'migrate' && opts.docs) {
+    result = migrateDocs({ AC, root, apply })
+    // A new OpenSpec dir changes the plan (the schema goes there), so a configured project syncs after the moves.
+    if (apply && result.ok && existsSync(join(root, CONFIG))) result = { ...result, sync: syncHost({ AC, root, apply: true }) }
+    if (result.sync && !result.sync.ok) result = { ...result, ok: false, errors: [...result.errors, ...result.sync.errors] }
+  } else if (command === 'migrate') result = { ...migrateLegacy({ AC, root, apply }), legacy: true }
   else if (command === 'check' && opts.docs) {
     const docs = checkDocs({ AC, root })
     result = { ok: docs.ok, docsOnly: true, docs }

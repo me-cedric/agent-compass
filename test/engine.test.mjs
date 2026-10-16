@@ -251,6 +251,16 @@ test('a compass file in a Konvoy path or on a Konvoy key is an error', async () 
   assert.match(r.json.errors.join('\n'), /mcpServers\.konvoy overlaps/)
 })
 
+test('a Konvoy whole file is fine when compass.json excludes each of its keys', async () => {
+  const compass = makeCompass()
+  const konvoy = JSON.stringify({ host_files: ['.codex/config.toml'] })
+  const exclude = ['.codex/config.toml#model_verbosity', '.codex/config.toml#mcp_servers.docs']
+  const host = makeHost({ '.agents/konvoy.json': konvoy, '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude }), '.codex/config.toml': 'model = "x"\n' })
+  const r = await ac(compass, host, 'sync')
+  assert.equal(r.code, 0, JSON.stringify(r.json?.errors))
+  assert.equal(read(host, '.codex/config.toml'), 'model = "x"\n')
+})
+
 test('stale items: unedited ones go, edited ones are released and kept', async () => {
   const compass = makeCompass()
   const host = makeHost()

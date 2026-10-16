@@ -1,13 +1,14 @@
 // migrate.mjs — the docs layout for Konvoy (docs/contract/ownership.md).
 //   stageSpecs   `ac init --from-specs <dir>`: create the layout and copy the input documents into the inbox.
 //   migrateDocs  `ac migrate --docs`: plan, then move spec-kit specs, a root specs/ folder and single-file
-//                question registers to OpenSpec changes and Q-NNN files.
+//                question registers to OpenSpec changes and Q-NNN files. It renames an ADR NNN-slug.md to
+//                NNNN-slug.md with MADR frontmatter and edits the Markdown links to the old name.
 // Neither one deletes or overwrites a file. A migrated source moves under migrated/<its path>.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, posix, resolve } from 'node:path'
 import { projectPaths, SCHEMA } from './config.mjs'
-import { isFence, questionsDir, SCREENS_SEED, screensFile } from './docs.mjs'
+import { isFence, isTemplate, questionsDir, SCREENS_SEED, screensFile } from './docs.mjs'
 import { outside, prune } from './sync.mjs'
 import { dirs, frontmatter, isDir, walk } from './util.mjs'
 
@@ -160,6 +161,61 @@ const speckitAgentFiles = (root) => {
   return { found: found.sort(), manual: manual.sort() }
 }
 
+const MADR = ['proposed', 'accepted', 'rejected', 'deprecated', 'superseded']
+const ADR_HEAD = 30
+
+// A compass 0.9 ADR keeps its status and date in the body: `- Status: accepted`, `**Date:** 2026-01-02`.
+const adrFacts = (text) => {
+  const { data, body } = frontmatter(text)
+  if (body !== text) return { front: true, status: /^[a-z]+/i.exec(data.status || '')?.[0].toLowerCase(), date: /^\d{4}-\d{2}-\d{2}$/.test(data.date || '') ? data.date : undefined }
+  const head = text.split(/\r?\n/).slice(0, ADR_HEAD).map((l) => l.replace(/[*_]/g, ''))
+  const pick = (re) => head.map((l) => re.exec(l)?.[1]).find(Boolean)
+  return { status: pick(/^\s*(?:[-+]\s+)?status\s*:\s*([a-z]+)/i)?.toLowerCase(), date: pick(/^\s*(?:[-+]\s+)?date\s*:\s*(\d{4}-\d{2}-\d{2})\b/i) }
+}
+
+// One descriptor per ADR with a 1–3 digit number: a rename to NNNN-slug.md with MADR frontmatter, or a manual item.
+// The number counts over every ADR, so a 0005-x.md and a 005-y.md clash.
+const adrItems = (root, paths) => {
+  const files = walk(join(root, paths.adr)).filter((f) => /\.md$/.test(f) && !/^(readme|index)\.md$/i.test(basename(f)) && !isTemplate(basename(f)))
+  const owners = new Map()
+  for (const f of files) {
+    const n = /^(\d{1,4})-/.exec(basename(f))?.[1]
+    if (n) owners.set(+n, [...(owners.get(+n) || []), `${paths.adr}/${f}`])
+  }
+  return files.flatMap((rel) => {
+    const m = /^(\d{1,3})-(.+)\.md$/.exec(basename(rel))
+    if (!m) return []
+    const source = `${paths.adr}/${rel}`
+    const manual = (note) => [{ type: 'adr', source, action: 'manual', note, copies: [], writes: [] }]
+    const same = owners.get(+m[1])
+    if (same.length > 1) return manual(`ADR number ${+m[1]} is in ${same.length} files (${same.join(', ')}); decide which file keeps it, renumber the others by hand, then run this command again`)
+    const text = readFileSync(join(root, source), 'utf8').replace(/^﻿/, '')
+    const { front, status, date } = adrFacts(text)
+    const name = slug(m[2])
+    if (!status) return manual('no "Status:" line or "status" key; write the MADR status by hand')
+    if (!MADR.includes(status)) return manual(`the status "${status}" is not a MADR status (${MADR.join(', ')}); decide the MADR status by hand`)
+    if (!date) return manual('no "Date: YYYY-MM-DD" line or "date" key; write the date by hand')
+    if (!name) return manual('the file name has no slug; name the file by hand')
+    const to = `${posix.dirname(source)}/${m[1].padStart(4, '0')}-${name}.md`
+    const eol = text.includes('\r\n') ? '\r\n' : '\n'
+    const out = front ? text : `---${eol}status: ${status}${eol}date: ${date}${eol}---${eol}${text}`
+    return [{ type: 'adr', source, action: 'move', note: `renamed to ${basename(to)}; status ${status}, date ${date}`, copies: [], writes: [[to, out]] }]
+  })
+}
+
+// Rewrite the Markdown link targets `](path)` that name a renamed ADR. `from` is the repo path of the file with the links.
+const relink = (text, from, renames) => text.replace(/(\]\(\s*<?)([^)\s<>#?]+)/g, (whole, open, target) => {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return whole
+  const to = renames.get(posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join(posix.dirname(from), target)))
+  return to ? `${open}${target.slice(0, target.length - posix.basename(target).length)}${posix.basename(to)}` : whole
+})
+
+const mdFiles = (root, dir = '') => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => {
+  const rel = dir ? `${dir}/${e.name}` : e.name
+  if (e.isDirectory()) return ['node_modules', '.git', MIGRATED].includes(e.name) ? [] : mdFiles(root, rel)
+  return e.isFile() && /\.md$/i.test(e.name) ? [rel] : []
+})
+
 const nextQ = (root, dir) => {
   const nums = (isDir(join(root, dir)) ? readdirSync(join(root, dir)) : []).filter((n) => /\.(md|markdown)$/i.test(n)).flatMap((n) => {
     const fm = frontmatter(readFileSync(join(root, dir, n), 'utf8')).data.id
@@ -168,8 +224,9 @@ const nextQ = (root, dir) => {
   return Math.max(0, ...nums) + 1
 }
 
-// Each item: { type, source, action: migrate | move | manual, note, copies: [[from, to]], writes: [[to, text]] }.
-// A migrate or move item moves its source to migrated/<source> after its copies and writes.
+// Each item: { type, source, action: migrate | move | manual, note, copies: [[from, to]], writes: [[to, text]], edit? }.
+// A migrate or move item moves its source to migrated/<source> after its copies and writes. With `edit`, the new text of
+// the source is written at the source path after the move (a link edit keeps the original under migrated/).
 const planDocs = (root, paths, today) => {
   const items = []
   const claimed = new Set()
@@ -241,6 +298,19 @@ const planDocs = (root, paths, today) => {
     add(item('register', rel, 'move', `${writes.length} RAID file(s) ${basename(writes[0][0], '.md')}…${basename(writes.at(-1)[0], '.md')}; check the prose that is not in a numbered heading or a question table`, [], writes))
     if (items.at(-1).action === 'manual') n -= writes.length
   }
+
+  for (const it of adrItems(root, paths)) add(it)
+  const renames = new Map(items.filter((i) => i.type === 'adr' && i.action === 'move').map((i) => [i.source, i.writes[0][0]]))
+  if (renames.size) {
+    for (const [i, it] of items.entries()) if (renames.has(it.source)) items[i] = { ...it, writes: [[it.writes[0][0], relink(it.writes[0][1], it.source, renames)]] }
+    const away = items.filter((i) => i.action !== 'manual').map((i) => i.source)
+    for (const rel of mdFiles(root).sort()) {
+      if (away.some((s) => rel === s || rel.startsWith(`${s}/`))) continue
+      const text = readFileSync(join(root, rel), 'utf8')
+      const edit = relink(text, rel, renames)
+      if (edit !== text) add({ ...item('adr-links', rel, 'migrate', 'the links to the renamed ADRs change'), edit })
+    }
+  }
   return items
 }
 
@@ -250,7 +320,8 @@ const applyDocs = (root, items) => {
     for (const [from, to] of it.copies) write(root, to, readFileSync(join(root, from)))
     for (const [to, text] of it.writes) write(root, to, text)
     renameSync(join(root, it.source), join(root, MIGRATED, it.source))
-    prune(root, dirname(join(root, it.source)))
+    if (it.edit === undefined) prune(root, dirname(join(root, it.source)))
+    else write(root, it.source, it.edit)
   }
 }
 

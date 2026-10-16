@@ -69,9 +69,12 @@ test('init --from-specs creates the layout, stages the documents and prints the 
   }
 })
 
-test('the CLI refuses --docs and --from-specs on the wrong command, and migrate without --docs', async () => {
+test('the CLI refuses --docs and --from-specs on the wrong command; migrate without --docs is the 0.x migration', async () => {
   const root = temp('ac-host-')
-  for (const args of [['migrate'], ['sync', '--docs'], ['sync', '--from-specs', 'x'], ['check', '--docs', '--frozen'], ['init', '--from-specs', '']]) {
+  const legacy = await ac('migrate', '--dry', '--json', '--root', root)
+  assert.equal(legacy.code, 0, legacy.stderr)
+  assert.equal(JSON.parse(legacy.stdout).detected.found, false)
+  for (const args of [['sync', '--docs'], ['sync', '--from-specs', 'x'], ['check', '--docs', '--frozen'], ['init', '--from-specs', '']]) {
     const r = await ac(...args, '--root', root)
     assert.equal(r.code, 2, `${args.join(' ')}: ${r.stderr}`)
   }
@@ -217,4 +220,92 @@ test('migrate --docs does not copy a file through a symlink', { skip: process.pl
   const r = migrateDocs({ AC: REPO, root, apply: true })
   assert.deepEqual(r.items.map((i) => [i.source, i.action, i.note]), [['.specify', 'manual', 'a symlink or a path outside the project']])
   assert.ok(!existsSync(join(root, 'docs/openspec/constitution.md')))
+})
+
+const adr = (n, title, status, date, extra = '') => `# ${n}. ${title}\n\n- Status: ${status}\n- Date: ${date}\n- Deciders: team\n${extra}\n## Context\n\nText.\n`
+const adrHost = () => put(temp('ac-host-'), {
+  'docs/decisions/000-template.md': adr('NNN', 'Decision Title', 'proposed', 'YYYY-MM-DD'),
+  'docs/decisions/adr-template.md': '# Template\n',
+  'docs/decisions/README.md': '# ADRs\n\n- [one](001-use-postgres.md)\n- [two](./002-queue.md#why) and [web](https://example.com/001-use-postgres.md)\n- plain text 001-use-postgres.md stays\n',
+  'docs/decisions/001-use-postgres.md': adr('001', 'Use Postgres', 'Accepted <!-- proposed | accepted -->', '2026-01-02', '\nSee [the queue](002-queue.md).\n'),
+  'docs/decisions/002-queue.md': '# 002. Queue\n\n**Status:** Superseded by 004\n**Date:** 2026-02-03\n\n## Context\n',
+  'docs/decisions/003-cache.md': '# 003. Cache\n\nStatus: **Rejected**\nDate: 2026-03-04\n',
+  'docs/decisions/006-idea.md': adr('006', 'Idea', 'strawman', '2026-04-05'),
+  'docs/decisions/007-undated.md': '# 007. Undated\n\n- Status: accepted\n\nText.\n',
+  'docs/decisions/008-taken.md': adr('008', 'Taken', 'accepted', '2026-05-06'),
+  'docs/decisions/0008-taken.md': adr('008', 'Taken', 'accepted', '2026-05-06'),
+  'docs/decisions/009-dup-a.md': adr('009', 'A', 'accepted', '2026-06-07'),
+  'docs/decisions/009-dup-b.md': adr('009', 'B', 'accepted', '2026-06-07'),
+  'docs/decisions/0010-ok.md': '---\nstatus: accepted\ndate: 2026-07-08\n---\n# 0010\n',
+  'docs/guide/index.md': 'Read [ADR 1](../decisions/001-use-postgres.md#top) and [ADR 6](../decisions/006-idea.md).\n',
+  'README.md': 'See [the decision](docs/decisions/003-cache.md) and [the root form](</docs/decisions/003-cache.md>).\n',
+  'node_modules/pkg/README.md': '[x](docs/decisions/001-use-postgres.md)\n',
+  'migrated/old.md': '[x](docs/decisions/001-use-postgres.md)\n',
+})
+
+test('migrate --docs renames an ADR to NNNN-slug.md with MADR frontmatter and lists the manual cases', () => {
+  const root = adrHost()
+  const before = files(root).map((rel) => [rel, readFileSync(join(root, rel), 'utf8')])
+  const r = migrateDocs({ AC: REPO, root, apply: false })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  assert.deepEqual(files(root).map((rel) => [rel, readFileSync(join(root, rel), 'utf8')]), before, 'a dry run writes nothing')
+  const adrs = Object.fromEntries(r.items.filter((i) => i.type === 'adr').map((i) => [i.source.replace('docs/decisions/', ''), i]))
+  assert.deepEqual(Object.keys(adrs), ['001-use-postgres.md', '002-queue.md', '003-cache.md', '006-idea.md', '007-undated.md', '008-taken.md', '009-dup-a.md', '009-dup-b.md'])
+
+  const one = adrs['001-use-postgres.md']
+  assert.equal(one.action, 'move')
+  assert.deepEqual(one.writes.map(([to]) => to), ['docs/decisions/0001-use-postgres.md'])
+  assert.match(one.writes[0][1], /^---\nstatus: accepted\ndate: 2026-01-02\n---\n# 001\. Use Postgres\n\n- Status: Accepted <!-- proposed \| accepted -->\n/)
+  assert.ok(one.writes[0][1].includes('[the queue](0002-queue.md)'), 'a link in a moved ADR changes too')
+  assert.equal(adrs['002-queue.md'].writes[0][1].split('\n')[1], 'status: superseded')
+  assert.equal(adrs['003-cache.md'].writes[0][1].split('\n')[1], 'status: rejected')
+  assert.match(adrs['006-idea.md'].note, /"strawman" is not a MADR status.*decide/)
+  assert.match(adrs['007-undated.md'].note, /no "Date: YYYY-MM-DD" line/)
+  assert.match(adrs['008-taken.md'].note, /ADR number 8 is in 2 files/)
+  assert.match(adrs['009-dup-a.md'].note, /ADR number 9 is in 2 files \(docs\/decisions\/009-dup-a\.md, docs\/decisions\/009-dup-b\.md\)/)
+  for (const name of ['006-idea.md', '007-undated.md', '008-taken.md', '009-dup-a.md', '009-dup-b.md']) assert.equal(adrs[name].action, 'manual', name)
+})
+
+test('migrate --docs edits the links to a renamed ADR and keeps each original under migrated/', () => {
+  const root = adrHost()
+  const r = migrateDocs({ AC: REPO, root, apply: true })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  const read = (rel) => readFileSync(join(root, rel), 'utf8')
+  assert.deepEqual(r.items.filter((i) => i.type === 'adr-links').map((i) => i.source), ['README.md', 'docs/decisions/README.md', 'docs/guide/index.md'])
+  assert.equal(read('docs/decisions/README.md'), '# ADRs\n\n- [one](0001-use-postgres.md)\n- [two](./0002-queue.md#why) and [web](https://example.com/001-use-postgres.md)\n- plain text 001-use-postgres.md stays\n')
+  assert.equal(read('docs/guide/index.md'), 'Read [ADR 1](../decisions/0001-use-postgres.md#top) and [ADR 6](../decisions/006-idea.md).\n')
+  assert.equal(read('README.md'), 'See [the decision](docs/decisions/0003-cache.md) and [the root form](</docs/decisions/0003-cache.md>).\n')
+  assert.equal(read('node_modules/pkg/README.md'), '[x](docs/decisions/001-use-postgres.md)\n')
+  assert.equal(read('migrated/old.md'), '[x](docs/decisions/001-use-postgres.md)\n')
+  assert.match(read('migrated/docs/decisions/README.md'), /\(001-use-postgres\.md\)/, 'the original of an edited file is under migrated/')
+
+  assert.ok(!existsSync(join(root, 'docs/decisions/001-use-postgres.md')))
+  assert.match(read('migrated/docs/decisions/001-use-postgres.md'), /^# 001\. Use Postgres/)
+  assert.match(read('docs/decisions/0001-use-postgres.md'), /^---\nstatus: accepted\ndate: 2026-01-02\n---\n# 001\. Use Postgres/)
+  for (const kept of ['006-idea', '007-undated', '008-taken', '009-dup-a', '009-dup-b', 'adr-template', '000-template']) assert.ok(existsSync(join(root, `docs/decisions/${kept}.md`)), kept)
+  assert.equal(read('docs/decisions/0010-ok.md'), '---\nstatus: accepted\ndate: 2026-07-08\n---\n# 0010\n')
+
+  const errors = checkDocs({ AC: REPO, root }).errors.filter((e) => /ADR|decisions/.test(e))
+  assert.ok(errors.some((e) => e.includes('006-idea.md')), 'a manual item stays an error for the user')
+  assert.ok(!errors.some((e) => /000[123]-/.test(e)), 'the migrated ADRs pass the check')
+
+  const again = migrateDocs({ AC: REPO, root, apply: false })
+  assert.deepEqual(again.items.filter((i) => i.action !== 'manual'), [], 'a second run has nothing left')
+})
+
+test('migrate --docs counts a 4-digit ADR for the number, keeps an ADR when the new name is taken, and keeps CRLF', () => {
+  const root = put(temp('ac-host-'), {
+    'docs/decisions/001-a.md': adr('001', 'A', 'accepted', '2026-01-02'),
+    'docs/decisions/0001-b.md': adr('001', 'B', 'accepted', '2026-01-02'),
+    'docs/decisions/002-c.md': adr('002', 'C', 'proposed', '2026-01-03').replace(/\n/g, '\r\n'),
+    'docs/decisions/0002-c.md': 'taken\n',
+    'docs/decisions/003-d.md': adr('003', 'D', 'proposed', '2026-01-04').replace(/\n/g, '\r\n'),
+  })
+  const r = migrateDocs({ AC: REPO, root, apply: true })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  const by = Object.fromEntries(r.items.map((i) => [i.source, i]))
+  assert.match(by['docs/decisions/001-a.md'].note, /ADR number 1 is in 2 files/)
+  assert.match(by['docs/decisions/002-c.md'].note, /ADR number 2 is in 2 files/)
+  assert.equal(readFileSync(join(root, 'docs/decisions/0002-c.md'), 'utf8'), 'taken\n')
+  assert.match(readFileSync(join(root, 'docs/decisions/0003-d.md'), 'utf8'), /^---\r\nstatus: proposed\r\ndate: 2026-01-04\r\n---\r\n# 003\. D\r\n/)
 })

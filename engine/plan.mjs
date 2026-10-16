@@ -115,7 +115,8 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
       if (target.has(key)) errors.push(`two sources set ${file}#${key}`)
       target.set(key, value)
     }
-    keys.set(file, target)
+    // A file whose keys are all excluded stays out of the plan: compass does not own any part of it.
+    if (target.size) keys.set(file, target)
   }
   const addKeys = (source) => {
     let data

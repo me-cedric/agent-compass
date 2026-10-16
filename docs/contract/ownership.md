@@ -97,7 +97,9 @@ Only `id` is necessary. Each other field has the type above when it is present.
 ## Commands that write the docs layout
 
 - `ac init --from-specs <dir>` creates `{{OPENSPEC_DIR}}/changes/`, `{{OPENSPEC_DIR}}/specs/`, `{{DELIVERY_DIR}}/questions/`, `{{ADR_DIR}}/` and `{{DESIGNS_DIR}}/` with `screens.json`. It copies the documents into `{{OPENSPEC_DIR}}/inbox/<dir name>/`. It does not copy hidden entries. A staged file with other content is an error. Then it runs `ac init`.
-- `ac migrate --docs` moves spec-kit features, `.specify/`, spec-kit agent files, `specs/constitution.md` and single-file question registers. It copies the content to the new paths, then moves each source to `migrated/<source path>`. An item that has a conflict becomes `manual`, and the command does not change it. `--dry` prints the plan.
+- `ac migrate --docs` moves spec-kit features, `.specify/`, spec-kit agent files, `specs/constitution.md`, single-file question registers and ADRs. It copies the content to the new paths, then moves each source to `migrated/<source path>`. An item that has a conflict becomes `manual`, and the command does not change it. `--dry` prints the plan.
+  - An ADR named `NNN-slug.md` becomes `NNNN-slug.md` with the MADR frontmatter `status` and `date`. The command reads the first word of the `Status:` line and the `Date:` line from the first 30 lines of the file, and it keeps the body as it is. It also changes the Markdown link targets `](path)` that name the old file, in every `*.md` file except those in `node_modules/`, `.git/` and `migrated/`. The old file and each edited file move to `migrated/`.
+  - An ADR stays `manual` when its number is in more than one file (a 4-digit file counts), when its status is not a MADR status, when it has no `Date:` line, or when the new name exists. `000-template.md`, `adr-template.md`, `README.md` and `index.md` are not ADRs; the command does not change them.
 
 ## Konvoy follow-ups
 
