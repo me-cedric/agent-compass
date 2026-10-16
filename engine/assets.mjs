@@ -119,11 +119,14 @@ const pluginAssets = (ctx) => catalogAssets('plugin', readJson(join(ctx.AC, CATA
 const upstreamAssets = ({ AC, config, stacks }) => Object.entries(loadUpstream(AC).sources).map(([id, src]) => {
   const want = src.stacks ?? []
   const hit = want.filter((s) => stacks.includes(s))
+  const fit = !want.length || hit.length > 0
+  const reason = !want.length ? 'baseline' : hit.length ? `stack ${hit.join(', ')}` : `for stack ${want.join(' or ')}`
   return asset('upstream', id, `upstream:${id}`, {
     description: `${src.skills.length} skills, ${src.licence} licence`,
     on: config.upstream.includes(id),
-    recommended: !want.length || hit.length > 0,
-    reason: !want.length ? 'baseline' : hit.length ? `stack ${hit.join(', ')}` : `for stack ${want.join(' or ')}`,
+    recommended: fit && !src.recommend,
+    reason: src.recommend === 'user' ? 'user level: the compass-user plugin and ac doctor --global'
+      : src.recommend === 'manual' && fit ? `${src.skills.length} skills: switch it on by hand` : reason,
   })
 })
 

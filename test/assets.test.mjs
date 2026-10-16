@@ -117,8 +117,13 @@ test('listAssets lists every kind with the plan state, the stack fit and the rec
   assert.match(lsp.description, /TypeScript/)
   const swift = find(list, 'plugin', SWIFT)
   assert.deepEqual([swift.on, swift.auto, swift.available, swift.recommended, swift.reason], [false, false, true, false, 'opt-in'])
-  assert.equal(find(list, 'upstream', 'ponytail').recommended, true)
-  assert.equal(find(list, 'upstream', 'taste').recommended, true)
+  const ponytail = find(list, 'upstream', 'ponytail')
+  assert.deepEqual([ponytail.recommended, ponytail.available], [false, true])
+  assert.match(ponytail.reason, /user level/)
+  const taste = find(list, 'upstream', 'taste')
+  assert.equal(taste.recommended, false)
+  assert.match(taste.reason, /by hand/)
+  assert.equal(find(list, 'upstream', 'mattpocock').recommended, true)
   assert.equal(find(list, 'upstream', 'android').recommended, false)
   assert.equal(find(list, 'upstream', 'taste').source, 'upstream:taste')
 })
@@ -253,6 +258,17 @@ test('listAssets follows setAsset for every kind', () => {
   assert.deepEqual(cfgOf(root).exclude, [])
 })
 
+test('the recommended set per stack: no user-level or large upstream sources; api-contract-sync for API and web stacks only', () => {
+  const lib = listAssets({ AC: REPO, root: makeHost({ 'package.json': JSON.stringify({ name: 'lib', dependencies: { zod: '4' } }) }) })
+  assert.deepEqual(lib.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id), ['mattpocock'])
+  assert.equal(find(lib, 'skill', 'api-contract-sync').available, false)
+  const ios = listAssets({ AC: REPO, root: makeHost({ 'Package.swift': '// swift-tools-version:6.0\n', 'App.xcodeproj/project.pbxproj': 'SDKROOT = iphoneos;\n' }) })
+  assert.deepEqual(ios.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id).sort(), ['agent-device', 'dimillian', 'mattpocock'])
+  assert.equal(find(ios, 'upstream', 'swift-ios').recommended, false)
+  const web = listAssets({ AC: REPO, root: makeHost(WEB_HOST) })
+  assert.equal(find(web, 'skill', 'api-contract-sync').recommended, true)
+})
+
 test('recommendedConfig applies the recommended set and keeps the other excludes', () => {
   const root = makeHost(WEB_HOST)
   const config = freeze({
@@ -270,7 +286,7 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   assert.ok(next.mcp.includes('grafana') && next.mcp.includes('github') && next.mcp.includes('sonarqube') && next.mcp.includes('context7'))
   assert.ok(!next.mcp.includes('playwright') && !next.mcp.includes('codebase-memory'), 'a stack server stays automatic')
   assert.equal(next.plugins, undefined, 'a stack plugin stays automatic')
-  assert.ok(['ponytail', 'taste', 'mattpocock'].every((id) => next.upstream.includes(id)) && !next.upstream.includes('android'))
+  assert.deepEqual(next.upstream, ['mattpocock'], 'style sources are user level; taste is switched on by hand')
   assert.deepEqual(next.paths, {})
 
   writeConfig(root, next)

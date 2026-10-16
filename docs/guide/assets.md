@@ -115,7 +115,8 @@ Only Claude Code reads the `enabledPlugins` setting.
 
 ## Upstream sources
 
-`upstream.json` pins third-party skill sources. Each source has a repository, a 40-character `sha`, a licence, a list of skills and optional `stacks`.
+`upstream.json` pins third-party skill sources. Each source has a repository, a 40-character `sha`, a licence, a list of skills, optional `stacks` and an optional `recommend`.
+`recommend: "user"` marks a style source that the `compass-user` plugin covers (ponytail, caveman, i-have-adhd, asd-ste100). `recommend: "manual"` marks a large set (taste, swift-ios). Neither one is in the recommended set; you can still switch it on.
 Compass keeps no copy. `ac sync` fetches the commit of each source in `upstream` into `~/.cache/agent-compass/upstream/` (`AC_CACHE` changes it).
 It copies the skills as they are, with the licence file beside each one. A failed fetch is a warning, and the installed copy stays.
 
@@ -153,7 +154,7 @@ An asset is recommended when it fits the project:
 
 - A pack that detection finds, or a CI pack whose signal exists, or `renovate` with the submodule and no Renovate config.
 - An MCP server or a Claude plugin that a detected stack lists. An MCP server that a signal lists, or that is a baseline server.
-- An upstream source with no `stacks`, or with a detected stack.
+- An upstream source with no `stacks`, or with a detected stack, and without `recommend`.
 - A skill, rule or agent with no `stacks`, or with a detected stack. An asset that does not fit shows as "not available". You cannot switch it on.
 
 ## Assets tab

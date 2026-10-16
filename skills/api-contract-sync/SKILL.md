@@ -4,6 +4,8 @@ description: Keep API code, OpenAPI, Bruno, Gherkin, mocks and client types in s
 risk_level: medium
 writes_files: true
 requires_tools: [bru]
+metadata:
+  stacks: [nestjs-api, react-web, next-web, angular-web, expo-mobile]
 ---
 
 # api-contract-sync

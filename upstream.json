@@ -5,6 +5,7 @@
       "sha": "2ed6c52c9d7e5e56942508591085fd45dea277d3",
       "licence": "MIT",
       "holder": "DietrichGebert",
+      "recommend": "user",
       "skills": [
         "skills/ponytail", "skills/ponytail-audit", "skills/ponytail-debt", "skills/ponytail-help",
         "skills/ponytail-review"
@@ -15,6 +16,7 @@
       "sha": "7bb71309e8749a4f112aacd3a54b3941d8689905",
       "licence": "MIT",
       "holder": "Julius Brussee",
+      "recommend": "user",
       "skills": [
         "skills/caveman", "caveman-commit", "caveman-review"
       ]
@@ -24,6 +26,7 @@
       "sha": "b42a45a068e080294924bfba19a7a2e8944c48ff",
       "licence": "MIT",
       "holder": "Ayoub Ghriss",
+      "recommend": "user",
       "skills": [
         "skills/i-have-adhd"
       ]
@@ -33,6 +36,7 @@
       "sha": "d5ce157870cf9c41efd1d6e836706a2be3c7b9da",
       "licence": "MIT",
       "holder": "Dustin Yuchen Teng",
+      "recommend": "user",
       "skills": [
         "."
       ]
@@ -42,6 +46,7 @@
       "sha": "72e299530e2eb31ed8da06181bc19f6c18a00821",
       "licence": "MIT",
       "holder": "Leonxlnx",
+      "recommend": "manual",
       "stacks": ["react-web", "next-web", "angular-web"],
       "skills": [
         "brandkit", "taste-skill", "soft-skill", "image-to-code-skill", "imagegen-frontend-mobile",
@@ -69,6 +74,7 @@
       "sha": "8d90fd121a263355a4fb44fd082af1416a5c1c2a",
       "licence": "PolyForm-Perimeter-1.0.0",
       "holder": "dpearson2699",
+      "recommend": "manual",
       "stacks": ["swift-ios", "macos-desktop"],
       "skills": [
         "accessorysetupkit", "activitykit", "adattributionkit", "alarmkit", "app-clips",
