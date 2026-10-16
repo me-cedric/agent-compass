@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Shared operating kit for AI coding agents (Claude Code, Codex, GitHub Copilot) in team repositories.",
+  "bin": {
+    "ac": "bin/ac.mjs"
+  },
   "engines": {
     "node": ">=20"
   },

@@ -1,5 +1,5 @@
 // detect.mjs — map a host repo to stack ids from dependencies and marker files.
-// Packs (engine/packs.mjs) map stack ids to the assets worth installing.
+// plan.mjs installs an asset only when its frontmatter `stacks` list names a detected stack.
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'

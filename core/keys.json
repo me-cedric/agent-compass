@@ -1,0 +1,8 @@
+{
+  ".claude/settings.json": {
+    "outputStyle": "compass"
+  },
+  ".codex/config.toml": {
+    "model_verbosity": "low"
+  }
+}
