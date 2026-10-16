@@ -14,8 +14,9 @@ import { isDir, isObj, readJson, run, safeRel, walk } from './util.mjs'
 export const UPSTREAM = 'upstream.json'
 const SHA = /^[0-9a-f]{40}$/
 const REPO = /^(https:\/\/|file:\/\/|\/)/
-// U+200C and U+200D (the zero-width non-joiner and joiner) stay allowed: Arabic, Indic scripts and emoji sequences use them.
-const HIDDEN = /[\u202A-\u202E\u2066-\u2069\u200B\u200E\u200F\u2060\u{E0000}-\u{E007F}]|(?<!^)\uFEFF/u
+// Bidi controls can reverse what the model reads; tag characters can hide an instruction. The zero-width characters
+// (U+200B to U+200D, U+2060) stay allowed: they come from copied web text, scripts and emoji sequences, and they hide nothing.
+const HIDDEN = /[\u202A-\u202E\u2066-\u2069\u200E\u200F\u{E0000}-\u{E007F}]|(?<!^)\uFEFF/u
 
 // The files of the listed skill dirs of a fetched tree that hold hidden Unicode. A file with a NUL byte is binary and is not checked.
 // Other files of the repository are not installed, so they are not checked.
@@ -66,7 +67,8 @@ const fetchOne = (id, src) => {
   const hidden = hiddenText(tmp, src.skills)
   if (hidden.length) {
     rmSync(tmp, { recursive: true, force: true })
-    return { error: `upstream ${id}: ${hidden.join(', ')} ${hidden.length > 1 ? 'hold' : 'holds'} hidden Unicode characters (bidi, zero-width or tag); compass does not install the source` }
+    // A warning for this source only: the other sources install, and this one stays out of the cache.
+    return `upstream ${id}: ${hidden.join(', ')} ${hidden.length > 1 ? 'hold' : 'holds'} hidden Unicode characters (bidi or tag); compass does not install the source`
   }
   try { renameSync(tmp, dir) } catch (err) {
     rmSync(tmp, { recursive: true, force: true })

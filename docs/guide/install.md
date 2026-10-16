@@ -44,7 +44,7 @@ Sync stops with an error in these cases. It writes nothing.
 
 - The lock is from a newer compass than the checkout, for example after a pull with a stale submodule. Run `git submodule update --init`. To go back to an older compass on purpose, run `ac sync --to <tag>`.
 - The lock or a managed file has git conflict markers (`<<<<<<<`). Take one side, or delete the lock. Then run `ac sync`.
-- A fetched upstream source has hidden Unicode: bidi controls, zero-width or tag characters. The error names each file. A byte order mark at the start of a file is allowed.
+- A fetched upstream source has bidi controls or tag characters in a skill file: a warning names each file, that source stays out of the cache, and the other sources install. Zero-width characters and a byte order mark at the start of a file are allowed.
 
 ### Your own hooks and permissions
 

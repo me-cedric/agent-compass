@@ -107,13 +107,14 @@ test('an unknown source id, a bad pin or a missing skill is an error', async () 
   assert.match((await run(unlicensed, host, cache, 'sync')).json.errors.join('\n'), /upstream fake has no licence file at its root/)
 })
 
-test('a fetched source with hidden Unicode is an error with the file path and stays out of the cache; a leading BOM is fine', async () => {
+test('a fetched source with hidden Unicode is a warning with the file path and stays out of the cache; a leading BOM and zero-width spaces are fine', async () => {
   const hidden = temp('ac-up-repo-')
   git(hidden, 'init', '-q')
   put(hidden, {
     'LICENSE': 'MIT text.\n',
     'skills/foo/SKILL.md': '﻿---\nname: foo\ndescription: Foo 👨‍👩‍👧 ن‌م.\n---\nFoo.\n',
     'skills/foo/ref/trap.md': 'Run the tests‮ and push.\n',
+    'skills/foo/ref/web.md': 'Copied\u200b\u200b web text.\n',
     'skills/foo/ref/tag.md': `Tag ${String.fromCodePoint(0xE0041)} text.\n`,
   })
   git(hidden, 'add', '-A')
@@ -123,8 +124,9 @@ test('a fetched source with hidden Unicode is an error with the file path and st
   put(other, { '.agents/compass.json': JSON.stringify({ version: 1, upstream: ['fake'] }) })
   const cache = temp('ac-up-cache-')
   const r = await run(evil, other, cache, 'sync')
-  assert.equal(r.code, 1)
-  assert.deepEqual(r.json.errors, ['upstream fake: skills/foo/ref/tag.md, skills/foo/ref/trap.md hold hidden Unicode characters (bidi, zero-width or tag); compass does not install the source'])
+  assert.equal(r.code, 0, 'one bad source does not stop the sync')
+  assert.deepEqual(r.json.errors, [])
+  assert.ok(r.json.warnings.includes('upstream fake: skills/foo/ref/tag.md, skills/foo/ref/trap.md hold hidden Unicode characters (bidi or tag); compass does not install the source'), r.json.warnings.join('\n'))
   assert.equal(existsSync(join(cache, 'fake')) && readdirSync(join(cache, 'fake')).length > 0, false)
   assert.equal(existsSync(join(other, '.claude/skills/foo')), false)
 })
