@@ -427,6 +427,38 @@ test('a key that the Konvoy ledger owns is not available', () => {
   assert.equal(find(list, 'key', '.claude/settings.json#permissions.deny').reason, 'Konvoy owns it (.agents/konvoy.json)')
 })
 
+test('a key that the Konvoy ledger owns as a whole file or as an overlapping key is not available', () => {
+  const owned = makeHost({ ...WEB_HOST, '.agents/konvoy.json': JSON.stringify({ owns: { files: ['.codex/hooks.json'], keys: { '.claude/settings.json': ['permissions'] } } }) })
+  const list = listAssets({ AC: REPO, root: owned })
+  const ids = ['.codex/hooks.json#hooks.PreToolUse', '.codex/hooks.json#hooks.Stop', '.codex/hooks.json#hooks.SessionStart', '.claude/settings.json#permissions.deny', '.claude/settings.json#permissions.ask']
+  for (const id of ids) assert.deepEqual([find(list, 'key', id).available, find(list, 'key', id).reason], [false, 'Konvoy owns it (.agents/konvoy.json)'], id)
+  assert.equal(find(list, 'key', '.codex/config.toml#model_verbosity').available, true)
+  const exclude = ids.slice(0, 3)
+  assert.deepEqual(recommendedConfig({ AC: REPO, root: owned, config: { version: 1, packs: [], exclude } }).exclude, exclude)
+})
+
+test('recommendedConfig keeps the excludes of keys, seeds and the schema: they are the project choices', () => {
+  const root = makeHost({ ...WEB_HOST, 'docs/openspec/.keep': '' })
+  const own = ['.claude/settings.json#permissions.ask', '.claude/settings.json#outputStyle', '.osv-scanner.toml', 'docs/openspec/schemas/konvoy-delivery/']
+  const config = { version: 1, packs: [], exclude: [...own, 'review'] }
+  assert.deepEqual(recommendedConfig({ AC: REPO, root, config }).exclude, own)
+  writeConfig(root, config)
+  const list = listAssets({ AC: REPO, root })
+  assert.deepEqual(own.map((id) => find(list, id.includes('#') ? 'key' : id.endsWith('/') ? 'schema' : 'seed', id).recommended), [true, true, true, true], 'the assets stay recommended')
+})
+
+test('a hook key is not available while the hook script is off', () => {
+  const root = makeHost(WEB_HOST)
+  const hook = find(listAssets({ AC: REPO, root }), 'file', '.agents/hooks/compass.mjs')
+  writeConfig(root, setAsset(cfgOf(root), hook, false))
+  const list = listAssets({ AC: REPO, root })
+  for (const id of hook.also) assert.deepEqual([find(list, 'key', id).on, find(list, 'key', id).available, find(list, 'key', id).reason], [false, false, 'switch on .agents/hooks/compass.mjs first'], id)
+  assert.equal(find(list, 'key', '.claude/settings.json#permissions.ask').available, true, 'a key that the script does not serve stays available')
+  assert.equal(find(list, 'file', '.agents/hooks/compass.mjs').available, true)
+  writeConfig(root, setAsset(cfgOf(root), find(list, 'file', '.agents/hooks/compass.mjs'), true))
+  assert.ok(hook.also.every((id) => find(listAssets({ AC: REPO, root }), 'key', id).available))
+})
+
 test('the key asset of permissions.deny also drops the MCP deny patterns', () => {
   const root = makeHost(WEB_HOST)
   const deny = find(listAssets({ AC: REPO, root }), 'key', '.claude/settings.json#permissions.deny')
@@ -623,6 +655,10 @@ test('ac assets: a usage error exits 2 and a failure exits 1', async () => {
   assert.match(help.stdout, /^ {2}on <kind>:<id> {3}Switch an asset on/m)
   const missing = await acAssets(['off', 'skill:nope', '--root', root])
   assert.deepEqual([missing.code, /no skill asset "nope"/.test(missing.stderr)], [1, true])
+  assert.equal((await acAssets(['off', 'file:.agents/hooks/compass.mjs', '--root', root])).code, 0)
+  const hook = await acAssets(['on', 'key:.claude/settings.json#hooks.Stop', '--root', root])
+  assert.deepEqual([hook.code, /not available: switch on \.agents\/hooks\/compass\.mjs first/.test(hook.stderr)], [1, true])
+  assert.equal((await acAssets(['on', 'file:.agents/hooks/compass.mjs', '--root', root])).code, 0)
   const unfit = await acAssets(['on', 'rule:.claude/rules/stack-nestjs.md', '--root', root])
   assert.deepEqual([unfit.code, /not available: needs stack nestjs-api/.test(unfit.stderr)], [1, true])
   const bare = await acAssets(['off', 'skill:review', '--root', makeHost()])

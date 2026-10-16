@@ -217,10 +217,22 @@ const upstreamAssets = ({ AC, config, stacks, plan }) => Object.entries(loadUpst
   return [asset('upstream', id, `upstream:${id}`, { description: `${src.skills.length} skills, ${src.licence} licence`, on, recommended, reason: why }), ...skills]
 })
 
-// A Konvoy key entry covers the key itself and the keys below it or above it (the rule of ownershipErrors in config.mjs).
+// Konvoy owns a key when it owns the whole file, or lists a key that is the same, below it or above it (the rule of ownershipErrors in config.mjs).
 const konvoyKey = (konvoy, id) => {
   const [file, key] = id.split('#')
-  return (konvoy.keys[file] ?? []).some((k) => k === key || key.startsWith(`${k}.`) || k.startsWith(`${key}.`))
+  return konvoyOwns(konvoy, file) || (konvoy.keys[file] ?? []).some((k) => k === key || key.startsWith(`${k}.`) || k.startsWith(`${key}.`))
+}
+
+// The recommended set never removes the exclude of these kinds: the project made that choice.
+const OWN_CHOICE = ['key', 'seed', 'schema']
+
+// A hook key calls the script of a file asset (its `also` list). Without the script the hook fails, so the key waits for the file.
+const needFile = (all) => {
+  const files = new Map(all.filter((a) => a.kind === 'file').flatMap((f) => (f.also ?? []).map((id) => [id, f])))
+  return (a) => {
+    const file = a.kind === 'key' && a.available ? files.get(a.id) : undefined
+    return file && file.available && !file.on ? { ...a, available: false, reason: `switch on ${file.id} first` } : a
+  }
 }
 
 const collect = ({ AC, root, config: given, konvoy }) => {
@@ -233,17 +245,19 @@ const collect = ({ AC, root, config: given, konvoy }) => {
   // An item that the Konvoy ledger owns cannot go on: the recommended set and a switch leave its exclude as it is.
   const path = (a) => (a.kind === 'agent' ? `.claude/agents/${a.id}.md` : ['rule', 'file', 'block', 'seed', 'schema'].includes(a.kind) ? a.id : null)
   const konvoyHas = (a) => konvoy && ((a.kind === 'skill' && konvoy.skills.has(a.id)) || (a.kind === 'key' && konvoyKey(konvoy, a.id)) || (path(a) && konvoyOwns(konvoy, path(a))))
-  const all = [...layerAssets(ctx), ...schemaAssets(ctx), ...packAssets(ctx), ...mcpAssets(ctx), ...pluginAssets(ctx), ...upstreamAssets(ctx)]
+  const owned = [...layerAssets(ctx), ...schemaAssets(ctx), ...packAssets(ctx), ...mcpAssets(ctx), ...pluginAssets(ctx), ...upstreamAssets(ctx)]
     .map((a) => (konvoyHas(a) ? { ...a, available: false, recommended: false, reason: 'Konvoy owns it (.agents/konvoy.json)' } : a))
+  const all = owned.map(needFile(owned))
   return { errors: plan.errors, stacks: plan.stacks, signals, detected, plan, paths, konvoy: Boolean(konvoy), assets: KINDS.flatMap((k) => all.filter((a) => a.kind === k)) }
 }
 
 // The config with every recommended asset on. A detected pack, a stack MCP server and a stack plugin stay automatic. Other excludes stay.
+// The exclude of a key, a seed or the schema stays too: the asset is recommended for a new project, but a project that excluded it chose that.
 // An upstream skill counts when its source is recommended: the source goes on in the same step.
 const recommendedFrom = (config, assets) => {
   const want = assets.filter((a) => a.recommended && (a.available || (a.kind === 'skill' && a.source.startsWith('upstream:'))))
   const union = (items = [], kind) => [...new Set([...items, ...want.filter((a) => a.kind === kind && !a.auto).map((a) => a.id)])]
-  const marked = new Set(want.flatMap(marks))
+  const marked = new Set(want.filter((a) => !OWN_CHOICE.includes(a.kind)).flatMap(marks))
   return {
     ...config,
     exclude: config.exclude.filter((e) => !marked.has(e)),

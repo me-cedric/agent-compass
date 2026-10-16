@@ -167,6 +167,8 @@ A key is one owned key that a `keys.json` sets. The title says what the key does
 | Codex verbosity, Codex reasoning summary | `.codex/config.toml#model_verbosity`, `#model_reasoning_summary` | Keep the Codex answers short. |
 | Codex guard, Codex gate, Codex start | `.codex/hooks.json#hooks.PreToolUse`, `#hooks.Stop`, `#hooks.SessionStart` | The same three hooks for Codex. |
 
+A hook key is not available while its script `.agents/hooks/compass.mjs` is off: switch the script on first, so no hook calls a missing file.
+A key is also not available when Konvoy owns its file, or a key that overlaps it.
 A seed file is written once, then the project owns it. A seed of a pack that is off turns the pack on when you switch the seed on.
 The schema asset is the folder `<openspec>/schemas/konvoy-delivery/`. It is not available when the OpenSpec folder is missing or when Konvoy owns the schema.
 
@@ -222,6 +224,7 @@ An asset is recommended when it fits the project:
 - An upstream source with no `stacks`, or with a detected stack, and without `recommend`.
 - A skill, rule or agent with no `stacks`, or with a detected stack. An asset that does not fit shows as "not available". You cannot switch it on.
 - A key is always recommended. A seed follows its pack. The schema is recommended when the OpenSpec folder exists. An upstream skill follows its source.
+- The recommended set keeps your `exclude` entry of a key, a seed or the schema. That entry is your own choice.
 
 ## Assets tab
 
