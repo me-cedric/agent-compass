@@ -84,6 +84,8 @@ export const reconcile = (root, plan, lock) => {
 
   const keys = {}
   for (const file of new Set([...plan.keys.keys(), ...Object.keys(lock.keys).filter((f) => !claimed(f))])) {
+    // A file that Konvoy took: compass writes nothing there, and the lock drops its keys (rule 8).
+    if (plan.released?.(file)) { if (lock.keys[file]) note('release', file); continue }
     const want = plan.keys.get(file) || new Map()
     const prev = lock.keys[file] || {}
     const toml = file.endsWith('.toml')
@@ -131,6 +133,7 @@ export const reconcile = (root, plan, lock) => {
 
   const blocks = {}
   for (const file of new Set([...plan.blocks.keys(), ...Object.keys(lock.blocks).filter((f) => !claimed(f))])) {
+    if (plan.released?.(file)) { if (lock.blocks[file]) note('release', file, 'block'); continue }
     const body = plan.blocks.get(file)
     const raw = read(file)?.toString('utf8') ?? null
     let found
@@ -207,8 +210,13 @@ const steps = ({ AC, root, apply, init }, version, tag) => {
 
   const { paths, from, warnings } = resolvePaths(cfg.config, kv.konvoy)
   const fetched = apply ? fetchUpstream(AC, cfg.config.upstream) : []
-  const plan = buildPlan({ AC, root, config: cfg.config, paths, konvoy: Boolean(kv.konvoy) })
-  const out = { paths, pathsFrom: from, warnings: [...warnings, ...fetched, ...plan.warnings], stacks: plan.stacks }
+  const built = buildPlan({ AC, root, config: cfg.config, paths, konvoy: Boolean(kv.konvoy) })
+  // Rule 6: a file that Konvoy owns as a whole gets no compass key and no compass block. Compass leaves them out.
+  const whole = kv.konvoy ? [...new Set([...built.keys.keys(), ...built.blocks.keys()])].filter((rel) => konvoyOwns(kv.konvoy, rel)) : []
+  const keep = ([rel]) => !whole.includes(rel)
+  const plan = { ...built, keys: new Map([...built.keys].filter(keep)), blocks: new Map([...built.blocks].filter(keep)) }
+  const left = whole.map((rel) => `${rel} belongs to Konvoy as a whole file; compass leaves its keys and blocks to Konvoy`)
+  const out = { paths, pathsFrom: from, warnings: [...warnings, ...fetched, ...built.warnings, ...left], stacks: plan.stacks }
   const planErrors = [...plan.errors, ...ownershipErrors(plan, lk.lock, kv.konvoy)]
   if (planErrors.length) return { ...out, errors: planErrors }
 

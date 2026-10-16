@@ -21,7 +21,7 @@ A path in braces, for example `{{DELIVERY_DIR}}`, is a path key. The section "Pa
 | 3 | Compass owns `.agents/compass.lock.json` and `.agents/compass.json`. | A Konvoy ledger that lists one of them is an error. `ownershipErrors`. |
 | 4 | A skill dir has one owner. Konvoy lists its skills in `compass_skills`, `taste_skills` and `owns.skills`. The compass lock lists its skills in `skills`. | A name in both ledgers is an error. `ownershipErrors`. |
 | 5 | Konvoy owns the keys `mcpServers.konvoy` in `.mcp.json`, `mcp_servers.konvoy` in `.codex/config.toml`, `servers.konvoy` in `.vscode/mcp.json`, and each key in `owns.keys`. Compass owns the keys in `core/keys.json` and in pack `keys.json` files. | A compass key that is the same as a Konvoy key, or a parent or a child of one, is an error. `ownershipErrors`. |
-| 6 | A file that Konvoy owns as a whole (rule 1) has no compass key and no compass block. | Error. `ownershipErrors`. |
+| 6 | A file that Konvoy owns as a whole (rule 1) has no compass key and no compass block. | The sync leaves the keys and blocks of that file out of the plan, writes nothing to it, and prints a warning (`steps` and `reconcile`, `engine/sync.mjs`). |
 | 7 | In a Markdown file, compass owns only the text between `<!-- compass:begin -->` and `<!-- compass:end -->`. | Compass writes only that text (`blockSet` in `engine/merge.mjs`). Two begin markers or a missing end marker is an error. |
 | 8 | When Konvoy takes a file that the compass lock records, compass releases it. | The file stays on disk. The lock does not record it after the sync (`reconcile`, `engine/sync.mjs`, action `release`). |
 | 9 | Konvoy is the only writer of `{{DELIVERY_DIR}}/tickets.json`. | Rule 1. The skills tell the agent not to edit it. |

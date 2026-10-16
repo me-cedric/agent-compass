@@ -137,9 +137,6 @@ export const ownershipErrors = (plan, lock, konvoy) => {
     if (konvoy.skills.has(name)) errors.push(`skill "${name}" is in both ledgers (${KONVOY} and the compass lock)`)
   }
   for (const rel of plan.files.keys()) if (konvoyOwns(konvoy, rel)) errors.push(`${rel} belongs to Konvoy`)
-  for (const rel of new Set([...plan.keys.keys(), ...plan.blocks.keys()])) {
-    if (konvoyOwns(konvoy, rel)) errors.push(`${rel} belongs to Konvoy as a whole file, so compass cannot own keys or a block in it`)
-  }
   for (const [file, keys] of plan.keys) {
     for (const key of keys.keys()) {
       const taken = (konvoy.keys[file] || []).find((k) => k === key || key.startsWith(`${k}.`) || k.startsWith(`${key}.`))
