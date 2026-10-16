@@ -8,7 +8,8 @@ import { join } from 'node:path'
 import { isObj } from './util.mjs'
 
 export const LIMITS = { plugins: 15, mcp: 10, hookChars: 1000, totalChars: 2000 }
-const EVENTS = ['SessionStart', 'UserPromptSubmit']
+// The hook events whose output goes into the context.
+const EVENTS = ['SessionStart', 'UserPromptSubmit', 'SubagentStart', 'PreCompact']
 const SET = [
   { name: 'ponytail', source: 'DietrichGebert/ponytail', market: 'ponytail' },
   { name: 'caveman', source: 'JuliusBrussee/caveman', market: 'caveman' },
@@ -137,7 +138,7 @@ export const formatGlobal = (r) => [
   'ac doctor --global',
   `  claude  ${r.claude.plugins.length} enabled plugin(s): ${r.claude.plugins.join(', ') || 'none'}`,
   `  claude  ${r.claude.mcp.length} MCP server(s): ${r.claude.mcp.map((s) => `${s.name} (${s.from})`).join(', ') || 'none'}`,
-  `  claude  ${r.claude.hooks.length} SessionStart or UserPromptSubmit hook(s)`,
+  `  claude  ${r.claude.hooks.length} SessionStart, UserPromptSubmit, SubagentStart or PreCompact hook(s)`,
   ...r.claude.hooks.map((h) => `            ${h.event} [${h.from}] ${h.command}`),
   `  codex   ${r.codex.mcp.length} MCP server(s): ${r.codex.mcp.join(', ') || 'none'}; ${r.codex.plugins.length} plugin(s)`,
   ...(r.measure ? [`  measure SessionStart output: ${r.measure.total} characters`, ...r.measure.items.map((i) => `            ${i.chars} chars  ${i.command}`)] : []),

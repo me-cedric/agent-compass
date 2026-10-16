@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { blockFind, blockRemove, blockSet, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlSet, tomlText } from '../engine/merge.mjs'
+import { arrayMerge, blockFind, blockRemove, blockSet, entrySha, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlSet, tomlText } from '../engine/merge.mjs'
 
 test('blockSet appends, replaces and keeps other text', () => {
   const start = '# Title\n\n<!-- konvoy:begin -->\nK\n<!-- konvoy:end -->\n'
@@ -62,4 +62,72 @@ test('TOML scan skips multi-line strings and arrays; CRLF files compare clean', 
   assert.equal(tomlGet(text, 'x'), undefined)
   assert.equal(tomlDelete(text, 'model_verbosity'), user)
   assert.equal(tomlGet('a = 1\r\n\r\n[t]\r\nb = 2\r\n', 't'), '[t]\nb = 2')
+})
+
+const group = (matcher, command, extra = {}) => ({ ...(matcher && { matcher }), hooks: [{ type: 'command', command: `node ".agents/hooks/compass.mjs" ${command}`, timeout: 10, ...extra }] })
+const own = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo ours' }] }
+const shas = (list) => list.map(entrySha)
+
+test('entrySha ignores key order at any depth, also inside arrays', () => {
+  const a = { matcher: 'Bash', hooks: [{ type: 'command', command: 'x', timeout: 10 }] }
+  const b = { hooks: [{ timeout: 10, command: 'x', type: 'command' }], matcher: 'Bash' }
+  assert.equal(entrySha(a), entrySha(b))
+  assert.notEqual(entrySha(a), entrySha({ ...a, matcher: 'Read' }))
+  assert.notEqual(entrySha('a'), entrySha('b'))
+})
+
+test('arrayMerge appends the planned entries after the host entries and keeps the host part as it is', () => {
+  const guard = group('Read|Bash', 'guard')
+  const host = [own]
+  const r = arrayMerge(host, [guard], [])
+  assert.deepEqual(r.next, [own, guard])
+  assert.equal(r.next[0], own)
+  assert.deepEqual(r.entries, shas([guard]))
+  assert.deepEqual(r.kept, [])
+  assert.deepEqual(host, [own], 'the input does not change')
+  const again = arrayMerge(r.next, [guard], r.entries)
+  assert.deepEqual(again.next, r.next)
+  assert.deepEqual(again.entries, r.entries)
+})
+
+test('arrayMerge never duplicates: the same entry in another key order, or twice in the plan, is added once', () => {
+  const guard = group('Bash', 'guard')
+  const reordered = { hooks: [{ timeout: 10, command: guard.hooks[0].command, type: 'command' }], matcher: 'Bash' }
+  const r = arrayMerge([own, reordered], [guard, guard], [])
+  assert.deepEqual(r.next, [own, reordered])
+  assert.deepEqual(r.entries, shas([guard]))
+  assert.deepEqual(arrayMerge([], [guard, guard], []).next, [guard])
+})
+
+test('arrayMerge removes a stale compass entry that is unchanged and keeps one that the host edited', () => {
+  const [a, b, c] = [group('Bash', 'a'), group('Read', 'b'), group('Grep', 'c')]
+  const editedB = group('Read', 'b', { timeout: 99 })
+  const r = arrayMerge([a, own, editedB, c], [c], shas([a, b, c]))
+  assert.deepEqual(r.next, [own, editedB, c])
+  assert.deepEqual(r.entries, shas([c]))
+  assert.deepEqual(r.kept, [])
+  assert.deepEqual(arrayMerge([own, a], [], shas([a])).next, [own])
+})
+
+test('arrayMerge reports an edited compass hook as kept and does not add a second one', () => {
+  const guard = group('Read|Bash', 'guard')
+  const edited = group('Read|Bash', 'guard --strict')
+  const r = arrayMerge([own, edited], [guard], [])
+  assert.deepEqual(r.next, [own, edited])
+  assert.deepEqual(r.kept, [guard])
+  assert.deepEqual(r.entries, [])
+  const other = arrayMerge([own, group('Bash', 'guard')], [guard], [])
+  assert.deepEqual(other.next, [own, group('Bash', 'guard'), guard], 'another matcher is another entry')
+  const plain = arrayMerge([{ matcher: 'Read|Bash', hooks: [{ type: 'command', command: 'echo ours' }] }], [guard], [])
+  assert.equal(plain.next.length, 2, 'a host hook that is not the compass script does not count')
+  assert.deepEqual(plain.kept, [])
+})
+
+test('arrayMerge handles permission strings: host strings stay, compass strings append, no string twice', () => {
+  const r = arrayMerge(['Read(.env)', 'Bash(rm *)'], ['Bash(rm *)', 'Bash(curl *)'], [])
+  assert.deepEqual(r.next, ['Read(.env)', 'Bash(rm *)', 'Bash(curl *)'])
+  assert.deepEqual(r.entries, shas(['Bash(rm *)', 'Bash(curl *)']))
+  const edited = arrayMerge(r.next, ['Bash(curl -s *)'], r.entries)
+  assert.deepEqual(edited.next, ['Read(.env)', 'Bash(curl -s *)'])
+  assert.deepEqual(edited.kept, [], 'a string has no edited form')
 })

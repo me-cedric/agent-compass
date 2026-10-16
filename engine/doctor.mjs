@@ -22,6 +22,11 @@ const commandChecks = ({ AC, root, sync }) => {
     .map(([cmd, names]) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names.join(', ')} cannot start` }))
 }
 
+// Before the per-entry merge, a host array became an exclude. The exclude now keeps the compass entries out.
+const excludeChecks = ({ AC, root }) => (loadConfig(root, AC, { init: true }).config?.exclude ?? [])
+  .filter((id) => /#(hooks|permissions)\./.test(id))
+  .map((id) => ({ name: 'exclude', status: 'warn', detail: `${id}: compass merges this array per entry now; remove the exclude to get the compass entries` }))
+
 const tokenChecks = (t) => [
   ...t.items.map((i) => ({ name: 'tokens', status: 'ok', detail: `${i.name}: ${i.chars} chars, about ${i.tokens} tokens` })),
   ...t.warnings.map((detail) => ({ name: 'budget', status: 'warn', detail })),
@@ -45,7 +50,7 @@ export const doctor = ({ AC, root, tokens = false }) => {
     })),
     ...sync.errors.map((detail) => ({ name: 'error', status: 'fail', detail })),
   ]
-  checks.push(...commandChecks({ AC, root, sync }))
+  checks.push(...excludeChecks({ AC, root }), ...commandChecks({ AC, root, sync }))
   if (sync.ok) {
     checks.push({ name: 'sync', status: sync.drift ? 'warn' : 'ok', detail: sync.drift ? `${sync.changes.length} pending change(s); run "ac sync"` : 'up to date' })
   }

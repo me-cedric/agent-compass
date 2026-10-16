@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { doctorGlobal } from '../engine/global.mjs'
+import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
 import { runNode } from './helpers.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -191,6 +191,25 @@ test('a hook command that is listed more than once for one event is a warning', 
   const home = makeHome({ settings: { hooks: { SessionStart: [cmd('remind'), cmd('remind'), cmd('remind'), cmd(say(10))], UserPromptSubmit: [cmd('remind')] } } })
   const r = doctorGlobal({ AC, root: home, home, env: {} })
   assert.deepEqual(r.warnings.filter((w) => /is listed \d+ times/.test(w)), ['the SessionStart hook "remind" is listed 3 times; it runs 3 times'])
+})
+
+test('the hook list covers the four events that inject text; --measure still runs SessionStart only', () => {
+  const root = temp()
+  const marker = (tag) => `node -e "require('fs').appendFileSync('marker', '${tag}|')"`
+  const hooks = {
+    SessionStart: [cmd(marker('start'))],
+    UserPromptSubmit: [cmd(marker('prompt'))],
+    SubagentStart: [cmd(marker('subagent'))],
+    PreCompact: [cmd(marker('compact'))],
+    Stop: [cmd(marker('stop'))],
+  }
+  const home = makeHome({ settings: { hooks }, extra: { 'cache/alpha/hooks/hooks.json': { hooks: { SubagentStart: [cmd(say(2))] } } } })
+  const listed = doctorGlobal({ AC, root, home }).claude.hooks.map((h) => `${h.event}:${h.from}`)
+  assert.deepEqual(listed, ['SessionStart:user settings', 'UserPromptSubmit:user settings', 'SubagentStart:user settings', 'PreCompact:user settings', 'SubagentStart:alpha@m'])
+  const r = doctorGlobal({ AC, root, home, measure: true })
+  assert.equal(r.measure.items.length, 1)
+  assert.equal(readFileSync(join(root, 'marker'), 'utf8'), 'start|')
+  assert.match(formatGlobal(r), /5 SessionStart, UserPromptSubmit, SubagentStart or PreCompact hook\(s\)/)
 })
 
 test('the options of doctor --global are checked', async () => {

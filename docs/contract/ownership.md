@@ -20,15 +20,35 @@ A path in braces, for example `{{DELIVERY_DIR}}`, is a path key. The section "Pa
 | 2 | Konvoy owns `{{OPENSPEC_DIR}}/schemas/konvoy-delivery/` when its ledger exists. | Compass does not plan the schema then (`buildPlan`, `engine/plan.mjs`). Rule 1 also covers the dir. |
 | 3 | Compass owns `.agents/compass.lock.json` and `.agents/compass.json`. | A Konvoy ledger that lists one of them is an error. `ownershipErrors`. |
 | 4 | A skill dir has one owner. Konvoy lists its skills in `compass_skills`, `taste_skills` and `owns.skills`. The compass lock lists its skills in `skills`. | A name in both ledgers is an error. `ownershipErrors`. |
-| 5 | Konvoy owns the keys `mcpServers.konvoy` in `.mcp.json`, `mcp_servers.konvoy` in `.codex/config.toml`, `servers.konvoy` in `.vscode/mcp.json`, and each key in `owns.keys`. Compass owns the keys in `core/keys.json` and in pack `keys.json` files. | A compass key that is the same as a Konvoy key, or a parent or a child of one, is an error. `ownershipErrors`. |
+| 5 | Konvoy owns the keys `mcpServers.konvoy` in `.mcp.json`, `mcp_servers.konvoy` in `.codex/config.toml`, `servers.konvoy` in `.vscode/mcp.json`, and each key in `owns.keys`. Compass owns the keys in `core/keys.json` and in pack `keys.json` files. An array key is owned per entry (rule 12). | A compass key that is the same as a Konvoy key, or a parent or a child of one, is an error. `ownershipErrors`. |
 | 6 | A file that Konvoy owns as a whole (rule 1) has no compass key and no compass block. | The sync leaves the keys and blocks of that file out of the plan, writes nothing to it, and prints a warning (`steps` and `reconcile`, `engine/sync.mjs`). |
 | 7 | In a Markdown file, compass owns only the text between `<!-- compass:begin -->` and `<!-- compass:end -->`. | Compass writes only that text (`blockSet` in `engine/merge.mjs`). Two begin markers or a missing end marker is an error. |
 | 8 | When Konvoy takes a file that the compass lock records, compass releases it. | The file stays on disk. The lock does not record it after the sync (`reconcile`, `engine/sync.mjs`, action `release`). |
 | 9 | Konvoy is the only writer of `{{DELIVERY_DIR}}/tickets.json`. | Rule 1. The skills tell the agent not to edit it. |
 | 10 | RAID files in `{{DELIVERY_DIR}}/questions/` use the Konvoy codec. `ac migrate --docs` writes new `Q-NNN.md` files only. It never edits or overwrites a RAID file. | `raidText` in `migrate/raid.mjs` and `migrateDocs` in `migrate/docs.mjs`. The docs layout checks below. |
 | 11 | Compass seeds an empty `{{DESIGNS_DIR}}/screens.json` once. Then the project owns it. Konvoy has no screen registry. | Seed mode in `buildPlan`: compass writes the file only when it does not exist. |
+| 12 | In a JSON file, compass owns its own entries of an array key, not the array. The keys are `hooks.PreToolUse`, `hooks.Stop`, `hooks.SessionStart`, `permissions.deny` and `permissions.ask`. The project keeps its own entries. | `arrayMerge` in `engine/merge.mjs`; `mergeArray` and `dropArray` in `engine/sync.mjs`. See "Array keys". |
 
 Konvoy must also follow rules 1 to 11. The engine cannot enforce what Konvoy writes. See "Konvoy follow-ups".
+
+## Array keys
+
+A JSON key whose planned value is an array is merged entry by entry. A TOML key stays one value.
+The sync follows these steps for each such key:
+
+1. The host array is the current array. A missing key is an empty array. A value that is not an array is `kept`.
+2. Compass removes each host entry that the lock lists and the plan does not list now. This entry is a stale compass entry.
+3. An entry that the project edited has another sha, so it stays. It belongs to the project.
+4. Compass appends each planned entry that is not in the host array. The compass entries go at the end.
+5. Compass does not change the order or the content of a host entry. Compass does not add an entry twice.
+6. An entry is known by the sha of its canonical JSON. The canonical form sorts the object keys at every depth.
+7. A host hook group on the same `matcher` that runs `.agents/hooks/compass.mjs` is an edited compass group. Compass reports `kept` and appends no second group. A permission string has no edited form.
+8. The lock records `{ "entries": ["<sha>", ...] }` for the key. The entries are the planned entries that are in the array now. `lockVersion` stays 2.
+9. An older lock has one sha string for an array key. This means that no entry is known. The next sync records the entries.
+10. `ac check --frozen` reports drift when a planned entry is missing or a stale compass entry is still there. A `kept` group is drift, as for every `kept` key.
+11. `exclude` with `<file>#<key>` removes all compass entries of the key. The host entries stay. The key goes with its last entry.
+12. The sync writes the array again as JSON, with the indent of the file (2 spaces by default). The layout of the host entries in that array can change.
+13. `ac doctor` warns about an exclude of a `hooks.*` or `permissions.*` key. `ac migrate` does not write such an exclude.
 
 ## Path keys
 

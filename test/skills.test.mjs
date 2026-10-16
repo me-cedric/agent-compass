@@ -42,6 +42,13 @@ test('every skill names its dir and every asset uses known stack ids', () => {
   }
 })
 
+test('every SKILL.md body has 120 lines or fewer; long text goes to references/', () => {
+  for (const d of skillDirs) {
+    const lines = frontmatter(readFileSync(join(REPO, d, 'SKILL.md'), 'utf8')).body.trimEnd().split('\n').length
+    assert.ok(lines <= 120, `${d}/SKILL.md has ${lines} body lines`)
+  }
+})
+
 test('no skill or rule hard-codes a Konvoy path; placeholders are used instead', () => {
   const literals = Object.values(PATH_DEFAULTS).map((p) => p.split('/').slice(0, 2).join('/'))
   for (const rel of assets) {

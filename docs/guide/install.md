@@ -37,6 +37,20 @@ A project that has input documents runs `ac init --from-specs <dir>`. See [Start
 Two syncs in a row give no diff. The lock has no timestamp.
 To take an update for a `kept` item, revert the file. To stop updates for it, add its path to `exclude` (see [assets.md](assets.md#exclude)).
 
+### Your own hooks and permissions
+
+`.claude/settings.json` and `.codex/hooks.json` can hold your hook groups. `.claude/settings.json` can hold your `permissions.deny` and `permissions.ask` strings.
+Compass adds its own entries after yours in `hooks.PreToolUse`, `hooks.Stop`, `hooks.SessionStart`, `permissions.deny` and `permissions.ask`.
+It does not change, remove or reorder an entry of yours. It writes that array again with the indent of the file (2 spaces when the file has no indent), so the layout of your entries can change.
+
+- Compass removes an entry of its own when the plan drops it and you did not edit it.
+- A compass hook group that you edited stays. Sync reports `kept` and adds no second group. Revert your edit to take the compass group again.
+- When you delete a compass entry, `ac check --frozen` fails. `ac sync` adds the entry again.
+- To keep the compass entries of one key out, add `<file>#<key>` to `exclude`. Your entries stay. `ac doctor` warns when an old exclude of a `hooks.*` or `permissions.*` key exists, because the merge makes it unnecessary.
+- A host value that is not an array stays `kept`.
+
+See [rule 12 of the ownership contract](../contract/ownership.md#array-keys).
+
 ## What compass writes
 
 | Path | Provider | Content |
@@ -111,7 +125,7 @@ codex plugin marketplace add <path> && codex plugin add compass-user@agent-compa
 copilot plugin marketplace add <path> && copilot plugin install compass-user@agent-compass
 ```
 
-`ac doctor --global` reads your user-level Claude Code and Codex setup and writes nothing. It lists the enabled plugins, the MCP servers and the hooks.
+`ac doctor --global` reads your user-level Claude Code and Codex setup and writes nothing. It lists the enabled plugins, the MCP servers and the hooks of four events: `SessionStart`, `UserPromptSubmit`, `SubagentStart` and `PreCompact`. These events put text into the context.
 It names each item of the recommended set that is missing, with the command that fixes it. `--measure` runs each `SessionStart` hook once and counts its output.
 It warns above 15 plugins, 10 MCP servers, 1,000 characters for one hook and 2,000 characters for all hooks.
 

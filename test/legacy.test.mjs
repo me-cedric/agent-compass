@@ -295,7 +295,6 @@ test('a Konvoy conflict and a host value go into exclude, and the check is green
     { id: '.claude/agents/reviewer.md', reason: 'konvoy' },
     { id: '.mcp.json#mcpServers.codebase-memory', reason: 'konvoy' },
     { id: 'impact-analysis', reason: 'konvoy' },
-    { id: '.claude/settings.json#hooks.PreToolUse', reason: 'host value' },
     { id: '.codex/config.toml#mcp_servers.codebase-memory', reason: 'host value' },
     { id: 'CLAUDE.md', reason: 'host value' },
   ])
@@ -306,7 +305,11 @@ test('a Konvoy conflict and a host value go into exclude, and the check is green
 
   for (const rel of ['.claude/agents/reviewer.md', '.claude/skills/impact-analysis/SKILL.md', 'CLAUDE.md']) assert.equal(readFileSync(join(root, rel), 'utf8'), own[rel], rel)
   assert.ok(readFileSync(join(root, '.codex/config.toml'), 'utf8').includes(own['.codex/config.toml']), 'the sync adds other keys and keeps the host key')
-  assert.deepEqual(JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8')).hooks.PreToolUse, JSON.parse(own['.claude/settings.json']).hooks.PreToolUse)
+  const [ours, guard, ...more] = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8')).hooks.PreToolUse
+  assert.deepEqual(ours, JSON.parse(own['.claude/settings.json']).hooks.PreToolUse[0], 'the host group stays first and unchanged')
+  assert.match(guard.hooks[0].command, /\.agents\/hooks\/compass\.mjs" guard/, 'the compass guard goes after it')
+  assert.deepEqual(more, [])
+  assert.ok(!config.exclude.some((e) => e.includes('#hooks.')), 'a host array is merged per entry, so no hooks exclude')
   assert.deepEqual(JSON.parse(readFileSync(join(root, '.mcp.json'), 'utf8')).mcpServers['codebase-memory'], { command: 'konvoy-cbm' })
   assert.ok(existsSync(join(root, '.claude/agents/scout.md')), 'the sync still writes the other compass files')
 
@@ -317,6 +320,28 @@ test('a Konvoy conflict and a host value go into exclude, and the check is green
   const before = readFileSync(join(root, '.agents/compass.json'), 'utf8')
   assert.deepEqual(migrateLegacy({ AC, root, apply: true }).excluded, [])
   assert.equal(readFileSync(join(root, '.agents/compass.json'), 'utf8'), before, 'a second run adds no entry')
+})
+
+test('a host array key is merged, so it gets no exclude; a host value that is not an array still does', { skip: needTag }, () => {
+  const root = temp()
+  const ours = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo ours' }] }
+  const edited = { matcher: 'Read|Grep|Bash', hooks: [{ type: 'command', command: 'node "${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs" guard --strict' }] }
+  const files = {
+    'agent-compass.answers.json': JSON.stringify({ name: 'demo' }),
+    '.claude/settings.json': `${JSON.stringify({ hooks: { PreToolUse: [ours, edited], Stop: [ours] }, permissions: { deny: 'oops' } }, null, 2)}\n`,
+  }
+  for (const [rel, text] of Object.entries(files)) {
+    mkdirSync(dirname(join(root, rel)), { recursive: true })
+    writeFileSync(join(root, rel), text)
+  }
+  const r = migrateLegacy({ AC, root, apply: true })
+  assert.deepEqual(r.errors, [])
+  assert.deepEqual(r.excluded, [{ id: '.claude/settings.json#permissions.deny', reason: 'host value' }])
+  const settings = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8'))
+  assert.equal(settings.permissions.deny, 'oops')
+  assert.equal(settings.hooks.Stop.length, 2, 'the compass gate goes after the host group')
+  assert.deepEqual(settings.hooks.PreToolUse, [ours, edited], 'an edited compass group stays and compass adds no second one')
+  assert.deepEqual(r.sync.changes.filter((c) => c.action === 'kept'), [{ action: 'kept', path: '.claude/settings.json', key: 'hooks.PreToolUse' }], 'the merge reports it and the migration does not exclude it')
 })
 
 test('a submodule is reported, its credentials are not, and its path matches the pointers', { skip: needTag }, () => {

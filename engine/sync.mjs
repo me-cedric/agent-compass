@@ -12,7 +12,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync,
 import { dirname, join } from 'node:path'
 import { CONFIG, DEFAULT_CONFIG, konvoyOwns, loadConfig, loadKonvoy, LOCK, ownershipErrors, resolvePaths } from './config.mjs'
 import { tagOf } from './git.mjs'
-import { blockFind, blockInner, blockRemove, blockSet, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlRender, tomlSet } from './merge.mjs'
+import { arrayMerge, blockFind, blockInner, blockRemove, blockSet, entrySha, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlRender, tomlSet } from './merge.mjs'
 import { buildPlan } from './plan.mjs'
 import { fetchUpstream } from './upstream.mjs'
 import { isObj, readJson, safeRel, sha, sorted } from './util.mjs'
@@ -32,6 +32,33 @@ export const readLock = (root) => {
   if (!shapeOk) return { lock: EMPTY_LOCK, errors: [`${LOCK}: the lock has an incorrect shape`] }
   const unsafe = [...Object.keys(lock.files), ...Object.keys(lock.keys), ...Object.keys(lock.blocks)].filter((p) => !safeRel(p))
   return { lock, errors: unsafe.map((p) => `${LOCK}: the path "${p}" is not inside the project`) }
+}
+
+// The lock records the compass entries of an array key as { entries: [sha, ...] }. An older lock has one sha string: no entry is known.
+const lockedEntries = (v) => (isObj(v) && Array.isArray(v.entries) ? v.entries : [])
+const sameList = (a, b) => a.length === b.length && a.every((e, i) => e === b[i])
+
+// A planned array key of a JSON file: add the planned entries, drop the stale compass entries, keep the host entries.
+const mergeArray = (doc, key, planned, prev) => {
+  const host = jsonGet(JSON.parse(doc), key)
+  if (host !== undefined && !Array.isArray(host)) return { doc, lock: prev, actions: ['kept'] }
+  const merged = arrayMerge(host ?? [], planned, lockedEntries(prev))
+  const moved = !sameList(merged.next, host ?? [])
+  return {
+    doc: moved ? jsonSet(doc, key, merged.next) : doc,
+    lock: merged.entries.length ? { entries: merged.entries } : undefined,
+    actions: [...(moved ? [host === undefined ? 'create' : 'update'] : []), ...(merged.kept.length ? ['kept'] : [])],
+  }
+}
+
+// An array key that the plan no longer has: remove the compass entries of the lock. The key goes with its last entry.
+const dropArray = (doc, key, was) => {
+  const host = jsonGet(JSON.parse(doc), key)
+  if (host === undefined) return { doc }
+  const mine = new Set(lockedEntries(was))
+  const rest = Array.isArray(host) ? host.filter((e) => !mine.has(entrySha(e))) : host
+  if (!Array.isArray(host) || rest.length === host.length) return { doc, action: 'release' }
+  return { doc: rest.length ? jsonSet(doc, key, rest) : jsonDelete(doc, key), action: 'remove' }
 }
 
 export const reconcile = (root, plan, lock) => {
@@ -105,6 +132,14 @@ export const reconcile = (root, plan, lock) => {
     let changed = false
     try {
       for (const [k, v] of want) {
+        if (!toml && Array.isArray(v)) {
+          const r = mergeArray(doc, k, v, prev[k])
+          changed ||= r.doc !== doc
+          doc = r.doc
+          if (r.lock) next[k] = r.lock
+          for (const action of r.actions) note(action, file, k)
+          continue
+        }
         const cur = current(k)
         const target = sha(toml ? tomlRender(k, v) : JSON.stringify(v))
         if (cur === target) next[k] = target
@@ -120,6 +155,13 @@ export const reconcile = (root, plan, lock) => {
       }
     } catch (err) { errors.push(`${file}: ${err.message}`); continue }
     for (const [k, was] of Object.entries(prev)) {
+      if (!toml && !want.has(k) && isObj(was)) {
+        const r = dropArray(doc, k, was)
+        changed ||= r.doc !== doc
+        doc = r.doc
+        if (r.action) note(r.action, file, k)
+        continue
+      }
       const cur = want.has(k) ? null : current(k)
       if (cur === null) continue
       if (cur !== was) { note('release', file, k); continue }

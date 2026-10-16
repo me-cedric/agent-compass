@@ -1,7 +1,7 @@
 // merge.mjs — edit only the parts of a shared file that compass owns:
 // one Markdown block, named JSON keys and named TOML keys. Other bytes stay as they are.
 
-import { isObj } from './util.mjs'
+import { isObj, sha, sorted } from './util.mjs'
 
 // --- Markdown block ---
 
@@ -116,6 +116,34 @@ export const jsonDelete = (text, key) => {
 
 // --- TOML keys ---
 // An owned key with an object value is a [table]. Any other value is one `key = value` line before the first table.
+
+// Array keys: compass owns its own entries in the array, not the array. An entry is known by the sha of its canonical JSON.
+const COMPASS_HOOK = '.agents/hooks/compass.mjs'
+
+export const entrySha = (entry) => sha(JSON.stringify(entry, (_, v) => (isObj(v) ? sorted(v) : v)))
+
+const runsCompass = (e) => isObj(e) && Array.isArray(e.hooks) && e.hooks.some((h) => typeof h?.command === 'string' && h.command.includes(COMPASS_HOOK))
+
+// A host hook group that runs the compass script on the same matcher is a compass group that the project edited.
+const editedCopy = (host, planned) => runsCompass(host) && runsCompass(planned) && host.matcher === planned.matcher
+
+// current: the host array. planned: the compass entries. lockShas: the compass entries of the last sync.
+// next: the new host array. entries: the planned entry shas that are in it. kept: the planned entries that stay out.
+export const arrayMerge = (current, planned, lockShas = []) => {
+  const want = new Set(planned.map(entrySha))
+  const mine = new Set(lockShas)
+  const host = current.filter((e) => { const s = entrySha(e); return want.has(s) || !mine.has(s) })
+  const have = new Set(host.map(entrySha))
+  const added = []
+  const kept = []
+  for (const entry of planned) {
+    const s = entrySha(entry)
+    if (have.has(s)) continue
+    if (host.some((h) => editedCopy(h, entry))) kept.push(entry)
+    else { added.push(entry); have.add(s) }
+  }
+  return { next: [...host, ...added], entries: [...want].filter((s) => have.has(s)), kept }
+}
 
 const HEADER = /^\s*\[\[?\s*([^\]]+?)\s*\]\]?\s*(?:#.*)?$/
 const bare = (k) => (/^[A-Za-z0-9_-]+$/.test(k) ? k : JSON.stringify(k))

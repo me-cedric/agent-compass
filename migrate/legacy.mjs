@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { CONFIG, DEFAULT_CONFIG, KONVOY, konvoyOwns, loadConfig, loadKonvoy, LOCK, resolvePaths } from '../engine/config.mjs'
+import { jsonGet } from '../engine/merge.mjs'
 import { buildPlan } from '../engine/plan.mjs'
 import { outside, prune, readLock, syncHost } from '../engine/sync.mjs'
 import { loadUpstream } from '../engine/upstream.mjs'
@@ -153,6 +154,9 @@ const konvoyExcludes = (plan, kv) => {
 }
 
 // A kept change names a file, a key ("<file>#<key>") or a block (the key "block" in a Markdown file).
+// A kept key whose host value is an array is merged per entry (an edited compass group). An exclude would drop the compass entries.
+const hostArray = (root, { path, key }) => Boolean(key) && Array.isArray(jsonGet(readJson(join(root, path)), key))
+
 const keptId = ({ path, key }) => (!key || (key === 'block' && !/\.(json|toml)$/.test(path)) ? path : `${path}#${key}`)
 
 // Add ids to "exclude" in compass.json. The old entries stay; the new ids follow in sorted order.
@@ -242,7 +246,7 @@ const execute = (AC, root, out) => {
   const first = sync()
   if (!first.ok) return fail(first)
   // A kept change is a host value that differs from the compass value. The host value stays; compass stops managing it.
-  const host = [...new Set(first.changes.filter((c) => c.action === 'kept').map(keptId))].sort()
+  const host = [...new Set(first.changes.filter((c) => c.action === 'kept' && !hostArray(root, c)).map(keptId))].sort()
   let result = first
   if (host.length) {
     exclude(root, host)

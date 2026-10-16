@@ -96,10 +96,10 @@ test('doctor --tokens passes on a fresh host and fails over budget', async () =>
 test('doctor warns when a project edit keeps an owned key out', async () => {
   const edited = temp('ac-harness-edited-')
   mkdirSync(join(edited, '.claude'))
-  writeFileSync(join(edited, '.claude/settings.json'), '{ "permissions": { "deny": ["Bash(rm *)"] } }\n')
+  writeFileSync(join(edited, '.claude/settings.json'), '{ "outputStyle": "mine" }\n')
   assert.equal((await ac(compass, ['init', '--root', edited])).code, 0)
   const r = await ac(compass, ['doctor', '--root', edited])
-  assert.match(r.stdout, /warn {2}kept {5}\.claude\/settings\.json#permissions\.deny is edited in the project/)
+  assert.match(r.stdout, /warn {2}kept {5}\.claude\/settings\.json#outputStyle is edited in the project/)
 })
 
 // Run the deliver workflow script with stub agents, to check its control flow.
