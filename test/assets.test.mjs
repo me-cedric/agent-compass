@@ -97,7 +97,7 @@ test('listAssets lists every kind with the plan state, the stack fit and the rec
   assert.deepEqual([env.on, env.recommended, env.reason], [true, true, 'pack env detected'])
   assert.deepEqual([find(list, 'skill', 'env').source, find(list, 'skill', 'env').on], ['pack:env', true])
   const ci = find(list, 'pack', 'ci-github')
-  assert.deepEqual([ci.on, ci.recommended, ci.reason], [false, true, 'signal github'])
+  assert.deepEqual([ci.on, ci.recommended, ci.reason], [false, false, 'opt-in: the CI seeds need your install and test commands first'])
   assert.equal(find(list, 'pack', 'ci-gitlab').recommended, false)
   assert.equal(find(list, 'pack', 'renovate').recommended, false)
   assert.equal(find(list, 'skill', 'e2e').on, false)
@@ -132,7 +132,7 @@ test('listAssets: renovate is recommended with the compass submodule and without
   const sub = { '.gitmodules': '[submodule "v"]\n\tpath = v\n\turl = https://example.test/agent-compass.git\n' }
   assert.equal(find(listAssets({ AC: REPO, root: makeHost(sub) }), 'pack', 'renovate').recommended, true)
   assert.equal(find(listAssets({ AC: REPO, root: makeHost({ ...sub, 'renovate.json': '{}' }) }), 'pack', 'renovate').recommended, false)
-  assert.equal(find(listAssets({ AC: REPO, root: makeHost({ '.gitlab-ci.yml': 'stages: []\n' }) }), 'pack', 'ci-gitlab').recommended, true)
+  assert.equal(find(listAssets({ AC: REPO, root: makeHost({ '.gitlab-ci.yml': 'stages: []\n' }) }), 'pack', 'ci-gitlab').recommended, false, 'a CI pack stays opt-in')
 })
 
 test('listAssets reports a broken config and works without .agents/compass.json', () => {
@@ -294,7 +294,7 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   })
   const next = recommendedConfig({ AC: REPO, root, config })
   assert.deepEqual(next.exclude, ['keep-me', 'nest-only'])
-  assert.deepEqual(next.packs, ['e2e', 'ci-github'])
+  assert.deepEqual(next.packs, ['e2e'], 'a CI pack stays opt-in')
   assert.ok(!next.packs.includes('env'), 'a detected pack stays automatic')
   assert.ok(next.mcp.includes('grafana') && next.mcp.includes('github') && next.mcp.includes('sonarqube') && next.mcp.includes('context7'))
   assert.ok(!next.mcp.includes('playwright') && !next.mcp.includes('codebase-memory'), 'a stack server stays automatic')

@@ -59,8 +59,8 @@ A `seed/` file is written once. A folder `extras/` holds reference files that sy
 | `local-run` | `process-compose*.yaml` or a compose file exists | Skill `local-run`. |
 | `e2e` | A Playwright config, a `.maestro` folder or `@playwright/test` exists | Skill `e2e`. |
 | `security` | `.osv-scanner.toml` or `sonar-project*.properties` exists | Skill `vuln-triage`, seed `.osv-scanner.toml`. |
-| `ci-github` | Opt in. Recommended with `.github/workflows/`. | Five seed workflows `compass-*.yml`. |
-| `ci-gitlab` | Opt in. Recommended with `.gitlab-ci.yml`. | Five seed files in `.gitlab/compass/`. |
+| `ci-github` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | Five seed workflows `compass-*.yml`. |
+| `ci-gitlab` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | Five seed files in `.gitlab/compass/`. |
 | `renovate` | Opt in. Recommended with the compass submodule and no Renovate config. | Seed `renovate.json`. |
 
 Use the packs in [dev-loop.md](dev-loop.md) and [quality.md](quality.md).

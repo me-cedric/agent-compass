@@ -61,10 +61,10 @@ const fitOf = (text, stacks) => {
     : { available: false, recommended: false, reason: `needs stack ${want.join(' or ')}` }
 }
 
-// Packs that fit the project, with the reason: the detected ones, CI packs by CI signal, renovate when the compass submodule has no renovate config.
+// Packs that fit the project, with the reason: the detected ones, and renovate when the compass submodule has no renovate config.
+// The CI packs stay opt-in: their seeds run install and test commands that the project must set first.
 const recommendedPacks = ({ AC, root, signals, detected }) => new Map([
   ...detected.map((p) => [p, `pack ${p} detected`]),
-  ...[['ci-github', 'github'], ['ci-gitlab', 'gitlab']].filter(([, s]) => signals.has(s)).map(([p, s]) => [p, `signal ${s}`]),
   ...(signals.has('compass-submodule') && !RENOVATE.some((f) => existsSync(join(root, f))) ? [['renovate', 'signal compass-submodule']] : []),
 ].filter(([p]) => isDir(join(AC, 'packs', p))))
 
@@ -95,7 +95,7 @@ const contents = (dir) => ['skills', 'agents', 'rules', 'files', 'seed', 'blocks
   .map((d) => [d, walk(join(dir, d)).length]).filter(([, n]) => n).map(([d, n]) => `${d}: ${n}`).join(', ')
 
 const packAssets = ({ AC, plan, detected, why }) => dirs(join(AC, 'packs')).map((name) => asset('pack', name, `pack:${name}`, {
-  description: contents(join(AC, 'packs', name)), on: plan.packs.includes(name), auto: detected.includes(name), recommended: why.has(name), reason: why.get(name) ?? 'opt-in',
+  description: contents(join(AC, 'packs', name)), on: plan.packs.includes(name), auto: detected.includes(name), recommended: why.has(name), reason: why.get(name) ?? (name.startsWith('ci-') ? 'opt-in: the CI seeds need your install and test commands first' : 'opt-in'),
 }))
 
 // A catalog entry is "auto" when a detected stack lists it ("*" lists every project).
