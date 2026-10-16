@@ -7,7 +7,7 @@ Extends [coding-style.md](coding-style.md) for the TS/JS ecosystem.
 `strict: true`. No implicit `any`. Prefer `unknown` + narrowing over `any`. Type
 external data at the boundary (parse, don't cast). Shared config lives in a
 `tsconfig.base.json` that apps extend — see
-[`templates/monorepo/tsconfig.base.json`](../../templates/monorepo/tsconfig.base.json).
+`templates/monorepo/tsconfig.base.json`.
 
 ## Type-check every project, not the default one
 

@@ -464,7 +464,7 @@ Coverage of the *change*, not global coverage.
   repository carries it, the `api-security-edge-cases` instinct in
   `knowledge/instincts/`.
 - Apply the repo's security-verification skill/gate (e.g.
-  [skills/verify-security/SKILL.md](../verify-security/SKILL.md)) when the
+  skills/verify-security/SKILL.md) when the
   diff touches trust boundaries, identity, external services, uploads, AI,
   background jobs, or data access.
 - Identity provider (e.g. Keycloak): check the attribute or role is actually

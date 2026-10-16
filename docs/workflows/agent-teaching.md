@@ -99,6 +99,6 @@ Teach these when relevant:
 
 ## Skill
 
-Use [`../../skills/agent-teacher/SKILL.md`](../../skills/agent-teacher/SKILL.md)
+Use `../../skills/agent-teacher/SKILL.md`
 when the user asks for explanations, onboarding, workflow guidance, or a reusable
 prompt/tool lesson.

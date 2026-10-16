@@ -80,9 +80,9 @@ taken inside a subagent is a decision nobody reviewed.
 
 Reduce tokens before changing tiers — it is free quality:
 
-- [headroom](headroom.md) compresses session context (wrap/proxy/MCP).
+- headroom compresses session context (wrap/proxy/MCP).
 - [`rtk`](rtk.md) compacts noisy command output.
-- Load the [context pack](../../scripts/context-pack.mjs) and
+- Load the context pack and
   [repo-map routing](../../templates/context/repo-map.md) instead of broad search.
 
 ## Safety

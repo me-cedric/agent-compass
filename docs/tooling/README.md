@@ -5,30 +5,30 @@ Concrete setup guides. Each points at runnable files in
 
 | Guide                                          | Tool / concern                                          |
 | ---------------------------------------------- | ------------------------------------------------------- |
-| [cli.md](cli.md)                               | The `agent-compass` CLI: install, usage, every command. |
+| cli.md                               | The `agent-compass` CLI: install, usage, every command. |
 | [prerequisites.md](prerequisites.md)           | Install the toolchain (node, pnpm, rtk, docker, scanners…). |
 | [rtk.md](rtk.md)                               | Compact, token-cheap wrappers for noisy shell commands. |
-| [headroom.md](headroom.md)                     | Session-level context compression (wrap/proxy/MCP); layers over rtk. |
+| headroom.md                     | Session-level context compression (wrap/proxy/MCP); layers over rtk. |
 | [pnpm.md](pnpm.md)                             | Workspaces, filters, `.npmrc`, `packageManager` pin.    |
 | [turbo.md](turbo.md)                           | Task pipeline, caching, the `check` verb.               |
 | [version-pinning.md](version-pinning.md)       | `.nvmrc`, `.npmrc`, `packageManager`, engines, Rust channel vs MSRV. |
 | [github-actions.md](github-actions.md)         | Required GitHub Action majors and CI template policy.   |
 | [husky.md](husky.md)                           | `pre-commit`, `pre-push`, `commit-msg` hooks.           |
-| [mcp.md](mcp.md)                               | MCP setup, projectmem, Figma design context.            |
-| [mcp-servers.md](mcp-servers.md)               | Recommended ready-to-use MCP servers (context7, fetch, playwright, …). |
-| [agent-provider-capabilities.md](agent-provider-capabilities.md) | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
+| mcp.md                               | MCP setup, projectmem, Figma design context.            |
+| mcp-servers.md               | Recommended ready-to-use MCP servers (context7, fetch, playwright, …). |
+| agent-provider-capabilities.md | Claude, Codex, and Copilot native levers: skills, hooks, goals, subagents, prompts, MCP. |
 | [upstream-sources.md](upstream-sources.md)       | Pinned external skill registry, cached checks, and reviewed refresh. |
 | [document-ingestion.md](document-ingestion.md)   | Safe local office-file and PDF extraction with anydoc. |
 | [native-mobile-skills.md](native-mobile-skills.md) | Tracked Android and Apple-platform skill corpora: routing, install, licence posture. |
 | [device-automation.md](device-automation.md)   | agent-device: drive and inspect a running app on a simulator, emulator or device (CLI, MCP). |
-| [operational-skills.md](operational-skills.md) | Tracked DevOps/security/infra/compliance corpus: install-time safety gate and the eight narrowings. |
+| operational-skills.md | Tracked DevOps/security/infra/compliance corpus: install-time safety gate and the eight narrowings. |
 | [style-and-design-skills.md](style-and-design-skills.md) | Tracked style, design, and document-extraction sources: curation, install routes, inventories. |
 | [agent-permissions.md](agent-permissions.md)   | Model & permission profiles per task type (read-only, fast-edit, careful, goal). |
 | [model-routing.md](model-routing.md)           | Model tier + delegation + token layer per task type to cut cost. |
 | [projectmem.md](projectmem.md)                 | Durable local project memory for coding agents.          |
 | [codebase-memory.md](codebase-memory.md)       | Structural code intelligence: query the graph before broad grep. |
 | [sonarqube.md](sonarqube.md)                   | Local SonarQube: sonar:do (scan + auto-close + report). |
-| [vale.md](vale.md)                             | Prose linting: imposed vocabulary, required sections, ids. |
+| vale.md                             | Prose linting: imposed vocabulary, required sections, ids. |
 | [security-scanning.md](security-scanning.md)   | OSV scanner, Checkmarx packaging, CI security.          |
 | [docker.md](docker.md)                         | Multi-stage images, local/test compose.                 |
 | [env-management.md](env-management.md)         | Env validation, examples, and local defaults kept in sync. |

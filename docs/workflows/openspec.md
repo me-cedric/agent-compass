@@ -106,7 +106,7 @@ Declare the real root and delete the other:
 { "paths": { "openspec": "docs/openspec" } }
 ```
 
-See the [`one-artifact-root`](../../knowledge/instincts/one-artifact-root.md)
+See the `one-artifact-root`
 instinct. `openspec-guard` fails on a second root.
 
 ### A root outside `<project>/openspec` breaks the installer
@@ -275,6 +275,6 @@ them for spec-kit headings stops `openspec validate` from understanding the file
 ## Related
 
 - [spec-driven-development.md](spec-driven-development.md) — the layout-neutral flow.
-- [`openspec-artifact-chain`](../../knowledge/instincts/openspec-artifact-chain.md) — the instinct.
+- `openspec-artifact-chain` — the instinct.
 - [`spec-drift-triage`](../../skills/spec-drift-triage/SKILL.md) — when code and spec already disagree.
 - [`progress-audit`](../../skills/progress-audit/SKILL.md) — what is built against what is specified.

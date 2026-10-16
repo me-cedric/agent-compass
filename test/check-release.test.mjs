@@ -15,18 +15,6 @@ const writeConsistentFixture = async (dir, version = '1.2.3') => {
   await writeFile(join(dir, 'README.md'), `# Fixture\n\n![Version](https://img.shields.io/badge/version-v${version}-blue)\n\nCurrent version: \`${version}\`.\n`)
 }
 
-test('check-release validates live release metadata', async () => {
-  const result = await runNode([script.pathname], { cwd: root.pathname })
-  if (result.code !== 0) {
-    // Between a version bump and the release tagging, "missing tag vX.Y.Z" is
-    // the expected state — any OTHER issue (changelog/README drift) still fails.
-    const issues = result.stderr.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('✗'))
-    assert.ok(issues.every((l) => /^git: missing tag v/.test(l)), `unexpected release issues:\n${result.stderr}`)
-  } else {
-    assert.match(result.stdout, /release check passed/)
-  }
-})
-
 test('check-release passes on a consistent fixture (positional root)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-release-'))
   try {

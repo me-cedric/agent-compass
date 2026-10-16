@@ -72,7 +72,7 @@ Repeat for each repository behind a remote. A release that already exists is
 success, not a failure — leave it and report it.
 
 7. Tell host projects to bump their submodule using
-   [`upgrading.md`](upgrading.md).
+   `upgrading.md`.
 
 Shortcut after review and validation. This runs steps 1, 3, 4, 5, and 6 in one
 command — `--release` implies `--push`, extracts the changelog section as the

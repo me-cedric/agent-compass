@@ -192,7 +192,7 @@ A refresh moves the pin and rewrites the recorded inventory. It copies no file.
 
 ## Related
 
-- [`platform-skill-before-memory`](../../knowledge/instincts/platform-skill-before-memory.md)
+- `platform-skill-before-memory`
   — why the tracked skill wins over recall for a yearly-release platform.
 - [`ui-change-needs-visual-proof`](../../knowledge/instincts/ui-change-needs-visual-proof.md)
   — the screenshot rule this skill applies to emulators and simulators.

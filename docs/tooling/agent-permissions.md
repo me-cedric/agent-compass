@@ -88,4 +88,4 @@ Use `[profiles.NAME]` in `config.toml` with `model`, `approval_policy`, and
 
 Cloud agent and code review run configured tools autonomously — keep them on a
 read-only allowlist and reserve write tools for local, approval-gated surfaces.
-See [`mcp.md`](mcp.md) and the MCP tool contract.
+See `mcp.md` and the MCP tool contract.

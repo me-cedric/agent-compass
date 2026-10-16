@@ -1,7 +1,7 @@
 # Husky Hooks
 
 Git hooks that enforce the gates locally, before bad commits leave the machine.
-Templates: [`templates/monorepo/husky/`](../../templates/monorepo/husky/).
+Templates: `templates/monorepo/husky/`.
 
 ## The three hooks
 
@@ -21,7 +21,7 @@ pnpm exec husky init          # creates .husky/ and the prepare script
 
 `package.json` gets `"prepare": "husky"` so hooks install on `pnpm install`.
 Configure `lint-staged` (per-glob format/lint) and `commitlint.config.js`
-([template](../../templates/monorepo/commitlint.config.js)).
+(template).
 
 ## Notes
 

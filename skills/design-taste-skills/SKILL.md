@@ -67,7 +67,7 @@ constraint. Before generating anything, fix:
 
 If the project already has a design system, the system wins and the skill's job
 is to use it well. Read
-[`figma-tokens-to-designmd`](../figma-tokens-to-designmd/SKILL.md) or
+`figma-tokens-to-designmd` or
 [`figma-mcp-frontend`](../figma-mcp-frontend/SKILL.md) first when Figma is the
 source of truth.
 
@@ -85,7 +85,7 @@ A design skill's own claim that the result "looks expensive" is not proof.
 ### 5. Agent surfaces are a separate concern
 
 If the surface shows model output — streaming answers, tool calls, approval
-gates, agent task rows — [`ai-native-ui-patterns`](../ai-native-ui-patterns/SKILL.md)
+gates, agent task rows — `ai-native-ui-patterns`
 governs its behaviour, and it composes with either design group. Taste does not
 decide whether a citation is visible or an approval gate blocks.
 

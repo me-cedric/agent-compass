@@ -30,7 +30,7 @@ It writes:
 ## 2. Create project specs first
 
 Before scaffolding code, create `specs/000-project/` from
-[`templates/specs/`](../../templates/specs/). Keep `spec.md` focused on what and
+`templates/specs/`. Keep `spec.md` focused on what and
 why, then put stack choices and validation in `plan.md`. See
 [spec-driven-development](spec-driven-development.md).
 

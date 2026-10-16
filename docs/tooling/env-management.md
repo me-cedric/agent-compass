@@ -18,7 +18,7 @@
 
 ## Template
 
-[`templates/monorepo/env.example.tpl`](../../templates/monorepo/env.example.tpl)
+`templates/monorepo/env.example.tpl`
 shows the style: grouped by concern, each var commented, secrets as placeholders.
 
 ```bash

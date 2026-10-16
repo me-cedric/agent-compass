@@ -52,6 +52,6 @@ rust-version = "1.77"
 - **List `components` in the toolchain file** so `cargo fmt` and `cargo clippy`
   exist after one install.
 
-Templates: [`templates/monorepo/.nvmrc`](../../templates/monorepo/.nvmrc),
-[`.npmrc`](../../templates/monorepo/.npmrc),
-[`tsconfig.base.json`](../../templates/monorepo/tsconfig.base.json).
+Templates: `templates/monorepo/.nvmrc`,
+`.npmrc`,
+`tsconfig.base.json`.

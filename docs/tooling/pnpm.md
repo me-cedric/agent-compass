@@ -15,7 +15,7 @@ Corepack activates it automatically. See
 
 ## Workspace
 
-[`templates/monorepo/pnpm-workspace.yaml`](../../templates/monorepo/pnpm-workspace.yaml)
+`templates/monorepo/pnpm-workspace.yaml`
 declares the package globs (`apps/*`, `packages/*`, `tools/*`). Internal deps use
 the workspace protocol: `"@scope/shared-types": "workspace:*"`.
 
@@ -35,7 +35,7 @@ expects — prefer it over whole-monorepo runs.
 
 ## .npmrc
 
-[`templates/monorepo/.npmrc`](../../templates/monorepo/.npmrc) holds registry/
+`templates/monorepo/.npmrc` holds registry/
 install settings (e.g. `auto-install-peers`, private registry auth via env). Keep
 tokens out — reference `${NPM_TOKEN}` from the environment.
 

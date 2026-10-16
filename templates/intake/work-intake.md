@@ -45,4 +45,4 @@ The highest-leverage automation is preventing a vague start. A precise intake
 removes clarification loops and makes `/goal`, subagents, and cloud agents safe.
 To turn a rough request into this shape, use the `prompt-upgrade` prompt file or
 the `agent-teacher` skill. See
-[`../../docs/workflows/agent-improvement-loop.md`](../../docs/workflows/agent-improvement-loop.md).
+`../../docs/workflows/agent-improvement-loop.md`.

@@ -35,5 +35,5 @@ and the `resilience-policy-pattern` instinct in
 
 For queue-backed provider work (media processing, imports, exports, AI calls),
 also use the
-[`async-external-pipeline`](../../knowledge/instincts/async-external-pipeline.md)
+`async-external-pipeline`
 instinct.

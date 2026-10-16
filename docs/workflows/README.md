@@ -12,8 +12,8 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [openspec.md](openspec.md)                     | Driving the OpenSpec change lifecycle: artifact chain, status gate, enforcement. |
 | [project-memory.md](project-memory.md)         | Reading and writing durable agent memory during work. |
 | [agent-teaching.md](agent-teaching.md)          | Teaching users without coaching every prompt. |
-| [agent-improvement-loop.md](agent-improvement-loop.md) | Turning repeated friction into instructions, skills, prompts, hooks, MCP, and checks. |
-| [agent-value-expansion.md](agent-value-expansion.md) | Extra automation and precision ideas beyond the current baseline. |
+| agent-improvement-loop.md | Turning repeated friction into instructions, skills, prompts, hooks, MCP, and checks. |
+| agent-value-expansion.md | Extra automation and precision ideas beyond the current baseline. |
 | [long-running-task.md](long-running-task.md) | Safe autonomous multi-phase implementation loops. |
 | [validation-defaults.md](validation-defaults.md) | Default lint/typecheck/test/build selection when a repo leaves details open. |
 | [pull-requests.md](pull-requests.md)           | Creating PRs and MRs: the body contract, base, labels, assignee, reviewers. |
@@ -21,8 +21,8 @@ Operational playbooks. Each is a sequence an agent (or you) can follow end to en
 | [wave-workflow.md](wave-workflow.md)           | Working a backlog of arbitrations or audit findings, one reviewed wave at a time. |
 | [mobile-visual-check.md](mobile-visual-check.md) | iOS, Android and React Native: the builder looks at its own screens (snapshots, agent-device), machine accessibility checks, a fault list. |
 | [pr-review.md](pr-review.md)                   | Local/GitHub PR reviews and implementing review fixes. |
-| [review-and-ship.md](review-and-ship.md)       | Finishing: review, validate, PR.                |
-| [knowledge-capture.md](knowledge-capture.md)   | Feeding lessons from a project back into this repo. |
-| [skill-intake.md](skill-intake.md)             | Deciding which local/public skills belong in Agent Compass. |
+| review-and-ship.md       | Finishing: review, validate, PR.                |
+| knowledge-capture.md   | Feeding lessons from a project back into this repo. |
+| skill-intake.md             | Deciding which local/public skills belong in Agent Compass. |
 | [releasing.md](releasing.md)                   | Tagging a reviewed agent-compass release; attaching host build artifacts. |
-| [upgrading.md](upgrading.md)                   | Bumping an imported agent-compass submodule safely. |
+| upgrading.md                   | Bumping an imported agent-compass submodule safely. |

@@ -30,7 +30,7 @@ Two entry points:
 
 ## The shape
 
-Fill [`docs/decisions/000-template.md`](../../docs/decisions/000-template.md):
+Fill `docs/decisions/000-template.md`:
 context and problem → decision drivers → considered options (each with pros and
 cons) → decision (chosen, and why the others were rejected) → consequences →
 links.

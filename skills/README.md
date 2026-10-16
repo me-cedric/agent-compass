@@ -8,7 +8,7 @@ Copilot as referenced context.
 
 ### Compass missions
 
-Playbooks for operating agent-compass itself — routed from [`MISSIONS.md`](../MISSIONS.md).
+Playbooks for operating agent-compass itself — routed from `MISSIONS.md`.
 
 | Skill               | What it does                                                            |
 | ------------------- | ----------------------------------------------------------------------- |
@@ -129,7 +129,7 @@ combines with either taste group above.
 The 146 curated operational skills are **not stored here**. They are tracked at
 [`BagelHole/DevOps-Security-Agent-Skills`](https://github.com/BagelHole/DevOps-Security-Agent-Skills)
 and corrected at install time — see
-[operational-skills.md](../docs/tooling/operational-skills.md).
+operational-skills.md.
 
 <!-- BEGIN GENERATED:OPERATIONAL_SKILLS -->
 ### Operational capability packs
@@ -169,7 +169,7 @@ node scripts/cli.mjs external-skills --source devops-security --recommended --gl
 | **hardening** | 6 | CIS, Linux, Windows, container, Kubernetes, and agent deployment hardening. |
 | **compliance-frameworks** | 6 | FedRAMP, GDPR, HIPAA, ISO 27001, PCI DSS, and SOC 2 framework guidance. |
 
-Every installed skill gains the Agent Compass operational safety gate, the argv-secret narrowings, and pinned MIT provenance. Upstream executable payloads are refused unless explicitly allowed. See [operational-skills.md](../docs/tooling/operational-skills.md).
+Every installed skill gains the Agent Compass operational safety gate, the argv-secret narrowings, and pinned MIT provenance. Upstream executable payloads are refused unless explicitly allowed. See operational-skills.md.
 
 #### Root-pack contents
 
@@ -346,7 +346,7 @@ a repo has `.specify/`.
 Native platform guidance itself lives in two external corpora that Agent Compass
 **tracks but never copies** — see
 [native-mobile-skills.md](../docs/tooling/native-mobile-skills.md) and
-[ADR 002](../docs/decisions/002-tracked-external-reference-sources.md).
+ADR 002.
 
 ## Using them
 
@@ -374,7 +374,7 @@ global provider directories.
 The stack-pattern skills were extracted from a production monorepo and may carry
 light project-specific naming in examples — that's fine as illustration; the
 triggers and rules are generic. Keep them current with
-[`scripts/pull-knowledge.mjs`](../scripts/pull-knowledge.mjs). Adding a skill?
+`scripts/pull-knowledge.mjs`. Adding a skill?
 Create `skills/<name>/SKILL.md` and add a row here (see
 [CONTRIBUTING](../CONTRIBUTING.md)).
 

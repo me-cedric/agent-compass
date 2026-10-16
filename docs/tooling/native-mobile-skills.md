@@ -12,7 +12,7 @@ The pinned commits, licences, and skill inventories live in
 `"strategy": "reference"`. See
 [upstream-sources.md](upstream-sources.md#reference-sources-tracked-not-copied)
 for what that strategy guarantees, and
-[ADR 002](../decisions/002-tracked-external-reference-sources.md) for why these
+ADR 002 for why these
 sources are tracked rather than vendored.
 
 ## Why These Are Not Vendored
@@ -36,7 +36,7 @@ android skills add --skill=<skill> --project=.
 ```
 
 Requires the [Android CLI](https://developer.android.com/tools/agents/android-cli).
-Android Studio installs the same skills through its own Gemini skills panel. The
+Android Studio installs the same skills through its own AI skills panel. The
 repository is <https://github.com/android/skills>.
 
 ### Apple platforms — `dpearson2699/swift-ios-skills` (PolyForm Perimeter 1.0.0)
@@ -131,8 +131,8 @@ third party a voice in the agent's decisions.
 | Validation (§3) | Run the smallest real command: `./gradlew :app:lint :app:testDebugUnitTest` or `xcodebuild test -scheme <scheme> -destination '<simulator>'`. Never report a skill's example command as a result. |
 | Visual proof (§6) | A screen change owes a screenshot from a real emulator or simulator, not a class-name assertion. See [`ui-change-needs-visual-proof`](../../knowledge/instincts/ui-change-needs-visual-proof.md). |
 | Module docs (§7) | A Gradle module or a Swift package is a module. It carries a `README.md`. |
-| Decision records | A platform-minimum bump, a navigation library choice, or a persistence choice is an ADR under [`docs/decisions/`](../decisions/000-template.md). |
-| Platform freshness | Load the tracked skill before answering from memory. See [`platform-skill-before-memory`](../../knowledge/instincts/platform-skill-before-memory.md). |
+| Decision records | A platform-minimum bump, a navigation library choice, or a persistence choice is an ADR under `docs/decisions/`. |
+| Platform freshness | Load the tracked skill before answering from memory. See `platform-skill-before-memory`. |
 
 ## Check And Refresh The Pins
 

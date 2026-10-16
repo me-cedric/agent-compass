@@ -91,5 +91,5 @@ agent-compass upstream-skills --update caveman --dry
   table and the sub-agent propagation rule.
 - [style-and-design-skills.md](../../docs/tooling/style-and-design-skills.md) —
   install routes and the tracked inventories.
-- [`agent-teacher`](../agent-teacher/SKILL.md) — when the user wants to be taught
+- `agent-teacher` — when the user wants to be taught
   rather than have the output reshaped.

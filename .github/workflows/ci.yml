@@ -19,11 +19,5 @@ jobs:
         run: for f in scripts/*.mjs; do node --check "$f"; done
       - name: Enforce GitHub Actions versions
         run: node scripts/check-actions.mjs
-      - name: Run tests
-        run: npm test
-      - name: Enforce generic naming
-        run: node scripts/check-naming.mjs
-      - name: Enforce index freshness
-        run: node scripts/check-indexes.mjs
-      - name: Check docs and template placeholders
-        run: node scripts/check-docs.mjs
+      - name: Run checks
+        run: npm run check

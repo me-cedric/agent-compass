@@ -157,7 +157,7 @@ configuration (Dual Graph MCP, Context Store, Session End rules).
 ## Relationship to headroom
 
 `rtk` works at the **command** layer (it compacts one command's stdout you
-invoke directly). [`headroom`](headroom.md) works at the **session** layer (it
+invoke directly). `headroom` works at the **session** layer (it
 compresses everything sent to the model, set up once via wrap/proxy/MCP). They
 are complementary and stack — keep using `rtk` for noisy commands even when an
 agent runs inside `headroom wrap`. Prefer headroom as the default session token

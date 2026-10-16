@@ -55,7 +55,7 @@ remaining risk, and evidence location. Redact secrets and personal data.
 ## Related assets
 
 - [`plan-before-operational-change`](../../knowledge/instincts/plan-before-operational-change.md)
-- [`verify-security`](../../skills/verify-security/SKILL.md)
+- `verify-security`
 - Opt-in capability packs in [`skills/README.md`](../../skills/README.md)
 
 This gate distills and hardens operational patterns adapted from

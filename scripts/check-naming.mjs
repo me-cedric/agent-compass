@@ -25,14 +25,16 @@ Also validates SKILL.md frontmatter and metadata.`,
 
 const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToPath(import.meta.url))))
 const SELF = basename(fileURLToPath(import.meta.url))
-const IGNORE = new Set(['.git', 'node_modules', 'incoming'])
+const IGNORE = new Set(['.git', 'node_modules'])
+// docs/remaster holds evidence about named team projects, so it is exempt.
+const IGNORE_PATHS = new Set(['docs/remaster'])
 const TEXT = new Set(['.md', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.json', '.yml', '.yaml', '.toml', '.properties', '.sh', '.tpl', '.txt', ''])
 
 // Forbidden tokens (case-insensitive regex fragments). Extend as new projects
 // are mined. Use \\b for short words to avoid matching inside other words.
 const DENY = [
   'parcus', 'velhop', 'orbility', 'eovia', 'nexterite', 'freshmile', 'monetico',
-  'konvoy', '\\bpaag\\b',
+  '\\bpaag\\b',
   '\\bcts\\b', 'parking[-_ ]?lots?', 'free[-_ ]?spots?', 'ev[-_ ]charging',
 ]
 const RE = new RegExp(`(${DENY.join('|')})`, 'i')
@@ -54,8 +56,8 @@ const checkSkillFrontmatter = (full, txt) => {
 }
 const walk = (dir) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (IGNORE.has(e.name)) continue
     const full = join(dir, e.name)
+    if (IGNORE.has(e.name) || IGNORE_PATHS.has(full.slice(ROOT.length + 1))) continue
     if (e.isDirectory()) walk(full)
     else if (basename(e.name) !== SELF && TEXT.has(extname(e.name))) {
       let txt

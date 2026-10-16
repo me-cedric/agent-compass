@@ -60,7 +60,7 @@ Follow in order; loop back when new facts land.
    - `gh search repos` / `gh search code` for reference implementations.
    - The host project's own MCP servers / docs for client-system facts.
    - The repo's `stacks/`, `skills/`, `knowledge/` as candidate inputs.
-   Enable these via [`docs/tooling/mcp-servers.md`](../../docs/tooling/mcp-servers.md)
+   Enable these via `docs/tooling/mcp-servers.md`
    (context7 for docs, exa for web research, fetch for pages, playwright for live
    apps). Cite sources and dates. Do not assert a current-tech fact you did not
    verify.

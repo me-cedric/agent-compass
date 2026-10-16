@@ -122,7 +122,7 @@ agent-compass upstream-skills --update swift-ios-skills
 
 The tracked native mobile corpora and their routing layer are documented in
 [native-mobile-skills.md](native-mobile-skills.md). The reasoning is
-[ADR 002](../decisions/002-tracked-external-reference-sources.md).
+ADR 002.
 
 ## Registry Contract
 
@@ -159,7 +159,7 @@ preserves those changes and stops when it cannot merge them safely.
 | `anydoc` | `firecrawl/anydoc` | 1 | 1 | MIT |
 | `agent-device` | `callstack/agent-device` | 4 | 4 | MIT |
 
-Per-corpus detail: [operational-skills.md](operational-skills.md),
+Per-corpus detail: operational-skills.md,
 [native-mobile-skills.md](native-mobile-skills.md),
 [device-automation.md](device-automation.md), and
 [style-and-design-skills.md](style-and-design-skills.md).
@@ -187,7 +187,7 @@ The installer writes `.claude/skills/` and `.agents/skills/`, adds
 `.github/instructions/external-skills.instructions.md` so Copilot sees the tree,
 writes the source's licence notice beside the install, and refuses executable
 payloads unless `--allow-scripts` is passed. The operational corpus is corrected
-on the way through — see [operational-skills.md](operational-skills.md).
+on the way through — see operational-skills.md.
 
 ## An Install Is A Snapshot, So It Is Recorded
 

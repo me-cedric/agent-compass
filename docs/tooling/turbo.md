@@ -5,7 +5,7 @@ in the right order, and caches outputs.
 
 ## Pipeline
 
-[`templates/monorepo/turbo.json`](../../templates/monorepo/turbo.json) defines
+`templates/monorepo/turbo.json` defines
 tasks and their dependencies — e.g. `build` depends on upstream `^build`, `test`/
 `lint`/`typecheck` declare their inputs and outputs so caching is correct.
 

@@ -25,7 +25,7 @@ implementation.
 
 The flow above is the same in every layout. Where the artifacts live is not, and
 an artifact written into the wrong root is read by nothing — see the
-[`one-artifact-root`](../../knowledge/instincts/one-artifact-root.md) instinct.
+`one-artifact-root` instinct.
 
 | The project has | Layout | Read |
 | --------------- | ------ | ---- |

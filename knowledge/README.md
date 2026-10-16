@@ -19,12 +19,12 @@ material humans and agents *read* and *promote from*.
   [`drizzle-repository-pattern`](instincts/drizzle-repository-pattern.md),
   [`mapper-pattern`](instincts/mapper-pattern.md),
   [`shared-types-pattern`](instincts/shared-types-pattern.md),
-  [`payment-module-pattern`](instincts/payment-module-pattern.md).
+  `payment-module-pattern`.
 - **Dependency boundaries:**
-  [`untyped-dependency-adapter`](instincts/untyped-dependency-adapter.md).
+  `untyped-dependency-adapter`.
 - **Async & pipelines:**
   [`bullmq-processor-pattern`](instincts/bullmq-processor-pattern.md),
-  [`async-external-pipeline`](instincts/async-external-pipeline.md).
+  `async-external-pipeline`.
 - **Resilience & observability:**
   [`resilience-policy-pattern`](instincts/resilience-policy-pattern.md),
   [`otel-logger-pattern`](instincts/otel-logger-pattern.md).
@@ -37,30 +37,30 @@ material humans and agents *read* and *promote from*.
 - **Config & environment:**
   [`env-var-sync`](instincts/env-var-sync.md).
 - **Platform & SDK freshness:**
-  [`platform-skill-before-memory`](instincts/platform-skill-before-memory.md).
+  `platform-skill-before-memory`.
 - **Frontend:**
-  [`angular-ai-assets`](instincts/angular-ai-assets.md),
-  [`react-query-bulk-mutation-reconcile`](instincts/react-query-bulk-mutation-reconcile.md),
-  [`entity-picker-label-source`](instincts/entity-picker-label-source.md),
-  [`frontend-shared-layer-escapes`](instincts/frontend-shared-layer-escapes.md),
-  [`dev-server-route-warmup`](instincts/dev-server-route-warmup.md),
+  `angular-ai-assets`,
+  `react-query-bulk-mutation-reconcile`,
+  `entity-picker-label-source`,
+  `frontend-shared-layer-escapes`,
+  `dev-server-route-warmup`,
   [`keyboard-path-before-done`](instincts/keyboard-path-before-done.md),
   [`hit-region-keeps-drawn-size`](instincts/hit-region-keeps-drawn-size.md).
 - **Workflow & process:**
   [`mr-scope-and-green-pipeline`](instincts/mr-scope-and-green-pipeline.md),
   [`commit-convention`](instincts/commit-convention.md),
   [`plan-before-operational-change`](instincts/plan-before-operational-change.md),
-  [`spec-kit-workflow`](instincts/spec-kit-workflow.md),
+  `spec-kit-workflow`,
   [`self-review-before-done`](instincts/self-review-before-done.md),
   [`verified-progress-signal`](instincts/verified-progress-signal.md),
-  [`spec-status-sync`](instincts/spec-status-sync.md),
-  [`provisioning-state-registry`](instincts/provisioning-state-registry.md),
-  [`one-artifact-root`](instincts/one-artifact-root.md),
-  [`openspec-artifact-chain`](instincts/openspec-artifact-chain.md),
+  `spec-status-sync`,
+  `provisioning-state-registry`,
+  `one-artifact-root`,
+  `openspec-artifact-chain`,
   [`cap-as-ratchet-with-baseline`](instincts/cap-as-ratchet-with-baseline.md),
   [`worktree-base-before-work`](instincts/worktree-base-before-work.md),
   [`changelog-entry-in-the-same-task`](instincts/changelog-entry-in-the-same-task.md),
-  [`parallel-locale-artifacts`](instincts/parallel-locale-artifacts.md),
+  `parallel-locale-artifacts`,
   [`documentation-chain-followthrough`](instincts/documentation-chain-followthrough.md),
   [`subagent-worktree-fence`](instincts/subagent-worktree-fence.md).
 - **Testing:**
@@ -73,13 +73,13 @@ material humans and agents *read* and *promote from*.
   [`test-proves-presence-not-truth`](instincts/test-proves-presence-not-truth.md),
   [`platform-a11y-audit-is-lenient`](instincts/platform-a11y-audit-is-lenient.md),
   [`snapshot-references-are-os-bound`](instincts/snapshot-references-are-os-bound.md),
-  [`shell-refusal-goes-to-stderr`](instincts/shell-refusal-goes-to-stderr.md).
+  `shell-refusal-goes-to-stderr`.
 - **Build & packaging:**
-  [`vendored-corpus-manifest`](instincts/vendored-corpus-manifest.md),
-  [`embedded-tree-lifecycle`](instincts/embedded-tree-lifecycle.md),
+  `vendored-corpus-manifest`,
+  `embedded-tree-lifecycle`,
   [`generated-file-whole-run`](instincts/generated-file-whole-run.md),
   [`build-success-needs-an-artifact`](instincts/build-success-needs-an-artifact.md),
-  [`declare-every-imported-module`](instincts/declare-every-imported-module.md),
+  `declare-every-imported-module`,
   [`swift-type-check-budget`](instincts/swift-type-check-budget.md).
 
 ## What an "instinct" is
@@ -87,7 +87,7 @@ material humans and agents *read* and *promote from*.
 A tiny, high-signal note that captures one pattern an agent should reach for
 automatically: the shape, the gotcha, the rule. They're the raw material for
 `skills/` and `docs/`. When an instinct proves generic and reusable, promote it
-(see [knowledge-capture](../docs/workflows/knowledge-capture.md)) — rewriting away
+(see knowledge-capture) — rewriting away
 project-specific names.
 
 ## Adding knowledge

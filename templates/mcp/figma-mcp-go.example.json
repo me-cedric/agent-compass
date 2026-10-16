@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "figma-mcp-go": {
-      "command": "npx",
-      "args": ["-y", "@vkhanhqui/figma-mcp-go@latest"]
-    }
-  }
-}

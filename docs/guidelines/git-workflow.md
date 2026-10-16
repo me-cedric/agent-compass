@@ -37,7 +37,7 @@ Subject ≤ ~50 chars, imperative mood. Enforced by `commitlint` via the
   workspace; abort the push on failure.
 - **commit-msg** → `commitlint`.
 
-Templates: [`templates/monorepo/husky/`](../../templates/monorepo/husky/). Setup:
+Templates: `templates/monorepo/husky/`. Setup:
 [tooling/husky.md](../tooling/husky.md).
 
 ## Pull requests

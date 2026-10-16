@@ -15,10 +15,6 @@ This project may use MCP servers for agent tools and context.
 | agent-device | Drive and inspect a running iOS or Android app (screens, element bounds, screenshots) | See `.mcp/agent-device.example.json` + `docs/tooling/device-automation.md`; pin the version | none |
 | research (context7, sequential-thinking, fetch, playwright) | Live docs, reasoning, web pages, browser | See `.mcp/recommended.example.json` + `docs/tooling/mcp-servers.md` | none |
 
-Gemini CLI reads MCP servers from `.gemini/settings.json` instead of `.mcp/`
-examples — start from the host's `.gemini/settings.example.json` (template:
-`templates/gemini/` in agent-compass).
-
 ## Rules
 
 - Do not commit tokens.
@@ -48,4 +44,4 @@ Default shared examples should enable read/export tools first. Upstream write
 tools exist, but do not allowlist them until the team has accepted the risk and
 updated `tool-contract.md`.
 
-Full setup guide: [`figma-mcp-go.md`](figma-mcp-go.md).
+Full setup guide: `figma-mcp-go.md`.

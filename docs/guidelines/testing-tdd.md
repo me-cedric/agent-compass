@@ -117,7 +117,7 @@ agent-compass evidence --change <slug> --phase finish --run  # after the work
 files, reads the spec's acceptance criteria, and renders the before and after
 screenshots side by side at `.agent/changes/<slug>/`. It is a gate: it exits
 non-zero unless the after-proof is complete **and** something actually changed.
-Start from [`specs/change-spec-template.md`](../../templates/specs/change-spec-template.md);
+Start from `specs/change-spec-template.md`;
 `finish` parses two of its headings literally.
 
 A complete bundle proves the run happened. It does not prove the result looks

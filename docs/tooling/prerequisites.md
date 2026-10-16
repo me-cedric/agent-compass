@@ -22,7 +22,7 @@ Node is pinned by `.nvmrc`; pnpm by `packageManager` in `package.json`
 | Tool         | Purpose                                  | Install                                                        |
 | ------------ | ---------------------------------------- | ------------------------------------------------------------- |
 | `rtk`        | Compact wrappers for noisy shell output  | Install the `rtk` binary from its distribution (Homebrew tap / cargo / release archive), then `rtk --version`. Reference: [rtk.md](rtk.md). |
-| `headroom`   | Session-level context compression layer  | `pip install "headroom-ai[all]"`, then `headroom --version`. Reference: [headroom.md](headroom.md). |
+| `headroom`   | Session-level context compression layer  | `pip install "headroom-ai[all]"`, then `headroom --version`. Reference: headroom.md. |
 | `skillshare` | Sync skills/agents across AI CLIs        | `npm i -g skillshare` (or per its README); `skillshare --help` |
 
 > `rtk` is a standalone binary, not an npm package — grab it from wherever you
@@ -78,7 +78,7 @@ Figma MCP quick setup:
 3. Verify the agent can call Figma design context tools.
 4. Keep tokens in the client secret store, not in repo files.
 
-See [mcp.md](mcp.md).
+See mcp.md.
 
 ## Quality & security (per project need)
 

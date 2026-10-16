@@ -134,8 +134,7 @@ portable between machines and contains no developer-specific absolute path:
 ```
 
 Copy `.mcp/codebase-memory.example.json` into your MCP client config and restart
-the agent session. Gemini CLI reads servers from `.gemini/settings.json` instead
-— merge the same `mcpServers` entry there.
+the agent session.
 
 The example ships to every host as a catalogue entry, so `agent-compass
 mcp-probe` only probes it once the host selects the layer. Otherwise a tool

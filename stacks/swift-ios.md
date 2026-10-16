@@ -26,7 +26,7 @@ Use this preset for a real Apple target. A React Native or Expo app has an
 - Doc: [native-mobile-skills.md](../docs/tooling/native-mobile-skills.md) —
   install commands, full inventory, licence posture, and the gates that survive.
 - Instinct:
-  [`platform-skill-before-memory`](../knowledge/instincts/platform-skill-before-memory.md).
+  `platform-skill-before-memory`.
 - Guidelines: [coding-style](../docs/guidelines/coding-style.md),
   [testing-tdd](../docs/guidelines/testing-tdd.md),
   [accessibility](../docs/guidelines/accessibility.md).

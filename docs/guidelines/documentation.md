@@ -30,8 +30,8 @@ alternatives. Use a fixed section list, because a fixed list makes the document
 reviewable: a reviewer, or an agent, checks each section for presence and for
 strength instead of guessing what is absent.
 
-**One place owns that list.** [`gen-docs`](../../skills/gen-docs/SKILL.md)
-scaffolds the sections and [`verify-module`](../../skills/verify-module/SKILL.md)
+**One place owns that list.** `gen-docs`
+scaffolds the sections and `verify-module`
 blocks delivery on them, so the checklist in `verify-module` is the list. Change
 it there, and change the generator in the same commit. Three copies of one
 section list always drift.
@@ -83,7 +83,7 @@ contract, or by a decision record. Where a project has such a table, it is
 recorded in the decision record that created it, and it is enforced mechanically
 — a reviewer cannot be expected to remember a retired term months later, and a
 single reintroduction can be a compliance issue rather than a style slip. Set up
-the check with [tooling/vale.md](../tooling/vale.md); a repo that declares one
+the check with tooling/vale.md; a repo that declares one
 runs it on documentation changes, including docs-only ones.
 
 ## API contract sync

@@ -16,7 +16,7 @@ Angular ships first-party agent tooling (https://angular.dev/ai) — wire it in
 instead of relying on training data:
 
 - **Angular CLI MCP server** — keyless, runs from the workspace root. Copy
-  [`templates/mcp/angular-cli.example.json`](../templates/mcp/angular-cli.example.json)
+  `templates/mcp/angular-cli.example.json`
   into the client MCP config. Call `get_best_practices` before writing Angular
   code and `search_documentation` instead of guessing APIs. The example ships
   `--read-only`; drop the flag only after updating
@@ -38,7 +38,7 @@ instead of relying on training data:
 - Skill: `angular-patterns` for idiomatic Angular (with an offline vendored
   copy of the official best-practices guide when the MCP server is absent).
 - Skill: `figma-mcp-frontend` for design-context-driven UI work.
-- Template: [`templates/mcp/angular-cli.example.json`](../templates/mcp/angular-cli.example.json).
+- Template: `templates/mcp/angular-cli.example.json`.
 - Guidelines: [typescript](../docs/guidelines/typescript.md),
   [testing-tdd](../docs/guidelines/testing-tdd.md).
 
