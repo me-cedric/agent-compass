@@ -9,7 +9,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { CONFIG, loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
+import { CONFIG, konvoyOwns, loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
 import { detectPacks, detectSignals } from './detect.mjs'
 import { CATALOG, stackHits } from './mcp.mjs'
 import { buildPlan } from './plan.mjs'
@@ -137,7 +137,11 @@ const collect = ({ AC, root, config: given, konvoy }) => {
   const signals = detectSignals(root, { openspecDir: paths.openspec, designs: paths.designs })
   const detected = detectPacks(root).filter((p) => isDir(join(AC, 'packs', p)))
   const ctx = { AC, root, plan, config, signals, detected, stacks: plan.stacks, why: recommendedPacks({ AC, root, signals, detected }) }
+  // An item that the Konvoy ledger owns cannot go on: the recommended set and a switch leave its exclude as it is.
+  const path = (a) => (a.kind === 'agent' ? `.claude/agents/${a.id}.md` : ['rule', 'file', 'block'].includes(a.kind) ? a.id : null)
+  const konvoyHas = (a) => konvoy && ((a.kind === 'skill' && konvoy.skills.has(a.id)) || (path(a) && konvoyOwns(konvoy, path(a))))
   const all = [...layerAssets(ctx), ...packAssets(ctx), ...mcpAssets(ctx), ...pluginAssets(ctx), ...upstreamAssets(ctx)]
+    .map((a) => (konvoyHas(a) ? { ...a, available: false, recommended: false, reason: 'Konvoy owns it (.agents/konvoy.json)' } : a))
   return { errors: plan.errors, stacks: plan.stacks, signals, detected, assets: KINDS.flatMap((k) => all.filter((a) => a.kind === k)) }
 }
 

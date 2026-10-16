@@ -117,15 +117,18 @@ Only Claude Code reads the `enabledPlugins` setting.
 
 `upstream.json` pins third-party skill sources. Each source has a repository, a 40-character `sha`, a licence, a list of skills, optional `stacks` and an optional `recommend`.
 `recommend: "user"` marks a style source that the `compass-user` plugin covers (ponytail, caveman, i-have-adhd, asd-ste100). `recommend: "manual"` marks a large set (taste, swift-ios). Neither one is in the recommended set; you can still switch it on.
+Three repositories have two entries: a small core in the recommended set (`mattpocock`, `dimillian`, `agent-device`) and the rest by hand (`mattpocock-more`, `dimillian-more`, `agent-device-tools`). Each model-invoked skill adds its description to the always-on listing, so the recommended set keeps a mobile or multi-stack host below 2,000 tokens.
 Compass keeps no copy. `ac sync` fetches the commit of each source in `upstream` into `~/.cache/agent-compass/upstream/` (`AC_CACHE` changes it).
 It copies the skills as they are, with the licence file beside each one. A failed fetch is a warning, and the installed copy stays.
 
 | Source id | Skills | Stacks |
 |---|---|---|
 | `ponytail`, `caveman`, `i-have-adhd`, `asd-ste100` | The style contract. See [agents.md](agents.md#style-contract). | All |
-| `mattpocock` | `grill-me`, `grilling`, `grill-with-docs`, `to-questionnaire`, `wayfinder`, `handoff`, `tdd` | All |
+| `mattpocock` | `grill-me`, `grilling` (the `grill` skill uses them) | All |
+| `mattpocock-more` | `grill-with-docs`, `to-questionnaire`, `wayfinder`, `handoff`, `tdd` (by hand) | All |
 | `taste` | Frontend design direction | `react-web`, `next-web`, `angular-web` |
 | `android`, `swift-ios`, `dimillian`, `agent-device` | Native and device skills. See [native.md](native.md). | Native and Expo stacks |
+| `dimillian-more`, `agent-device-tools` | The other SwiftUI skills; `android-emulator`, `dogfood`, `ios-simulator` (by hand) | Native and Expo stacks |
 | `apple-macos`, `winui`, `gtk` | Desktop review and development | `macos-desktop`, `winui-desktop`, `gtk-desktop` |
 
 A third-party skill is text that you did not write. It cannot relax a compass rule.

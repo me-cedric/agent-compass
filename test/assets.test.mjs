@@ -269,6 +269,19 @@ test('the recommended set per stack: no user-level or large upstream sources; ap
   assert.equal(find(web, 'skill', 'api-contract-sync').recommended, true)
 })
 
+test('an asset that Konvoy owns is not available, and the recommended set keeps its exclude', () => {
+  const root = makeHost({ ...WEB_HOST, '.agents/konvoy.json': JSON.stringify({ compass_skills: { review: '0.9.1' }, host_files: ['.claude/agents/reviewer.md', '.claude/output-styles/compass.md'] }) })
+  const config = { version: 1, packs: [], exclude: ['review', 'agent:reviewer', '.claude/output-styles/compass.md'], paths: {} }
+  writeConfig(root, config)
+  const list = listAssets({ AC: REPO, root })
+  for (const [kind, id] of [['skill', 'review'], ['agent', 'reviewer'], ['file', '.claude/output-styles/compass.md']]) {
+    const a = find(list, kind, id)
+    assert.deepEqual([a.available, a.recommended, a.reason], [false, false, 'Konvoy owns it (.agents/konvoy.json)'], `${kind} ${id}`)
+  }
+  const next = recommendedConfig({ AC: REPO, root, config })
+  assert.deepEqual(next.exclude, ['review', 'agent:reviewer', '.claude/output-styles/compass.md'])
+})
+
 test('recommendedConfig applies the recommended set and keeps the other excludes', () => {
   const root = makeHost(WEB_HOST)
   const config = freeze({
@@ -321,7 +334,7 @@ test('the catalog suggest lists and the upstream stacks lists name known signals
   const { sources, errors } = loadUpstream(REPO)
   assert.deepEqual(errors, [])
   const stacks = Object.fromEntries(Object.entries(sources).filter(([, s]) => s.stacks).map(([id, s]) => [id, s.stacks]))
-  assert.deepEqual(Object.keys(stacks).sort(), ['agent-device', 'android', 'apple-macos', 'dimillian', 'gtk', 'swift-ios', 'taste', 'winui'])
+  assert.deepEqual(Object.keys(stacks).sort(), ['agent-device', 'agent-device-tools', 'android', 'apple-macos', 'dimillian', 'dimillian-more', 'gtk', 'swift-ios', 'taste', 'winui'])
   for (const [id, list] of Object.entries(stacks)) assert.ok(list.every((s) => STACK_IDS.includes(s)), id)
   assert.ok(['ponytail', 'caveman', 'i-have-adhd', 'asd-ste100', 'mattpocock'].every((id) => !sources[id].stacks))
 })

@@ -103,9 +103,19 @@
       "holder": "Thomas Ricouard",
       "stacks": ["swift-ios", "macos-desktop"],
       "skills": [
-        "swift-concurrency-expert", "swiftui-liquid-glass", "swiftui-performance-audit",
-        "swiftui-ui-patterns", "swiftui-view-refactor"
+        "swift-concurrency-expert", "swiftui-ui-patterns"
       ]
+    },
+    "dimillian-more": {
+      "repo": "https://github.com/Dimillian/Skills",
+      "sha": "05ba982bfeb0d77d3c97d4542b0ee15034d05f84",
+      "licence": "MIT",
+      "holder": "Thomas Ricouard",
+      "stacks": ["swift-ios", "macos-desktop"],
+      "skills": [
+        "swiftui-liquid-glass", "swiftui-performance-audit", "swiftui-view-refactor"
+      ],
+      "recommend": "manual"
     },
     "agent-device": {
       "repo": "https://github.com/callstack/agent-device",
@@ -114,8 +124,19 @@
       "holder": "Callstack",
       "stacks": ["expo-mobile", "android-compose", "swift-ios"],
       "skills": [
-        "agent-device", "android-emulator", "dogfood", "ios-simulator"
+        "agent-device"
       ]
+    },
+    "agent-device-tools": {
+      "repo": "https://github.com/callstack/agent-device",
+      "sha": "202585240f0c1289642885b5df645cbc25114272",
+      "licence": "MIT",
+      "holder": "Callstack",
+      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
+      "skills": [
+        "android-emulator", "dogfood", "ios-simulator"
+      ],
+      "recommend": "manual"
     },
     "mattpocock": {
       "repo": "https://github.com/mattpocock/skills",
@@ -124,8 +145,19 @@
       "licence": "MIT",
       "holder": "Matt Pocock",
       "skills": [
-        "grill-me", "grilling", "grill-with-docs", "to-questionnaire", "wayfinder", "handoff", "tdd"
+        "grill-me", "grilling"
       ]
+    },
+    "mattpocock-more": {
+      "repo": "https://github.com/mattpocock/skills",
+      "ref": "v1.3.1",
+      "sha": "24fe0ef7737efae15c87225755e9f6f5965e4888",
+      "licence": "MIT",
+      "holder": "Matt Pocock",
+      "skills": [
+        "grill-with-docs", "to-questionnaire", "wayfinder", "handoff", "tdd"
+      ],
+      "recommend": "manual"
     },
     "apple-macos": {
       "repo": "https://github.com/rshankras/claude-code-apple-skills",
