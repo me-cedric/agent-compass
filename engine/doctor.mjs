@@ -3,11 +3,13 @@
 
 import { accessSync, constants, statSync } from 'node:fs'
 import { delimiter, join } from 'node:path'
-import { loadConfig } from './config.mjs'
+import { konvoyOwns, loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
 import { mcpPlan } from './mcp.mjs'
+import { jsonGet } from './merge.mjs'
+import { buildPlan } from './plan.mjs'
 import { syncHost } from './sync.mjs'
 import { BUDGET, measureTokens } from './tokens.mjs'
-import { run } from './util.mjs'
+import { readJson, run } from './util.mjs'
 
 // True when an executable file with this name is in a directory of PATH.
 export const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((dir) => {
@@ -22,10 +24,24 @@ const commandChecks = ({ AC, root, sync }) => {
     .map(([cmd, names]) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names.join(', ')} cannot start` }))
 }
 
-// Before the per-entry merge, a host array became an exclude. The exclude now keeps the compass entries out.
-const excludeChecks = ({ AC, root }) => (loadConfig(root, AC, { init: true }).config?.exclude ?? [])
-  .filter((id) => /#(hooks|permissions)\./.test(id))
-  .map((id) => ({ name: 'exclude', status: 'warn', detail: `${id}: compass merges this array per entry now; remove the exclude to get the compass entries` }))
+// An exclude that a host array needed before the per-entry merge. It is advice only when the key is a planned array that the host holds as an array
+// and Konvoy does not own. Else the exclude is right, and the sync fails without it. A plan error shows in the sync check.
+const konvoyTakes = (kv, file, key) => konvoyOwns(kv, file) || (kv.keys[file] ?? []).some((k) => k === key || key.startsWith(`${k}.`) || k.startsWith(`${key}.`))
+
+const excludeChecks = ({ AC, root }) => {
+  const { config } = loadConfig(root, AC, { init: true })
+  const ids = (config?.exclude ?? []).filter((id) => id.includes('#'))
+  if (!ids.length) return []
+  try {
+    const { konvoy } = loadKonvoy(root)
+    const open = { ...config, exclude: config.exclude.filter((id) => !ids.includes(id)) }
+    const { keys } = buildPlan({ AC, root, config: open, paths: resolvePaths(open, konvoy).paths, konvoy: Boolean(konvoy) })
+    return ids.filter((id) => {
+      const [file, key] = [id.slice(0, id.indexOf('#')), id.slice(id.indexOf('#') + 1)]
+      return Array.isArray(keys.get(file)?.get(key)) && !(konvoy && konvoyTakes(konvoy, file, key)) && Array.isArray(jsonGet(readJson(join(root, file)), key))
+    }).map((id) => ({ name: 'exclude', status: 'warn', detail: `${id}: compass merges this array per entry now; remove the exclude to get the compass entries` }))
+  } catch { return [] }
+}
 
 const tokenChecks = (t) => [
   ...t.items.map((i) => ({ name: 'tokens', status: 'ok', detail: `${i.name}: ${i.chars} chars, about ${i.tokens} tokens` })),

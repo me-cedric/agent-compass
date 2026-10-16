@@ -36,13 +36,15 @@ export const readLock = (root) => {
 
 // The lock records the compass entries of an array key as { entries: [sha, ...] }. An older lock has one sha string: no entry is known.
 const lockedEntries = (v) => (isObj(v) && Array.isArray(v.entries) ? v.entries : [])
+// An older lock has one sha string for the whole array. When the host array still fits it, every entry in it is a compass entry.
+const knownEntries = (prev, host) => (typeof prev === 'string' && Array.isArray(host) && sha(JSON.stringify(host)) === prev ? host.map(entrySha) : lockedEntries(prev))
 const sameList = (a, b) => a.length === b.length && a.every((e, i) => e === b[i])
 
 // A planned array key of a JSON file: add the planned entries, drop the stale compass entries, keep the host entries.
 const mergeArray = (doc, key, planned, prev) => {
   const host = jsonGet(JSON.parse(doc), key)
   if (host !== undefined && !Array.isArray(host)) return { doc, lock: prev, actions: ['kept'] }
-  const merged = arrayMerge(host ?? [], planned, lockedEntries(prev))
+  const merged = arrayMerge(host ?? [], planned, knownEntries(prev, host))
   const moved = !sameList(merged.next, host ?? [])
   return {
     doc: moved ? jsonSet(doc, key, merged.next) : doc,

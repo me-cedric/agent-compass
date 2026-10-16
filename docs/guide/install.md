@@ -46,7 +46,7 @@ It does not change, remove or reorder an entry of yours. It writes that array ag
 - Compass removes an entry of its own when the plan drops it and you did not edit it.
 - A compass hook group that you edited stays. Sync reports `kept` and adds no second group. Revert your edit to take the compass group again.
 - When you delete a compass entry, `ac check --frozen` fails. `ac sync` adds the entry again.
-- To keep the compass entries of one key out, add `<file>#<key>` to `exclude`. Your entries stay. `ac doctor` warns when an old exclude of a `hooks.*` or `permissions.*` key exists, because the merge makes it unnecessary.
+- To keep the compass entries of one key out, add `<file>#<key>` to `exclude`. Your entries stay. `ac doctor` warns about an exclude of an array key that the merge makes unnecessary: the planned value and your value are both arrays, and Konvoy does not own the file or the key.
 - A host value that is not an array stays `kept`.
 
 See [rule 12 of the ownership contract](../contract/ownership.md#array-keys).

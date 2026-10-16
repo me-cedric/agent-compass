@@ -95,7 +95,7 @@ test('arrayMerge never duplicates: the same entry in another key order, or twice
   const reordered = { hooks: [{ timeout: 10, command: guard.hooks[0].command, type: 'command' }], matcher: 'Bash' }
   const r = arrayMerge([own, reordered], [guard, guard], [])
   assert.deepEqual(r.next, [own, reordered])
-  assert.deepEqual(r.entries, shas([guard]))
+  assert.deepEqual(r.entries, [], 'the host had it first')
   assert.deepEqual(arrayMerge([], [guard, guard], []).next, [guard])
 })
 
@@ -116,8 +116,13 @@ test('arrayMerge reports an edited compass hook as kept and does not add a secon
   assert.deepEqual(r.next, [own, edited])
   assert.deepEqual(r.kept, [guard])
   assert.deepEqual(r.entries, [])
-  const other = arrayMerge([own, group('Bash', 'guard')], [guard], [])
-  assert.deepEqual(other.next, [own, group('Bash', 'guard'), guard], 'another matcher is another entry')
+  const narrowed = group('Bash', 'guard')
+  const other = arrayMerge([own, narrowed], [guard], [])
+  assert.deepEqual(other.next, [own, narrowed], 'a changed matcher is still an edited compass group')
+  assert.deepEqual(other.kept, [guard])
+  const gate = arrayMerge([own, group('Bash', 'gate')], [guard], [])
+  assert.equal(gate.next.length, 3, 'a group for another compass subcommand is another group')
+  assert.deepEqual(gate.kept, [])
   const plain = arrayMerge([{ matcher: 'Read|Bash', hooks: [{ type: 'command', command: 'echo ours' }] }], [guard], [])
   assert.equal(plain.next.length, 2, 'a host hook that is not the compass script does not count')
   assert.deepEqual(plain.kept, [])
@@ -126,8 +131,18 @@ test('arrayMerge reports an edited compass hook as kept and does not add a secon
 test('arrayMerge handles permission strings: host strings stay, compass strings append, no string twice', () => {
   const r = arrayMerge(['Read(.env)', 'Bash(rm *)'], ['Bash(rm *)', 'Bash(curl *)'], [])
   assert.deepEqual(r.next, ['Read(.env)', 'Bash(rm *)', 'Bash(curl *)'])
-  assert.deepEqual(r.entries, shas(['Bash(rm *)', 'Bash(curl *)']))
+  assert.deepEqual(r.entries, shas(['Bash(curl *)']), 'a host string that equals a planned string stays the host string')
   const edited = arrayMerge(r.next, ['Bash(curl -s *)'], r.entries)
-  assert.deepEqual(edited.next, ['Read(.env)', 'Bash(curl -s *)'])
+  assert.deepEqual(edited.next, ['Read(.env)', 'Bash(rm *)', 'Bash(curl -s *)'])
   assert.deepEqual(edited.kept, [], 'a string has no edited form')
+})
+
+test('arrayMerge records an entry in the lock only when the lock had it or compass adds it now', () => {
+  const [a, b] = [group('Bash', 'a'), group('Read', 'b')]
+  const first = arrayMerge([a], [a, b], [])
+  assert.deepEqual(first.entries, shas([b]), 'the host had a before compass')
+  const again = arrayMerge(first.next, [a, b], first.entries)
+  assert.deepEqual(again.entries, shas([b]))
+  assert.deepEqual(arrayMerge(first.next, [], first.entries).next, [a], 'the host entry stays when the plan drops it')
+  assert.deepEqual(arrayMerge([a], [a], shas([a])).entries, shas([a]), 'an entry of the lock stays recorded')
 })

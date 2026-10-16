@@ -118,31 +118,33 @@ export const jsonDelete = (text, key) => {
 // An owned key with an object value is a [table]. Any other value is one `key = value` line before the first table.
 
 // Array keys: compass owns its own entries in the array, not the array. An entry is known by the sha of its canonical JSON.
-const COMPASS_HOOK = '.agents/hooks/compass.mjs'
-
 export const entrySha = (entry) => sha(JSON.stringify(entry, (_, v) => (isObj(v) ? sorted(v) : v)))
 
-const runsCompass = (e) => isObj(e) && Array.isArray(e.hooks) && e.hooks.some((h) => typeof h?.command === 'string' && h.command.includes(COMPASS_HOOK))
+// The compass script subcommands (guard, gate, start) that the hook commands of a group run.
+const subcommands = (e) => (isObj(e) && Array.isArray(e.hooks) ? e.hooks : [])
+  .flatMap((h) => (typeof h?.command === 'string' ? [/\.agents\/hooks\/compass\.mjs["']?\s+(\w+)/.exec(h.command)?.[1]] : []))
+  .filter(Boolean)
 
-// A host hook group that runs the compass script on the same matcher is a compass group that the project edited.
-const editedCopy = (host, planned) => runsCompass(host) && runsCompass(planned) && host.matcher === planned.matcher
+// A host hook group that runs the same compass subcommand as a planned group is a compass group that the project edited.
+const editedCopy = (host, planned) => subcommands(planned).some((c) => subcommands(host).includes(c))
 
 // current: the host array. planned: the compass entries. lockShas: the compass entries of the last sync.
-// next: the new host array. entries: the planned entry shas that are in it. kept: the planned entries that stay out.
+// next: the new host array. entries: the planned entries that compass owns in it (in the lock, or added now). kept: the planned entries that stay out.
 export const arrayMerge = (current, planned, lockShas = []) => {
   const want = new Set(planned.map(entrySha))
   const mine = new Set(lockShas)
   const host = current.filter((e) => { const s = entrySha(e); return want.has(s) || !mine.has(s) })
   const have = new Set(host.map(entrySha))
-  const added = []
+  const added = new Set()
+  const adds = []
   const kept = []
   for (const entry of planned) {
     const s = entrySha(entry)
     if (have.has(s)) continue
     if (host.some((h) => editedCopy(h, entry))) kept.push(entry)
-    else { added.push(entry); have.add(s) }
+    else { adds.push(entry); have.add(s); added.add(s) }
   }
-  return { next: [...host, ...added], entries: [...want].filter((s) => have.has(s)), kept }
+  return { next: [...host, ...adds], entries: [...want].filter((s) => have.has(s) && (added.has(s) || mine.has(s))), kept }
 }
 
 const HEADER = /^\s*\[\[?\s*([^\]]+?)\s*\]\]?\s*(?:#.*)?$/

@@ -42,13 +42,13 @@ The sync follows these steps for each such key:
 4. Compass appends each planned entry that is not in the host array. The compass entries go at the end.
 5. Compass does not change the order or the content of a host entry. Compass does not add an entry twice.
 6. An entry is known by the sha of its canonical JSON. The canonical form sorts the object keys at every depth.
-7. A host hook group on the same `matcher` that runs `.agents/hooks/compass.mjs` is an edited compass group. Compass reports `kept` and appends no second group. A permission string has no edited form.
-8. The lock records `{ "entries": ["<sha>", ...] }` for the key. The entries are the planned entries that are in the array now. `lockVersion` stays 2.
-9. An older lock has one sha string for an array key. This means that no entry is known. The next sync records the entries.
+7. A host hook group that runs the same compass subcommand (`guard`, `gate` or `start`) of `.agents/hooks/compass.mjs` is an edited compass group, also when its `matcher` is different. Compass reports `kept` and appends no second group. A permission string has no edited form.
+8. The lock records `{ "entries": ["<sha>", ...] }` for the key. The entries are the planned entries that are in the array now and that the lock listed or this sync added. A host entry that equals a planned entry stays the host's when compass did not add it. `lockVersion` stays 2.
+9. An older lock has one sha string for an array key. When the host array still has that sha, every entry in it is a compass entry. Else no entry is known. The next sync records the entries.
 10. `ac check --frozen` reports drift when a planned entry is missing or a stale compass entry is still there. A `kept` group is drift, as for every `kept` key.
 11. `exclude` with `<file>#<key>` removes all compass entries of the key. The host entries stay. The key goes with its last entry.
 12. The sync writes the array again as JSON, with the indent of the file (2 spaces by default). The layout of the host entries in that array can change.
-13. `ac doctor` warns about an exclude of a `hooks.*` or `permissions.*` key. `ac migrate` does not write such an exclude.
+13. `ac doctor` warns about an exclude `<file>#<key>` only when the planned value and the host value are arrays and Konvoy does not own the key. Else the exclude is right, and `ac doctor` says nothing. `ac migrate` does not write an exclude for a host array.
 
 ## Path keys
 

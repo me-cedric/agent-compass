@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { entrySha } from '../engine/merge.mjs'
-import { walk } from '../engine/util.mjs'
+import { sha, walk } from '../engine/util.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -518,7 +518,7 @@ test('an exclude on an array key removes all compass entries and leaves the host
   assert.equal(settingsOf(fresh).hooks.PreToolUse, undefined, 'the key that compass made goes with its last entry')
 })
 
-test('an old lock with one sha for an array key records the entries; the second run has no drift', async () => {
+test('an old lock whose sha does not fit the array: the entries that the host had stay the host\'s; the second run has no drift', async () => {
   const compass = arrayCompass({ 'hooks.PreToolUse': [GUARD] })
   const host = makeHost()
   writeSettings(host, { hooks: { PreToolUse: [OURS] } })
@@ -531,20 +531,78 @@ test('an old lock with one sha for an array key records the entries; the second 
   assert.equal(first.code, 0, first.stderr)
   assert.deepEqual(first.json.changes, [], 'the file is right, so only the lock changes')
   assert.equal(read(host, '.claude/settings.json'), settings)
-  assert.deepEqual(lockedEntries(host, 'hooks.PreToolUse'), { entries: [entrySha(GUARD)] })
+  assert.equal(lockedEntries(host, 'hooks.PreToolUse'), undefined)
   assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0)
   assert.equal((await ac(compass, host, 'sync')).json.drift, false)
 })
 
-test('doctor warns about an exclude of a hook or permission array key', async () => {
+test('an old lock with one sha for an array key: the older compass entries are updated and removed once', async () => {
+  const compass = arrayCompass({ 'hooks.PreToolUse': [GUARD], 'permissions.deny': ['Bash(rm *)', 'Bash(curl *)'] })
+  const host = makeHost()
+  await ac(compass, host, 'init')
+  const older = hook('Read|Bash', 'guard', { timeout: 5 })
+  const deny = ['Bash(rm *)', 'Bash(curl *)', 'Bash(old-compass-entry *)']
+  writeSettings(host, { ...settingsOf(host), hooks: { PreToolUse: [older] }, permissions: { deny } })
+  const lock = JSON.parse(read(host, '.agents/compass.lock.json'))
+  lock.keys['.claude/settings.json']['hooks.PreToolUse'] = sha(JSON.stringify([older]))
+  lock.keys['.claude/settings.json']['permissions.deny'] = sha(JSON.stringify(deny))
+  put(host, { '.agents/compass.lock.json': `${JSON.stringify(lock, null, 2)}\n` })
+  const first = await ac(compass, host, 'sync')
+  assert.equal(first.code, 0, first.stderr)
+  assert.deepEqual(actions(first).sort(), [`update ${PRE}`, 'update .claude/settings.json#permissions.deny'])
+  assert.deepEqual(settingsOf(host).hooks.PreToolUse, [GUARD])
+  assert.deepEqual(settingsOf(host).permissions.deny, ['Bash(rm *)', 'Bash(curl *)'])
+  assert.deepEqual(lockedEntries(host, 'hooks.PreToolUse'), { entries: [entrySha(GUARD)] })
+  assert.deepEqual((await ac(compass, host, 'sync')).json.changes, [])
+  assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0)
+})
+
+test('a host string that equals a planned string stays the host string when the key goes off', async () => {
+  const compass = arrayCompass({ 'permissions.deny': ['Bash(rm *)', 'Bash(curl *)'] })
+  const host = makeHost()
+  writeSettings(host, { permissions: { deny: ['Read(.env)', 'Bash(rm *)'] } })
+  await ac(compass, host, 'init')
+  assert.deepEqual(settingsOf(host).permissions.deny, ['Read(.env)', 'Bash(rm *)', 'Bash(curl *)'])
+  assert.deepEqual(lockedEntries(host, 'permissions.deny'), { entries: [entrySha('Bash(curl *)')] })
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: ['.claude/settings.json#permissions.deny'] }) })
+  const r = await ac(compass, host, 'sync')
+  assert.deepEqual(actions(r), ['remove .claude/settings.json#permissions.deny'])
+  assert.deepEqual(settingsOf(host).permissions.deny, ['Read(.env)', 'Bash(rm *)'])
+})
+
+test('a compass group with a narrowed matcher is an edited group: kept once, no second guard group', async () => {
   const compass = arrayCompass({ 'hooks.PreToolUse': [GUARD] })
-  const exclude = [PRE, '.claude/settings.json#permissions.deny', '.claude/settings.json#outputStyle']
-  const host = makeHost({ '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude }) })
-  const r = await ac(compass, host, 'doctor')
-  assert.equal(r.code, 0, JSON.stringify(r.json.checks))
-  const warns = r.json.checks.filter((c) => c.name === 'exclude')
-  assert.deepEqual(warns.map((c) => c.status), ['warn', 'warn'])
-  assert.deepEqual(warns.map((c) => c.detail), exclude.slice(0, 2).map((e) => `${e}: compass merges this array per entry now; remove the exclude to get the compass entries`))
+  const host = makeHost()
+  writeSettings(host, { hooks: { PreToolUse: [OURS] } })
+  await ac(compass, host, 'init')
+  const narrowed = hook('Bash', 'guard')
+  writeSettings(host, { outputStyle: 'compass', hooks: { PreToolUse: [OURS, narrowed] } })
+  for (const run of [1, 2]) {
+    const r = await ac(compass, host, 'sync')
+    assert.deepEqual(actions(r), [`kept ${PRE}`], `sync ${run}`)
+    assert.deepEqual(settingsOf(host).hooks.PreToolUse, [OURS, narrowed], `sync ${run}`)
+  }
+})
+
+const WARN = (id) => `${id}: compass merges this array per entry now; remove the exclude to get the compass entries`
+
+test('doctor warns about an exclude only when the planned value and the host value are arrays and Konvoy does not own the key', async () => {
+  const STOP = '.claude/settings.json#hooks.Stop'
+  const DENY = '.claude/settings.json#permissions.deny'
+  const compass = arrayCompass({ 'hooks.PreToolUse': [GUARD], 'hooks.Stop': [hook('*', 'gate')], 'permissions.deny': ['Bash(rm *)'] })
+  const exclude = [PRE, STOP, DENY, '.claude/settings.json#outputStyle', '.claude/settings.json#hooks.Unknown']
+  const doctor = async (settings, konvoy) => {
+    const host = makeHost({ '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude }), ...(konvoy && { '.agents/konvoy.json': JSON.stringify(konvoy) }) })
+    writeSettings(host, settings)
+    const r = await ac(compass, host, 'doctor')
+    assert.equal(r.code, 0, JSON.stringify(r.json.checks))
+    return r.json.checks.filter((c) => c.name === 'exclude').map((c) => c.detail)
+  }
+  const arrays = { outputStyle: 'x', hooks: { PreToolUse: [OURS], Stop: [OURS], Unknown: [OURS] }, permissions: { deny: ['Read(.env)'] } }
+  assert.deepEqual(await doctor(arrays), [WARN(PRE), WARN(STOP), WARN(DENY)])
+  assert.deepEqual(await doctor(arrays, { owns: { keys: { '.claude/settings.json': ['hooks.Stop'] } } }), [WARN(PRE), WARN(DENY)], 'Konvoy owns hooks.Stop')
+  assert.deepEqual(await doctor({ ...arrays, hooks: { PreToolUse: 'x' }, permissions: { deny: 'x' } }), [], 'a host value that is not an array needs the exclude')
+  assert.deepEqual(await doctor({}), [], 'no host array')
 })
 
 test('the real compass assets add their hook groups and deny strings beside a host with its own', async () => {
