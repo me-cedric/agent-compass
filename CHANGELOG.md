@@ -6,6 +6,10 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 ### Engine
 
+- `ac sync` refuses a lock from a newer compass than the checkout (run `git submodule update`). Conflict markers in the lock or a managed file give one error. `ac check --diff` shows the diff of each kept file; a kept item says whether compass has a newer version. The commands find the project root from a subdirectory.
+- `ac doctor` warns about a missing LSP binary, a project without a code graph index, an MCP server older than its minimum version, a submodule off its commit or behind a newer tag, a project without git; it names the Codex `/hooks` trust step and the user-level todo count.
+- An upstream source with bidi or tag characters in a skill file stays out of the cache, with a warning. `npm run release` lists the assets changed since the last tag. The compass-check CI files are managed. The tests run on Windows in CI.
+
 - The `ac` command has `init`, `sync`, `check`, `doctor` and `migrate`. These five take `--root`, `--dry` and `--json`. Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 - `ac sync` writes files, JSON and TOML keys, and text blocks into the project. It records each one in `.agents/compass.lock.json`. Two syncs give no diff.
 - A file that the project edited stays as it is. `ac doctor` lists it as `kept`.
@@ -19,6 +23,12 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 - The licence is MIT.
 
 ### Harness
+
+- The guard hook blocks a read of a secret file (SSH keys, .pem, .key, keystores, service files), an edit of a lock file, a tracker worklog or delete tool on Codex, and a destructive git or rm command. It fails closed from Claude Code 2.1.295 (`onFailure`).
+- The permission rules ask before every tracker and forge write (Jira, Confluence, GitHub, GitLab, the GitHub plugin, gh, glab, jira, acli) and before a force push, a hard reset, git clean, a branch delete and a recursive rm. They deny repository deletes and the read of .env files.
+- No AI attribution lines in commits and pull requests (`attribution` setting).
+- The Copilot cloud agent gets the three hooks in `.github/hooks/compass.json`; the hook prints the JSON that Copilot reads.
+- Role agents: the scout omits the project files; Codex scout and reviewer run read-only; Copilot agents load the project contract and their reasoning effort.
 
 - One contract block in `AGENTS.md`: core rules, the style contract, the answer shape, the completion gate and the safety rules.
 - Hooks for Claude Code and Codex: `guard` blocks the read of a `.env` file, `gate` asks for the end summary after a turn that edited files, and `start` prints the style reminder.
@@ -47,7 +57,7 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 - `ac assets` does the same from the command line: list, `on|off <kind>:<id>`, `recommended`.
 - The Projects tab shows the `ac doctor` checks and token items. The Delivery tab pulls Jira issues through jira-cli too.
 - The Delivery tab pulls GitHub or GitLab issues, read only.
-- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code and Codex transcripts, by day, project, model, provider and session (`--provider`). `--by session` gives the tokens of each session, with and without the code graph.
+- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code and Codex transcripts, by day, project, model, provider, session, skill and branch. Each session counts graph calls, searches, edits, searches before the first edit, fresh tokens per message, hook errors, guard fires and stop blocks. The Usage tab shows the hook health and the group medians.
 - `ac promote` copies a project skill into compass.
 
 ### Migration
