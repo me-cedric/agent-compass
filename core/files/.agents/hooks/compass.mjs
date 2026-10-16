@@ -4,13 +4,15 @@
 //   gate   Stop:         exit 2 asks for the completion-gate summary once, after a turn that edited files.
 //   start  SessionStart: print the style reminder.
 // A hook that cannot read its input exits 0. A guard rail must not stop the session.
+// The user-level plugin has a copy of this file. That copy does nothing in a project that has its own copy.
 
-import { readFileSync } from 'node:fs'
-import { basename } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { basename, dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const START = 'compass: the style contract is on (ponytail full, i-have-adhd, caveman; asd-ste100 for durable text). ' +
   'One-line acknowledgement, no text between tool calls, one end summary with the changed files and each check with its result. ' +
-  'The rules are in the compass block of AGENTS.md.'
+  'The rules are in the compass block of AGENTS.md, or in the compass-style skill.'
 
 const TEMPLATE = /\.(example|sample|template)$/
 const secretFile = (p) => { const b = basename(p); return b.startsWith('.env') && !TEMPLATE.test(b) }
@@ -75,17 +77,23 @@ const gate = (input) => {
 
 const read = () => { try { return JSON.parse(readFileSync(0, 'utf8') || '{}') } catch { return null } }
 
+// The compass lock marks a project with its own copy. That copy sits beside the lock: .agents/hooks/ and .agents/compass.lock.json.
+const deferred = () => existsSync(join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), '.agents', 'compass.lock.json')) &&
+  !existsSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'compass.lock.json'))
+
 const mode = process.argv[2]
-if (mode === 'start') console.log(START)
-else if (mode === 'guard' || mode === 'gate') {
-  const input = read()
-  let reason = null
-  try { reason = input && (mode === 'guard' ? guard(input) : gate(input)) } catch { reason = null }
-  if (reason) {
-    console.error(reason)
-    process.exitCode = 2
-  }
-} else {
+if (!['start', 'guard', 'gate'].includes(mode)) {
   console.error('usage: compass.mjs guard|gate|start')
   process.exitCode = 1
+} else if (!deferred()) {
+  if (mode === 'start') console.log(START)
+  else {
+    const input = read()
+    let reason = null
+    try { reason = input && (mode === 'guard' ? guard(input) : gate(input)) } catch { reason = null }
+    if (reason) {
+      console.error(reason)
+      process.exitCode = 2
+    }
+  }
 }

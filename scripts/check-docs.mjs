@@ -25,6 +25,7 @@ const LOCAL_PATH_RE = /(?:\/Users\/(?!runner\b)|\/home\/(?!runner\b)|[A-Za-z]:\\
 const hits = []
 
 const walk = (dir, onFile) => {
+  if (!existsSync(dir)) return
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (IGNORE.has(entry.name)) continue
     const full = join(dir, entry.name)
@@ -78,7 +79,8 @@ for (const file of markdownFiles) {
   }
 }
 
-walk(join(ROOT, 'templates'), (file) => {
+const packDirs = existsSync(join(ROOT, 'packs')) ? readdirSync(join(ROOT, 'packs')).flatMap((p) => ['extras', 'seed'].map((d) => join(ROOT, 'packs', p, d))) : []
+for (const dir of packDirs) walk(dir, (file) => {
   if (!TEXT_EXT.has(extname(file))) return
   let text
   try { text = readFileSync(file, 'utf8') } catch { return }

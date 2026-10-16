@@ -1,0 +1,15 @@
+{
+  "name": "agent-compass",
+  "description": "The user-level plugin of agent-compass.",
+  "owner": {
+    "name": "CGI"
+  },
+  "plugins": [
+    {
+      "name": "compass-user",
+      "source": "./plugins/compass-user",
+      "description": "Style contract for every repository: the compass hooks, the answer-shape output style, the compass-style skill and a cache-aware status line.",
+      "version": "1.0.0"
+    }
+  ]
+}

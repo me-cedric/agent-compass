@@ -3,13 +3,14 @@
 
 import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { CONFIG } from '../engine/config.mjs'
 import { checkDocs } from '../engine/docs.mjs'
 import { doctor } from '../engine/doctor.mjs'
 import { pinTag } from '../engine/git.mjs'
+import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
 import { migrateLegacy } from '../engine/legacy.mjs'
 import { migrateDocs, stageSpecs } from '../engine/migrate.mjs'
 import { syncHost } from '../engine/sync.mjs'
@@ -54,6 +55,9 @@ Options:
   --frozen       With check: exit 1 if the project is different from the lock.
   --to <tag>     With sync: check out this compass tag, then sync with it.
   --tokens       With doctor: measure the always-on context and check the budgets.
+  --global       With doctor: report the user-level Claude Code and Codex setup (plugins, MCP
+                 servers, hooks) and the recommended set. Read only.
+  --measure      With doctor --global: run each SessionStart hook once and count its output.
   --docs         With check: check only the docs layout. With migrate: migrate the docs layout.
   --from-specs <dir>
                  With init: create the docs layout and copy the documents in <dir> into
@@ -162,6 +166,8 @@ const main = async () => {
         frozen: { type: 'boolean' },
         to: { type: 'string' },
         tokens: { type: 'boolean' },
+        global: { type: 'boolean' },
+        measure: { type: 'boolean' },
         docs: { type: 'boolean' },
         'from-specs': { type: 'string' },
         help: { type: 'boolean', short: 'h' },
@@ -181,10 +187,19 @@ const main = async () => {
   if (opts.frozen && command !== 'check') return usage('--frozen applies to check only.')
   if (opts.to !== undefined && command !== 'sync') return usage('--to applies to sync only.')
   if (opts.tokens && command !== 'doctor') return usage('--tokens applies to doctor only.')
+  if (opts.global && command !== 'doctor') return usage('--global applies to doctor only.')
+  if (opts.measure && !opts.global) return usage('--measure applies to doctor --global only.')
+  if (opts.global && (opts.tokens || opts.docs)) return usage('--global does not combine with --tokens or --docs.')
   if (opts.docs && !['check', 'migrate'].includes(command)) return usage('--docs applies to check and migrate only.')
   if (opts.docs && opts.frozen) return usage('--frozen does not apply with --docs.')
   if (opts['from-specs'] !== undefined && command !== 'init') return usage('--from-specs applies to init only.')
   if (opts['from-specs'] === '') return usage('--from-specs needs a folder.')
+
+  if (opts.global) {
+    const report = doctorGlobal({ AC, root: resolve(opts.root || process.cwd()), measure: Boolean(opts.measure) })
+    console.log(opts.json ? JSON.stringify({ command: 'doctor', global: true, ...report }, null, 2) : formatGlobal(report))
+    return report.ok ? 0 : 1
+  }
 
   const fail = (message) => {
     if (opts.json) console.log(JSON.stringify({ command, ok: false, errors: [message] }, null, 2))

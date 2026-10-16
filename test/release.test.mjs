@@ -1,91 +1,77 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import test from 'node:test'
-
-import { changelogSection } from '../scripts/lib/changelog.mjs'
+import { VERSION_FILES, getAt } from '../scripts/lib/versions.mjs'
 import { runNode } from './helpers.mjs'
 
-const script = new URL('../scripts/release.mjs', import.meta.url)
+const script = new URL('../scripts/release.mjs', import.meta.url).pathname
+const checker = new URL('../scripts/check-release.mjs', import.meta.url).pathname
+const temps = []
+test.after(() => { for (const d of temps) rmSync(d, { recursive: true, force: true }) })
 
-const README = '# Fixture\n\n![Version](https://img.shields.io/badge/version-v1.2.3-blue)\n\nCurrent version: `1.2.3`.\n'
+const CHANGELOG = '# Changelog\n\n## 1.2.3 — 2026-01-01\n\n- change\n'
 
-const writeFixture = async (dir) => {
-  await writeFile(join(dir, 'package.json'), `${JSON.stringify({ version: '1.2.3' }, null, 2)}\n`)
-  await writeFile(join(dir, 'CHANGELOG.md'), '# Changelog\n\n## [Unreleased]\n\n- change\n')
-  await writeFile(join(dir, 'README.md'), README)
+// A repository with every version file at 1.2.3, a plugin entry in the marketplace and a changelog.
+const makeRepo = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ac-release-'))
+  temps.push(dir)
+  const put = (file, data) => {
+    mkdirSync(dirname(join(dir, file)), { recursive: true })
+    writeFileSync(join(dir, file), typeof data === 'string' ? data : `${JSON.stringify(data, null, 2)}\n`)
+  }
+  put('package.json', { name: 'fixture', version: '1.2.3' })
+  put('plugins/compass-user/.claude-plugin/plugin.json', { name: 'compass-user', version: '1.2.3' })
+  put('plugins/compass-user/.codex-plugin/plugin.json', { name: 'compass-user', version: '1.2.3', skills: './skills/' })
+  put('.claude-plugin/marketplace.json', { name: 'm', plugins: [{ name: 'compass-user', version: '1.2.3' }] })
+  put('CHANGELOG.md', CHANGELOG)
+  return dir
 }
+const read = (dir, file) => readFileSync(join(dir, file), 'utf8')
 
-test('changelogSection returns the whole section, blank lines included', () => {
-  const changelog = '# Changelog\n\n## [Unreleased]\n\n## [1.2.3] - 2026-01-01\n\n### Added\n\n- one\n\n### Fixed\n\n- two\n\n## [1.2.2] - 2025-12-01\n\n- old\n'
-
-  assert.equal(changelogSection(changelog, '1.2.3'), '### Added\n\n- one\n\n### Fixed\n\n- two')
-  assert.equal(changelogSection(changelog, '1.2.2'), '- old')
+test('release sets the version in every file and adds one changelog heading', async () => {
+  const dir = makeRepo()
+  const r = await runNode([script, '2.0.0'], { cwd: dir })
+  assert.equal(r.code, 0, r.stderr)
+  for (const { file, path } of VERSION_FILES) assert.equal(getAt(JSON.parse(read(dir, file)), path), '2.0.0', file)
+  assert.match(read(dir, 'plugins/compass-user/.codex-plugin/plugin.json'), /"skills": "\.\/skills\/"/)
+  assert.match(read(dir, 'CHANGELOG.md'), /^# Changelog\n\n## 2\.0\.0 — \d{4}-\d{2}-\d{2}\n\n## 1\.2\.3 — 2026-01-01\n/)
+  assert.equal((await runNode([checker, dir])).code, 0)
+  const again = await runNode([script, '2.0.0'], { cwd: dir })
+  assert.equal(again.code, 0, again.stderr)
+  assert.equal(read(dir, 'CHANGELOG.md').match(/^## 2\.0\.0 /gm).length, 1)
 })
 
-test('changelogSection falls back when the version has no section', () => {
-  assert.equal(changelogSection('# Changelog\n\n## [Unreleased]\n', '9.9.9'), 'Release v9.9.9')
+test('release fails when CHANGELOG.md has no title line, and writes nothing', async () => {
+  const dir = makeRepo()
+  writeFileSync(join(dir, 'CHANGELOG.md'), '## 1.2.3 — 2026-01-01\n')
+  const r = await runNode([script, '2.0.0'], { cwd: dir })
+  assert.equal(r.code, 1)
+  assert.match(r.stderr, /title line/)
+  assert.equal(JSON.parse(read(dir, 'package.json')).version, '1.2.3')
 })
 
-test('release rejects --push without --tag', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
-  try {
-    await writeFixture(dir)
+test('release --dry writes nothing', async () => {
+  const dir = makeRepo()
+  const r = await runNode([script, '2.0.0', '--dry'], { cwd: dir })
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(r.stdout, /would write package\.json/)
+  assert.equal(JSON.parse(read(dir, 'package.json')).version, '1.2.3')
+  assert.equal(read(dir, 'CHANGELOG.md'), CHANGELOG)
+})
 
-    const result = await runNode([script.pathname, '9.9.9', '--push'], { cwd: dir })
-    assert.equal(result.code, 1)
-    assert.match(result.stderr, /--push requires --tag/)
-    assert.equal(await readFile(join(dir, 'README.md'), 'utf8'), README)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
+test('release rejects a bad version and the git flags of the old script', async () => {
+  const dir = makeRepo()
+  for (const args of [['nope'], [], ['2.0.0', '--tag'], ['2.0.0', '--push']]) {
+    const r = await runNode([script, ...args], { cwd: dir })
+    assert.equal(r.code, 1, args.join(' '))
   }
+  assert.equal(read(dir, 'CHANGELOG.md'), CHANGELOG)
 })
 
-test('release rejects --release without --tag', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
-  try {
-    await writeFixture(dir)
-
-    const result = await runNode([script.pathname, '9.9.9', '--release'], { cwd: dir })
-    assert.equal(result.code, 1)
-    assert.match(result.stderr, /--release requires --tag/)
-    assert.equal(await readFile(join(dir, 'README.md'), 'utf8'), README)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
-})
-
-test('release --dry reports the README bump and writes nothing', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
-  try {
-    await writeFixture(dir)
-
-    const result = await runNode([script.pathname, '9.9.9', '--dry'], { cwd: dir })
-    assert.equal(result.code, 0, result.stderr)
-    assert.match(result.stdout, /package\.json version -> 9\.9\.9/)
-    assert.match(result.stdout, /CHANGELOG\.md adds ## \[9\.9\.9\]/)
-    assert.match(result.stdout, /README\.md version markers 1\.2\.3 -> 9\.9\.9/)
-    assert.equal(await readFile(join(dir, 'README.md'), 'utf8'), README)
-    assert.match(await readFile(join(dir, 'package.json'), 'utf8'), /"version": "1\.2\.3"/)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
-})
-
-test('release bumps both README version markers', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'ac-release-run-'))
-  try {
-    await writeFixture(dir)
-
-    const result = await runNode([script.pathname, '9.9.9'], { cwd: dir })
-    assert.equal(result.code, 0, result.stderr)
-
-    const readme = await readFile(join(dir, 'README.md'), 'utf8')
-    assert.match(readme, /version-v9\.9\.9-blue/)
-    assert.match(readme, /Current version: `9\.9\.9`\./)
-    assert.doesNotMatch(readme, /1\.2\.3/)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
+test('the repository passes its own release check', async () => {
+  const r = await runNode([checker], { cwd: dirname(dirname(script)) })
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(r.stdout, /release check passed/)
 })

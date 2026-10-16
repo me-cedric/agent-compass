@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -106,4 +106,33 @@ test('start prints a stable reminder under 1,000 characters', async () => {
   assert.equal(a.code, 0)
   assert.equal(a.stdout, b.stdout)
   assert.ok(a.stdout.length > 50 && a.stdout.length <= 1000, `${a.stdout.length} chars`)
+})
+
+test('a copy outside the project stays silent when the project has the compass lock', async () => {
+  const locked = join(dir, 'locked')
+  const plain = join(dir, 'plain')
+  const own = join(locked, '.agents/hooks/compass.mjs')
+  const user = join(dir, 'user/hooks/compass.mjs')
+  for (const f of [own, user, join(plain, 'x')]) mkdirSync(dirname(f), { recursive: true })
+  writeFileSync(join(locked, '.agents/compass.lock.json'), '{}\n')
+  copyFileSync(HOOK, own)
+  copyFileSync(HOOK, user)
+  const input = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/repo/.env' } })
+  const edited = JSON.stringify({ transcript_path: transcript(claudeTurn('Fixed it.')) })
+  const { CLAUDE_PROJECT_DIR: _, ...bare } = process.env
+  const at = (project) => ({ env: { ...bare, CLAUDE_PROJECT_DIR: project } })
+
+  assert.equal((await runNode([own, 'guard'], { input, ...at(locked) })).code, 2)
+  assert.equal((await runNode([own, 'gate'], { input: edited, ...at(locked) })).code, 2)
+  assert.match((await runNode([own, 'start'], at(locked))).stdout, /^compass: /)
+  for (const [mode, text] of [['guard', input], ['gate', edited]]) {
+    const r = await runNode([user, mode], { input: text, ...at(locked) })
+    assert.deepEqual([r.code, r.stdout, r.stderr], [0, '', ''], mode)
+  }
+  assert.equal((await runNode([user, 'start'], at(locked))).stdout, '')
+  assert.equal((await runNode([user, 'nope'], at(locked))).code, 1)
+  assert.equal((await runNode([user, 'guard'], { input, ...at(plain) })).code, 2)
+  assert.match((await runNode([user, 'start'], at(plain))).stdout, /^compass: /)
+  assert.equal((await runNode([user, 'guard'], { input, env: bare, cwd: locked })).code, 0, 'the project is the current directory')
+  assert.equal((await runNode([user, 'guard'], { input, env: bare, cwd: plain })).code, 2)
 })

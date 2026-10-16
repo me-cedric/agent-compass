@@ -18,7 +18,7 @@ Ask for each input that the repository does not show. Ask one question at a time
 - Secrets: use the `env` skill and `ac env import` to get the values. Never ask the user to paste a secret in chat.
 - VPN: does an app or a registry need it? Is it on?
 - Corporate certificates: when Node fails with a certificate error, set `NODE_EXTRA_CA_CERTS` to the CA file. Or set `NODE_OPTIONS=--use-system-ca`.
-- Docker: is the daemon running? Check with `docker info`.
+- Docker: is the daemon running? Check with `docker info`. Dockerfiles and a compose file to adapt are in `docs/agent-compass/packs/local-run/extras/`. Sync does not install them.
 - Mobile: which target? iOS needs Xcode and a simulator. Android needs the SDK and an emulator.
 - Apps: which apps must run now? Which ports are already in use?
 

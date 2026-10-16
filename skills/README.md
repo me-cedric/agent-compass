@@ -16,4 +16,4 @@ Each skill is a folder `skills/<name>/SKILL.md`. `ac sync` copies the skills int
 - A model-invoked description has 220 characters or fewer. All model-invoked descriptions together have 3,000 characters or fewer.
 - A SKILL.md body has 120 lines or fewer. Put long reference text in `references/`.
 - Write repository paths as path placeholders, such as `{{DELIVERY_DIR}}`.
-- The legacy stack skills move to `rules/` in this phase.
+- Stack knowledge lives in `rules/stack-*.md`, not in skills. Pack skills live in `packs/<pack>/skills/`.

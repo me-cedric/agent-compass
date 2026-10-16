@@ -24,7 +24,7 @@ test('setup-mode doctor permits CSV drift that the upcoming scan will refresh', 
     await mkdir(scripts)
     await writeFile(join(host, '.env'), 'SONAR_TOKEN=test-token\n')
     await writeFile(join(host, 'sonar-issues-api.csv'), 'header\nissue\n')
-    await writeFile(join(scripts, 'sonar-doctor.sh'), await readFile(join(root, 'templates/scripts/sonar-doctor.sh')))
+    await writeFile(join(scripts, 'sonar-doctor.sh'), await readFile(join(root, 'packs/security/extras/sonar-doctor.sh')))
     await writeFile(join(bin, 'curl'), `#!/bin/sh
 case "$*" in
   *api/settings/values*) printf '{"settings":[{"value":"git"}]' ;;
@@ -52,8 +52,8 @@ esac
 })
 
 test('setup probes current issueadmin endpoint', async () => {
-  const setup = await readFile(join(root, 'templates/scripts/sonar-setup.sh'), 'utf8')
-  const cycle = await readFile(join(root, 'templates/scripts/sonar-do.sh'), 'utf8')
+  const setup = await readFile(join(root, 'packs/security/extras/sonar-setup.sh'), 'utf8')
+  const cycle = await readFile(join(root, 'packs/security/extras/sonar-do.sh'), 'utf8')
   assert.match(setup, /api\/permissions\/users\?permission=issueadmin/)
   assert.doesNotMatch(setup, /api\/permissions\/check|administerIssues/)
   assert.match(setup, /SONAR_DOCTOR_DONE=1 bash scripts\/sonar-do\.sh all/)

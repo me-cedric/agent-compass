@@ -4,17 +4,9 @@ node_modules/
 .env
 .env.*
 !.env.example
-# internal build/resume note
-.agent-compass-progress.md
+# local outputs: ac run results and the evidence script
+.agents/runs/
 .agent/evidence/
-.agent/changes/
-.agent/.update-check.json
-.agent/.upstream-source-check.json
-# staged knowledge pulls awaiting review (kept local until promoted)
-knowledge/incoming/
-# generated bootstrap output (users keep their own copy)
-BOOTSTRAP_PROMPT.md
-agent-compass.answers.json
 
 # codebase-memory-mcp generated graph (local cache; shared artifact is opt-in)
 .codebase-memory/

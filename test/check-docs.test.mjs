@@ -18,9 +18,9 @@ test('check-docs validates live links and template placeholders', async () => {
 test('check-docs rejects broken local links and unknown template placeholders', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-docs-'))
   try {
-    await mkdir(join(dir, 'templates'), { recursive: true })
+    await mkdir(join(dir, 'packs', 'security', 'extras'), { recursive: true })
     await writeFile(join(dir, 'README.md'), '[missing](docs/missing.md)\n')
-    await writeFile(join(dir, 'templates', 'bad.tpl'), 'name=<client>\nroot=/Users/example/repo\n')
+    await writeFile(join(dir, 'packs', 'security', 'extras', 'bad.sh'), 'name=<client>\nroot=/Users/example/repo\n')
 
     const result = await runNode([script.pathname, '--root', dir], { cwd: root.pathname })
     assert.equal(result.code, 1)

@@ -1,0 +1,12 @@
+{
+  "name": "agent-compass",
+  "interface": { "displayName": "Agent Compass" },
+  "plugins": [
+    {
+      "name": "compass-user",
+      "source": { "source": "local", "path": "./plugins/compass-user" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -59,3 +59,8 @@ For each finding, give the id, the package or file, the score, the decision (fix
 
 The `ci-github` and `ci-gitlab` packs run osv-scanner with the offline database and call this script with `--fail-at 9`.
 Keep this pack installed when you use them.
+
+## Local SonarQube and Checkmarx
+
+For a SonarQube server on this machine, or a Checkmarx source zip, use the files in `docs/agent-compass/packs/security/extras/`.
+Sync does not install them. Copy the scripts into `scripts/` of the project. Ask the user before you run `sonar-setup.sh`: it starts a container.
