@@ -5,10 +5,10 @@ import { spawn, spawnSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { constants, homedir, tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
-import { parseArgs, parseEnv } from 'node:util'
+import { parseEnv } from 'node:util'
 import { checkCmd, discover, ENV_FILE, TEMPLATE } from './env-check.mjs'
 import { outside } from './sync.mjs'
-import { hostRoot, isObj, run, safeRel } from './util.mjs'
+import { failCommand, hostRoot, isObj, parseCommand, run, safeRel, usageError } from './util.mjs'
 
 const USAGE = `Usage: ac env <command> [options]
 
@@ -38,12 +38,6 @@ const isFile = (p) => statSync(p, { throwIfNoEntry: false })?.isFile() === true
 const has = (o, n) => Object.hasOwn(o, n)
 const splitList = (s) => (s ?? '').split(',').map((x) => x.trim()).filter(Boolean)
 
-const fail = (json, message) => {
-  if (json) console.log(JSON.stringify({ ok: false, errors: [message] }, null, 2))
-  else console.error(`error: ${message}`)
-  return 1
-}
-const usage = (message) => { console.error(`${message}\n\n${USAGE}`); return 2 }
 const show = (v, data, text) => { console.log(v.json ? JSON.stringify({ ok: true, ...data }, null, 2) : text); return 0 }
 
 // A value that parseEnv reads back unchanged and that a shell `source` cannot run. Single quotes come first.
@@ -115,7 +109,7 @@ const exportCmd = async ({ root, v }) => {
   const { local } = discover(root)
   const want = v.file?.length ? v.file.map((f) => relative(root, resolve(root, f))) : local
   const stray = want.find((f) => !local.includes(f))
-  if (stray) return fail(v.json, `${stray} is not a local env file`)
+  if (stray) return failCommand(v.json, `${stray} is not a local env file`)
   const only = new Set(splitList(v.only))
   const files = {}
   for (const f of want) {
@@ -124,23 +118,23 @@ const exportCmd = async ({ root, v }) => {
   }
   const count = Object.values(files).reduce((sum, x) => sum + Object.keys(x).length, 0)
   const bad = Object.values(files).flatMap(Object.keys).find((n) => !NAME.test(n))
-  if (bad) return fail(v.json, `the name ${bad} is not a valid env name`)
-  if (!count) return fail(v.json, 'there are no values to export')
+  if (bad) return failCommand(v.json, `the name ${bad} is not a valid env name`)
+  if (!count) return failCommand(v.json, 'there are no values to export')
   const out = resolve(root, v.out ?? 'env-bundle.age')
-  if (!out.endsWith('.age')) return fail(v.json, '--out must end with .age')
+  if (!out.endsWith('.age')) return failCommand(v.json, '--out must end with .age')
   const outRel = relative(root, out)
-  if (!safeRel(outRel) || outside(root, outRel)) return fail(v.json, '--out must be a path inside the project, without a symlink')
+  if (!safeRel(outRel) || outside(root, outRel)) return failCommand(v.json, '--out must be a path inside the project, without a symlink')
   const recipients = []
   try {
     for (const spec of splitList(v.to)) recipients.push({ recipient: spec, keys: await recipientKeys(spec, { forge: v.forge, root }) })
-  } catch (err) { return fail(v.json, err.message) }
+  } catch (err) { return failCommand(v.json, err.message) }
   const tmp = mkdtempSync(join(tmpdir(), 'ac-env-'))
   try {
     const rfile = join(tmp, 'recipients')
     writeFileSync(rfile, `${recipients.flatMap((r) => r.keys).join('\n')}\n`, { mode: 0o600 })
     mkdirSync(dirname(out), { recursive: true })
     const r = age(['-R', rfile, '-o', out], JSON.stringify({ version: 1, files }), 30_000)
-    if (r.error) return fail(v.json, r.error)
+    if (r.error) return failCommand(v.json, r.error)
   } finally { rmSync(tmp, { recursive: true, force: true }) }
   const summary = recipients.map((r) => ({ recipient: r.recipient, keys: r.keys.length }))
   return show(v, { out: outRel, files: Object.keys(files).length, values: count, recipients: summary },
@@ -179,14 +173,14 @@ const merge = (text, vals, overwrite) => {
 
 const importCmd = ({ root, v, positionals }) => {
   const b = decrypt(root, resolve(root, positionals[0]), v.identity)
-  if (b.error) return fail(v.json, b.error)
+  if (b.error) return failCommand(v.json, b.error)
   const errors = Object.keys(b.files).map((rel) => [rel, targetError(root, rel)]).filter(([, e]) => e).map(([rel, e]) => `${rel} ${e}`)
   const plans = errors.length ? [] : Object.entries(b.files).map(([rel, vals]) => {
     const text = existsSync(join(root, rel)) ? readFileSync(join(root, rel), 'utf8') : ''
     return { rel, old: text, ...merge(text, vals, v.overwrite) }
   })
   for (const p of plans) for (const n of p.bad) errors.push(`${p.rel}: the value of ${n} has no safe quote style`)
-  if (errors.length) return fail(v.json, `${errors.join('; ')}. Nothing was written.`)
+  if (errors.length) return failCommand(v.json, `${errors.join('; ')}. Nothing was written.`)
   for (const p of plans.filter((x) => x.text !== x.old)) {
     mkdirSync(dirname(join(root, p.rel)), { recursive: true })
     writeFileSync(join(root, p.rel), p.text, { mode: 0o600 })
@@ -201,12 +195,12 @@ const importCmd = ({ root, v, positionals }) => {
 const runCmd = ({ root, v, cmd }) => {
   const files = v.file?.length ? v.file.map((f) => resolve(root, f)) : ['.env', '.env.local'].map((f) => join(root, f)).filter(isFile)
   const gone = files.find((f) => !isFile(f))
-  if (gone) return fail(v.json, `${relative(root, gone)} does not exist`)
+  if (gone) return failCommand(v.json, `${relative(root, gone)} does not exist`)
   let vals = {}
   for (const f of files) vals = { ...vals, ...parseEnv(readFileSync(f, 'utf8')) }
   if (v.bundle) {
     const b = decrypt(root, resolve(root, v.bundle), v.identity)
-    if (b.error) return fail(v.json, b.error)
+    if (b.error) return failCommand(v.json, b.error)
     // ponytail: every file of the bundle merges into one set; the last file wins.
     for (const f of Object.values(b.files)) vals = { ...vals, ...f }
   }
@@ -215,7 +209,7 @@ const runCmd = ({ root, v, cmd }) => {
     const forward = (sig) => () => child.kill(sig)
     const handlers = ['SIGINT', 'SIGTERM'].map((sig) => [sig, forward(sig)])
     for (const [sig, fn] of handlers) process.on(sig, fn)
-    child.on('error', (err) => done(fail(v.json, `cannot start ${cmd[0]}: ${err.message}`)))
+    child.on('error', (err) => done(failCommand(v.json, `cannot start ${cmd[0]}: ${err.message}`)))
     child.on('close', (code, signal) => {
       for (const [sig, fn] of handlers) process.off(sig, fn)
       done(code ?? (signal ? 128 + constants.signals[signal] : 1))
@@ -225,7 +219,7 @@ const runCmd = ({ root, v, cmd }) => {
 
 // ---- cli ----
 
-const COMMON = { root: { type: 'string' }, json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } }
+const COMMON = { root: { type: 'string' }, json: { type: 'boolean' } }
 const COMMANDS = {
   check: { run: checkCmd, options: {} },
   export: { run: exportCmd, options: { to: { type: 'string' }, forge: { type: 'string' }, only: { type: 'string' }, file: { type: 'string', multiple: true }, out: { type: 'string' } } },
@@ -236,19 +230,15 @@ const COMMANDS = {
 export const cli = async (argv, { AC }) => {
   const [sub, ...rest] = argv
   if (sub === '--help' || sub === '-h') { console.log(USAGE); return 0 }
-  if (!Object.hasOwn(COMMANDS, sub)) return usage(sub ? `Unknown command: ${sub}` : 'A command is necessary.')
+  if (!Object.hasOwn(COMMANDS, sub)) return usageError(USAGE, sub ? `Unknown command: ${sub}` : 'A command is necessary.')
   const cut = sub === 'run' ? rest.indexOf('--') : -1
-  let parsed
-  try {
-    parsed = parseArgs({ args: cut < 0 ? rest : rest.slice(0, cut), strict: true, allowPositionals: true, options: { ...COMMON, ...COMMANDS[sub].options } })
-  } catch (err) { return usage(err.message) }
-  const { values: v, positionals } = parsed
-  if (v.help) { console.log(USAGE); return 0 }
+  const { values: v, positionals, exit } = parseCommand(cut < 0 ? rest : rest.slice(0, cut), USAGE, { ...COMMON, ...COMMANDS[sub].options })
+  if (exit !== undefined) return exit
   const cmd = cut < 0 ? [] : rest.slice(cut + 1)
-  if (positionals.length !== (sub === 'import' ? 1 : 0)) return usage(sub === 'import' ? 'import needs one bundle file.' : `Unexpected argument: ${positionals[0]}`)
-  if (sub === 'run' && !cmd.length) return usage('run needs -- <command>.')
-  if (sub === 'export' && !splitList(v.to).length) return usage('export needs --to <recipients>.')
+  if (positionals.length !== (sub === 'import' ? 1 : 0)) return usageError(USAGE, sub === 'import' ? 'import needs one bundle file.' : `Unexpected argument: ${positionals[0]}`)
+  if (sub === 'run' && !cmd.length) return usageError(USAGE, 'run needs -- <command>.')
+  if (sub === 'export' && !splitList(v.to).length) return usageError(USAGE, 'export needs --to <recipients>.')
   const host = hostRoot(AC, v.root)
-  if (host.error) return fail(v.json, host.error)
+  if (host.error) return failCommand(v.json, host.error)
   return COMMANDS[sub].run({ root: host.root, v, positionals, cmd })
 }

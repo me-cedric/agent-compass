@@ -7,8 +7,7 @@
 import { readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
-import { parseArgs } from 'node:util'
-import { run, walk } from './util.mjs'
+import { parseCommand, run, usageError, walk } from './util.mjs'
 
 // Model id prefix → [input, output, cacheRead] in USD per million tokens. The longest matching prefix prices a row.
 export const PRICES = {
@@ -173,19 +172,13 @@ const printSessions = (u) => {
   ].join('\n'))
 }
 
-const usage = (message) => { console.error(`${message}\n\n${HELP}`); return 2 }
-
 export const cli = (argv) => {
-  let parsed
-  try {
-    parsed = parseArgs({ args: argv, strict: true, allowPositionals: true, options: { by: { type: 'string' }, project: { type: 'string' }, since: { type: 'string' }, until: { type: 'string' }, json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } } })
-  } catch (err) { return usage(err.message) }
-  const { values: v, positionals } = parsed
-  if (v.help) { console.log(HELP); return 0 }
-  if (positionals.length) return usage(`Unexpected argument: ${positionals[0]}`)
+  const { values: v, positionals, exit } = parseCommand(argv, HELP, { by: { type: 'string' }, project: { type: 'string' }, since: { type: 'string' }, until: { type: 'string' }, json: { type: 'boolean' } })
+  if (exit !== undefined) return exit
+  if (positionals.length) return usageError(HELP, `Unexpected argument: ${positionals[0]}`)
   const bad = [['--since', v.since], ['--until', v.until]].find(([, day]) => day !== undefined && !validDay(day))
-  if (bad) return usage(`${bad[0]} needs a date as YYYY-MM-DD.`)
-  if (v.by !== undefined && v.by !== 'session') return usage('--by needs the value session.')
+  if (bad) return usageError(HELP, `${bad[0]} needs a date as YYYY-MM-DD.`)
+  if (v.by !== undefined && v.by !== 'session') return usageError(HELP, '--by needs the value session.')
   const result = readUsage({ since: v.since, until: v.until, project: v.project === undefined ? undefined : resolve(v.project) })
   const { bySession, sessionSummary, ...general } = result
   if (v.json) console.log(JSON.stringify({ ok: true, ...(v.by ? { totals: result.totals, bySession, sessionSummary } : general) }, null, 2))

@@ -4,11 +4,10 @@
 
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
-import { parseArgs } from 'node:util'
 import { findIssues } from '../scripts/lib/redact.mjs'
 import { loadKonvoy } from './config.mjs'
 import { readLock } from './sync.mjs'
-import { dirs, frontmatter, hostRoot, walk } from './util.mjs'
+import { dirs, failCommand, frontmatter, hostRoot, parseCommand, usageError, walk } from './util.mjs'
 
 const SKILLS = '.claude/skills'
 const ABS_PATH = /\/Users\/|\/home\/|[A-Za-z]:\\/
@@ -70,23 +69,12 @@ Options:
   --json        Print the result as JSON.
   --help, -h    Show this help.`
 
-const usage = (message) => { console.error(`${message}\n\n${HELP}`); return 2 }
-const fail = (json, message) => {
-  if (json) console.log(JSON.stringify({ ok: false, errors: [message] }, null, 2))
-  else console.error(`error: ${message}`)
-  return 1
-}
-
 export const cli = (argv, { AC }) => {
-  let parsed
-  try {
-    parsed = parseArgs({ args: argv, strict: true, allowPositionals: true, options: { root: { type: 'string' }, dry: { type: 'boolean' }, json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } } })
-  } catch (err) { return usage(err.message) }
-  const { values: v, positionals: [skill, extra] } = parsed
-  if (v.help) { console.log(HELP); return 0 }
-  if (extra) return usage(`Unexpected argument: ${extra}`)
+  const { values: v, positionals: [skill, extra], exit } = parseCommand(argv, HELP, { root: { type: 'string' }, dry: { type: 'boolean' }, json: { type: 'boolean' } })
+  if (exit !== undefined) return exit
+  if (extra) return usageError(HELP, `Unexpected argument: ${extra}`)
   const host = hostRoot(AC, v.root)
-  if (host.error) return fail(v.json, host.error)
+  if (host.error) return failCommand(v.json, host.error)
   if (skill === undefined) {
     const list = candidates({ AC, root: host.root })
     if (v.json) console.log(JSON.stringify({ ok: true, candidates: list }, null, 2))

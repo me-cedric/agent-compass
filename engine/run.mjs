@@ -5,11 +5,10 @@ import { spawn } from 'node:child_process'
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, statSync, writeFileSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
-import { parseArgs } from 'node:util'
 import { SECRET_RE } from '../scripts/lib/redact.mjs'
 import { MAX_SECONDS, names, prepare, REGISTRY, runnable } from './run-plan.mjs'
 import { outside } from './sync.mjs'
-import { hostRoot, isObj, readJson } from './util.mjs'
+import { failCommand, hostRoot, isObj, parseCommand, readJson, usageError } from './util.mjs'
 
 const USAGE = `Usage: ac run <name> [--confirm] [--timeout <s>] [--root <dir>] [--json]
        ac run --list
@@ -63,47 +62,31 @@ const execute = ({ root, argv, env, limit }, emit) => new Promise((done) => {
   child.on('close', finish)
 })
 
-const fail = (json, message) => {
-  if (json) console.log(JSON.stringify({ ok: false, errors: [message] }, null, 2))
-  else console.error(`error: ${message}`)
-  return 1
-}
-const usage = (message) => { console.error(`${message}\n\n${USAGE}`); return 2 }
-
 export const cli = async (argv, { AC }) => {
-  let parsed
-  try {
-    parsed = parseArgs({
-      args: argv,
-      strict: true,
-      allowPositionals: true,
-      options: { root: { type: 'string' }, json: { type: 'boolean' }, list: { type: 'boolean' }, confirm: { type: 'boolean' }, timeout: { type: 'string' }, help: { type: 'boolean', short: 'h' } },
-    })
-  } catch (err) { return usage(err.message) }
-  const { values: v, positionals: [name, extra] } = parsed
-  if (v.help) { console.log(USAGE); return 0 }
+  const { values: v, positionals: [name, extra], exit } = parseCommand(argv, USAGE, { root: { type: 'string' }, json: { type: 'boolean' }, list: { type: 'boolean' }, confirm: { type: 'boolean' }, timeout: { type: 'string' } })
+  if (exit !== undefined) return exit
   const seconds = v.timeout === undefined ? null : Number(v.timeout)
-  if (seconds !== null && !(seconds > 0 && seconds <= MAX_SECONDS)) return usage(`--timeout needs a number of seconds above 0 and up to ${MAX_SECONDS}.`)
-  if (extra) return usage(`Unexpected argument: ${extra}`)
-  if (!name && !v.list) return usage('A command name is necessary. Use ac run --list.')
+  if (seconds !== null && !(seconds > 0 && seconds <= MAX_SECONDS)) return usageError(USAGE, `--timeout needs a number of seconds above 0 and up to ${MAX_SECONDS}.`)
+  if (extra) return usageError(USAGE, `Unexpected argument: ${extra}`)
+  if (!name && !v.list) return usageError(USAGE, 'A command name is necessary. Use ac run --list.')
   const host = hostRoot(AC, v.root)
-  if (host.error) return fail(v.json, host.error)
+  if (host.error) return failCommand(v.json, host.error)
   const { root } = host
   const registry = readJson(join(root, REGISTRY))
-  if (!isObj(registry)) return fail(v.json, `${REGISTRY} is missing or is not valid JSON`)
+  if (!isObj(registry)) return failCommand(v.json, `${REGISTRY} is missing or is not valid JSON`)
   if (v.list) {
     console.log(v.json ? JSON.stringify({ ok: true, commands: names(registry) }, null, 2) : names(registry).join('\n'))
     return 0
   }
   const entry = name.split('.').reduce((node, part) => (isObj(node) && Object.hasOwn(node, part) ? node[part] : undefined), registry)
-  if (!runnable(entry)) return fail(v.json, `${name} is not in ${REGISTRY}. Do not invent a command. Use ac run --list.`)
+  if (!runnable(entry)) return failCommand(v.json, `${name} is not in ${REGISTRY}. Do not invent a command. Use ac run --list.`)
   const plan = prepare(name, entry, { confirm: v.confirm, seconds })
-  if (plan.error) return fail(v.json, plan.error)
+  if (plan.error) return failCommand(v.json, plan.error)
 
   const startedMs = Date.now()
   const dir = `.agents/runs/${new Date(startedMs).toISOString().replace(/[:.]/g, '-')}-${name.replace(/[^\w.-]/g, '_')}`
   if (outside(root, `${dir}/output.log`) || outside(root, '.agents/runs/.gitignore')) {
-    return fail(v.json, '.agents/runs is a symlink or leaves the project root; compass does not write there')
+    return failCommand(v.json, '.agents/runs is a symlink or leaves the project root; compass does not write there')
   }
   mkdirSync(join(root, dir), { recursive: true })
   if (!existsSync(join(root, '.agents/runs/.gitignore'))) writeFileSync(join(root, '.agents/runs/.gitignore'), '*\n')

@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { parseArgs } from 'node:util'
 
 export const sha = (data) => createHash('sha256').update(data).digest('hex').slice(0, 16)
 
@@ -80,4 +81,27 @@ export const hostRoot = (AC, dir) => {
 export const writeNew = (root, rel, content) => {
   mkdirSync(dirname(join(root, rel)), { recursive: true })
   writeFileSync(join(root, rel), content, { flag: 'wx' })
+}
+
+// The usage error of a command: the message and the help on stderr. Exit 2.
+export const usageError = (help, message, prefix = '') => { console.error(`${prefix}${message}\n\n${help}`); return 2 }
+
+// The options of a command module, with --help added. Returns { values, positionals }, or { exit } when the command is done:
+// --help prints the help (exit 0), a bad option prints the usage error (exit 2).
+export const parseCommand = (argv, help, options, { allowPositionals = true, prefix } = {}) => {
+  const stop = (exit) => ({ exit, values: {}, positionals: [] })
+  let parsed
+  try {
+    parsed = parseArgs({ args: argv, strict: true, allowPositionals, options: { ...options, help: { type: 'boolean', short: 'h' } } })
+  } catch (err) { return stop(usageError(help, err.message, prefix)) }
+  if (!parsed.values.help) return parsed
+  console.log(help)
+  return stop(0)
+}
+
+// An error for a command: JSON with --json, else "error: <message>" on stderr. Exit 1.
+export const failCommand = (json, message) => {
+  if (json) console.log(JSON.stringify({ ok: false, errors: [message] }, null, 2))
+  else console.error(`error: ${message}`)
+  return 1
 }

@@ -5,8 +5,7 @@ import { readFileSync } from 'node:fs'
 import { createServer as httpServer } from 'node:http'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseArgs } from 'node:util'
-import { hostRoot, isObj } from '../engine/util.mjs'
+import { failCommand, hostRoot, isObj, parseCommand, usageError } from '../engine/util.mjs'
 import { HttpError, routes } from './api.mjs'
 
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), 'public')
@@ -96,16 +95,12 @@ export const createServer = ({ AC, root, token }) => {
 }
 
 export const cli = async (argv, { AC }) => {
-  const usage = (message) => { console.error(`error: ${message}\n\n${USAGE}`); return 2 }
-  let v
-  try {
-    v = parseArgs({ args: argv, options: { root: { type: 'string' }, port: { type: 'string' }, help: { type: 'boolean', short: 'h' } } }).values
-  } catch (err) { return usage(err.message) }
-  if (v.help) { console.log(USAGE); return 0 }
+  const { values: v, exit } = parseCommand(argv, USAGE, { root: { type: 'string' }, port: { type: 'string' } }, { allowPositionals: false, prefix: 'error: ' })
+  if (exit !== undefined) return exit
   const port = v.port === undefined ? 0 : Number(v.port)
-  if (v.port === '' || !Number.isInteger(port) || port < 0 || port > 65535) return usage('--port needs a whole number from 0 to 65535.')
+  if (v.port === '' || !Number.isInteger(port) || port < 0 || port > 65535) return usageError(USAGE, '--port needs a whole number from 0 to 65535.', 'error: ')
   const host = hostRoot(AC, v.root)
-  if (host.error) { console.error(`error: ${host.error}`); return 1 }
+  if (host.error) return failCommand(false, host.error)
   const token = randomBytes(24).toString('base64url')
   const server = createServer({ AC, root: host.root, token })
   try {

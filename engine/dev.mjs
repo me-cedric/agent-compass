@@ -3,9 +3,8 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseArgs } from 'node:util'
 import { outside } from './sync.mjs'
-import { dirs, hostRoot, isDir, isObj, readJson, run } from './util.mjs'
+import { dirs, hostRoot, isDir, isObj, parseCommand, readJson, run, usageError } from './util.mjs'
 
 const FILE = 'process-compose.yaml'
 const DIR = '.agents/dev'
@@ -199,23 +198,14 @@ const finish = (o, sub, result) => {
 }
 
 export const cli = async (argv, { AC }) => {
-  const usage = (message) => { console.error(`${message}\n\n${HELP}`); return 2 }
-  let parsed
-  try {
-    parsed = parseArgs({
-      args: argv,
-      allowPositionals: true,
-      options: { root: { type: 'string' }, dry: { type: 'boolean' }, json: { type: 'boolean' }, tail: { type: 'string' }, help: { type: 'boolean', short: 'h' } },
-    })
-  } catch (err) { return usage(err.message) }
-  const { values: o, positionals: [sub, name, ...extra] } = parsed
-  if (o.help) { console.log(HELP); return 0 }
-  if (!['up', 'down', 'status', 'logs'].includes(sub)) return usage(sub ? `Unknown dev command: ${sub}` : 'A dev command is necessary.')
-  if (extra.length || (name !== undefined && sub !== 'logs')) return usage(`Unexpected argument: ${extra[0] ?? name}`)
-  if (sub === 'logs' && !NAME.test(name || '')) return usage('logs needs a process name. A name has letters, digits, "_", "." and "-".')
+  const { values: o, positionals: [sub, name, ...extra], exit } = parseCommand(argv, HELP, { root: { type: 'string' }, dry: { type: 'boolean' }, json: { type: 'boolean' }, tail: { type: 'string' } })
+  if (exit !== undefined) return exit
+  if (!['up', 'down', 'status', 'logs'].includes(sub)) return usageError(HELP, sub ? `Unknown dev command: ${sub}` : 'A dev command is necessary.')
+  if (extra.length || (name !== undefined && sub !== 'logs')) return usageError(HELP, `Unexpected argument: ${extra[0] ?? name}`)
+  if (sub === 'logs' && !NAME.test(name || '')) return usageError(HELP, 'logs needs a process name. A name has letters, digits, "_", "." and "-".')
   const tail = o.tail === undefined ? 100 : Number(o.tail)
-  if (o.tail !== undefined && sub !== 'logs') return usage('--tail applies to logs only.')
-  if (!Number.isInteger(tail) || tail < 1 || tail > 2000) return usage('--tail needs a whole number from 1 to 2000.')
+  if (o.tail !== undefined && sub !== 'logs') return usageError(HELP, '--tail applies to logs only.')
+  if (!Number.isInteger(tail) || tail < 1 || tail > 2000) return usageError(HELP, '--tail needs a whole number from 1 to 2000.')
   const host = hostRoot(AC, o.root)
   if (host.error) return finish(o, sub, fail(host.error))
   const { root } = host
