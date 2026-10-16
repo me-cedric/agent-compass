@@ -1,10 +1,11 @@
 # Line budget — proposal
 
-Status: A and B are applied (2026-10-16). C is checked and not applied: the copies are not the same (see "Result"). The owner approves each other option before any code changes.
+Status: closed (2026-10-16). A and B are applied. C is checked and not applied: the copies are not the same (see "Result"). The owner keeps the features of D, E and F and sets the budget to 4,000 lines for engine, UI and CLI. The count, 3,839, is in the budget.
 
 ## Budget and count
 
-The plan sets "engine + UI ≤ 3,500 lines". The progress log counts `engine/*.mjs`, `ui/*.mjs` and `bin/ac.mjs`.
+The plan set "engine + UI ≤ 3,500 lines" at first. The progress log counts `engine/*.mjs`, `ui/*.mjs` and `bin/ac.mjs`.
+On 2026-10-16 the owner set the budget to 4,000 lines for these three parts. The tables below show the count before options A and B.
 The static page (`ui/public/*`, 323 lines) is not in the count.
 
 Command: `wc -l engine/*.mjs ui/*.mjs bin/ac.mjs`.
