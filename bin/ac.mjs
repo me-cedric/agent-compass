@@ -14,8 +14,10 @@ import { hostRoot } from '../engine/util.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const COMMANDS = ['init', 'sync', 'check', 'doctor', 'migrate']
-// Dev-loop commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
-const DEV_LOOP = { env: 'env.mjs', dev: 'dev.mjs', run: 'run.mjs' }
+// These commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
+const OWN_CLI = {
+  env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', promote: 'engine/promote.mjs', ui: 'ui/server.mjs',
+}
 const USAGE = `Usage: ac <command> [options]
 
 Commands:
@@ -31,8 +33,13 @@ Commands:
   dev      up | down | status | logs: start and stop the local stack with process-compose.
   run      Run a command from agent-compass.commands.json by name. Store the result in
            .agents/runs/<timestamp>/.
+  usage    Read the Claude Code transcripts in ~/.claude/projects. Show tokens, cost, cache
+           hit rate and sub-agent share by day, project and model.
+  promote  List the project skills that compass does not own. With a name: check a skill
+           and copy it into skills/ of this compass checkout.
+  ui       Start the local web UI on 127.0.0.1.
 
-Use "ac <env|dev|run> --help" for the options of a dev-loop command.
+Use "ac <env|dev|run|usage|promote|ui> --help" for the options of these commands.
 
 Options:
   --root <dir>   Use this project root. The default is the current directory.
@@ -114,8 +121,8 @@ const print = (command, opts, result, failed, root) => {
 
 const main = async () => {
   const first = process.argv[2]
-  if (Object.hasOwn(DEV_LOOP, first)) {
-    const { cli } = await import(`../engine/${DEV_LOOP[first]}`)
+  if (Object.hasOwn(OWN_CLI, first)) {
+    const { cli } = await import(`../${OWN_CLI[first]}`)
     return cli(process.argv.slice(3), { AC })
   }
   let parsed

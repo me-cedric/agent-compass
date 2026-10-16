@@ -14,6 +14,8 @@
 // Layers: the compass root, core/, then each pack in compass.json "packs" and each detected pack (detectPacks:
 // env, local-run, e2e, security). A detected pack that is not in the compass checkout is skipped. Then the upstream sources
 // in compass.json "upstream", from the user cache (upstream.mjs).
+// "exclude" removes a skill by name, a whole file or a rule by path, and an owned key as "<file>#<key>". It also takes
+// two prefixed forms: "agent:<name>" drops a role agent (all its provider files), "pack:<name>" drops a pack, even a detected one.
 // Docs layout: core/openspec/<schema>/ → {{OPENSPEC_DIR}}/schemas/<schema>/ when that dir exists and the Konvoy
 // ledger does not (Konvoy owns the schema otherwise). An empty {{DESIGNS_DIR}}/screens.json seeds into a designs dir.
 // MCP: mcp/catalog.json and compass.json "mcp" → keys in .mcp.json, .codex/config.toml, .vscode/mcp.json, plus
@@ -125,6 +127,7 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
   }
 
   const packs = [...new Set([...config.packs, ...detectPacks(root).filter((p) => isDir(join(AC, 'packs', p)))])]
+    .filter((p) => !excluded(`pack:${p}`))
   const layers = [AC, join(AC, 'core'), ...packs.map((p) => join(AC, 'packs', p))]
   for (const layer of layers) {
     for (const name of dirs(join(layer, 'skills'))) {
@@ -139,7 +142,7 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
     }
     for (const rel of walk(join(layer, 'agents')).filter((f) => /^[^/]+\.md$/.test(f))) {
       const text = readFileSync(join(layer, 'agents', rel), 'utf8')
-      if (!fits(text, stacks)) continue
+      if (!fits(text, stacks) || excluded(`agent:${rel.slice(0, -3)}`)) continue
       addFile(`.claude/agents/${rel}`, Buffer.from(text))
       addFile(`.codex/agents/${rel.slice(0, -3)}.toml`, Buffer.from(codexAgent(rel.slice(0, -3), text)))
       if (frontmatter(text).data['copilot-model']) addFile(`.github/agents/${rel.slice(0, -3)}.agent.md`, Buffer.from(copilotAgent(rel.slice(0, -3), text)))
@@ -217,5 +220,5 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
     if (keys.has(path) || blocks.has(path)) errors.push(`${path} is both a whole file and a merged file`)
   }
   for (const path of blocks.keys()) if (keys.has(path)) errors.push(`${path} has both a block and owned keys`)
-  return { files, keys, blocks, skills, stacks, packs, errors, warnings, held }
+  return { files, keys, blocks, skills, stacks, packs, mcp: mcp.selected, errors, warnings, held }
 }

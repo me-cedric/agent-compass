@@ -15,6 +15,8 @@ Every command takes `--dry` (show the changes, write nothing) and `--json`.
 
 Commands that exist: `ac init`, `ac sync`, `ac sync --to <tag>`, `ac check --frozen`, `ac doctor --tokens`.
 Dev-loop commands: `ac env`, `ac dev` and `ac run`. The skills `env`, `local-run` and `e2e` tell how to use them.
+`ac ui` opens the local web UI: assets on and off, the recommended set for the stack, env, run, tests, usage, delivery, promote.
+`ac usage` shows tokens and cost by day, project and model. `ac promote <skill>` copies a project skill into compass.
 Compass owns the text between its markers and the files that `ac sync` lists. Put project rules outside the markers.
 
 ## init

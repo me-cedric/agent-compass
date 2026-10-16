@@ -1,4 +1,4 @@
-// detect.mjs — map a host repo to stack ids from dependencies and marker files.
+// detect.mjs — map a host repo to stack ids, pack names and tool signals from dependencies and marker files.
 // plan.mjs installs an asset only when its frontmatter `stacks` list names a detected stack.
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
@@ -8,15 +8,16 @@ const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage'
 const FILE_MARKERS = [
   'turbo.json', 'drizzle.config.ts', '.specify', 'angular.json',
   'AndroidManifest.xml', 'Package.swift', 'Podfile',
-  'env.catalog.json', '.maestro',
+  'env.catalog.json', '.maestro', 'Chart.yaml',
 ]
-// Name patterns for the dev-loop and security packs (detectPacks).
+// Name patterns for the dev-loop and security packs (detectPacks) and the sonar signal (detectSignals).
 const NAME_MARKERS = [
   [/^\.env(\.[\w-]+)*\.(example|sample|template)$/, 'env-template'],
   [/^process-compose(\.[\w-]+)?\.ya?ml$/, 'process-compose'],
   [/^(docker-)?compose(\.[\w-]+)?\.ya?ml$/, 'docker-compose'],
   [/^playwright\.config\.[cm]?[jt]s$/, 'playwright'],
   [/^(\.osv-scanner\.toml|sonar-project(\.[\w-]+)?\.properties)$/, 'security-config'],
+  [/^sonar-project(\.[\w-]+)?\.properties$/, 'sonar'],
 ]
 
 // Dependency names + marker files across the whole workspace. Monorepos keep
@@ -80,8 +81,7 @@ export const STACK_IDS = [
   'bullmq', 'turbo-monorepo', 'gtk-desktop', 'winui-desktop', 'macos-desktop', 'spec-kit', 'openspec',
 ]
 
-export const detectStacks = (root, { openspecDir } = {}) => {
-  const { deps, markers } = collectWorkspace(root)
+const stacksOf = ({ deps, markers }, root, openspecDir) => {
   const anyDep = (pred) => [...deps].some(pred)
   // A cross-platform toolkit generates the native `android/` and `ios/` trees, so
   // its markers are build output, not a native app to route work to.
@@ -109,14 +109,39 @@ export const detectStacks = (root, { openspecDir } = {}) => {
   ].filter(Boolean)
 }
 
+export const detectStacks = (root, { openspecDir } = {}) => stacksOf(collectWorkspace(root), root, openspecDir)
+
+const packsOf = ({ deps, markers }) => [
+  (markers.has('env-template') || markers.has('env.catalog.json')) && 'env',
+  (markers.has('process-compose') || markers.has('docker-compose')) && 'local-run',
+  (markers.has('playwright') || markers.has('.maestro') || deps.has('@playwright/test') || deps.has('playwright')) && 'e2e',
+  markers.has('security-config') && 'security',
+].filter(Boolean)
+
 // Packs that fit the project. `ac sync` installs them in addition to compass.json "packs".
-// ponytail: a second workspace scan; merge it with detectStacks when the scan time matters.
-export const detectPacks = (root) => {
-  const { deps, markers } = collectWorkspace(root)
-  return [
-    (markers.has('env-template') || markers.has('env.catalog.json')) && 'env',
-    (markers.has('process-compose') || markers.has('docker-compose')) && 'local-run',
-    (markers.has('playwright') || markers.has('.maestro') || deps.has('@playwright/test') || deps.has('playwright')) && 'e2e',
-    markers.has('security-config') && 'security',
-  ].filter(Boolean)
+export const detectPacks = (root) => packsOf(collectWorkspace(root))
+
+const readText = (path) => { try { return readFileSync(path, 'utf8') } catch { return '' } }
+const hasFileKey = (path) => { try { return JSON.parse(readText(path)).screens.some((s) => typeof s?.figma?.fileKey === 'string') } catch { return false } }
+
+// Every fact that assets.mjs uses to recommend an asset: the stacks, the packs and these tool signals:
+// github, gitlab, sonar, storybook, postgres, helm, figma, compass-submodule. `designs` is the designs dir.
+export const detectSignals = (root, { openspecDir, designs = 'docs/designs' } = {}) => {
+  const ws = collectWorkspace(root)
+  const { deps, markers } = ws
+  const anyDep = (pred) => [...deps].some(pred)
+  return new Set([
+    ...stacksOf(ws, root, openspecDir),
+    ...packsOf(ws),
+    ...[
+      isDir(join(root, '.github/workflows')) && 'github',
+      existsSync(join(root, '.gitlab-ci.yml')) && 'gitlab',
+      markers.has('sonar') && 'sonar',
+      anyDep((n) => n === 'storybook' || n.startsWith('@storybook/')) && 'storybook',
+      ['pg', 'postgres', 'drizzle-orm', '@prisma/client', 'typeorm'].some((n) => deps.has(n)) && 'postgres',
+      (markers.has('Chart.yaml') || isDir(join(root, 'helm')) || isDir(join(root, 'charts'))) && 'helm',
+      (isDir(join(root, '.figma-ref')) || hasFileKey(join(root, designs, 'screens.json'))) && 'figma',
+      /agent-compass/i.test(readText(join(root, '.gitmodules'))) && 'compass-submodule',
+    ].filter(Boolean),
+  ])
 }

@@ -2,6 +2,8 @@
 // A secret value is "${VAR}" ("Bearer ${VAR}" in an Authorization header). Claude expands "${VAR}" itself and Copilot
 // reads "${env:VAR}". Codex cannot expand it, so a Codex entry names the variable (env_vars, bearer_token_env_var,
 // env_http_headers) and never holds "${".
+// `stacks` lists the stacks that add a server by themselves. `suggest` lists the signals (detectSignals) or "*" that make
+// assets.mjs recommend a server. A recommended server is not installed until the project picks it in "mcp".
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'

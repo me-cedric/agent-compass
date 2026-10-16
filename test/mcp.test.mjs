@@ -32,7 +32,7 @@ const put = (root, files) => {
 
 const VAR = /^\$\{([A-Z][A-Z0-9_]*)\}$/
 const BEARER = /^Bearer \$\{([A-Z][A-Z0-9_]*)\}$/
-const ENTRY_KEYS = ['description', 'status', 'readOnly', 'secrets', 'stacks', 'providers', 'deny', 'files', 'transport', 'command', 'args', 'env', 'url', 'headers']
+const ENTRY_KEYS = ['description', 'status', 'readOnly', 'secrets', 'stacks', 'suggest', 'providers', 'deny', 'files', 'transport', 'command', 'args', 'env', 'url', 'headers']
 
 test('the catalog: every entry has a valid shape', () => {
   assert.equal(catalog.version, 1)
@@ -45,6 +45,7 @@ test('the catalog: every entry has a valid shape', () => {
     for (const key of ['description', 'readOnly']) assert.ok(typeof e[key] === 'string' && e[key].length > 10, `${name}: ${key}`)
     assert.ok(['adopt', 'trial'].includes(e.status), `${name}: status`)
     assert.ok(Array.isArray(e.stacks) && e.stacks.every((s) => STACK_IDS.includes(s)), `${name}: stacks`)
+    assert.ok(e.suggest === undefined || (Array.isArray(e.suggest) && e.suggest.length > 0 && e.suggest.every((s) => typeof s === 'string')), `${name}: suggest`)
     assert.ok(Array.isArray(e.secrets) && e.secrets.every((s) => /^[A-Z][A-Z0-9_]*$/.test(s)), `${name}: secrets`)
     assert.ok((e.providers || ['claude']).every((p) => ['claude', 'codex', 'copilot'].includes(p)), `${name}: providers`)
     assert.ok(Boolean(e.command) !== Boolean(e.url), `${name}: one transport`)

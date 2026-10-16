@@ -42,6 +42,7 @@
       "sha": "72e299530e2eb31ed8da06181bc19f6c18a00821",
       "licence": "MIT",
       "holder": "Leonxlnx",
+      "stacks": ["react-web", "next-web", "angular-web"],
       "skills": [
         "brandkit", "taste-skill", "soft-skill", "image-to-code-skill", "imagegen-frontend-mobile",
         "imagegen-frontend-web", "brutalist-skill", "minimalist-skill", "redesign-skill",
@@ -53,6 +54,7 @@
       "sha": "ea05a53683d1fb1fc701c3ad91f494d25d4fc7c6",
       "licence": "Apache-2.0",
       "holder": "Google LLC",
+      "stacks": ["android-compose"],
       "skills": [
         "adaptive", "agp-9-upgrade", "android-cli", "android-intent-security", "android-profiler",
         "appfunctions", "camerax", "display-glasses-with-jetpack-compose-glimmer", "edge-to-edge",
@@ -67,6 +69,7 @@
       "sha": "8d90fd121a263355a4fb44fd082af1416a5c1c2a",
       "licence": "PolyForm-Perimeter-1.0.0",
       "holder": "dpearson2699",
+      "stacks": ["swift-ios", "macos-desktop"],
       "skills": [
         "accessorysetupkit", "activitykit", "adattributionkit", "alarmkit", "app-clips",
         "app-intents", "app-store-optimization", "app-store-review", "apple-on-device-ai",
@@ -92,6 +95,7 @@
       "sha": "05ba982bfeb0d77d3c97d4542b0ee15034d05f84",
       "licence": "MIT",
       "holder": "Thomas Ricouard",
+      "stacks": ["swift-ios", "macos-desktop"],
       "skills": [
         "swift-concurrency-expert", "swiftui-liquid-glass", "swiftui-performance-audit",
         "swiftui-ui-patterns", "swiftui-view-refactor"
@@ -102,6 +106,7 @@
       "sha": "202585240f0c1289642885b5df645cbc25114272",
       "licence": "MIT",
       "holder": "Callstack",
+      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
       "skills": [
         "agent-device", "android-emulator", "dogfood", "ios-simulator"
       ]
@@ -121,6 +126,7 @@
       "sha": "9ffb83138209057875698dd11c1720c657c47a92",
       "licence": "MIT",
       "holder": "Ravishankar",
+      "stacks": ["macos-desktop"],
       "skills": [
         "ui-review-tahoe", "macos-capabilities"
       ]
@@ -130,6 +136,7 @@
       "sha": "7ebc355c0e50ab4db91d8d46a7813062fefad981",
       "licence": "MIT",
       "holder": "Microsoft Corporation and Contributors",
+      "stacks": ["winui-desktop"],
       "skills": [
         "winui-design", "winui-code-review", "winui-dev-workflow"
       ]
@@ -139,6 +146,7 @@
       "sha": "201fe0e96e55c42fde6bbb18bd83920f0213880a",
       "licence": "BSD-3-Clause",
       "holder": "Alex Oleshkevich",
+      "stacks": ["gtk-desktop"],
       "skills": [
         ".agents/skills/developing-gtk-apps"
       ]
