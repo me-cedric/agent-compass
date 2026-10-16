@@ -90,6 +90,19 @@ test('gate asks once for the summary after a Claude turn that edited files', asy
   assert.equal((await hook('gate', { transcript_path: transcript(question) })).code, 0)
 })
 
+test('gate reads only the end of a large transcript, and a turn there still counts', async () => {
+  // 40 MB of older turns with edits, then the last turn. The gate looks at the last 2 MB only.
+  const old = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { pad: 'x'.repeat(4000) } }] } })
+  const path = join(dir, 'big.jsonl')
+  writeFileSync(path, `${`${old}\n`.repeat(10_000)}${claudeTurn('Fixed it.').map((l) => JSON.stringify(l)).join('\n')}\n`)
+  const started = Date.now()
+  const asked = await hook('gate', { transcript_path: path })
+  assert.equal(asked.code, 2, 'the last turn edited a file and has no result')
+  assert.ok(Date.now() - started < 3000, `${Date.now() - started} ms`)
+  const quiet = transcript([...claudeTurn('Fixed it.'), { type: 'user', message: { role: 'user', content: 'Thanks.' } }, { type: 'assistant', message: { content: [{ type: 'text', text: 'Good.' }] } }])
+  assert.equal((await hook('gate', { transcript_path: quiet })).code, 0)
+})
+
 test('gate reads a Codex transcript and prefers last_assistant_message', async () => {
   const codex = transcript([
     { type: 'event_msg', payload: { type: 'user_message', message: 'Fix the bug.' } },
