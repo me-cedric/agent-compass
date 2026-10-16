@@ -107,6 +107,9 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
       : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node ${JSON.stringify(script)}` } })}` },
   ]
 
+  const seen = new Map()
+  for (const h of hooks) seen.set(`${h.event}\0${h.command}`, (seen.get(`${h.event}\0${h.command}`) ?? 0) + 1)
+  for (const [key, n] of seen) if (n > 1) { const [event, command] = key.split('\0'); warnings.push(`the ${event} hook "${command}" is listed ${n} times; it runs ${n} times`) }
   if (enabled.length > LIMITS.plugins) warnings.push(`${enabled.length} enabled Claude plugins; the budget is ${LIMITS.plugins}`)
   if (mcp.length > LIMITS.mcp) warnings.push(`${mcp.length} Claude MCP servers at user level; the budget is ${LIMITS.mcp}`)
   if (codex.mcp.length > LIMITS.mcp) warnings.push(`${codex.mcp.length} Codex MCP servers; the budget is ${LIMITS.mcp}`)

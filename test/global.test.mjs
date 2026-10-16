@@ -187,6 +187,12 @@ test('the status line command uses the unversioned compass path in quotes, and r
   assert.match(run.stdout, /Opus/)
 })
 
+test('a hook command that is listed more than once for one event is a warning', () => {
+  const home = makeHome({ settings: { hooks: { SessionStart: [cmd('remind'), cmd('remind'), cmd('remind'), cmd(say(10))], UserPromptSubmit: [cmd('remind')] } } })
+  const r = doctorGlobal({ AC, root: home, home, env: {} })
+  assert.deepEqual(r.warnings.filter((w) => /is listed \d+ times/.test(w)), ['the SessionStart hook "remind" is listed 3 times; it runs 3 times'])
+})
+
 test('the options of doctor --global are checked', async () => {
   const home = temp()
   for (const args of [['doctor', '--measure'], ['sync', '--global'], ['doctor', '--global', '--tokens']]) {
