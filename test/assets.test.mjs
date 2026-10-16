@@ -175,6 +175,19 @@ test('setAsset toggles skills, rules and agents and never mutates its input', ()
   }
 })
 
+test('switching the compass hook script off also switches off the hook keys that call it', () => {
+  const root = makeHost(WEB_HOST)
+  const hook = find(listAssets({ AC: REPO, root }), 'file', '.agents/hooks/compass.mjs')
+  assert.deepEqual(hook.also.sort(), ['.claude/settings.json', '.codex/hooks.json'].flatMap((f) => ['PreToolUse', 'SessionStart', 'Stop'].map((e) => `${f}#hooks.${e}`)))
+  const off = setAsset(cfgOf(root), hook, false)
+  assert.deepEqual(off.exclude, ['.agents/hooks/compass.mjs', ...hook.also])
+  const plan = planOf(root, off)
+  assert.ok(!plan.files.has('.agents/hooks/compass.mjs'))
+  assert.ok(![...(plan.keys.get('.claude/settings.json') ?? new Map()).keys()].some((k) => k.startsWith('hooks.')), 'no hook key calls a missing script')
+  assert.deepEqual(setAsset(off, hook, true).exclude, [])
+  assert.equal(find(listAssets({ AC: REPO, root }), 'file', '.claude/output-styles/compass.md').also, undefined)
+})
+
 test('setAsset: packs, MCP servers and upstream sources', () => {
   const config = freeze({ ...BASE })
   const pack = { kind: 'pack', id: 'env', auto: false }

@@ -33,13 +33,15 @@ const marks = ({ kind, id }) => {
 }
 
 // A new config with one asset on or off. Lists keep their order and hold no duplicate. Other keys stay as they are.
+// `also`: the owned keys that call a file (the hook keys of the hook script) go off and on with it.
 export const setAsset = (config, asset, on) => {
   const key = LISTS[asset.kind]
   const gone = marks(asset)
+  const also = asset.also ?? []
   const pack = on && asset.kind !== 'pack' ? packOf(asset.source) : undefined
   let exclude = config.exclude
-  if (on) exclude = gone.reduce(drop, exclude)
-  else if (gone.length && !(key && asset.auto === false)) exclude = add(exclude, gone[0])
+  if (on) exclude = [...gone, ...also].reduce(drop, exclude)
+  else if (gone.length && !(key && asset.auto === false)) exclude = [gone[0], ...also].reduce(add, exclude)
   return {
     ...config,
     exclude: pack ? drop(exclude, `pack:${pack}`) : exclude,
@@ -75,6 +77,8 @@ const layerAssets = ({ AC, plan, stacks, why }) => [['compass', AC], ['core', jo
       return asset(kind, id, source, { description: frontmatter(text).data.description ?? '', on, ...fit, ...tied, ...extra })
     }
     const read = (rel) => readFileSync(join(dir, rel), 'utf8')
+    const keys = readJson(join(dir, 'keys.json')) ?? {}
+    const callers = (f) => Object.entries(keys).flatMap(([file, map]) => Object.entries(map).filter(([, v]) => JSON.stringify(v).includes(f)).map(([k]) => `${file}#${k}`))
     return [
       ...dirs(join(dir, 'skills')).filter((n) => existsSync(join(dir, 'skills', n, 'SKILL.md')))
         .map((n) => make('skill', n, read(`skills/${n}/SKILL.md`), plan.skills.has(n))),
@@ -82,7 +86,7 @@ const layerAssets = ({ AC, plan, stacks, why }) => [['compass', AC], ['core', jo
         .map((f) => make('rule', `.claude/rules/${f}`, read(`rules/${f}`), plan.files.has(`.claude/rules/${f}`), { title: f.slice(0, -3) })),
       ...walk(join(dir, 'agents')).filter((f) => /^[^/]+\.md$/.test(f))
         .map((f) => make('agent', f.slice(0, -3), read(`agents/${f}`), plan.files.has(`.claude/agents/${f}`))),
-      ...walk(join(dir, 'files')).map((f) => make('file', f, '', plan.files.has(f), { description: 'Managed file' })),
+      ...walk(join(dir, 'files')).map((f) => make('file', f, '', plan.files.has(f), { description: 'Managed file', ...(callers(f).length && { also: callers(f) }) })),
       ...walk(join(dir, 'blocks')).map((f) => make('block', f, '', plan.blocks.has(f), { description: 'Compass block' })),
     ]
   })

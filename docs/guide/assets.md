@@ -160,5 +160,6 @@ An asset is recommended when it fits the project:
 
 `ac ui` shows each asset with a switch, in groups such as Skills, MCP servers and Claude plugins. The filters are all, recommended, on and off. A search box narrows the list.
 A badge says why an asset is recommended or not available. A switch writes `.agents/compass.json` only, then the tab shows the sync diff.
+The switch of the hook script `.agents/hooks/compass.mjs` also switches the hook keys that call it in `.claude/settings.json` and `.codex/hooks.json`, so no hook calls a missing file.
 The button "Apply the recommended set" turns on every recommended asset and keeps your other excludes.
 A detected pack, and the MCP servers and plugins of a detected stack, stay automatic. The button "Apply sync" runs `ac sync`.
