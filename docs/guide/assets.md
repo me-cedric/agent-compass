@@ -197,6 +197,7 @@ ac assets                          # list the assets by kind, with state, tokens
 ac assets --json                   # the same as JSON (the list that the UI shows)
 ac assets off skill:review         # switch one asset off in .agents/compass.json
 ac assets on key:.claude/settings.json#hooks.Stop
+ac assets off review               # a name without a kind works when one kind has it
 ac assets recommended              # switch on every recommended asset
 ```
 

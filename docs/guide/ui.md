@@ -13,14 +13,25 @@ It prints a URL that holds the token. Open the URL. Press Ctrl+C to stop. It has
 |---|---|---|
 | Projects | The project root, the compass version in the project and in the checkout, drift, the sync diff, the doctor checks, other projects. See [Doctor](#doctor). | Apply sync. Switch project. |
 | Assets | Each skill, rule, agent, pack, MCP server, upstream source, file, block, owned settings key, seed file and OpenSpec schema, with the tokens of each. The always-on context against the target. See [assets.md](assets.md#assets-tab) and [Assets tab](#assets-tab). | Switch an asset. Apply the recommended set. |
-| Env | The findings of `ac env check`. The names in each git-ignored local env file, as `set` or `empty`. | Save a value. Export and import an age bundle. |
+| Env | The findings of `ac env check`. The names in each git-ignored local env file, as `set` or `empty`. See [Env values](#env-values). | Save a value. Export and import an age bundle. |
 | Run | The processes of the local stack and their logs. | Up. Down. Follow a log. |
-| Tests | The commands in `agent-compass.commands.json` and the history of `.agents/runs/`. | Run a command. Open a log, JUnit or HTML report. |
+| Tests | The commands in `agent-compass.commands.json` and the history of `.agents/runs/`. A project without the file gets a note, not an error. | Run a command. Open a log, JUnit or HTML report. |
 | Usage | Tokens, cost, cache hit rate and sub-agent share for 7, 30 or 90 days, for Claude Code and Codex. By provider, day, project and model. The 20 largest sessions. See [Usage tab](#usage-tab). | Choose the range and the provider. Refresh. Load the CodexBar quota when `codexbar` is on `PATH`. |
 | Delivery | RAID files, tickets, audit rows and ADRs from the docs layout. See [delivery.md](delivery.md#docs-layout). The open issues of GitHub, GitLab or Jira. | Pull GitHub issues. Pull GitLab issues. Pull Jira issues. See [Tracker pull](#tracker-pull). |
 | Promote | The project skills that compass does not own. | Preview. Promote. |
 
 The Projects tab lists the other projects of the last 90 days of usage data that have `.agents/compass.json`.
+
+The URL hash holds the open tab, for example `#assets`. A reload or a link with the hash opens that tab.
+The tab bar is a `tablist`. Each tab is a `tab` with `aria-selected`. The arrow keys move to the next or the previous tab. Home and End move to the first and the last tab.
+
+### Env values
+
+- Save value replaces the value of a name, or adds the name at the end of the file.
+- The page asks for a confirmation before it replaces a name that is `set`.
+- A file with CRLF line ends keeps CRLF line ends.
+- The server writes a temp file in the same folder, then renames it over the env file. The env file keeps its file mode.
+- An entry that has more than one line is not changed. Edit the file by hand.
 
 ### Security model
 

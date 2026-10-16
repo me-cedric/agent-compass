@@ -60,6 +60,21 @@ It does not change, remove or reorder an entry of yours. It writes that array ag
 
 See [rule 12 of the ownership contract](../contract/ownership.md#array-keys).
 
+### Copilot hooks
+
+Compass writes `.github/hooks/compass.json` from its hook keys in `.claude/settings.json`. The Copilot cloud agent and the Copilot CLI read this file.
+The file uses the events `PreToolUse`, `Stop` and `SessionStart`. With these PascalCase names, Copilot sends the Claude payload and uses the Claude tool names and matcher.
+Each entry runs in the repository root (`"cwd": "."`).
+
+- The `guard` blocks a tool call in Copilot as in Claude: exit code 2 is a deny.
+- The Copilot entries run the hook with `--copilot`. In that mode the hook prints the JSON that Copilot reads: `additionalContext` for the start text, `permissionDecision: "deny"` for a blocked tool call, and `decision: "block"` with the reason for the gate, so all three events work in the cloud agent too.
+- An exclude of `.claude/settings.json#hooks.<event>` also removes that event from the Copilot file. To keep the whole file out, add `.github/hooks/compass.json` to `exclude`.
+
+The Copilot CLI also reads the hooks of `.claude/settings.json`. Copilot runs the hook entries of all sources, so a local Copilot CLI session runs each compass hook two times.
+The result is the same, because the two runs block or pass the same call. A block message can show two times.
+Copilot has no setting that removes a duplicate hook. `disableAllHooks` stops all hooks of a file or of all sources, so it does not help here.
+If no one uses the Copilot cloud agent, add `.github/hooks/compass.json` to `exclude`.
+
 ## What compass writes
 
 | Path | Provider | Content |
@@ -69,7 +84,8 @@ See [rule 12 of the ownership contract](../contract/ownership.md#array-keys).
 | `.claude/rules/stack-*.md`, `.agents/skills/stack-*/` | Claude, Copilot / Codex | Stack rules. Codex gets them as skills. |
 | `.claude/agents/*.md`, `.codex/agents/*.toml`, `.github/agents/*.agent.md` | Claude / Codex / Copilot | Role agents with model pins. |
 | `.claude/output-styles/compass.md`, `.claude/workflows/deliver.js` | Claude | Output style and the `deliver` workflow. |
-| `.agents/hooks/compass.mjs` | Claude, Codex | The `guard`, `gate` and `start` hooks. |
+| `.agents/hooks/compass.mjs` | Claude, Codex, Copilot | The `guard`, `gate` and `start` hooks. |
+| `.github/hooks/compass.json` | Copilot | The hook entries for Copilot. See [Copilot hooks](#copilot-hooks). |
 | Keys in `.claude/settings.json`, `.codex/config.toml`, `.codex/hooks.json` | Claude / Codex | Output style, hooks, permissions, `model_verbosity`. |
 | Keys in `.mcp.json`, `.codex/config.toml`, `.vscode/mcp.json` | Claude / Codex / Copilot | MCP servers. |
 | `.agents/compass.lock.json` | all | The state that `ac check` compares. |
@@ -115,7 +131,8 @@ The lock keeps its tag only while the compass version stays the same.
 - The project has no code graph index (`codebase-memory-mcp cli index_status`). A failure of that command is a warning only.
 - The command of an MCP server is older than its `minVersion` in the catalog.
 
-It prints one line when `.codex/hooks.json` exists: Codex runs the project hooks only after you trust them with `/hooks`. It prints one line with the count of open items of `ac doctor --global`.
+It prints one line when `.codex/hooks.json` exists: Codex runs the project hooks only after you trust them with `/hooks`.
+A sync that creates or changes a compass key in `.codex/hooks.json` also gives the warning "Codex: approve the changed hooks in /hooks before they run". It prints one line with the count of open items of `ac doctor --global`.
 
 ## Check in CI
 

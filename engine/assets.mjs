@@ -301,6 +301,7 @@ const HELP = `Usage: ac assets [on|off <kind>:<id> | recommended] [options]
 Without an action: list the assets by kind, with the state, the tokens and the reason.
   on <kind>:<id>   Switch an asset on in .agents/compass.json. Then show the sync diff.
   off <kind>:<id>  Switch an asset off in .agents/compass.json. Then show the sync diff.
+                   A name without "<kind>:" is enough when only one kind has that name.
   recommended      Switch on every recommended asset. Other excludes stay. Then show the sync diff.
 An action writes .agents/compass.json only. Run "ac sync" to apply the diff.
 The kinds: ${KINDS.join(', ')}.
@@ -314,8 +315,10 @@ Options:
 const ACTIONS = ['on', 'off', 'recommended']
 
 // "<kind>:<id>" → { kind, id }. The id can hold colons, so only the first colon splits.
+// A name without a colon → { id }: nextConfig finds its kind when only one kind has that id.
 const parseTarget = (text) => {
   const at = text.indexOf(':')
+  if (at < 0) return text ? { id: text } : null
   const kind = text.slice(0, at)
   return KINDS.includes(kind) && at < text.length - 1 ? { kind, id: text.slice(at + 1) } : null
 }
@@ -354,15 +357,18 @@ const nextConfig = ({ AC, root, action, target }) => {
   if (errors.length) return { error: errors.join(' ') }
   const config = { ...DEFAULT_CONFIG, ...readJson(join(root, CONFIG)) }
   if (action === 'recommended') return { config: recommendedConfig({ AC, root, config }) }
-  const found = listAssets({ AC, root }).assets.find((a) => a.kind === target.kind && a.id === target.id)
-  if (!found) return { error: `no ${target.kind} asset "${target.id}"; run "ac assets" to list the assets` }
-  if (action === 'on' && !found.available) return { error: `${target.kind}:${target.id} is not available: ${found.reason}` }
-  return { config: setAsset(config, found, action === 'on') }
+  const hits = listAssets({ AC, root }).assets.filter((a) => (target.kind ?? a.kind) === a.kind && a.id === target.id)
+  if (hits.length > 1) return { error: `"${target.id}" is more than one asset: ${hits.map((a) => `${a.kind}:${a.id}`).join(', ')}. Give <kind>:<id>.`, exit: 2 }
+  const [found] = hits
+  if (!found) return { error: `no ${target.kind ? `${target.kind} ` : ''}asset "${target.id}"; run "ac assets" to list the assets` }
+  if (action === 'on' && !found.available) return { error: `${found.kind}:${found.id} is not available: ${found.reason}` }
+  return { config: setAsset(config, found, action === 'on'), target: { kind: found.kind, id: found.id } }
 }
 
-const change = ({ AC, root, action, target, json }) => {
-  const next = nextConfig({ AC, root, action, target })
-  if (next.error) return failCommand(json, next.error)
+const change = ({ AC, root, action, target: asked, json }) => {
+  const next = nextConfig({ AC, root, action, target: asked })
+  if (next.error) return failCommand(json, next.error) && (next.exit ?? 1)
+  const { target } = next
   try { writeConfig(root, next.config) } catch (err) { return failCommand(json, err.message) }
   const sync = syncHost({ AC, root })
   const { changes, warnings, errors } = sync

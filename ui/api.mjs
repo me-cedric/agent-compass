@@ -3,7 +3,7 @@
 // with bin/ac.mjs and fixed arguments, or codexbar, gh, glab or jira with fixed arguments.
 
 import { execFile } from 'node:child_process'
-import { createReadStream, existsSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { createReadStream, existsSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, isAbsolute, join, relative, sep } from 'node:path'
 import { parseEnv } from 'node:util'
 import { CONFIG, DEFAULT_CONFIG, LOCK, loadConfig, projectPaths } from '../engine/config.mjs'
@@ -11,6 +11,7 @@ import { onPath } from '../engine/doctor.mjs'
 import { isTemplate, questionsDir } from '../engine/docs.mjs'
 import { discover } from '../engine/env-check.mjs'
 import { encodeValue } from '../engine/env.mjs'
+import { REGISTRY } from '../engine/run-plan.mjs'
 import { outside, syncHost } from '../engine/sync.mjs'
 import { frontmatter, hostRoot, isObj, readJson, run, safeRel, walk } from '../engine/util.mjs'
 
@@ -135,6 +136,19 @@ const masked = (root) => localFiles(root).map((file) => {
 
 const envInfo = async (c) => ({ check: await acJson(c, ['env', 'check', '--json']), files: masked(c.state.root) })
 
+// The temp file is in the same dir, so the rename replaces the file in one step. It keeps the mode of the file.
+const writeAtomic = (abs, text) => {
+  const tmp = `${abs}.${process.pid}.tmp`
+  try {
+    rmSync(tmp, { force: true })
+    writeFileSync(tmp, text, { mode: statSync(abs).mode & 0o777, flag: 'wx' })
+    renameSync(tmp, abs)
+  } catch (err) {
+    rmSync(tmp, { force: true })
+    throw err
+  }
+}
+
 const envValue = (c) => {
   const { root } = c.state
   const { file, name, value } = c.body
@@ -143,14 +157,17 @@ const envValue = (c) => {
   if (typeof value !== 'string' || /[\r\n\0]/.test(value)) bad('A value must be one line.')
   const enc = /^[\w./:@%+,-]*$/.test(value) ? value : encodeValue(value)
   if (enc === null) bad('This value has no safe quote style.')
-  const text = readFileSync(join(root, file), 'utf8')
+  // A file with CRLF line ends keeps them. The edit works on the LF text.
+  const raw = readFileSync(join(root, file), 'utf8')
+  const eol = raw.includes('\r\n') ? '\r\n' : '\n'
+  const text = raw.replaceAll('\r\n', '\n')
   const lines = text.split('\n')
   const at = lines.findLastIndex((l) => new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=`).test(l))
   // An entry that spans more lines is not edited in place: the inner lines would become live names.
   if (at >= 0 && parseEnv(lines[at])[name] !== parseEnv(text)[name]) bad('This entry has more than one line. Edit the file by hand.', 409)
   const next = at < 0 ? `${text}${text === '' || text.endsWith('\n') ? '' : '\n'}${name}=${enc}\n` : lines.with(at, `${name}=${enc}`).join('\n')
   if (parseEnv(next)[name] !== value) bad('This entry cannot be edited safely. Edit the file by hand.', 409)
-  writeFileSync(join(root, file), next)
+  writeAtomic(join(root, file), next.replaceAll('\n', eol))
   return { ok: true, files: masked(root) }
 }
 
@@ -218,7 +235,9 @@ const results = (root, limit) => {
 
 const tests = async (c) => {
   const list = await acJson(c, ['run', '--list', '--json'])
-  return { commands: list.ok ? list.commands : [], errors: list.ok ? [] : list.errors, history: results(c.state.root, 50) }
+  // A project without the registry is not an error: the page shows a note.
+  const missing = !existsSync(join(c.state.root, REGISTRY))
+  return { commands: list.ok ? list.commands : [], errors: list.ok || missing ? [] : list.errors, missing, history: results(c.state.root, 50) }
 }
 
 const testRun = async (c) => {

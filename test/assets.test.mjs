@@ -648,7 +648,7 @@ test('ac assets: a usage error exits 2 and a failure exits 1', async () => {
   const root = makeHost(WEB_HOST)
   assert.equal((await acRun('init', '--root', root)).code, 0)
   const code = async (...args) => (await acAssets([...args, '--root', root])).code
-  for (const args of [['frob'], ['on'], ['off'], ['on', 'review'], ['on', 'bogus:review'], ['on', 'skill:review', 'extra'], ['recommended', 'skill:review'], ['--nope']]) {
+  for (const args of [['frob'], ['on'], ['off'], ['on', 'bogus:review'], ['on', 'skill:review', 'extra'], ['recommended', 'skill:review'], ['--nope']]) {
     assert.equal(await code(...args), 2, args.join(' '))
   }
   const help = await acAssets(['--help'])
@@ -667,4 +667,19 @@ test('ac assets: a usage error exits 2 and a failure exits 1', async () => {
   const json = await acAssets(['on', 'skill:nope', '--json', '--root', root])
   assert.deepEqual([json.code, JSON.parse(json.stdout).ok], [1, false])
   assert.equal((await acAssets(['--root', join(root, 'missing')])).code, 1)
+})
+
+test('ac assets off and on without a kind resolve a unique name; an ambiguous name lists its forms and exits 2', async () => {
+  const root = makeHost(WEB_HOST)
+  assert.equal((await acRun('init', '--root', root)).code, 0)
+  const off = await acAssets(['off', 'review', '--json', '--root', root])
+  assert.equal(off.code, 0, off.stderr)
+  assert.deepEqual([JSON.parse(off.stdout).asset, cfgOf(root).exclude], [{ kind: 'skill', id: 'review' }, ['review']])
+  const twice = await acAssets(['off', 'env', '--root', root])
+  assert.equal(twice.code, 2)
+  assert.match(twice.stderr, /"env" is more than one asset: skill:env, pack:env\. Give <kind>:<id>\./)
+  assert.deepEqual(JSON.parse((await acAssets(['off', 'env', '--json', '--root', root])).stdout).ok, false)
+  assert.deepEqual(cfgOf(root).exclude, ['review'])
+  const none = await acAssets(['on', 'nope', '--root', root])
+  assert.deepEqual([none.code, /no asset "nope"/.test(none.stderr)], [1, true])
 })

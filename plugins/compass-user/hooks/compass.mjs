@@ -149,17 +149,27 @@ const deferred = (mode) => {
   return Boolean(lock?.keys?.[file]?.[`hooks.${EVENTS[mode]}`])
 }
 
+// Claude Code and Codex read plain stdout (start) and exit 2 with stderr (guard, gate). The Copilot cloud agent reads
+// JSON on stdout only: additionalContext for a session start, permissionDecision for a tool call, decision for a stop.
+// The generated .github/hooks/compass.json entries pass --copilot.
 const mode = process.argv[2]
+const copilot = process.argv.includes('--copilot')
+const say = (text, json) => console.log(copilot ? JSON.stringify(json) : text)
 if (!['start', 'guard', 'gate'].includes(mode)) {
-  console.error('usage: compass.mjs guard|gate|start')
+  console.error('usage: compass.mjs guard|gate|start [--copilot]')
   process.exitCode = 1
 } else if (!deferred(mode)) {
-  if (mode === 'start') console.log(START)
+  if (mode === 'start') say(START, { additionalContext: START })
   else {
     const input = read()
     let reason = null
     try { reason = input && (mode === 'guard' ? guard(input) : gate(input)) } catch { reason = null }
-    if (reason) {
+    if (reason && mode === 'guard') {
+      if (copilot) console.log(JSON.stringify({ permissionDecision: 'deny', permissionDecisionReason: reason }))
+      console.error(reason)
+      process.exitCode = 2
+    } else if (reason && copilot) console.log(JSON.stringify({ decision: 'block', reason }))
+    else if (reason) {
       console.error(reason)
       process.exitCode = 2
     }

@@ -192,6 +192,24 @@ test('gate reads a Codex transcript and prefers last_assistant_message', async (
   assert.equal((await hook('gate', { transcript_path: codex, last_assistant_message: 'npm test failed: 1 test.' })).code, 0)
 })
 
+test('--copilot: start and gate print the JSON that Copilot reads; guard still exits 2', async () => {
+  const start = await runNode([HOOK, 'start', '--copilot'])
+  assert.equal(start.code, 0)
+  const out = JSON.parse(start.stdout)
+  assert.equal(out.additionalContext, (await runNode([HOOK, 'start'])).stdout.trim())
+  const edited = { transcript_path: transcript(claudeTurn('Fixed it.')) }
+  const gate = await runNode([HOOK, 'gate', '--copilot'], { input: JSON.stringify(edited) })
+  assert.equal(gate.code, 0, 'Copilot reads decision from stdout; exit 2 is not the signal for Stop')
+  assert.deepEqual(Object.keys(JSON.parse(gate.stdout)), ['decision', 'reason'])
+  assert.equal(JSON.parse(gate.stdout).decision, 'block')
+  const quiet = await runNode([HOOK, 'gate', '--copilot'], { input: JSON.stringify({ transcript_path: transcript(claudeTurn('npm test passed.')) }) })
+  assert.deepEqual([quiet.code, quiet.stdout], [0, ''])
+  const guard = await runNode([HOOK, 'guard', '--copilot'], { input: JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/repo/.env' } }) })
+  assert.equal(guard.code, 2)
+  assert.equal(JSON.parse(guard.stdout).permissionDecision, 'deny')
+  assert.match(JSON.parse(guard.stdout).permissionDecisionReason, /\.env/)
+})
+
 test('start prints a stable reminder under 1,000 characters', async () => {
   const a = await runNode([HOOK, 'start'])
   const b = await runNode([HOOK, 'start'])

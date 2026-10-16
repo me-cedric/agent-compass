@@ -1,7 +1,7 @@
 // app.js — the page of `ac ui`. It builds the DOM with textContent only. Server data never goes into HTML.
 
 const token = new URLSearchParams(location.search).get('token') ?? ''
-history.replaceState(null, '', location.pathname)
+history.replaceState(null, '', location.pathname + location.hash)
 
 const $ = (id) => document.getElementById(id)
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -156,6 +156,8 @@ const fileCard = (f) => {
   const value = h('input', { type: 'password', placeholder: 'value', autocomplete: 'off', size: 30 })
   return h('div', { className: 'card' }, h('h3', {}, f.file), table(['Name', 'State'], f.vars.map((v) => [v.name, v.state])),
     h('div', { className: 'bar' }, name, value, act('Save value', async () => {
+      const known = f.vars.find((v) => v.name === name.value)
+      if (known?.state === 'set' && !confirm(`${name.value} has a value. Replace it?`)) return
       await api('env/value', { file: f.file, name: name.value, value: value.value })
       say(`${name.value} saved.`)
       reload()
@@ -219,7 +221,7 @@ async function tests(box) {
       const r = await api('tests/run', { name: n })
       say(`${n}: ${r.ok ? 'passed' : `failed (${r.exitCode ?? 'no exit code'})`}.`, !r.ok)
       reload()
-    })])) : note('No command is in agent-compass.commands.json.'),
+    })])) : d.missing ? note('The project has no agent-compass.commands.json. Add it to list the test commands here.') : note('No command is in agent-compass.commands.json.'),
     h('h2', {}, 'History'),
     table(['Started', 'Name', 'Exit', 'Duration', 'Reports'], d.history.map((r) => [r.startedAt, r.name, exit(r), `${(r.durationMs / 1000).toFixed(1)} s`,
       [report(`${r.dir}/output.log`, 'log'), ...r.junit.map((p) => report(p, 'junit')), ...r.html.map((p) => report(p, 'html'))]])))
@@ -299,12 +301,31 @@ async function show(name) {
   current = name
   stop.forEach((f) => f())
   stop = []
-  for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.tab === name)
+  for (const b of $('tabs').children) {
+    const on = b.dataset.tab === name
+    b.classList.toggle('on', on)
+    b.setAttribute('aria-selected', String(on))
+    b.tabIndex = on ? 0 : -1
+  }
+  if (location.hash !== `#${name}`) history.replaceState(null, '', `#${name}`)
   $('view').replaceChildren(note('Loading.'))
   const box = h('div')
   try { await TABS[name](box) } catch (err) { box.replaceChildren(note(err.status === 501 ? `Not available: ${err.message}` : err.message, 'err')) }
   if (mine === seq) $('view').replaceChildren(box)
 }
 
-$('tabs').append(...Object.keys(TABS).map((n) => h('button', { 'data-tab': n, onclick: () => show(n) }, n[0].toUpperCase() + n.slice(1))))
-show(current)
+// The tab bar: arrow keys, Home and End move between the tabs. The URL hash holds the tab, so a reload or a link opens it.
+const names = Object.keys(TABS)
+$('tabs').append(...names.map((n) => h('button', { role: 'tab', 'data-tab': n, 'aria-controls': 'view', onclick: () => show(n) }, n[0].toUpperCase() + n.slice(1))))
+$('tabs').addEventListener('keydown', (e) => {
+  const at = names.indexOf(current)
+  const to = { ArrowRight: at + 1, ArrowLeft: at - 1, Home: 0, End: names.length - 1 }[e.key]
+  if (to === undefined) return
+  e.preventDefault()
+  const next = names[(to + names.length) % names.length]
+  show(next)
+  Array.from($('tabs').children).find((b) => b.dataset.tab === next).focus()
+})
+const fromHash = () => location.hash.slice(1)
+addEventListener('hashchange', () => { if (Object.hasOwn(TABS, fromHash()) && fromHash() !== current) show(fromHash()) })
+show(Object.hasOwn(TABS, fromHash()) ? fromHash() : current)

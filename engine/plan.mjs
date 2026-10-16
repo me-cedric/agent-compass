@@ -20,6 +20,7 @@
 // ledger does not (Konvoy owns the schema otherwise). An empty {{DESIGNS_DIR}}/screens.json seeds into a designs dir.
 // MCP: mcp/catalog.json and compass.json "mcp" → keys in .mcp.json, .codex/config.toml, .vscode/mcp.json, plus
 // deny patterns in .claude/settings.json (mcp.mjs).
+// Copilot hooks: the planned hook keys of .claude/settings.json → the managed file .github/hooks/compass.json.
 // An asset whose frontmatter has `stacks: [...]` installs only when one of those stacks is detected.
 // Skill, rule and block text gets the path placeholders of the resolved paths: {{DELIVERY_DIR}}, {{PERSONAS_FILE}} …
 
@@ -91,7 +92,27 @@ const copilotAgent = (name, text) => {
   return `---\n${head.join('\n')}\n---\n${body}`
 }
 
-export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
+// The Copilot CLI and the Copilot cloud agent read .github/hooks/*.json. A PascalCase event keeps the Claude payload,
+// the Claude tool names and the Claude matcher. The planned Claude hook keys give the entries, so an excluded key leaves
+// its event out. Copilot has no SessionStart source names of Claude, so only PreToolUse keeps its matcher.
+// cwd '.' is the repository root: the cloud agent does not set CLAUDE_PROJECT_DIR.
+const COPILOT_HOOKS = '.github/hooks/compass.json'
+const COPILOT_EVENTS = ['PreToolUse', 'Stop', 'SessionStart']
+const copilotHooks = (claude = new Map()) => {
+  const hooks = Object.fromEntries(COPILOT_EVENTS.flatMap((event) => {
+    const entries = (claude.get(`hooks.${event}`) ?? []).flatMap((group) => (group.hooks ?? []).map((h) => ({
+      type: 'command',
+      ...(event === 'PreToolUse' && group.matcher && { matcher: group.matcher }),
+      bash: `${h.command} --copilot`,
+      cwd: '.',
+      ...(h.timeout && { timeoutSec: h.timeout }),
+    })))
+    return entries.length ? [[event, entries]] : []
+  }))
+  return Object.keys(hooks).length ? `${JSON.stringify({ version: 1, hooks }, null, 2)}\n` : null
+}
+
+export const buildPlan =({ AC, root, config, paths, konvoy = false }) => {
   const errors = []
   const warnings = []
   const held = []
@@ -188,6 +209,9 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
     target.set('permissions.deny', [...new Set([...(target.get('permissions.deny') || []), ...mcp.deny])])
     keys.set(settings, target)
   }
+
+  const copilot = copilotHooks(keys.get(settings))
+  if (copilot) addFile(COPILOT_HOOKS, Buffer.from(copilot))
 
   const schema = join(AC, 'core/openspec', SCHEMA)
   if (!konvoy && isDir(join(root, paths.openspec))) for (const rel of walk(schema)) copy(join(schema, rel), `${schemaDir(paths)}${rel}`, 'managed')

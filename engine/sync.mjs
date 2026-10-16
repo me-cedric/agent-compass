@@ -279,6 +279,9 @@ const conflicted = (root, plan) => [...[...plan.files].filter(([, w]) => w.mode 
   .filter((rel) => statSync(join(root, rel), { throwIfNoEntry: false })?.isFile() && MARKERS.test(readFileSync(join(root, rel), 'utf8')))
   .sort()
 
+const CODEX_HOOKS = '.codex/hooks.json'
+const CODEX_TRUST = 'Codex: approve the changed hooks in /hooks before they run'
+
 const steps = ({ AC, root, apply, init, diff, downgrade }, version, tag) => {
   const cfg = loadConfig(root, AC, { init })
   const kv = loadKonvoy(root)
@@ -316,7 +319,9 @@ const steps = ({ AC, root, apply, init, diff, downgrade }, version, tag) => {
   if (unsafe.length) return { ...out, changes, errors: unsafe.map((rel) => `${rel} is a symlink or leaves the project root; compass does not write it`) }
   if (apply) applyWrites(root, writes, rec.lockChanged && rec.lockText)
   const diffs = diff ? [...rec.kept].map(([path, content]) => ({ path, diff: unifiedDiff(root, path, content) })) : undefined
-  return { ...out, ok: true, changes, drift, ...(diffs && { diffs }) }
+  // Codex runs a new or changed project hook only after the user approves it in /hooks.
+  const trust = changes.some((c) => c.path === CODEX_HOOKS && ['create', 'update'].includes(c.action)) ? [CODEX_TRUST] : []
+  return { ...out, warnings: [...out.warnings, ...trust], ok: true, changes, drift, ...(diffs && { diffs }) }
 }
 
 // One pass for init, sync and check. apply=false writes nothing. diff adds a unified diff of each kept file.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
 import { delimiter, dirname, join } from 'node:path'
@@ -212,6 +212,22 @@ test('the assets tab shows the always-on tiles, a tokens column and the reason o
   assert.match(app, /Number\.isFinite\(a\.tokens\) \? num\(a\.tokens\) : ''/)
   assert.match(app, /not available: \$\{a\.reason/)
   assert.match(readFileSync(join(REPO, 'ui/public/style.css'), 'utf8'), /\.tile\.warn/)
+})
+
+test('the tab bar is a tablist with arrow keys and the tab in the URL hash; the env editor asks before it replaces a set value', () => {
+  const app = readFileSync(join(REPO, 'ui/public/app.js'), 'utf8')
+  const html = readFileSync(join(REPO, 'ui/public/index.html'), 'utf8')
+  assert.match(html, /<nav id="tabs" role="tablist" aria-label="[^"]+">/)
+  assert.match(html, /<main id="view" role="tabpanel">/)
+  assert.match(app, /role: 'tab'/)
+  assert.match(app, /setAttribute\('aria-selected'/)
+  assert.match(app, /ArrowRight/)
+  assert.match(app, /ArrowLeft/)
+  assert.match(app, /history\.replaceState\(null, '', location\.pathname \+ location\.hash\)/, 'the token goes, the tab stays')
+  assert.match(app, /addEventListener\('hashchange'/)
+  assert.match(app, /Object\.hasOwn\(TABS, /)
+  assert.match(app, /state === 'set' && !confirm\(/)
+  assert.match(app, /d\.missing \? note\(/)
 })
 
 test('the page has the doctor, sessions and provider parts', () => {
@@ -502,6 +518,7 @@ test('a test run needs a name from the registry, and its result lands in the his
   const list = (await call(port, { path: '/api/tests' })).json()
   assert.deepEqual(list.commands, ['test', 'fail'])
   assert.deepEqual(list.history, [])
+  assert.equal(list.missing, false)
   for (const name of ['nope', '--help', '../x', 'test; id', 5, undefined]) assert.equal((await post(port, '/api/tests/run', { name })).status, 404, String(name))
   const ran = (await post(port, '/api/tests/run', { name: 'test' })).json()
   assert.equal(ran.ok, true)
@@ -521,7 +538,7 @@ test('a test run without a registry lists no command', async () => {
   const { port } = await start(await host())
   const list = (await call(port, { path: '/api/tests' })).json()
   assert.deepEqual(list.commands, [])
-  assert.equal(list.errors.length, 1)
+  assert.deepEqual([list.missing, list.errors], [true, []])
 })
 
 test('the run tab reports a stack that is not there, and checks the log process name', async () => {
@@ -614,6 +631,19 @@ test('an env edit changes one value in place, or appends it, and checks its inpu
   writeFileSync(join(root, '.env.local'), multi)
   assert.equal((await edit({ file: '.env.local', name: 'CERT', value: 'new' })).status, 409, 'a multi-line entry is not edited in place')
   assert.equal(readFileSync(join(root, '.env.local'), 'utf8'), multi)
+})
+
+test('an env edit keeps CRLF line ends and the file mode, and leaves no temp file', async () => {
+  const root = await envHost()
+  const file = join(root, '.env.local')
+  writeFileSync(file, 'API_KEY=s3cr3t-value-123\r\nEMPTY=\r\nPORT=3000\r\n')
+  chmodSync(file, 0o600)
+  const { port } = await start(root)
+  assert.equal((await post(port, '/api/env/value', { file: '.env.local', name: 'PORT', value: '4000' })).status, 200)
+  assert.equal((await post(port, '/api/env/value', { file: '.env.local', name: 'NEW_NAME', value: 'x' })).status, 200)
+  assert.equal(readFileSync(file, 'utf8'), 'API_KEY=s3cr3t-value-123\r\nEMPTY=\r\nPORT=4000\r\nNEW_NAME=x\r\n')
+  assert.equal(statSync(file).mode & 0o777, 0o600)
+  assert.deepEqual(readdirSync(root).filter((f) => f.endsWith('.tmp')), [])
 })
 
 test('env export and import check their inputs before they start a command', async () => {

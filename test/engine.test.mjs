@@ -378,6 +378,9 @@ test('the real compass assets sync into an empty project and pass doctor', async
   const host = makeHost()
   const init = await ac(REPO, host, 'init')
   assert.equal(init.code, 0, init.stderr)
+  const copilot = JSON.parse(read(host, '.github/hooks/compass.json')).hooks
+  assert.deepEqual(Object.keys(copilot), ['PreToolUse', 'Stop', 'SessionStart'])
+  assert.equal(copilot.PreToolUse[0].matcher, settingsOf(host).hooks.PreToolUse[0].matcher)
   assert.equal((await ac(REPO, host, 'check', '--frozen')).code, 0)
   const doc = await ac(REPO, host, 'doctor')
   assert.equal(doc.code, 0, JSON.stringify(doc.json?.checks))
@@ -531,7 +534,7 @@ test('doctor: a host without git, the Codex hook trust, the user-level todo coun
 })
 
 // Array keys: compass owns its entries in the array, not the array.
-const hook = (matcher, command, extra = {}) => ({ matcher, hooks: [{ type: 'command', command: `node ".agents/hooks/compass.mjs" ${command}`, timeout: 10, ...extra }] })
+const hook =(matcher, command, extra = {}) => ({ matcher, hooks: [{ type: 'command', command: `node ".agents/hooks/compass.mjs" ${command}`, timeout: 10, ...extra }] })
 const GUARD = hook('Read|Bash', 'guard')
 const OURS = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo ours' }] }
 const PRE = '.claude/settings.json#hooks.PreToolUse'
@@ -620,13 +623,13 @@ test('a planned entry that compass drops is removed when unchanged and kept when
   assert.equal((await ac(compass, host, 'check', '--frozen')).code, 1, 'a stale compass entry in the file is drift')
   const shrink = await ac(compass, host, 'sync')
   assert.equal(shrink.code, 0)
-  assert.deepEqual(actions(shrink), [`update ${PRE}`])
+  assert.deepEqual(actions(shrink).sort(), [`update ${PRE}`, `update ${COPILOT}`])
   assert.deepEqual(settingsOf(host).hooks.PreToolUse, [OURS, editedB, c])
   assert.deepEqual(lockedEntries(host, 'hooks.PreToolUse'), { entries: [entrySha(c)] })
   assert.deepEqual((await ac(compass, host, 'sync')).json.changes, [])
   put(compass, { 'core/keys.json': JSON.stringify({ ...KEYS, '.claude/settings.json': { outputStyle: 'compass' } }) })
   const drop = await ac(compass, host, 'sync')
-  assert.deepEqual(actions(drop), [`remove ${PRE}`])
+  assert.deepEqual(actions(drop).sort(), [`remove ${PRE}`, `remove ${COPILOT}`])
   assert.deepEqual(settingsOf(host).hooks.PreToolUse, [OURS, editedB])
   assert.equal(lockedEntries(host, 'hooks.PreToolUse'), undefined)
   assert.deepEqual((await ac(compass, host, 'sync')).json.changes, [])
@@ -653,7 +656,7 @@ test('an exclude on an array key removes all compass entries and leaves the host
   put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [PRE] }) })
   const r = await ac(compass, host, 'sync')
   assert.equal(r.code, 0)
-  assert.deepEqual(actions(r), [`remove ${PRE}`])
+  assert.deepEqual(actions(r).sort(), [`remove ${PRE}`, `remove ${COPILOT}`])
   assert.deepEqual(settingsOf(host).hooks.PreToolUse, [OURS])
   assert.equal(lockedEntries(host, 'hooks.PreToolUse'), undefined)
   assert.deepEqual((await ac(compass, host, 'sync')).json.changes, [])
@@ -772,4 +775,41 @@ test('the real compass assets add their hook groups and deny strings beside a ho
   assert.deepEqual((await ac(REPO, host, 'sync')).json.changes, [])
   assert.deepEqual(snapshot(host), before)
   assert.equal((await ac(REPO, host, 'check', '--frozen')).code, 0)
+})
+
+// Copilot reads the hooks of .github/hooks/*.json. PascalCase events keep the Claude payload and the Claude matcher.
+const STOP = { hooks: [{ type: 'command', command: 'node ".agents/hooks/compass.mjs" gate', timeout: 10 }] }
+const HOOKS = { 'hooks.PreToolUse': [GUARD], 'hooks.Stop': [STOP], 'hooks.SessionStart': [hook('startup|clear', 'start')] }
+const COPILOT = '.github/hooks/compass.json'
+const copilotEntry = (cmd, extra = {}) => ({ type: 'command', ...extra, bash: `node ".agents/hooks/compass.mjs" ${cmd} --copilot`, cwd: '.', timeoutSec: 10 })
+
+test('the Claude hook keys give the Copilot hook file; an excluded key leaves its event out; no hook key gives no file', async () => {
+  const compass = arrayCompass(HOOKS)
+  const host = makeHost()
+  const r = await ac(compass, host, 'init')
+  assert.equal(r.code, 0, r.stderr)
+  assert.deepEqual(JSON.parse(read(host, COPILOT)), {
+    version: 1,
+    hooks: { PreToolUse: [copilotEntry('guard', { matcher: 'Read|Bash' })], Stop: [copilotEntry('gate')], SessionStart: [copilotEntry('start')] },
+  })
+  assert.equal(JSON.parse(read(host, '.agents/compass.lock.json')).files[COPILOT].owner, 'compass')
+  const exclude = (...keys) => put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: keys.map((k) => `.claude/settings.json#${k}`) }) })
+  exclude('hooks.Stop')
+  assert.equal((await ac(compass, host, 'sync')).code, 0)
+  assert.deepEqual(Object.keys(JSON.parse(read(host, COPILOT)).hooks), ['PreToolUse', 'SessionStart'])
+  exclude(...Object.keys(HOOKS))
+  assert.equal((await ac(compass, host, 'sync')).code, 0)
+  assert.equal(existsSync(join(host, COPILOT)), false)
+})
+
+test('a sync that writes a .codex/hooks.json key warns to approve the hooks in /hooks; a sync without a change does not', async () => {
+  const trust = 'Codex: approve the changed hooks in /hooks before they run'
+  const compass = makeCompass({ 'core/keys.json': JSON.stringify({ ...KEYS, '.codex/hooks.json': { 'hooks.Stop': [STOP] } }) })
+  const host = makeHost()
+  const init = await ac(compass, host, 'init')
+  assert.equal(init.code, 0, init.stderr)
+  assert.ok(init.json.warnings.includes(trust), JSON.stringify(init.json.warnings))
+  assert.ok(!(await ac(compass, host, 'sync')).json.warnings.includes(trust))
+  put(compass, { 'core/keys.json': JSON.stringify({ ...KEYS, '.codex/hooks.json': { 'hooks.Stop': [{ hooks: [{ ...STOP.hooks[0], timeout: 20 }] }] } }) })
+  assert.ok((await ac(compass, host, 'sync')).json.warnings.includes(trust))
 })

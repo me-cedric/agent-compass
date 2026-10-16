@@ -40,3 +40,4 @@ pre { margin: 8px 0; padding: 8px; overflow: auto; max-height: 50vh; border: 1px
 .tile b { font-size: 20px }
 #status { position: fixed; right: 16px; bottom: 16px; max-width: 60ch; padding: 6px 12px; border-radius: 6px; background: var(--head); border: 1px solid var(--line) }
 #status:empty { display: none }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
