@@ -1,0 +1,18 @@
+# compass-check: fail when the project is different from the compass lock.
+# To fix a failure, run "ac sync" and commit the result.
+# Include it from .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/compass/check.yml
+# The submodule clone works best with a relative URL in .gitmodules.
+# A runner without internet access: replace the image with your registry mirror.
+
+compass-check:
+  stage: test
+  image: node:24-alpine
+  variables:
+    COMPASS_DIR: docs/agent-compass # edit: the path of the compass submodule
+    GIT_SUBMODULE_STRATEGY: normal
+  script:
+    - node "$COMPASS_DIR/bin/ac.mjs" check --frozen
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

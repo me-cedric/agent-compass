@@ -1,0 +1,44 @@
+# compass-security: scan the dependencies with osv-scanner and its offline database.
+# The gate job fails on a finding with a CVSS score of 9.0 or more.
+# Needs the compass "security" pack: .osv-scanner.toml and .agents/skills/vuln-triage/scripts/sarif-merge.mjs.
+# Runs in scheduled and manual pipelines. Include it from .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/compass/security.yml
+# A runner without internet access cannot download the database. Put the database in .osv-db with
+# another job or a mirror, then set OSV_DB_FLAGS to "". Replace the images with your registry mirror.
+
+compass-osv:
+  stage: test
+  # The image keeps the binary at /osv-scanner, outside PATH.
+  image:
+    name: ghcr.io/google/osv-scanner:v2.7.0
+    entrypoint: ['']
+  variables:
+    OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: $CI_PROJECT_DIR/.osv-db
+    OSV_DB_FLAGS: --download-offline-databases
+  cache:
+    key: osv-db
+    paths: [.osv-db/]
+  script:
+    # osv-scanner exits 1 when it finds a vulnerability. The gate job decides. Exit 127 or 128 is a failure.
+    - /osv-scanner scan source --recursive --config=.osv-scanner.toml --offline-vulnerabilities $OSV_DB_FLAGS --format=sarif --output-file=osv.sarif . || rc=$?
+    - test "${rc:-0}" -le 1
+  artifacts:
+    when: always
+    paths: [osv.sarif]
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+
+compass-security-gate:
+  stage: test
+  image: node:24-alpine
+  needs: [compass-osv]
+  script:
+    - node .agents/skills/vuln-triage/scripts/sarif-merge.mjs --fail-at 9 --out merged.sarif osv.sarif
+  artifacts:
+    when: always
+    paths: [merged.sarif]
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"

@@ -52,15 +52,14 @@ short life is a smaller problem than a pretence that argv is private.
 ## Dependency & code scanning
 
 - **OSV scanner** for dependency vulnerabilities — config in
-  [`templates/security/.osv-scanner.toml`](../../templates/security/.osv-scanner.toml),
+  [`packs/security/seed/.osv-scanner.toml`](../../packs/security/seed/.osv-scanner.toml),
   with a baseline file to suppress triaged findings.
 - **Checkmarx** packaging for SAST — see
   [`templates/scripts/checkmarx-package.sh`](../../templates/scripts/checkmarx-package.sh)
   and [tooling/security-scanning.md](../tooling/security-scanning.md).
 - **SonarQube** for code smells, hotspots, and coverage — see
   [tooling/sonarqube.md](../tooling/sonarqube.md).
-- A `security-scan` CI workflow runs these on PRs — see
-  [`templates/ci/security-scan.example.yml`](../../templates/ci/security-scan.example.yml).
+- The `ci-github` and `ci-gitlab` packs run the osv scan on a schedule with a CVSS 9.0 gate.
 
 ## Response protocol
 

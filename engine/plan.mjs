@@ -12,7 +12,7 @@
 //   blocks/<path>    Markdown block   → the compass block in <path>
 //   keys.json        owned keys       → { "<host .json or .toml file>": { "<dotted.key>": value } }
 // Layers: the compass root, core/, then each pack in compass.json "packs" and each detected pack (detectPacks:
-// env, local-run, e2e). A detected pack that is not in the compass checkout is skipped. Then the upstream sources
+// env, local-run, e2e, security). A detected pack that is not in the compass checkout is skipped. Then the upstream sources
 // in compass.json "upstream", from the user cache (upstream.mjs).
 // Docs layout: core/openspec/<schema>/ → {{OPENSPEC_DIR}}/schemas/<schema>/ when that dir exists and the Konvoy
 // ledger does not (Konvoy owns the schema otherwise). An empty {{DESIGNS_DIR}}/screens.json seeds into a designs dir.

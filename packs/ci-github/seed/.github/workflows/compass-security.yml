@@ -1,0 +1,55 @@
+# compass-security: scan the dependencies with osv-scanner and its offline database.
+# The job fails on a finding with a CVSS score of 9.0 or more. The merged SARIF file is an artifact.
+# Needs the compass "security" pack: .osv-scanner.toml and .agents/skills/vuln-triage/scripts/sarif-merge.mjs.
+# Set the repository variable CODE_SCANNING to "true" to upload the findings to code scanning.
+
+name: compass-security
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+      # osv-scanner exits 1 when it finds a vulnerability. The gate step decides.
+      - name: Scan with the offline database
+        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --recursive
+            --config=.osv-scanner.toml
+            --offline-vulnerabilities
+            --download-offline-databases
+            --format=sarif
+            --output-file=osv.sarif
+            ./
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # The scanner runs in a container, so its paths start with /github/workspace.
+      - name: Gate on CVSS 9.0
+        run: node .agents/skills/vuln-triage/scripts/sarif-merge.mjs --root /github/workspace --fail-at 9 --out merged.sarif osv.sarif
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: security-sarif
+          path: merged.sarif
+          if-no-files-found: ignore
+      - uses: github/codeql-action/upload-sarif@v4
+        if: ${{ !cancelled() && vars.CODE_SCANNING == 'true' && hashFiles('merged.sarif') != '' }}
+        with:
+          sarif_file: merged.sarif
+          category: osv-scanner

@@ -128,7 +128,13 @@ test('detectPacks finds env templates, compose files and e2e suites in workspace
     await writeFile(join(other, 'process-compose.yaml'), 'version: "0.5"\n')
     await mkdir(join(other, '.maestro'))
     assert.deepEqual(detectPacks(other), ['local-run', 'e2e'], 'a local .env file is not a template')
+    await writeFile(join(other, 'sonar-project.api.properties'), 'sonar.projectKey=a\n')
+    assert.deepEqual(detectPacks(other), ['local-run', 'e2e', 'security'])
     await rm(other, { recursive: true, force: true })
+    const osv = await mkdtemp(join(tmpdir(), 'ac-detect-packs-'))
+    await writeFile(join(osv, '.osv-scanner.toml'), '')
+    assert.deepEqual(detectPacks(osv), ['security'])
+    await rm(osv, { recursive: true, force: true })
   } finally {
     await rm(host, { recursive: true, force: true })
   }

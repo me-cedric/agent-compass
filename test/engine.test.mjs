@@ -228,6 +228,9 @@ test('check --frozen exits 1 on drift and 0 when clean', async () => {
   assert.equal((await ac(compass, host, 'check')).code, 0, 'without --frozen, drift is a report')
   await ac(compass, host, 'sync')
   assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0)
+  const lock = JSON.parse(read(host, '.agents/compass.lock.json'))
+  put(host, { '.agents/compass.lock.json': `${JSON.stringify({ ...lock, tag: 'v1.0.0' }, null, 2)}\n` })
+  assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0, 'a checkout without tag data keeps the lock tag (CI clone)')
 })
 
 test('a skill name in both ledgers is an error and nothing is written', async () => {

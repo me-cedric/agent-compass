@@ -10,12 +10,13 @@ const FILE_MARKERS = [
   'AndroidManifest.xml', 'Package.swift', 'Podfile',
   'env.catalog.json', '.maestro',
 ]
-// Name patterns for the dev-loop packs (detectPacks).
+// Name patterns for the dev-loop and security packs (detectPacks).
 const NAME_MARKERS = [
   [/^\.env(\.[\w-]+)*\.(example|sample|template)$/, 'env-template'],
   [/^process-compose(\.[\w-]+)?\.ya?ml$/, 'process-compose'],
   [/^(docker-)?compose(\.[\w-]+)?\.ya?ml$/, 'docker-compose'],
   [/^playwright\.config\.[cm]?[jt]s$/, 'playwright'],
+  [/^(\.osv-scanner\.toml|sonar-project(\.[\w-]+)?\.properties)$/, 'security-config'],
 ]
 
 // Dependency names + marker files across the whole workspace. Monorepos keep
@@ -108,7 +109,7 @@ export const detectStacks = (root, { openspecDir } = {}) => {
   ].filter(Boolean)
 }
 
-// Dev-loop packs that fit the project. `ac sync` installs them in addition to compass.json "packs".
+// Packs that fit the project. `ac sync` installs them in addition to compass.json "packs".
 // ponytail: a second workspace scan; merge it with detectStacks when the scan time matters.
 export const detectPacks = (root) => {
   const { deps, markers } = collectWorkspace(root)
@@ -116,5 +117,6 @@ export const detectPacks = (root) => {
     (markers.has('env-template') || markers.has('env.catalog.json')) && 'env',
     (markers.has('process-compose') || markers.has('docker-compose')) && 'local-run',
     (markers.has('playwright') || markers.has('.maestro') || deps.has('@playwright/test') || deps.has('playwright')) && 'e2e',
+    markers.has('security-config') && 'security',
   ].filter(Boolean)
 }

@@ -25,11 +25,14 @@ test('check-actions rejects stale action majors', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-actions-'))
   try {
     await mkdir(join(dir, '.github', 'workflows'), { recursive: true })
-    await mkdir(join(dir, 'templates', 'ci'), { recursive: true })
+    const seed = join(dir, 'packs', 'ci-github', 'seed', '.github', 'workflows')
+    await mkdir(seed, { recursive: true })
     await writeFile(join(dir, '.github', 'workflows', 'ci.yml'), 'steps:\n  - uses: actions/checkout@v4\n')
+    await writeFile(join(seed, 'e2e.yml'), 'steps:\n  - uses: actions/download-artifact@v4\n')
     const result = await runNode([script.pathname, '--root', dir], { cwd: root.pathname })
     assert.equal(result.code, 1)
     assert.match(result.stderr, /actions\/checkout@v4/)
+    assert.match(result.stderr, /packs\/ci-github\/seed\/\.github\/workflows\/e2e\.yml: actions\/download-artifact@v4/)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

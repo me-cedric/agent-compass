@@ -1,0 +1,34 @@
+# compass-migrations: two gates for database migrations.
+# 1. A merge request does not change or delete a migration file that the target branch has.
+# 2. The migration generator gives no new file: each schema change has its migration.
+# Include it from .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/compass/migrations.yml
+# Edit MIGRATIONS_DIR, the install command and the generator. The generator must run without a database.
+
+compass-migrations:
+  stage: test
+  image: node:24
+  variables:
+    MIGRATIONS_DIR: drizzle # edit: the migrations directory
+    GIT_DEPTH: 0
+  script:
+    - git fetch --quiet origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - changed=$(git diff --name-only --diff-filter=MDR FETCH_HEAD...HEAD -- "$MIGRATIONS_DIR/*.sql")
+    - |
+      if [ -n "$changed" ]; then
+        echo "Add a new migration. Do not change or delete an applied one:"
+        echo "$changed"
+        exit 1
+      fi
+    - npm ci # edit: your install command
+    - npx drizzle-kit generate # edit: your migration generator
+    - |
+      drift=$(git status --porcelain -- "$MIGRATIONS_DIR")
+      if [ -n "$drift" ]; then
+        echo "The schema changed without a migration. Run the generator and commit its output:"
+        echo "$drift"
+        exit 1
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"

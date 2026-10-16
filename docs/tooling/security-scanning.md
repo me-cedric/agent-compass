@@ -5,7 +5,7 @@ Three layers, all runnable locally and in CI. See also
 
 ## OSV — dependency vulnerabilities
 
-[`templates/security/.osv-scanner.toml`](../../templates/security/.osv-scanner.toml)
+[`packs/security/seed/.osv-scanner.toml`](../../packs/security/seed/.osv-scanner.toml)
 configures [osv-scanner](https://google.github.io/osv-scanner/). A **baseline**
 file records already-triaged findings so CI only fails on *new* ones.
 
@@ -54,9 +54,9 @@ changes.
 
 ## CI
 
-[`templates/ci/security-scan.example.yml`](../../templates/ci/security-scan.example.yml)
-runs the scans on PRs. Gate on **new** Critical/High only — pre-existing,
-baselined findings don't block unrelated work.
+The `ci-github` and `ci-gitlab` packs run osv-scanner with the offline database
+on a schedule. The gate fails on a finding with a CVSS score of 9.0 or more.
+The `security` pack has the `vuln-triage` skill and its SARIF merge script.
 
 ## Secrets
 

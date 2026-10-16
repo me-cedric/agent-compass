@@ -1,0 +1,64 @@
+# compass-helm-bump: open a pull request in the chart repository that sets the image tag.
+# Call it after the image push, or start it by hand.
+# Secret HELM_REPO_TOKEN: a token with contents and pull request write access on the chart repository.
+
+name: compass-helm-bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+    secrets:
+      HELM_REPO_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  HELM_REPO: owner/helm-charts # edit: the chart repository
+  HELM_BASE: main # edit: its default branch
+  VALUES_FILE: charts/app/values.yaml # edit: the values file
+  TAG_KEY: .image.tag # edit: the yq path of the tag
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ env.HELM_REPO }}
+          ref: ${{ env.HELM_BASE }}
+          token: ${{ secrets.HELM_REPO_TOKEN }}
+      - name: Set the image tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$TAG" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "::error::The tag \"$TAG\" has a character that is not allowed."; exit 1; }
+          [[ "$TAG_KEY" =~ ^(\.[A-Za-z0-9_-]+)+$ ]] || { echo "::error::TAG_KEY must be a yq path such as .image.tag."; exit 1; }
+          yq -i "${TAG_KEY} = strenv(TAG)" "$VALUES_FILE"
+      - name: Open the pull request
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ secrets.HELM_REPO_TOKEN }}
+        run: |
+          if git diff --quiet; then echo "The chart already uses $TAG."; exit 0; fi
+          app="${GITHUB_REPOSITORY#*/}"
+          branch="bump/$app-$TAG"
+          title="chore(helm): bump $app to $TAG"
+          git switch -c "$branch"
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -qam "$title"
+          git push --force origin "$branch"
+          open=$(gh pr list --repo "$HELM_REPO" --head "$branch" --state open --json number --jq length)
+          [ "$open" != 0 ] ||
+            gh pr create --repo "$HELM_REPO" --base "$HELM_BASE" --head "$branch" --title "$title" \
+              --body "Image tag $TAG from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID."

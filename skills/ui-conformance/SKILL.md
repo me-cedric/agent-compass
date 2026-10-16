@@ -38,6 +38,7 @@ Read both sides as values. A screenshot cannot settle fonts, colors, backgrounds
 1. Compare order, nesting, alignment, constraints and responsive rules with the design.
 2. Check each state: hover, focus, disabled, loading, empty, error.
 3. Compare the copy character by character.
+4. Atomic design on the web: copy `assets/eslint-boundaries.mjs` next to `eslint.config.mjs` and add it to the config. The lint then fails when a level imports a higher level.
 
 ## 3. Screenshot compare
 

@@ -19,11 +19,12 @@ const { values, positionals } = parseCliArgs({
 const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToPath(import.meta.url))))
 const REQUIRED = new Map([
   ['actions/checkout', 'v7'],
-  ['actions/setup-node', 'v6'],
+  ['actions/setup-node', 'v7'],
   ['actions/upload-artifact', 'v7'],
+  ['actions/download-artifact', 'v8'],
   ['actions/github-script', 'v9'],
 ])
-const SCAN_DIRS = ['.github/workflows', 'templates/ci']
+const SCAN_DIRS = ['.github/workflows', 'packs']
 const hits = []
 
 const walk = (dir, onFile) => {

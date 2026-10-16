@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "git-submodules": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Compass submodule: set `branch = <release tag>` for it in .gitmodules, so Renovate proposes the next tag. Run `ac sync` in the update branch: `ac check --frozen` fails until you do.",
+      "matchManagers": ["git-submodules"],
+      "matchPackageNames": ["/agent-compass/"],
+      "versioning": "semver-coerced",
+      "groupName": "agent-compass"
+    }
+  ]
+}

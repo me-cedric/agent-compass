@@ -1,0 +1,46 @@
+# compass-migrations: two gates for database migrations.
+# 1. A pull request does not change or delete a migration file that the base branch has.
+# 2. The migration generator gives no new file: each schema change has its migration.
+# Edit MIGRATIONS_DIR, the install command and the generator. The generator must run without a database.
+
+name: compass-migrations
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  MIGRATIONS_DIR: drizzle # edit: the migrations directory
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Applied migrations do not change
+        run: |
+          git fetch --quiet origin "$GITHUB_BASE_REF"
+          changed=$(git diff --name-only --diff-filter=MDR FETCH_HEAD...HEAD -- "$MIGRATIONS_DIR/*.sql")
+          if [ -n "$changed" ]; then
+            echo "::error::Add a new migration. Do not change or delete an applied one:"
+            echo "$changed"
+            exit 1
+          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci # edit: your install command
+      - run: npx drizzle-kit generate # edit: your migration generator
+      - name: The schema has its migrations
+        run: |
+          drift=$(git status --porcelain -- "$MIGRATIONS_DIR")
+          if [ -n "$drift" ]; then
+            echo "::error::The schema changed without a migration. Run the generator and commit its output:"
+            echo "$drift"
+            exit 1
+          fi

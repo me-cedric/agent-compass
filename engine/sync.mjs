@@ -213,7 +213,8 @@ const steps = ({ AC, root, apply, init }, version, tag) => {
   if (planErrors.length) return { ...out, errors: planErrors }
 
   const released = kv.konvoy && ((rel) => konvoyOwns(kv.konvoy, rel))
-  const rec = reconcile(root, { ...plan, version, tag, released }, lk.lock)
+  // No tag data (a CI clone without git or tags) is not a tag change: keep the lock tag.
+  const rec = reconcile(root, { ...plan, version, tag: tag ?? lk.lock.tag ?? null, released }, lk.lock)
   if (rec.errors.length) return { ...out, errors: rec.errors, changes: rec.changes }
   const configWrite = cfg.created ? [[CONFIG, { content: Buffer.from(`${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`) }]] : []
   const writes = new Map([...configWrite, ...rec.writes])

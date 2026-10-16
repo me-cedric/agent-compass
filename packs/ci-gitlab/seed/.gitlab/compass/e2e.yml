@@ -1,0 +1,38 @@
+# compass-e2e: Playwright in 4 parallel jobs, then one HTML report and one JUnit report.
+# Include it from .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/compass/e2e.yml
+# Use the image tag of your @playwright/test version. Edit the install command.
+
+compass-e2e:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.62.0-noble
+  parallel: 4
+  script:
+    - npm ci # edit: your install command
+    - npx playwright test --shard="$CI_NODE_INDEX/$CI_NODE_TOTAL" --reporter=blob
+  artifacts:
+    when: always
+    paths: [blob-report/]
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+compass-e2e-report:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.62.0-noble
+  needs: [compass-e2e]
+  variables:
+    PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit.xml
+  script:
+    - npm ci # edit: your install command
+    - npx playwright merge-reports --reporter=html,junit ./blob-report
+  artifacts:
+    when: always
+    paths: [playwright-report/, junit.xml]
+    reports:
+      junit: junit.xml
+    expire_in: 2 weeks
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always

@@ -1,0 +1,63 @@
+# compass-e2e: Playwright in 4 shards, then one HTML report and one JUnit file.
+# Edit the install command. Keep the shard count in the matrix.
+
+name: compass-e2e
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci # edit: your install command
+      - run: npx playwright install --with-deps
+      - name: Run the shard
+        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=blob
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 1
+
+  report:
+    needs: e2e
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci # edit: your install command
+      - uses: actions/download-artifact@v8
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+      - name: Merge the shard reports
+        run: npx playwright merge-reports --reporter=html,junit ./all-blob-reports
+        env:
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit.xml
+      - uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            junit.xml
+          retention-days: 14

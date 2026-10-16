@@ -1,0 +1,31 @@
+# compass-helm-bump: on a tag, open a merge request in the chart project that sets the image tag.
+# Include it from .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/compass/helm-bump.yml
+# Variable HELM_REPO_TOKEN: masked and protected, with write_repository access on the chart project.
+# Protect the release tag pattern, so that only protected tags get the token.
+# A runner without internet access: use an image that has git and yq, and remove the apk line.
+
+compass-helm-bump:
+  stage: deploy
+  image: alpine:3.22
+  variables:
+    HELM_REPO: group/helm-charts # edit: the chart project path
+    HELM_BASE: main # edit: its default branch
+    VALUES_FILE: charts/app/values.yaml # edit: the values file
+    TAG_KEY: .image.tag # edit: the yq path of the tag
+  script:
+    - apk add --no-cache git yq-go
+    - '[ -n "$HELM_REPO_TOKEN" ] || { echo "HELM_REPO_TOKEN is not set."; exit 1; }'
+    - echo "$TAG_KEY" | grep -Eq '^(\.[A-Za-z0-9_-]+)+$' || { echo "TAG_KEY must be a yq path such as .image.tag."; exit 1; }
+    - git clone --quiet --depth 1 --branch "$HELM_BASE" "https://oauth2:${HELM_REPO_TOKEN}@${CI_SERVER_HOST}/${HELM_REPO}.git" helm
+    - cd helm
+    - TAG="$CI_COMMIT_TAG" yq -i "${TAG_KEY} = strenv(TAG)" "$VALUES_FILE"
+    - if git diff --quiet; then echo "The chart already uses $CI_COMMIT_TAG."; exit 0; fi
+    - 'title="chore(helm): bump $CI_PROJECT_NAME to $CI_COMMIT_TAG"'
+    - branch="bump/$CI_PROJECT_NAME-$CI_COMMIT_TAG"
+    - git switch -c "$branch"
+    - git -c user.name="$GITLAB_USER_NAME" -c user.email="$GITLAB_USER_EMAIL" commit -qam "$title"
+    - git push --force -o merge_request.create -o merge_request.target="$HELM_BASE" -o merge_request.title="$title" origin "$branch"
+  rules:
+    - if: $CI_COMMIT_TAG

@@ -1,0 +1,29 @@
+# compass-check: fail when the project is different from the compass lock.
+# To fix a failure, run "ac sync" and commit the result.
+# A private compass repository needs a `token:` with read access on the checkout step.
+
+name: compass-check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  COMPASS_DIR: docs/agent-compass # edit: the path of the compass submodule
+
+jobs:
+  compass:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Check the compass lock
+        run: node "$COMPASS_DIR/bin/ac.mjs" check --frozen
