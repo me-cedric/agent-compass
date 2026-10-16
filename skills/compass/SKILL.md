@@ -41,7 +41,7 @@ A project that has specs starts with `spec-flow`, section "Init from specs".
 Use this for an old install: a submodule, a vendored copy, `.agent/agent-compass.lock`, or double skill copies.
 
 1. Run `ac migrate --dry`.
-2. If `ac` prints "Unknown command", stop. Tell the user that this compass version has no migrate command.
+2. If `ac` prints "migrate needs --docs", stop. Tell the user that this compass version migrates only the docs layout. For the docs, use `spec-flow`.
 3. Show the plan to the user. Run `ac migrate` only after a yes.
 4. Run `ac check --frozen`. Report each file that the command kept because the project edited it.
 

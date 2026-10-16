@@ -13,16 +13,19 @@
 //   keys.json        owned keys       → { "<host .json or .toml file>": { "<dotted.key>": value } }
 // Layers: the compass root, core/, then each pack in compass.json "packs". Then the upstream sources
 // in compass.json "upstream", from the user cache (upstream.mjs).
+// Docs layout: core/openspec/<schema>/ → {{OPENSPEC_DIR}}/schemas/<schema>/ when that dir exists and the Konvoy
+// ledger does not (Konvoy owns the schema otherwise). An empty {{DESIGNS_DIR}}/screens.json seeds into a designs dir.
 // An asset whose frontmatter has `stacks: [...]` installs only when one of those stacks is detected.
 // Skill, rule and block text gets the path placeholders of the resolved paths: {{DELIVERY_DIR}}, {{PERSONAS_FILE}} …
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { PATH_DEFAULTS } from './config.mjs'
+import { PATH_DEFAULTS, SCHEMA, schemaDir } from './config.mjs'
 import { detectStacks } from './detect.mjs'
+import { SCREENS_SEED, screensFile } from './docs.mjs'
 import { tomlText, tomlValue } from './merge.mjs'
 import { loadUpstream, sourceDir } from './upstream.mjs'
-import { dirs, frontmatter, list, safeRel, walk } from './util.mjs'
+import { dirs, frontmatter, isDir, list, safeRel, walk } from './util.mjs'
 
 const SKILL_ROOTS = ['.claude/skills', '.agents/skills']
 
@@ -74,7 +77,7 @@ const copilotAgent = (name, text) => {
   return `---\n${head.join('\n')}\n---\n${body}`
 }
 
-export const buildPlan = ({ AC, root, config, paths }) => {
+export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
   const errors = []
   const warnings = []
   const held = []
@@ -152,6 +155,10 @@ export const buildPlan = ({ AC, root, config, paths }) => {
     }
     if (existsSync(join(layer, 'keys.json'))) addKeys(join(layer, 'keys.json'))
   }
+
+  const schema = join(AC, 'core/openspec', SCHEMA)
+  if (!konvoy && isDir(join(root, paths.openspec))) for (const rel of walk(schema)) copy(join(schema, rel), `${schemaDir(paths)}${rel}`, 'managed')
+  if (isDir(join(root, paths.designs))) addFile(screensFile(paths), Buffer.from(SCREENS_SEED), 'seed')
 
   // Upstream skills are third-party text: copied as they are, with the source licence file beside each one.
   // A source that is not in the cache holds its installed files, so offline work removes nothing.

@@ -10,14 +10,14 @@
 
 import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { CONFIG, DEFAULT_CONFIG, loadConfig, loadKonvoy, ownershipErrors, resolvePaths } from './config.mjs'
+import { CONFIG, DEFAULT_CONFIG, konvoyOwns, loadConfig, loadKonvoy, LOCK, ownershipErrors, resolvePaths } from './config.mjs'
 import { tagOf } from './git.mjs'
 import { blockFind, blockInner, blockRemove, blockSet, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlRender, tomlSet } from './merge.mjs'
 import { buildPlan } from './plan.mjs'
 import { fetchUpstream } from './upstream.mjs'
 import { isObj, readJson, safeRel, sha, sorted } from './util.mjs'
 
-export const LOCK = '.agents/compass.lock.json'
+export { LOCK }
 const EMPTY_LOCK = { skills: [], files: {}, keys: {}, blocks: {} }
 
 export const readLock = (root) => {
@@ -72,7 +72,8 @@ export const reconcile = (root, plan, lock) => {
   for (const [rel, prev] of Object.entries(lock.files)) {
     if (plan.files.has(rel) || prev.owner !== 'compass') continue
     if (plan.held?.some((p) => rel.startsWith(p))) { files[rel] = prev; continue }
-    if (claimed(rel)) { note('release', rel); continue }
+    // A file that Konvoy owns now leaves the lock and stays on disk.
+    if (claimed(rel) || plan.released?.(rel)) { note('release', rel); continue }
     const have = read(rel)
     if (!have) continue
     if (sha(have) === prev.sha) { writes.set(rel, null); note('remove', rel) } else note('release', rel)
@@ -165,7 +166,7 @@ export const reconcile = (root, plan, lock) => {
   return { changes, errors, writes, lockText, lockChanged: read(LOCK)?.toString('utf8') !== lockText }
 }
 
-const prune = (root, dir) => {
+export const prune = (root, dir) => {
   while (dir.startsWith(`${root}/`) && existsSync(dir) && !readdirSync(dir).length) {
     rmdirSync(dir)
     dir = dirname(dir)
@@ -173,7 +174,7 @@ const prune = (root, dir) => {
 }
 
 // Refuse a write or a delete through a symlink, or below a parent that resolves outside the root.
-const outside = (root, rel) => {
+export const outside = (root, rel) => {
   const abs = join(root, rel)
   if (lstatSync(abs, { throwIfNoEntry: false })?.isSymbolicLink()) return true
   let dir = dirname(abs)
@@ -206,12 +207,13 @@ const steps = ({ AC, root, apply, init }, version, tag) => {
 
   const { paths, from, warnings } = resolvePaths(cfg.config, kv.konvoy)
   const fetched = apply ? fetchUpstream(AC, cfg.config.upstream) : []
-  const plan = buildPlan({ AC, root, config: cfg.config, paths })
+  const plan = buildPlan({ AC, root, config: cfg.config, paths, konvoy: Boolean(kv.konvoy) })
   const out = { paths, pathsFrom: from, warnings: [...warnings, ...fetched, ...plan.warnings], stacks: plan.stacks }
   const planErrors = [...plan.errors, ...ownershipErrors(plan, lk.lock, kv.konvoy)]
   if (planErrors.length) return { ...out, errors: planErrors }
 
-  const rec = reconcile(root, { ...plan, version, tag }, lk.lock)
+  const released = kv.konvoy && ((rel) => konvoyOwns(kv.konvoy, rel))
+  const rec = reconcile(root, { ...plan, version, tag, released }, lk.lock)
   if (rec.errors.length) return { ...out, errors: rec.errors, changes: rec.changes }
   const configWrite = cfg.created ? [[CONFIG, { content: Buffer.from(`${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`) }]] : []
   const writes = new Map([...configWrite, ...rec.writes])

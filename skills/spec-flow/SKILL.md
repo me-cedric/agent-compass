@@ -26,7 +26,7 @@ OpenSpec lives in `{{OPENSPEC_DIR}}`. The schema is `konvoy-delivery`.
 
 1. Proposal: write what and why. Do not name a stack. Start with `openspec new change <id>`.
 2. Clarify: ask until no high-impact `[NEEDS CLARIFICATION]` remains. Use `grill` for a long interview.
-3. Specs: write each `### Requirement:` with `#### Scenario:` blocks in GIVEN, WHEN, THEN form.
+3. Specs: fill the headings of the schema template. Then append the delta section. See "Delta section".
 4. Plan and tasks: write ordered tasks, tests first. Mark parallel-safe tasks with `[P]`.
 5. Apply: implement only after the spec, plan and tasks are stable.
 6. Validate, then archive.
@@ -41,23 +41,61 @@ openspec archive <id>
 Read `status` before each step. Do not guess which artifact is ready.
 Run `validate` before you report done. Run `archive` only when the user asks.
 
+Run `ac check --docs` before you report done. It checks the RAID files, the ADRs and the screen tags.
+It also runs `openspec validate` when the CLI is installed.
+
 ## Init from specs
 
-Run `ac init --from-specs` to set up compass from the specs that the project has.
-If `ac` prints "Unknown command", stop and tell the user.
+Use this to start a project from input documents: a brief, a tender, meeting notes.
+
+1. Run `ac init --from-specs <dir>`. It creates the layout and copies the documents into `{{OPENSPEC_DIR}}/inbox/<dir name>/`.
+2. Convert each document that is not Markdown. See "Convert documents".
+3. Run `grill` on the inbox. It writes one RAID file for each open question.
+4. Write `{{OPENSPEC_DIR}}/constitution.md` if it does not exist. Ask for the governing rules. Do not invent them.
+5. Write one change for each feature: the proposal first, then the quartet for each capability.
+6. Keep the inbox files. They are the source of each requirement.
+
+## Migrate specs
+
+Use this for a project with spec-kit (`.specify/`, `specs/<feature>/`), a root `specs/` folder or a single-file question list.
+
+1. Run `ac migrate --docs --dry`. Show the plan to the user.
+2. Run `ac migrate --docs` only when the user says yes. Each source moves under `migrated/`. Nothing is deleted.
+3. Do each `manual` item with the user.
+4. Append the delta section to each migrated `spec.md`. See "Delta section".
+5. Run `ac check --docs`. Report each `openspec validate` failure. Do not hide it.
+
+## Delta section
+
+`openspec validate --strict` reads only the delta headings. Konvoy reads the spec-kit headings. Each `spec.md` keeps both.
+
+1. Keep the spec-kit headings and their text. Do not change or move them.
+2. Append `## ADDED Requirements` at the end of `spec.md`.
+3. Use `## MODIFIED Requirements` for a requirement that `{{OPENSPEC_DIR}}/specs/<cap>/spec.md` has already. Copy all its scenarios.
+4. Write one `### Requirement: <id> <short title>` for each requirement id in the spec. Keep the id, for example `REQ-003`.
+5. Write the body in one or two sentences with SHALL or MUST. Restate the spec-kit text. Do not add a requirement.
+6. Write one or more `#### Scenario: <name>` blocks under each requirement, with `- GIVEN`, `- WHEN` and `- THEN` lines.
+7. Take each scenario from the acceptance criteria or the acceptance scenarios of the spec.
+8. If no criterion covers a requirement, do not invent one. Write `- THEN [NEEDS CLARIFICATION: <question>]` and give the question to `grill`.
+9. When you change a requirement later, change the spec-kit text and the delta section in the same edit.
+10. Run `openspec validate <id> --strict` in the parent folder of `{{OPENSPEC_DIR}}` when the CLI is installed. Else run `ac check --docs`.
 
 ## Screens
 
 The registry is `{{DESIGNS_DIR}}/screens.json`. It has one entry per screen:
 
 ```json
-{ "id": "SCR-014", "aliases": ["login"], "route": "/login",
-  "figma": { "fileKey": "<key>", "node-id": "12:345" }, "stories": ["Auth/LoginForm"] }
+{ "version": 1, "screens": [
+  { "id": "SCR-014", "aliases": ["login"], "route": "/login",
+    "figma": { "fileKey": "<key>", "nodeId": "12:345" },
+    "stories": ["Auth/LoginForm"], "specRefs": ["auth/spec.md#REQ-003"] } ] }
 ```
 
-- Tag each requirement of a screen with the line `Screen: SCR-014`.
+- Tag each requirement of a screen with the line `Screen: SCR-014`. An alias is also correct: `Screen: login`.
 - Match a name from the user against `aliases` first.
+- An alias belongs to one screen only.
 - Take the next free number for a new screen. Never reuse an id.
+- `ac check` fails on a tag that is not an id or an alias in the registry.
 - `ui-conformance` reads this registry.
 
 ## Specs from code

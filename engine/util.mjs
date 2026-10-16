@@ -57,13 +57,13 @@ export const frontmatter = (text) => {
 export const list = (v) => (v ? v.replace(/^\[|\]$/g, '').split(',').map(unquote).filter(Boolean) : [])
 
 // Run a command with no prompt and a timeout. Git reads GIT_TERMINAL_PROMPT; ssh reads BatchMode.
-export const run = (cmd, args, { cwd, timeout = 30_000 } = {}) => {
+export const run = (cmd, args, { cwd, timeout = 30_000, env } = {}) => {
   const r = spawnSync(cmd, args, {
     cwd,
     timeout,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: process.env.GIT_SSH_COMMAND || 'ssh -o BatchMode=yes' },
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: process.env.GIT_SSH_COMMAND || 'ssh -o BatchMode=yes', ...env },
   })
   return { ok: r.status === 0, out: (r.stdout || '').trim(), err: (r.stderr || r.error?.message || '').trim() }
 }

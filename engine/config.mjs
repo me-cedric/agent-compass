@@ -7,6 +7,8 @@ import { isDir, isObj, safeRel } from './util.mjs'
 
 export const CONFIG = '.agents/compass.json'
 export const KONVOY = '.agents/konvoy.json'
+export const LOCK = '.agents/compass.lock.json'
+export const SCHEMA = 'konvoy-delivery'
 export const DEFAULT_CONFIG = { version: 1, packs: [], exclude: [] }
 
 // Konvoy RepoPaths keys and defaults (konvoy src-tauri/src/infrastructure/config.rs).
@@ -26,6 +28,9 @@ export const PATH_DEFAULTS = {
   planning: 'docs/planning',
   test_plans: 'docs/delivery/test-plans',
 }
+
+// The OpenSpec schema dir. Compass installs the schema there only when the Konvoy ledger is absent.
+export const schemaDir = (paths) => `${paths.openspec}/schemas/${SCHEMA}/`
 
 // Konvoy writes its MCP server under these keys in the provider files.
 const KONVOY_KEYS = { '.mcp.json': ['mcpServers.konvoy'], '.codex/config.toml': ['mcp_servers.konvoy'], '.vscode/mcp.json': ['servers.konvoy'] }
@@ -93,7 +98,7 @@ export const loadKonvoy = (root) => {
       paths,
       skills: new Set([...names(data.compass_skills), ...names(data.taste_skills), ...names(owns.skills)]),
       files: new Set([KONVOY, ...names(data.host_files), ...names(owns.files)]),
-      prefixes: [`${paths.delivery || PATH_DEFAULTS.delivery}/`],
+      prefixes: [`${paths.delivery || PATH_DEFAULTS.delivery}/`, schemaDir({ ...PATH_DEFAULTS, ...paths })],
       keys,
     },
   }
@@ -109,14 +114,28 @@ export const resolvePaths = (config, konvoy) => {
   return { paths: { ...PATH_DEFAULTS, ...konvoy.paths }, from: KONVOY, warnings }
 }
 
+// Paths for a command that can run before "ac init": the same rules, with the default config when compass.json is absent.
+export const projectPaths = (root, AC) => {
+  const cfg = loadConfig(root, AC, { init: true })
+  const kv = loadKonvoy(root)
+  const errors = [...cfg.errors, ...kv.errors]
+  if (errors.length) return { errors, warnings: [] }
+  return { ...resolvePaths(cfg.config, kv.konvoy), konvoy: kv.konvoy, errors }
+}
+
+export const konvoyOwns = (konvoy, rel) => konvoy.files.has(rel) || konvoy.prefixes.some((p) => rel.startsWith(p))
+
+// The rules of docs/contract/ownership.md that need both ledgers.
 export const ownershipErrors = (plan, lock, konvoy) => {
   if (!konvoy) return []
   const errors = []
+  for (const rel of [CONFIG, LOCK]) if (konvoy.files.has(rel)) errors.push(`${KONVOY} lists ${rel}, but compass owns that file`)
   for (const name of new Set([...plan.skills, ...lock.skills])) {
     if (konvoy.skills.has(name)) errors.push(`skill "${name}" is in both ledgers (${KONVOY} and the compass lock)`)
   }
-  for (const rel of plan.files.keys()) {
-    if (konvoy.files.has(rel) || konvoy.prefixes.some((p) => rel.startsWith(p))) errors.push(`${rel} belongs to Konvoy`)
+  for (const rel of plan.files.keys()) if (konvoyOwns(konvoy, rel)) errors.push(`${rel} belongs to Konvoy`)
+  for (const rel of new Set([...plan.keys.keys(), ...plan.blocks.keys()])) {
+    if (konvoyOwns(konvoy, rel)) errors.push(`${rel} belongs to Konvoy as a whole file, so compass cannot own keys or a block in it`)
   }
   for (const [file, keys] of plan.keys) {
     for (const key of keys.keys()) {
