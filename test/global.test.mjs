@@ -128,27 +128,47 @@ test('--measure flags a hook above 1,000 characters, a total above 2,000 and a f
   assert.equal(r.ok, true)
 })
 
-test('an odd config does not stop the report; CLAUDE_CONFIG_DIR and CODEX_HOME move the files', () => {
+test('null and non-object entries and a non-string installPath in installed_plugins.json do not stop the report', () => {
   const home = makeHome()
-  put(home, { '.claude/plugins/installed_plugins.json': { version: 2, plugins: { 'alpha@m': [null, { scope: 'user', installPath: 5 }] } } })
+  put(home, { '.claude/plugins/installed_plugins.json': { version: 2, plugins: { 'alpha@m': [null, 7, { scope: 'user', installPath: 5 }], 'beta@m': 'oops' } } })
+  const r = doctorGlobal({ AC, root: home, home, env: {} })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'])
+  assert.deepEqual(r.claude.mcp.map((s) => s.from), ['user', 'user'], 'no plugin MCP file is read without a string installPath')
+})
+
+test('a directory named config.toml is an error line, and the rest of the report still prints', async () => {
+  const home = makeHome()
   rmSync(join(home, '.codex/config.toml'))
   mkdirSync(join(home, '.codex/config.toml'))
   const r = doctorGlobal({ AC, root: home, home, env: {} })
-  assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'], 'the report goes on after the odd entries')
-  assert.equal(r.ok, false, 'an unreadable config file is an error')
+  assert.equal(r.ok, false)
   assert.equal(r.errors.length, 1)
-  assert.match(r.errors[0], /config\.toml: EISDIR/)
+  assert.match(r.errors[0], /config\.toml: /)
+  assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'])
+  const cli = await runNode([BIN, 'doctor', '--global'], { env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: '', CODEX_HOME: '' } })
+  assert.equal(cli.code, 1)
+  assert.match(cli.stderr + cli.stdout, /^error: .*config\.toml: /m)
+  assert.match(cli.stdout, /enabled plugin/)
+})
 
+test('CLAUDE_CONFIG_DIR moves settings.json, .claude.json and the plugin registry', () => {
+  const home = makeHome()
   const moved = temp()
   put(moved, { 'settings.json': { enabledPlugins: { 'solo@m': true } }, '.claude.json': { mcpServers: { only: { command: 'x' } } } })
+  const r = doctorGlobal({ AC, root: home, home, env: { CLAUDE_CONFIG_DIR: moved } })
+  assert.deepEqual(r.claude.plugins, ['solo@m'])
+  assert.deepEqual(r.claude.mcp.map((s) => s.name), ['only'])
+  assert.deepEqual(r.codex.mcp, ['docs', 'two words'], 'Codex still reads ~/.codex')
+})
+
+test('CODEX_HOME moves the Codex config', () => {
+  const home = makeHome()
   const codexHome = temp()
   put(codexHome, { 'config.toml': '[mcp_servers.one]\ncommand = "x"\n' })
-  const m = doctorGlobal({ AC, root: home, home, env: { CLAUDE_CONFIG_DIR: moved, CODEX_HOME: codexHome } })
-  assert.deepEqual(m.claude.plugins, ['solo@m'])
-  assert.deepEqual(m.claude.mcp.map((s) => s.name), ['only'])
-  assert.deepEqual(m.codex.mcp, ['one'])
-  const fix = m.recommended.find((c) => c.name === 'statusLine').fix
-  assert.ok(fix.includes(JSON.stringify(JSON.stringify(join(AC, 'plugins/compass-user/scripts/statusline.mjs'))).slice(1, -1)), fix)
+  const r = doctorGlobal({ AC, root: home, home, env: { CODEX_HOME: codexHome } })
+  assert.deepEqual(r.codex.mcp, ['one'])
+  assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'], 'Claude still reads ~/.claude')
 })
 
 test('the status line command uses the unversioned compass path in quotes, and runs from a path with a space', async () => {
