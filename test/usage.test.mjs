@@ -131,7 +131,7 @@ test('readUsage: a project is the repo root of the cwd', () => {
 test('ac usage prints a summary and --json; a bad date is a usage error', async () => {
   const home = makeHome()
   const bin = join(REPO, 'bin/ac.mjs')
-  const env = { ...process.env, HOME: home }
+  const env = { ...process.env, HOME: home, CODEX_HOME: '' }
   const json = await runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', '--json'], { env })
   assert.equal(json.code, 0, json.stderr)
   const data = JSON.parse(json.stdout)
@@ -203,11 +203,11 @@ test('readUsage: --since and --project narrow the sessions; an empty set gives z
 test('ac usage --by session prints the summary and the rows; --project and --by are checked', async () => {
   const home = sessionHome()
   const bin = join(REPO, 'bin/ac.mjs')
-  const env = { ...process.env, HOME: home }
+  const env = { ...process.env, HOME: home, CODEX_HOME: '' }
   const json = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31', '--json'], { env })
   assert.equal(json.code, 0, json.stderr)
   const data = JSON.parse(json.stdout)
-  assert.deepEqual(Object.keys(data).sort(), ['bySession', 'ok', 'sessionSummary', 'totals'])
+  assert.deepEqual(Object.keys(data).sort(), ['byDay', 'byModel', 'byProject', 'byProvider', 'bySession', 'cacheHit', 'files', 'lines', 'ok', 'sessionSummary', 'subagentShare', 'totals', 'unknownModels'])
   assert.equal(data.bySession.length, 6)
   const text = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31'], { env })
   assert.equal(text.code, 0, text.stderr)
@@ -218,10 +218,131 @@ test('ac usage --by session prints the summary and the rows; --project and --by 
   const one = JSON.parse((await runNode([bin, 'usage', '--by', 'session', '--project', '/y/other/', '--until', '2026-12-31', '--json'], { env })).stdout)
   assert.deepEqual(one.bySession.map((r) => r.session), ['n2'])
   const plain = JSON.parse((await runNode([bin, 'usage', '--until', '2026-12-31', '--json'], { env })).stdout)
-  assert.deepEqual([plain.bySession, plain.sessionSummary], [undefined, undefined])
+  assert.deepEqual(Object.keys(plain).sort(), Object.keys(data).sort())
+  assert.deepEqual([plain.bySession.length, plain.sessionSummary.graph.count, plain.sessionSummary.noGraph.count], [6, 2, 4])
   for (const args of [['--by', 'day'], ['--by'], ['--project']]) {
     const bad = await runNode([bin, 'usage', ...args], { env })
     assert.equal(bad.code, 2, args.join(' '))
     assert.match(bad.stderr, /Usage: ac usage/)
   }
+})
+
+// ---- Codex sessions ----
+// A Codex rollout file is <codex home>/sessions/YYYY/MM/DD/rollout-*.jsonl. The fixtures keep the event shapes of real files and no real text.
+const event = (type, payload, timestamp = at(3, 10)) => JSON.stringify({ timestamp, type, payload })
+const count = (total) => event('event_msg', { type: 'token_count', info: { total_token_usage: total, last_token_usage: total, model_context_window: 1000 } })
+const totals = (input, cached, output, reasoning = 0) => ({ input_tokens: input, cached_input_tokens: cached, cache_write_input_tokens: 0, output_tokens: output, reasoning_output_tokens: reasoning, total_tokens: input + output })
+const header = (id, cwd, over = {}) => event('session_meta', { id, session_id: id, timestamp: at(3, 10), cwd, originator: 'codex_exec', cli_version: '0.0.0', source: 'cli', model_provider: 'openai', ...over })
+const context = (model) => [event('event_msg', { type: 'task_started', turn_id: 't' }), event('turn_context', { turn_id: 't', cwd: '/x/repo', model })]
+const toolCall = (server) => event('event_msg', { type: 'mcp_tool_call_end', call_id: 'c', invocation: { server, tool: 'x', arguments: {} } })
+const putCodex = (home, id, lines, day = '2026/03/10') => {
+  const file = join(home, 'sessions', day, `rollout-${day.replaceAll('/', '-')}T12-00-00-${id}.jsonl`)
+  mkdirSync(dirname(file), { recursive: true })
+  writeFileSync(file, `${lines.join('\n')}\n`)
+}
+const OLD = { input_tokens: 0, cached_input_tokens: 0, output_tokens: 0, reasoning_output_tokens: 0, total_tokens: 303 }
+
+// c1: the final total counts, a repeated total is one step, an event without info is skipped, the last turn_context names the model.
+// c2: a sub-agent thread on another day and project. c3: an old file with only total_tokens. c4: no token_count. c5: no session_meta.
+const codexFiles = (codex) => {
+  putCodex(codex, 'c1', [header('c1', '/x/repo'), ...context('gpt-test-1'), event('event_msg', { type: 'token_count', info: null }), count(totals(1000, 800, 100, 40)), count(totals(1000, 800, 100, 40)),
+    ...context('gpt-test-2'), count(totals(5000, 4000, 400, 150)), toolCall('codebase-memory-mcp')])
+  putCodex(codex, 'c2', [header('c2', '/y/other', { timestamp: at(3, 11), source: { subagent: 'review' } }), ...context('gpt-test-1'), count(totals(300, 100, 50)), toolCall('playwright')], '2026/03/11')
+  putCodex(codex, 'c3', [header('c3', '/x/repo'), count(OLD)])
+  putCodex(codex, 'c4', [header('c4', '/x/repo'), ...context('gpt-test-1')])
+  putCodex(codex, 'c5', [...context('gpt-test-1'), count(totals(9, 0, 1))])
+}
+const codexHome = () => {
+  const home = temp('ac-usage-codex-')
+  codexFiles(join(home, '.codex'))
+  return home
+}
+const mixedHome = () => {
+  const home = makeHome()
+  codexFiles(join(home, '.codex'))
+  return home
+}
+
+test('readUsage: a Codex session is one row from the final token_count, with its day, project, model and graph flag', () => {
+  const u = readUsage({ home: codexHome(), ...window })
+  assert.equal(u.files, 5)
+  assert.deepEqual(sums(u.totals), [1503, 450, 0, 4100, 6053, 4])
+  assert.equal(u.totals.cost, 0)
+  assert.deepEqual(u.unknownModels, ['(unknown)', 'gpt-test-1', 'gpt-test-2'])
+  assert.deepEqual(u.bySession.map((r) => [r.provider, r.session, r.project, r.first, r.last, r.tokens, r.messages, r.graph]), [
+    ['codex', 'c1', '/x/repo', '2026-03-10', '2026-03-10', 5400, 2, true],
+    ['codex', 'c2', '/y/other', '2026-03-11', '2026-03-11', 350, 1, false],
+    ['codex', 'c3', '/x/repo', '2026-03-10', '2026-03-10', 303, 1, false],
+  ])
+  const c1 = u.bySession[0]
+  assert.deepEqual([c1.input, c1.cacheRead, c1.output, c1.cacheWrite, c1.cost], [1000, 4000, 400, 0, 0])
+  close(c1.cacheHit, 4000 / 5000)
+  assert.deepEqual(u.byModel.map((m) => [m.model, m.tokens]), [['gpt-test-2', 5400], ['gpt-test-1', 350], ['(unknown)', 303]])
+  assert.deepEqual(u.byProject.map((p) => [p.project, p.tokens]), [['/x/repo', 5703], ['/y/other', 350]])
+  close(u.subagentShare, 350 / 6053)
+  assert.deepEqual(u.sessionSummary.graph, { count: 1, median: 5400, p90: 5400 })
+  assert.deepEqual(u.byProvider.map((p) => [p.provider, p.tokens, p.messages]), [['codex', 6053, 4]])
+})
+
+test('readUsage: provider selects claude, codex or both; every row and total carries its provider', () => {
+  const home = mixedHome()
+  const all = readUsage({ home, ...window })
+  assert.equal(all.totals.tokens, 7400 + 6053)
+  assert.deepEqual(all.byProvider.map((p) => [p.provider, p.tokens, p.messages]), [['claude', 7400, 6], ['codex', 6053, 4]])
+  assert.equal(all.byProvider.reduce((sum, p) => sum + p.cost, 0), all.totals.cost)
+  assert.deepEqual([...new Set(all.bySession.map((r) => r.provider))].sort(), ['claude', 'codex'])
+  assert.equal(all.bySession.filter((r) => r.provider === 'codex').length, 3)
+  assert.deepEqual(readUsage({ home, ...window, provider: 'all' }).totals, all.totals)
+  const claude = readUsage({ home, ...window, provider: 'claude' })
+  assert.deepEqual([claude.totals.tokens, claude.byProvider.map((p) => p.provider), claude.files], [7400, ['claude'], 2])
+  assert.ok(claude.bySession.every((r) => r.provider === 'claude'))
+  const codex = readUsage({ home, ...window, provider: 'codex' })
+  assert.deepEqual([codex.totals.tokens, codex.byProvider.map((p) => p.provider), codex.files], [6053, ['codex'], 5])
+  assert.ok(codex.bySession.every((r) => r.provider === 'codex'))
+  assert.deepEqual(codex.unknownModels, ['(unknown)', 'gpt-test-1', 'gpt-test-2'])
+})
+
+test('readUsage: since, until and project cut the Codex sessions by the day of their start', () => {
+  const home = codexHome()
+  assert.deepEqual(readUsage({ home, since: '2026-03-11', until: '2026-03-31' }).bySession.map((r) => r.session), ['c2'])
+  assert.deepEqual(readUsage({ home, since: '2026-03-01', until: '2026-03-10' }).bySession.map((r) => r.session), ['c1', 'c3'])
+  assert.deepEqual(readUsage({ home, project: '/y/other', ...window }).bySession.map((r) => r.session), ['c2'])
+  assert.deepEqual(readUsage({ home, since: '2026-05-01', until: '2026-05-31' }).byProvider, [])
+})
+
+test('readUsage: a home without a Codex folder reads Claude only; a given home ignores CODEX_HOME', () => {
+  const home = makeHome()
+  const u = readUsage({ home, ...window })
+  assert.deepEqual([u.files, u.byProvider.map((p) => p.provider)], [2, ['claude']])
+  const old = process.env.CODEX_HOME
+  process.env.CODEX_HOME = join(codexHome(), '.codex')
+  try { assert.equal(readUsage({ home, ...window }).totals.tokens, 7400) } finally { if (old === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = old }
+})
+
+test('ac usage --provider filters the sources, CODEX_HOME moves the Codex folder, and the option is checked', async () => {
+  const home = makeHome()
+  const alt = temp('ac-usage-alt-')
+  codexFiles(alt)
+  const bin = join(REPO, 'bin/ac.mjs')
+  const run = (args, codex) => runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', ...args], { env: { ...process.env, HOME: home, CODEX_HOME: codex } })
+  const json = async (args, codex) => JSON.parse((await run([...args, '--json'], codex)).stdout)
+  assert.deepEqual((await json([], '')).byProvider.map((p) => p.provider), ['claude'])
+  const all = await json([], alt)
+  assert.deepEqual([all.totals.tokens, all.byProvider.map((p) => p.provider)], [13453, ['claude', 'codex']])
+  assert.deepEqual((await json(['--provider', 'codex'], alt)).byProvider.map((p) => [p.provider, p.tokens]), [['codex', 6053]])
+  assert.deepEqual((await json(['--provider', 'claude'], alt)).byProvider.map((p) => [p.provider, p.tokens]), [['claude', 7400]])
+  assert.equal((await json(['--provider', 'all'], alt)).totals.tokens, 13453)
+  const text = await run([], alt)
+  assert.match(text.stdout, /By provider/)
+  assert.match(text.stdout, /codex\s+6,053 tokens/)
+  assert.match(text.stdout, /gpt-test-2/)
+  const sessions = await run(['--by', 'session', '--provider', 'codex'], alt)
+  assert.match(sessions.stdout, /3 sessions/)
+  assert.match(sessions.stdout, /repo\s+2026-03-10 to 2026-03-10\s+2 msgs\s+5,400 tokens\s+\$0\.00\s+cache 80\.0%\s+graph\s+codex/)
+  for (const args of [['--provider', 'gpt'], ['--provider', ''], ['--provider']]) {
+    const bad = await run(args, alt)
+    assert.equal(bad.code, 2, args.join(' '))
+    assert.match(bad.stderr, /--provider needs|Usage: ac usage/)
+  }
+  assert.match((await run(['--help'], alt)).stdout, /--provider/)
 })

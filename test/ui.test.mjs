@@ -188,13 +188,38 @@ test('the page puts no server data into HTML', () => {
   assert.doesNotMatch(readFileSync(join(REPO, 'ui/api.mjs'), 'utf8'), /shell\s*:\s*true|\bexec\(`|execSync|spawnSync\(/)
 })
 
+// The order of the groups in the Assets tab, from the contract of engine/assets.mjs.
+const PAGE_KINDS = ['skill', 'rule', 'agent', 'pack', 'mcp', 'plugin', 'upstream', 'file', 'block', 'key', 'seed', 'schema']
+
 test('the page has a label for every asset kind and the buttons of the tracker pull', () => {
   const app = readFileSync(join(REPO, 'ui/public/app.js'), 'utf8')
   const labels = /const KINDS = \{([^}]+)\}/.exec(app)[1]
-  assert.deepEqual([...labels.matchAll(/(\w+): '/g)].map((m) => m[1]), KINDS)
+  assert.deepEqual([...labels.matchAll(/(\w+): '/g)].map((m) => m[1]), PAGE_KINDS)
+  for (const kind of KINDS) assert.ok(PAGE_KINDS.includes(kind), `${kind} has a label`)
   assert.match(labels, /plugin: 'Claude plugins'/)
-  assert.match(app, /pull\('github', 'GitHub'\), pull\('gitlab', 'GitLab'\)/)
-  assert.match(app, /mcp-atlassian/)
+  assert.match(labels, /key: 'Settings \(owned keys\)', seed: 'Seed files', schema: 'OpenSpec schema'/)
+  assert.match(app, /pull\('github', 'GitHub'\), pull\('gitlab', 'GitLab'\), pull\('jira', 'Jira'\)/)
+})
+
+test('the assets tab shows the always-on tiles, a tokens column and the reason of an asset that is not available', () => {
+  const app = readFileSync(join(REPO, 'ui/public/app.js'), 'utf8')
+  assert.match(app, /tile\('Always-on now', `≈ \$\{num\(always\.current\)\} tokens`/)
+  assert.match(app, /tile\('With the recommended set', `≈ \$\{num\(always\.recommended\)\}`/)
+  assert.match(app, /tile\('Target', num\(always\.budget\)\)/)
+  assert.match(app, /v > always\.budget \? 'warn'/)
+  assert.match(app, /always\.note/)
+  assert.match(app, /\['On', 'Name', 'Description', 'Tokens', 'Badges'\]/)
+  assert.match(app, /Number\.isFinite\(a\.tokens\) \? num\(a\.tokens\) : ''/)
+  assert.match(app, /not available: \$\{a\.reason/)
+  assert.match(readFileSync(join(REPO, 'ui/public/style.css'), 'utf8'), /\.tile\.warn/)
+})
+
+test('the page has the doctor, sessions and provider parts', () => {
+  const app = readFileSync(join(REPO, 'ui/public/app.js'), 'utf8')
+  assert.match(app, /api\('doctor'\)/)
+  assert.match(app, /usage\?days=\$\{days\}&provider=\$\{provider\}/)
+  assert.match(app, /PROVIDER_LABELS = \{ all: 'All', claude: 'Claude', codex: 'Codex' \}/)
+  assert.match(app, /u\.bySession\.map/)
 })
 
 // ---- report files ----
@@ -309,6 +334,40 @@ test('the delivery tab shows nothing for a host without delivery files', async (
   assert.deepEqual([d.raid, d.tickets, d.audit.total, d.adrs], [[], { count: 0, rows: [] }, 0, []])
 })
 
+// ---- doctor ----
+
+test('GET /api/doctor runs ac doctor --tokens --json with fixed arguments and keeps the checks and the token items', async () => {
+  const fake = temp('ac-ui-fake-')
+  const log = join(fake, 'args.log')
+  const out = { command: 'doctor', ok: false, checks: [{ name: 'node', status: 'ok', detail: 'v1' }, { name: 'budget', status: 'fail', detail: 'too big' }], paths: { adr: 'x' }, changes: [], tokens: { ok: false, items: [{ name: 'skill listing', chars: 40, tokens: 10 }], total: 10, startChars: 0, errors: ['too big'], warnings: [] } }
+  put(fake, { 'bin/ac.mjs': `import { appendFileSync } from 'node:fs'\nappendFileSync(${JSON.stringify(log)}, JSON.stringify(process.argv.slice(2)) + '\\n')\nconsole.log(${JSON.stringify(JSON.stringify(out))})\nprocess.exitCode = 1\n` })
+  const root = await host()
+  const server = createServer({ AC: fake, root, token: TOKEN })
+  servers.push(server)
+  await new Promise((ok) => server.listen(0, '127.0.0.1', ok))
+  const port = server.address().port
+  const d = (await call(port, { path: '/api/doctor' })).json()
+  assert.deepEqual(readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l)), [['doctor', '--tokens', '--json', '--root', root]])
+  assert.deepEqual([d.ok, d.checks, d.tokens.items, d.tokens.total], [false, out.checks, out.tokens.items, 10])
+  assert.equal(d.paths, undefined)
+  assert.equal((await call(port, { path: '/api/doctor', token: null })).status, 401)
+  assert.equal((await call(port, { method: 'POST', path: '/api/doctor', headers: { 'content-type': 'application/json' }, body: '{}' })).status, 404)
+})
+
+test('GET /api/doctor lists the checks and the token items of a host, and the error of a folder that is not a host', async () => {
+  const { port } = await start(await host())
+  const d = (await call(port, { path: '/api/doctor' })).json()
+  assert.equal(d.ok, true)
+  assert.ok(['node', 'git', 'sync', 'budget'].every((n) => d.checks.some((c) => c.name === n)))
+  assert.ok(d.checks.every((c) => ['ok', 'warn', 'fail'].includes(c.status) && typeof c.detail === 'string'))
+  assert.ok(d.tokens.items.length > 0 && d.tokens.items.every((i) => typeof i.name === 'string' && i.tokens >= 0))
+  assert.equal(typeof d.tokens.total, 'number')
+  const bare = await start(temp())
+  const b = (await call(bare.port, { path: '/api/doctor' })).json()
+  assert.equal(b.ok, false)
+  assert.ok(b.checks.some((c) => c.status === 'fail'))
+})
+
 // ---- tracker pull ----
 
 // A fake tracker CLI: it records its arguments, its directory and its prompt setting, prints a fixed text and exits.
@@ -325,6 +384,19 @@ const withPath = async (path, fn) => {
 }
 const GH = [{ number: 12, title: 'Fix the login', state: 'OPEN', labels: [{ name: 'bug' }, { name: 'ui' }], assignees: [{ login: 'ana' }, { login: 'bob' }], url: 'https://github.com/o/r/issues/12' }, { number: 13, title: 'No links', state: 'OPEN', labels: [], assignees: [], url: 'javascript:alert(1)' }]
 const GL = [{ iid: 7, title: 'Slow page', state: 'opened', labels: ['perf'], assignees: [{ username: 'cy' }], web_url: 'https://gitlab.example/g/p/-/issues/7' }]
+
+const JIRA = [
+  { key: 'PRJ-1', self: 'https://acme.atlassian.net/rest/api/3/issue/10001', fields: { summary: 'Fix the login', status: { name: 'In Progress' }, labels: ['bug', 'ui'], assignee: { displayName: 'Ana Smith' } } },
+  { key: 'PRJ-2', self: 'javascript:alert(1)', fields: { summary: 'No link', status: { name: 'To Do' }, labels: [], assignee: null } },
+  { key: '../x', self: 'https://jira.example/jira/rest/api/2/issue/5', fields: { summary: 'Odd key', status: { name: 'Done' } } },
+  { key: 'ABC-5', self: 'https://jira.example/jira/rest/api/2/issue/5', fields: { summary: 'Context path' } },
+]
+const JIRA_ROWS = [
+  { number: 'PRJ-1', title: 'Fix the login', state: 'In Progress', labels: 'bug, ui', assignee: 'Ana Smith', url: 'https://acme.atlassian.net/browse/PRJ-1' },
+  { number: 'PRJ-2', title: 'No link', state: 'To Do', labels: '', assignee: '', url: '' },
+  { number: '../x', title: 'Odd key', state: 'Done', labels: '', assignee: '', url: '' },
+  { number: 'ABC-5', title: 'Context path', state: '', labels: '', assignee: '', url: 'https://jira.example/jira/browse/ABC-5' },
+]
 
 test('the tracker pull runs a fixed read-only list command in the project root and shows plain rows', async () => {
   const root = await host()
@@ -347,13 +419,53 @@ test('the tracker pull runs a fixed read-only list command in the project root a
   assert.deepEqual(calls(bin, 'glab').map((c) => c.args), [['issue', 'list', '--output', 'json', '--per-page', '100']])
 })
 
-test('the tracker pull accepts only github and gitlab, and caps what it shows', async () => {
+test('the Jira pull runs jira issue list --raw in the project root and maps the REST issues to plain rows', async () => {
+  const root = await host()
+  const bin = temp('ac-ui-bin-')
+  fakeCli(bin, 'jira', { stdout: JSON.stringify(JIRA) })
+  const { port } = await start(root)
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    const list = (await post(port, '/api/delivery/pull', { tracker: 'jira' })).json()
+    assert.deepEqual([list.ok, list.tracker, list.count], [true, 'jira', 4])
+    assert.deepEqual(list.rows, JIRA_ROWS)
+  })
+  fakeCli(bin, 'jira', { stdout: JSON.stringify({ startAt: 0, total: 1, issues: JIRA.slice(0, 1) }) })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    const wrapped = (await post(port, '/api/delivery/pull', { tracker: 'jira' })).json()
+    assert.deepEqual([wrapped.ok, wrapped.count, wrapped.rows], [true, 1, JIRA_ROWS.slice(0, 1)])
+  })
+  assert.deepEqual(calls(bin, 'jira').map((c) => [c.args, c.cwd, c.prompt]), Array(2).fill([['issue', 'list', '--raw', '--paginate', '0:100'], realpathSync(root), '0']))
+})
+
+test('the Jira pull gives a short message for a missing CLI, no login, a bad answer and a huge answer', async () => {
+  const bin = temp('ac-ui-bin-')
+  const { port } = await start(await host())
+  const pull = async () => (await post(port, '/api/delivery/pull', { tracker: 'jira' })).json()
+  await withPath(temp('ac-ui-nopath-'), async () => {
+    const r = await pull()
+    assert.equal(r.ok, false)
+    assert.match(r.errors[0], /^jira is not on PATH\. Install it and run "jira init"/)
+  })
+  fakeCli(bin, 'jira', { stderr: '\u001b[0;33mThe tool needs a Jira API token to function.\n\nRun jira init when you are done.\n\u001b[0m\n', code: 1 })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    assert.deepEqual((await pull()).errors, ['The tool needs a Jira API token to function. Run jira init when you are done.'])
+  })
+  fakeCli(bin, 'jira', { stdout: '{"errorMessages":["x"]}' })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => assert.deepEqual((await pull()).errors, ['jira printed no JSON list.']))
+  const big = JIRA.slice(0, 1).map((i) => ({ ...i, fields: { ...i.fields, description: 'd'.repeat(400_000) } }))
+  fakeCli(bin, 'jira', { stdout: JSON.stringify(big) })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => assert.deepEqual([(await pull()).ok, (await pull()).count], [true, 1]))
+  fakeCli(bin, 'jira', { stdout: 'x'.repeat(5 * 1024 * 1024) })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => assert.deepEqual((await pull()).errors, ['The command ran too long or printed too much.']))
+})
+
+test('the tracker pull accepts only github, gitlab and jira, and caps what it shows', async () => {
   const bin = temp('ac-ui-bin-')
   const many = Array.from({ length: 130 }, (_, i) => ({ number: i, title: 'T'.repeat(500), state: 'OPEN', labels: [], assignees: [], url: '' }))
   fakeCli(bin, 'gh', { stdout: JSON.stringify(many) })
   const { port } = await start(await host())
   await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
-    for (const tracker of ['jira', '', '-h', 'github;id', ['github'], 5, undefined]) assert.equal((await post(port, '/api/delivery/pull', { tracker })).status, 400, JSON.stringify(tracker))
+    for (const tracker of ['Jira', '', '-h', 'github;id', 'jira;id', ['github'], ['jira'], 5, undefined]) assert.equal((await post(port, '/api/delivery/pull', { tracker })).status, 400, JSON.stringify(tracker))
     assert.equal((await post(port, '/api/delivery/pull', {})).status, 400)
     assert.deepEqual(calls(bin, 'gh'), [], 'a bad tracker starts no command')
     const r = (await post(port, '/api/delivery/pull', { tracker: 'github' })).json()
@@ -522,9 +634,9 @@ test('env export and import check their inputs before they start a command', asy
 const present = (name) => existsSync(join(REPO, 'engine', `${name}.mjs`))
 
 const withHome = async (home, fn) => {
-  const old = process.env.HOME
-  process.env.HOME = home
-  try { return await fn() } finally { process.env.HOME = old }
+  const old = { HOME: process.env.HOME, CODEX_HOME: process.env.CODEX_HOME }
+  Object.assign(process.env, { HOME: home, CODEX_HOME: '' })
+  try { return await fn() } finally { for (const [k, v] of Object.entries(old)) { if (v === undefined) delete process.env[k]; else process.env[k] = v } }
 }
 const row = (cwd, id) => JSON.stringify({ timestamp: new Date().toISOString(), cwd, requestId: `r-${id}`, isSidechain: false, message: { id, model: 'claude-sonnet-5-5', usage: { input_tokens: 100, output_tokens: 50, cache_read_input_tokens: 1000, cache_creation_input_tokens: 0 } } })
 
@@ -547,6 +659,56 @@ test('the usage and project tabs read the transcripts in a child process and swi
     assert.equal(switched.status, 200)
     assert.equal((await call(port, { path: '/api/project' })).json().root, b)
     assert.equal((await call(port, { path: '/api/sync' })).json().ok, true)
+  })
+})
+
+// A Codex rollout file with the event shapes of a real one and no real text.
+const rollout = (id, cwd, tokens) => {
+  const event = (type, payload) => JSON.stringify({ timestamp: new Date().toISOString(), type, payload })
+  return [
+    event('session_meta', { id, timestamp: new Date().toISOString(), cwd, source: 'cli' }), event('turn_context', { model: 'gpt-test' }),
+    event('event_msg', { type: 'token_count', info: { total_token_usage: { input_tokens: tokens, cached_input_tokens: 0, output_tokens: 0, reasoning_output_tokens: 0, total_tokens: tokens } } }),
+  ].join('\n')
+}
+const session = (id, cwd, tokens) => JSON.stringify({ timestamp: new Date().toISOString(), cwd, sessionId: id, requestId: `r-${id}`, isSidechain: false, message: { id: `m-${id}`, model: 'claude-sonnet-5-5', usage: { input_tokens: tokens, output_tokens: 0 } } })
+
+test('the usage route shows the 20 largest sessions and the graph summary, with the provider of each', { skip: !present('usage') }, async () => {
+  const a = await host()
+  const home = temp('ac-ui-home-')
+  put(home, { '.claude/projects/p/s.jsonl': Array.from({ length: 25 }, (_, i) => session(`s${String(i).padStart(2, '0')}`, a, 1000 + i)).join('\n') })
+  await withHome(home, async () => {
+    const { port } = await start(a)
+    const u = (await call(port, { path: '/api/usage?days=30' })).json()
+    assert.equal(u.sessionCount, 25)
+    assert.equal(u.bySession.length, 20)
+    assert.deepEqual(u.bySession.map((r) => r.tokens), Array.from({ length: 20 }, (_, i) => 1024 - i))
+    assert.deepEqual(Object.keys(u.bySession[0]).sort(), ['cacheHit', 'cacheRead', 'cacheWrite', 'cost', 'first', 'graph', 'input', 'last', 'messages', 'output', 'project', 'provider', 'session', 'tokens'])
+    assert.deepEqual([u.bySession[0].project, u.bySession[0].provider, u.bySession[0].graph, u.bySession[0].messages], [a, 'claude', false, 1])
+    assert.deepEqual(u.sessionSummary.noGraph.count, 25)
+    assert.equal(u.sessionSummary.graph.count, 0)
+  })
+})
+
+test('the usage route filters by provider, keeps one cache for each provider and ignores an unknown provider', { skip: !present('usage') }, async () => {
+  const a = await host()
+  const home = temp('ac-ui-home-')
+  put(home, { '.claude/projects/p/s.jsonl': session('c1', a, 1000), '.codex/sessions/2026/01/01/rollout-2026-01-01T00-00-00-x1.jsonl': rollout('x1', a, 5000) })
+  await withHome(home, async () => {
+    const { port } = await start(a)
+    const get = async (query) => (await call(port, { path: `/api/usage?days=30${query}` })).json()
+    const all = await get('')
+    assert.deepEqual([all.provider, all.totals.tokens, all.byProvider.map((p) => [p.provider, p.tokens])], ['all', 6000, [['codex', 5000], ['claude', 1000]]])
+    const codex = await get('&provider=codex')
+    assert.deepEqual([codex.provider, codex.totals.tokens, codex.byProvider.map((p) => p.provider), codex.bySession.map((r) => r.provider)], ['codex', 5000, ['codex'], ['codex']])
+    assert.deepEqual([codex.unknownModels], [['gpt-test']])
+    const claude = await get('&provider=claude')
+    assert.deepEqual([claude.provider, claude.totals.tokens, claude.byProvider.map((p) => p.provider)], ['claude', 1000, ['claude']])
+    for (const bad of ['&provider=gpt', '&provider=', '&provider=codex;id', '&provider=ALL']) assert.equal((await get(bad)).provider, 'all', bad)
+    put(home, { '.codex/sessions/2026/01/01/rollout-2026-01-01T00-00-00-x2.jsonl': rollout('x2', a, 700) })
+    assert.equal((await get('&provider=codex')).totals.tokens, 5000, 'a repeated call uses the cache of its provider')
+    assert.equal((await get('&provider=claude')).totals.tokens, 1000)
+    assert.equal((await get('&provider=codex&fresh=1')).totals.tokens, 5700)
+    assert.equal((await get('')).totals.tokens, 6000, 'the cache of another provider stays')
   })
 })
 

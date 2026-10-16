@@ -4,6 +4,7 @@ const token = new URLSearchParams(location.search).get('token') ?? ''
 history.replaceState(null, '', location.pathname)
 
 const $ = (id) => document.getElementById(id)
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const nodes = (kids) => kids.flat(Infinity).filter((x) => x != null && x !== false)
 const fill = (el, ...kids) => el.replaceChildren(...nodes(kids))
 const add = (el, ...kids) => el.append(...nodes(kids))
@@ -42,8 +43,10 @@ const table = (head, rows) => (rows.length
   : note('None.'))
 const kv = (obj) => h('dl', {}, Object.entries(obj).flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, String(v ?? ''))]))
 const pre = (data) => h('pre', {}, typeof data === 'string' ? data : JSON.stringify(data, null, 2))
-const tile = (label, value) => h('div', { className: 'tile' }, h('small', {}, label), h('b', {}, value))
+const tile = (label, value, cls = '') => h('div', { className: `tile ${cls}`.trim() }, h('small', {}, label), h('b', {}, value))
 const ver = (v, tag) => `${v ?? '-'}${tag ? ` (${tag})` : ''}`
+const num = (x) => Math.round(x ?? 0).toLocaleString('en-US')
+const pct = (x) => `${((x ?? 0) * 100).toFixed(1)} %`
 
 let current = 'projects'
 let stop = []
@@ -66,6 +69,19 @@ const syncBox = (first, after) => {
   return box
 }
 
+const CHECK_CLASS = { ok: 'ok', warn: 'warn', fail: 'err' }
+
+// The checks and the token items of `ac doctor --tokens`. It runs after the tab is drawn.
+const doctorBox = () => {
+  const out = h('div', note('Running the checks.'))
+  api('doctor').then((d) => fill(out, errors(d),
+    table(['Status', 'Check', 'Detail'], d.checks.map((c) => [h('span', { className: CHECK_CLASS[c.status] ?? 'muted' }, c.status), c.name, c.detail])),
+    d.tokens ? [h('div', { className: 'tiles' }, tile('Always-on tokens', num(d.tokens.total)), tile('SessionStart chars', num(d.tokens.startChars))),
+      table(['Item', 'Chars', 'Tokens'], d.tokens.items.map((i) => [i.name, num(i.chars), num(i.tokens)]))] : null),
+  (err) => fill(out, note(err.message, 'err')))
+  return out
+}
+
 async function projects(box) {
   const [p, s] = await Promise.all([api('project'), api('sync')])
   $('root').textContent = p.root
@@ -75,11 +91,24 @@ async function projects(box) {
     : note('The usage data of the last 90 days has no other project with .agents/compass.json.')), (err) => others.replaceChildren(note(err.message, 'err')))
   add(box, h('h2', {}, 'Project'),
     kv({ Root: p.root, 'Compass in the project': p.lock ? ver(p.lock.version, p.lock.tag) : 'not synced yet', 'Compass checkout': ver(s.version, s.tag), Drift: s.drift ? 'yes' : 'no' }),
-    syncBox(s, reload), h('h2', {}, 'Other projects'), others)
+    syncBox(s, reload), h('h2', {}, 'Doctor'), doctorBox(), h('h2', {}, 'Other projects'), others)
 }
 
-const KINDS = { skill: 'Skills', rule: 'Rules', agent: 'Agents', pack: 'Packs', mcp: 'MCP servers', plugin: 'Claude plugins', upstream: 'Upstream sources', file: 'Files', block: 'Blocks' }
+const KINDS = {
+  skill: 'Skills', rule: 'Rules', agent: 'Agents', pack: 'Packs', mcp: 'MCP servers', plugin: 'Claude plugins', upstream: 'Upstream sources', file: 'Files', block: 'Blocks',
+  key: 'Settings (owned keys)', seed: 'Seed files', schema: 'OpenSpec schema',
+}
 const FILTERS = { all: () => true, recommended: (a) => a.recommended, on: (a) => a.on, off: (a) => !a.on }
+
+// The always-on context of the current config and of the recommended set, against the target. It shows nothing when the answer has no `always`.
+const alwaysTiles = (always) => {
+  if (!isObj(always)) return null
+  const over = (v) => (v > always.budget ? 'warn' : '')
+  return [
+    h('div', { className: 'tiles' }, tile('Always-on now', `≈ ${num(always.current)} tokens`, over(always.current)), tile('With the recommended set', `≈ ${num(always.recommended)}`, over(always.recommended)), tile('Target', num(always.budget))),
+    always.note ? note(always.note) : null,
+  ]
+}
 
 async function assets(box) {
   let data = await api('assets')
@@ -88,6 +117,7 @@ async function assets(box) {
   const count = h('span', { className: 'muted' })
   const filters = h('span', { className: 'bar' })
   const list = h('div')
+  const tiles = h('div')
   const diff = h('div')
   const apply = (res) => { data = res; drawList(); diff.replaceChildren(syncBox(data.sync)) }
   const row = (a) => [
@@ -99,22 +129,23 @@ async function assets(box) {
         try { apply(await api('assets', { kind: a.kind, id: a.id, on: el.checked })) } catch (err) { el.checked = !el.checked; el.disabled = false; say(err.message, true) }
       },
     }),
-    h('b', {}, a.title ?? a.id), a.description,
+    h('b', {}, a.title ?? a.id), a.description, Number.isFinite(a.tokens) ? num(a.tokens) : '',
     [a.recommended ? h('span', { className: 'badge rec' }, `recommended: ${a.reason ?? ''}`) : null, a.available ? null : h('span', { className: 'badge no' }, `not available: ${a.reason ?? ''}`)],
   ]
   function drawList() {
     const all = data.assets ?? []
+    fill(tiles, alwaysTiles(data.always))
     count.textContent = `${all.filter((a) => a.on).length} on, ${all.filter((a) => a.recommended).length} recommended`
     filters.replaceChildren(...Object.keys(FILTERS).map((f) => h('button', { className: f === filter ? 'on' : '', onclick: () => { filter = f; drawList() } }, f)))
     const shown = all.filter((a) => FILTERS[filter](a) && `${a.kind} ${a.id} ${a.title} ${a.description}`.toLowerCase().includes(query))
     fill(list, Object.entries(KINDS).map(([kind, label]) => {
       const part = shown.filter((a) => a.kind === kind)
-      return part.length ? h('div', {}, h('h3', {}, `${label} (${part.length})`), table(['On', 'Name', 'Description', 'Badges'], part.map(row))) : null
+      return part.length ? h('div', {}, h('h3', {}, `${label} (${part.length})`), table(['On', 'Name', 'Description', 'Tokens', 'Badges'], part.map(row))) : null
     }))
   }
   drawList()
   add(diff, syncBox(data.sync))
-  add(box, h('h2', {}, 'Assets'), errors(data),
+  add(box, h('h2', {}, 'Assets'), errors(data), tiles,
     h('div', { className: 'bar' }, filters, h('input', { type: 'search', placeholder: 'Search', oninput: (e) => { query = e.target.value.toLowerCase(); drawList() } }), count,
       act('Apply the recommended set', async () => { apply(await api('assets/recommended', {})); say('The recommended set is on.') })),
     list, diff)
@@ -195,25 +226,37 @@ async function tests(box) {
 }
 
 let days = 30
+let provider = 'all'
 let fresh = false
 
+const PROVIDER_LABELS = { all: 'All', claude: 'Claude', codex: 'Codex' }
+const dayRange = (r) => (r.first === r.last ? r.first : `${r.first} to ${r.last}`)
+const spread = (label, g) => [label, num(g?.count), num(g?.median), num(g?.p90)]
+
 async function usage(box) {
-  const u = await api(`usage?days=${days}${fresh ? '&fresh=1' : ''}`)
+  const u = await api(`usage?days=${days}&provider=${provider}${fresh ? '&fresh=1' : ''}`)
   fresh = false
-  const n = (x) => Math.round(x ?? 0).toLocaleString('en-US')
-  const pct = (x) => `${((x ?? 0) * 100).toFixed(1)} %`
-  const by = (list, key) => table([key, 'Tokens', 'Cost (USD)', 'Messages'], list.map((r) => [r[key.toLowerCase()], n(r.tokens), (r.cost ?? 0).toFixed(2), n(r.messages)]))
+  const by = (list, key) => table([key, 'Tokens', 'Cost (USD)', 'Messages'], list.map((r) => [r[key.toLowerCase()], num(r.tokens), (r.cost ?? 0).toFixed(2), num(r.messages)]))
   const out = h('div')
   add(box, h('h2', {}, 'Usage'),
-    h('div', { className: 'bar' }, [7, 30, 90].map((d) => h('button', { className: d === days ? 'on' : '', onclick: () => { days = d; reload() } }, `${d} days`)), act('Refresh', async () => { fresh = true; reload() })),
-    h('div', { className: 'tiles' }, tile('Tokens', n(u.totals?.tokens)), tile('Cost (USD)', (u.totals?.cost ?? 0).toFixed(2)), tile('Cache hit', pct(u.cacheHit)), tile('Sub-agent share', pct(u.subagentShare))),
+    h('div', { className: 'bar' }, h('span', { className: 'bar' }, [7, 30, 90].map((d) => h('button', { className: d === days ? 'on' : '', onclick: () => { days = d; reload() } }, `${d} days`))),
+      h('span', { className: 'bar' }, Object.entries(PROVIDER_LABELS).map(([p, label]) => h('button', { className: p === provider ? 'on' : '', onclick: () => { provider = p; reload() } }, label))),
+      act('Refresh', async () => { fresh = true; reload() })),
+    h('div', { className: 'tiles' }, tile('Tokens', num(u.totals?.tokens)), tile('Cost (USD)', (u.totals?.cost ?? 0).toFixed(2)), tile('Cache hit', pct(u.cacheHit)), tile('Sub-agent share', pct(u.subagentShare))),
     u.unknownModels?.length ? note(`No price for: ${u.unknownModels.join(', ')}. These models cost 0 here.`, 'warn') : null,
     h('h3', {}, 'Quota'),
     u.quota ? act('Load quota', async () => { const r = await api('usage/quota', {}); out.replaceChildren(pre(r.text)) }) : note('CodexBar is not on PATH. Quota is not available.'), out,
+    h('h3', {}, 'By provider'), by(u.byProvider ?? [], 'Provider'),
+    h('h3', {}, `Sessions (${num(u.sessionCount)})`),
+    note('A graph session called a codebase-memory MCP tool. A Codex session counts on the day it started.'),
+    table(['Group', 'Sessions', 'Median tokens', 'p90 tokens'], [spread('Graph', u.sessionSummary?.graph), spread('No graph', u.sessionSummary?.noGraph)]),
+    u.sessionCount > u.bySession.length ? note(`The table shows the ${u.bySession.length} largest sessions.`) : null,
+    table(['Provider', 'Project', 'Days', 'Messages', 'Tokens', 'Cost (USD)', 'Cache hit', 'Graph'],
+      u.bySession.map((r) => [r.provider, r.project, dayRange(r), num(r.messages), num(r.tokens), (r.cost ?? 0).toFixed(2), pct(r.cacheHit), r.graph ? 'graph' : ''])),
     h('h3', {}, 'By day'), by(u.byDay ?? [], 'Day'), h('h3', {}, 'By project'), by(u.byProject ?? [], 'Project'), h('h3', {}, 'By model'), by(u.byModel ?? [], 'Model'))
 }
 
-// A read-only pull of the open issues from `gh` or `glab`, run in the project root. Jira has no button: the agent reads it.
+// A read-only pull of the open issues from `gh`, `glab` or `jira`, run in the project root.
 function tracker() {
   const out = h('div')
   const pull = (name, label) => act(`Pull ${label} issues`, async () => {
@@ -222,8 +265,8 @@ function tracker() {
       table(['Number', 'Title', 'State', 'Labels', 'Assignee', 'Link'], r.rows.map((i) => [i.number, i.title, i.state, i.labels, i.assignee, i.url ? h('a', { href: i.url, target: '_blank', rel: 'noopener' }, 'open') : null]))] : null)
   })
   return h('div', {}, h('h2', {}, 'Tracker issues'),
-    note('Compass runs "gh issue list" or "glab issue list" in the project root. It needs the CLI on PATH and a login. Jira stays with the mcp-atlassian MCP server in the agent: this page holds no Jira token.'),
-    h('div', { className: 'bar' }, pull('github', 'GitHub'), pull('gitlab', 'GitLab')), out)
+    note('Compass runs "gh issue list", "glab issue list" or "jira issue list" in the project root. It needs the CLI on PATH and a login. This page holds no token: the CLI keeps it.'),
+    h('div', { className: 'bar' }, pull('github', 'GitHub'), pull('gitlab', 'GitLab'), pull('jira', 'Jira')), out)
 }
 
 async function delivery(box) {

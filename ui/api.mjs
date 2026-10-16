@@ -1,6 +1,6 @@
 // api.mjs — the JSON routes of `ac ui`. A route gets { AC, state, body, query } and returns data,
 // or a function (res) that writes the response itself. No shell: a command is process.execPath
-// with bin/ac.mjs and fixed arguments, or codexbar, gh or glab with fixed arguments.
+// with bin/ac.mjs and fixed arguments, or codexbar, gh, glab or jira with fixed arguments.
 
 import { execFile } from 'node:child_process'
 import { createReadStream, existsSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
@@ -26,9 +26,9 @@ const ENV_NAME = /^[A-Z_][A-Z0-9_]*$/
 const RECIPIENT = /^[A-Za-z0-9][\w.@:/-]{0,200}$/
 const AGE_FILE = /^\w[\w./-]*\.age$/
 
-const exec = (file, args, { cwd, timeout = 60_000 } = {}) => new Promise((done) => {
-  const child = execFile(file, args, { cwd, timeout, maxBuffer: MAX_OUT, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
-    (err, stdout, stderr) => done({ ok: !err, stdout: stdout ?? '', stderr: stderr ?? '', killed: Boolean(err?.killed) }))
+const exec = (file, args, { cwd, timeout = 60_000, max = MAX_OUT } = {}) => new Promise((done) => {
+  const child = execFile(file, args, { cwd, timeout, maxBuffer: max, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } },
+    (err, stdout, stderr) => done({ ok: !err, stdout: stdout ?? '', stderr: stderr ?? '', killed: Boolean(err?.killed) || err?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' }))
   child.stdin?.end()
 })
 const ac = (c, args, { root = true, ...opts } = {}) => exec(process.execPath, [join(c.AC, 'bin/ac.mjs'), ...args, ...(root ? ['--root', c.state.root] : [])], { cwd: c.state.root, ...opts })
@@ -56,23 +56,25 @@ const readIn = (root, rel) => {
   try { return outside(root, rel) || statSync(join(root, rel)).size > 5e6 ? null : readFileSync(join(root, rel), 'utf8') } catch { return null }
 }
 
-// `ac usage` reads every transcript. It takes 10 s or more, so it runs in a child process and the answer is cached for 5 minutes.
-const usageData = (c, days, fresh) => {
-  const hit = c.state.usage[days]
+// `ac usage` reads every transcript. It takes 10 s or more, so it runs in a child process and the answer is cached for 5 minutes, for each range and provider.
+const PROVIDERS = ['claude', 'codex', 'all']
+const usageData = (c, days, provider, fresh) => {
+  const key = `${days}:${provider}`
+  const hit = c.state.usage[key]
   if (hit && !fresh && Date.now() - hit.at < 300_000) return hit.promise
   const promise = (async () => {
     await engine('usage', 'readUsage')
-    const data = parse(await ac(c, ['usage', '--json', '--since', ymd(new Date(Date.now() - (days - 1) * 864e5))], { root: false }))
+    const data = parse(await ac(c, ['usage', '--json', '--provider', provider, '--since', ymd(new Date(Date.now() - (days - 1) * 864e5))], { root: false }))
     return data.ok ? data : bad((data.errors ?? ['The usage command failed.']).join(' '), 502)
   })()
-  c.state.usage = { ...c.state.usage, [days]: { at: Date.now(), promise } }
-  promise.catch(() => { c.state.usage = { ...c.state.usage, [days]: undefined } })
+  c.state.usage = { ...c.state.usage, [key]: { at: Date.now(), promise } }
+  promise.catch(() => { c.state.usage = { ...c.state.usage, [key]: undefined } })
   return promise
 }
 
 // The projects of the last 90 days that hold .agents/compass.json, without the current one.
 const roots = async (c, fresh) => {
-  const rows = (await usageData(c, 90, fresh).catch(() => ({ byProject: [] }))).byProject
+  const rows = (await usageData(c, 90, 'all', fresh).catch(() => ({ byProject: [] }))).byProject
   return rows.map((r) => r.project).filter((p) => typeof p === 'string' && isAbsolute(p) && p !== c.state.root && existsSync(join(p, CONFIG)))
 }
 
@@ -91,6 +93,12 @@ const switchProject = async (c) => {
 
 // Apply runs in a child process: it can fetch upstream sources, and the server must keep answering.
 const sync = (apply) => (c) => (apply ? acJson(c, ['sync', '--json'], { timeout: 10 * 60_000 }) : syncHost({ AC: c.AC, root: c.state.root }))
+
+// The checks and the token items of `ac doctor --tokens`. The paths and the sync changes stay on the server.
+const doctorView = async (c) => {
+  const d = await acJson(c, ['doctor', '--tokens', '--json'])
+  return { ok: d.ok === true, errors: d.errors ?? [], checks: d.checks ?? [], tokens: d.tokens ?? null }
+}
 
 const assetView = async (c) => ({ ...(await engine('assets', 'listAssets'))({ AC: c.AC, root: c.state.root }), sync: syncHost({ AC: c.AC, root: c.state.root }) })
 
@@ -246,9 +254,14 @@ const report = (c) => {
   }
 }
 
+const SESSIONS_SHOWN = 20
+
 const usage = async (c) => {
   const days = [7, 30, 90].includes(Number(c.query.get('days'))) ? Number(c.query.get('days')) : 30
-  return { ...(await usageData(c, days, c.query.get('fresh') === '1')), days, quota: onPath('codexbar') }
+  const provider = PROVIDERS.includes(c.query.get('provider')) ? c.query.get('provider') : 'all'
+  const data = await usageData(c, days, provider, c.query.get('fresh') === '1')
+  const sessions = data.bySession ?? []
+  return { ...data, bySession: sessions.slice(0, SESSIONS_SHOWN), sessionCount: sessions.length, days, provider, quota: onPath('codexbar') }
 }
 
 const quota = async () => {
@@ -301,10 +314,6 @@ const delivery = (c) => {
 }
 
 // A read-only issue list. The command, its arguments and its limits are fixed. The page gets plain text and http(s) links only.
-const TRACKERS = {
-  github: ['gh', ['issue', 'list', '--json', 'number,title,state,labels,assignees,url', '--limit', '100']],
-  gitlab: ['glab', ['issue', 'list', '--output', 'json', '--per-page', '100']],
-}
 const names = (list, ...keys) => (Array.isArray(list) ? list : []).map((x) => (isObj(x) ? keys.map((k) => x[k]).find(scalar) : x)).filter(scalar).map((x) => cap(x, 60)).join(', ')
 const issue = (i) => {
   const t = isObj(i) ? i : {}
@@ -312,17 +321,34 @@ const issue = (i) => {
   return { number: cap(t.number ?? t.iid, 20), title: cap(t.title), state: cap(t.state, 20), labels: names(t.labels, 'name'), assignee: names(t.assignees, 'login', 'username'), url: /^https?:\/\//.test(url) ? cap(url, 300) : '' }
 }
 
+// `jira issue list --raw` prints REST issues: a list, or an object with the list in `issues`. The link is the part of `self` before "/rest/" and "/browse/<key>".
+const jiraList = (data) => (Array.isArray(data) ? data : data?.issues)
+const jiraIssue = (i) => {
+  const t = isObj(i) ? i : {}
+  const f = isObj(t.fields) ? t.fields : {}
+  const base = /^(https?:\/\/[^\s?#]+?)\/rest\//.exec(t.self)?.[1]
+  return { number: cap(t.key, 40), title: cap(f.summary), state: cap(f.status?.name, 40), labels: names(f.labels), assignee: cap(f.assignee?.displayName, 60), url: base && /^[\w-]+$/.test(t.key) ? cap(`${base}/browse/${t.key}`, 300) : '' }
+}
+
+const TRACKERS = {
+  github: { cli: 'gh', login: 'gh auth login', args: ['issue', 'list', '--json', 'number,title,state,labels,assignees,url', '--limit', '100'], row: issue },
+  gitlab: { cli: 'glab', login: 'glab auth login', args: ['issue', 'list', '--output', 'json', '--per-page', '100'], row: issue },
+  jira: { cli: 'jira', login: 'jira init', args: ['issue', 'list', '--raw', '--paginate', '0:100'], row: jiraIssue, list: jiraList, max: 4 * 1024 * 1024 },
+}
+const message = (text) => cap(text.replace(/\x1b\[[\d;]*m/g, '').replace(/\s+/g, ' ').trim())
+
 const pull = async (c) => {
   const { tracker } = c.body
-  if (typeof tracker !== 'string' || !Object.hasOwn(TRACKERS, tracker)) bad('"tracker" must be github or gitlab.')
-  const [cli, args] = TRACKERS[tracker]
-  const fail = (message) => ({ ok: false, errors: [message] })
-  if (!onPath(cli)) return fail(`${cli} is not on PATH. Install it and run "${cli} auth login".`)
-  const r = await exec(cli, args, { cwd: c.state.root, timeout: 20_000 })
-  if (!r.ok) return fail(r.killed ? 'The command ran too long or printed too much.' : cap(r.stderr.replace(/\s+/g, ' ').trim()) || `${cli} failed.`)
-  let list
-  try { list = JSON.parse(r.stdout) } catch { /* the check below reports it */ }
-  return Array.isArray(list) ? { ok: true, tracker, count: list.length, rows: list.slice(0, 100).map(issue) } : fail(`${cli} printed no JSON list.`)
+  if (typeof tracker !== 'string' || !Object.hasOwn(TRACKERS, tracker)) bad('"tracker" must be github, gitlab or jira.')
+  const { cli, login, args, row, list: pick = (data) => data, max } = TRACKERS[tracker]
+  const fail = (text) => ({ ok: false, errors: [text] })
+  if (!onPath(cli)) return fail(`${cli} is not on PATH. Install it and run "${login}".`)
+  const r = await exec(cli, args, { cwd: c.state.root, timeout: 20_000, max })
+  if (!r.ok) return fail(r.killed ? 'The command ran too long or printed too much.' : message(r.stderr) || `${cli} failed.`)
+  let data
+  try { data = JSON.parse(r.stdout) } catch { /* the check below reports it */ }
+  const list = pick(data)
+  return Array.isArray(list) ? { ok: true, tracker, count: list.length, rows: list.slice(0, 100).map((x) => row(x)) } : fail(`${cli} printed no JSON list.`)
 }
 
 const candidates = async (c) => (await engine('promote', 'candidates'))({ AC: c.AC, root: c.state.root })
@@ -338,6 +364,7 @@ export const routes = {
   'GET /api/project': project,
   'GET /api/project/others': async (c) => ({ others: await roots(c, c.query.get('fresh') === '1') }),
   'POST /api/project': switchProject,
+  'GET /api/doctor': doctorView,
   'GET /api/sync': sync(false),
   'POST /api/sync': sync(true),
   'GET /api/assets': assetView,
