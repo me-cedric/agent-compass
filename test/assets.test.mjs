@@ -186,6 +186,14 @@ test('setAsset toggles skills, rules and agents and never mutates its input', ()
   }
 })
 
+test('a user-invoked skill is marked and costs no always-on tokens', () => {
+  const list = listAssets({ AC: REPO, root: makeHost(WEB_HOST) })
+  const adr = find(list, 'skill', 'adr')
+  assert.deepEqual([adr.userInvoked, adr.tokens], [true, 0])
+  assert.equal(find(list, 'skill', 'review').userInvoked, undefined)
+  assert.ok(find(list, 'skill', 'review').tokens > 0)
+})
+
 test('switching the compass hook script off also switches off the hook keys that call it', () => {
   const root = makeHost(WEB_HOST)
   const hook = find(listAssets({ AC: REPO, root }), 'file', '.agents/hooks/compass.mjs')

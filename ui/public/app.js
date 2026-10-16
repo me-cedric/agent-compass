@@ -129,7 +129,7 @@ async function assets(box) {
         try { apply(await api('assets', { kind: a.kind, id: a.id, on: el.checked })) } catch (err) { el.checked = !el.checked; el.disabled = false; say(err.message, true) }
       },
     }),
-    h('b', {}, a.title ?? a.id), a.description, Number.isFinite(a.tokens) ? num(a.tokens) : '',
+    h('b', {}, a.title ?? a.id), a.description, a.userInvoked ? 'user-invoked' : Number.isFinite(a.tokens) ? num(a.tokens) : '',
     [a.recommended ? h('span', { className: 'badge rec' }, `recommended: ${a.reason ?? ''}`) : null, a.available ? null : h('span', { className: 'badge no' }, `not available: ${a.reason ?? ''}`)],
   ]
   function drawList() {

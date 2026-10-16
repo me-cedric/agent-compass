@@ -112,7 +112,9 @@ const layerAssets = ({ AC, plan, stacks, why }) => [['compass', AC], ['core', jo
     return [
       ...dirs(join(dir, 'skills')).filter((n) => existsSync(join(dir, 'skills', n, 'SKILL.md'))).map((n) => {
         const text = read(`skills/${n}/SKILL.md`)
-        return make('skill', n, text, plan.skills.has(n), { tokens: listingTokens(planned(plan, `.claude/skills/${n}/SKILL.md`, text)) })
+        // A user-invoked skill is not in the always-on listing: it costs 0 tokens until the user starts it.
+        const user = frontmatter(text).data['disable-model-invocation'] === 'true'
+        return make('skill', n, text, plan.skills.has(n), { tokens: listingTokens(planned(plan, `.claude/skills/${n}/SKILL.md`, text)), ...(user && { userInvoked: true }) })
       }),
       ...walk(join(dir, 'rules')).filter((f) => f.endsWith('.md'))
         .map((f) => make('rule', `.claude/rules/${f}`, read(`rules/${f}`), plan.files.has(`.claude/rules/${f}`), { title: f.slice(0, -3) })),
@@ -318,7 +320,7 @@ const printList = (result, root) => {
     const width = Math.max(...group.map((a) => a.id.length))
     console.log(`\n${kind} (${group.length})`)
     for (const a of group) {
-      console.log(`  ${state(a).padEnd(3)} ${a.recommended ? '*' : ' '} ${a.id.padEnd(width)}  ${(a.tokens === undefined ? '' : `${a.tokens}t`).padStart(6)}  ${a.reason}`)
+      console.log(`  ${state(a).padEnd(3)} ${a.recommended ? '*' : ' '} ${a.id.padEnd(width)}  ${(a.userInvoked ? 'user' : a.tokens === undefined ? '' : `${a.tokens}t`).padStart(6)}  ${a.reason}`)
     }
   }
   for (const e of result.errors) console.error(`error: ${e}`)

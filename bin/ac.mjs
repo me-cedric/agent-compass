@@ -39,8 +39,8 @@ Commands:
   dev      up | down | status | logs: start and stop the local stack with process-compose.
   run      Run a command from agent-compass.commands.json by name. Store the result in
            .agents/runs/<timestamp>/.
-  usage    Read the Claude Code transcripts in ~/.claude/projects. Show tokens, cost, cache
-           hit rate and sub-agent share by day, project and model.
+  usage    Read the Claude Code and Codex transcripts. Show tokens, cost, cache hit rate and
+           sub-agent share by day, project, model, provider and session.
   promote  List the project skills that compass does not own. With a name: check a skill
            and copy it into skills/ of this compass checkout.
   assets   List the assets (skills, rules, agents, packs, MCP servers, keys, seeds, and more)
