@@ -63,10 +63,11 @@ const STYLE = /^\.claude\/output-styles\/[^/]+\.md$/
 // The title and the description of each owned key that compass sets. A Codex file gets the prefix "Codex".
 const KEY_TEXT = {
   outputStyle: ['output style', 'Selects the compass output style.'],
-  'hooks.PreToolUse': ['guard', 'Blocks a read or shell call that names a .env file, before the tool runs.'],
+  'hooks.PreToolUse': ['guard', 'Blocks a read of a secret file, an edit of a lock file, a tracker worklog or delete tool, and a destructive git or rm command, before the tool runs.'],
   'hooks.Stop': ['gate', 'Asks once for the completion summary when a turn that edited files ends.'],
   'hooks.SessionStart': ['start', 'Prints the style reminder when a session starts.'],
-  'permissions.deny': ['tracker deny', 'Blocks the tracker delete tools and the issue delete commands, and holds the deny patterns of the MCP servers.'],
+  'permissions.deny': ['tracker deny', 'Blocks the tracker delete tools, the repository delete commands and the read of .env files, and holds the deny patterns of the MCP servers.'],
+  attribution: ['attribution', 'Keeps AI attribution lines out of commits and pull requests.'],
   'permissions.ask': ['tracker ask', 'Asks before a tracker write tool or an issue or pull request write command runs.'],
   model_verbosity: ['verbosity', 'Sets the Codex model verbosity to low.'],
   model_reasoning_summary: ['reasoning summary', 'Sets the Codex reasoning summary to none.'],

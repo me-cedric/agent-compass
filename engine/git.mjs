@@ -1,8 +1,9 @@
-// git.mjs — the tag of the compass checkout, and `ac sync --to <tag>`.
+// git.mjs — the tag of the compass checkout, its submodule state, and `ac sync --to <tag>`.
 // Every git call runs through run(): a timeout, GIT_TERMINAL_PROMPT=0 and ssh BatchMode.
 
 import { realpathSync } from 'node:fs'
-import { run } from './util.mjs'
+import { relative, sep } from 'node:path'
+import { below, run, versionCmp } from './util.mjs'
 
 const TAG = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/
 
@@ -16,6 +17,23 @@ export const tagOf = (AC) => {
   if (!ownCheckout(AC)) return null
   const r = run('git', ['-C', AC, 'describe', '--tags', '--exact-match', 'HEAD'], { timeout: 10_000 })
   return r.ok ? r.out : null
+}
+
+// The newest local release tag (x.y.z or vx.y.z) of the compass checkout when it is newer than version, else null.
+export const newerTag = (AC, version) => {
+  if (!ownCheckout(AC)) return null
+  const r = run('git', ['-C', AC, 'tag', '--list', '--sort=-v:refname'], { timeout: 10_000 })
+  const tag = r.ok ? r.out.split('\n').find((t) => /^v?\d+\.\d+\.\d+$/.test(t)) : undefined
+  return tag && versionCmp(tag, version) > 0 ? tag : null
+}
+
+// The path of the compass submodule when the project records another commit for it than the one checked out, else null.
+export const submoduleMoved = (root, AC) => {
+  const [top, ac] = [root, AC].map((p) => realpathSync(p))
+  if (!below(top, ac)) return null
+  const rel = relative(top, ac).split(sep).join('/')
+  const r = run('git', ['-C', root, 'submodule', 'status', '--', rel], { timeout: 10_000 })
+  return r.ok && r.out.startsWith('+') ? rel : null
 }
 
 // Move the compass submodule to a release tag. The caller then syncs with the engine of that tag.

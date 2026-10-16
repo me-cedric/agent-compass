@@ -1,5 +1,6 @@
 # compass-check: fail when the project is different from the compass lock.
 # To fix a failure, run "ac sync" and commit the result.
+# Compass writes this file. To own it, add its path to "exclude" in .agents/compass.json.
 # A private compass repository needs a `token:` with read access on the checkout step.
 
 name: compass-check
@@ -12,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  COMPASS_DIR: docs/agent-compass # edit: the path of the compass submodule
+  COMPASS_DIR: {{COMPASS_DIR}}
 
 jobs:
   compass:

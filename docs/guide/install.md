@@ -5,6 +5,7 @@ It needs Node 20.12 or later and git. It never prompts.
 
 Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 `init`, `sync`, `check`, `doctor` and `migrate` take `--root <dir>`, `--dry` (show the changes and write nothing) and `--json`. The other commands list their options in `--help`.
+Without `--root`, `sync`, `check` and `doctor` find the project root above the current folder: the nearest folder with `.agents/compass.json` or `.git`.
 
 ## Install
 
@@ -35,7 +36,15 @@ A project that has input documents runs `ac init --from-specs <dir>`. See [Start
 | Seed file | Write it once. The project owns it then. |
 
 Two syncs in a row give no diff. The lock has no timestamp.
+A `kept` item has a note: `compass has a newer version` when the plan differs from the lock, else `no compass change`.
+`ac check --diff` shows a unified diff of each kept file, block and single-value key against the compass version.
 To take an update for a `kept` item, revert the file. To stop updates for it, add its path to `exclude` (see [assets.md](assets.md#exclude)).
+
+Sync stops with an error in these cases. It writes nothing.
+
+- The lock is from a newer compass than the checkout, for example after a pull with a stale submodule. Run `git submodule update --init`. To go back to an older compass on purpose, run `ac sync --to <tag>`.
+- The lock or a managed file has git conflict markers (`<<<<<<<`). Take one side, or delete the lock. Then run `ac sync`.
+- A fetched upstream source has hidden Unicode: bidi controls, zero-width or tag characters. The error names each file. A byte order mark at the start of a file is allowed.
 
 ### Your own hooks and permissions
 
@@ -96,11 +105,25 @@ ac sync --to <tag>     # check out a release tag in the submodule, then sync wit
 
 `--to` needs a clean submodule and a tag that has `bin/ac.mjs`. Commit the submodule change.
 After an update, run `ac check --frozen` and `ac doctor --tokens`.
+The lock keeps its tag only while the compass version stays the same.
+
+`ac doctor` also warns when:
+
+- The compass submodule is not at the commit that the project records, or a local tag is newer than the checkout.
+- The project is not a git repository. The Codex hooks use `git rev-parse`.
+- The language server of an enabled LSP plugin is not on PATH.
+- The project has no code graph index (`codebase-memory-mcp cli index_status`). A failure of that command is a warning only.
+- The command of an MCP server is older than its `minVersion` in the catalog.
+
+It prints one line when `.codex/hooks.json` exists: Codex runs the project hooks only after you trust them with `/hooks`. It prints one line with the count of open items of `ac doctor --global`.
 
 ## Check in CI
 
 `ac check --frozen` exits 1 when the project is different from the lock. It writes nothing.
 The `ci-github` and `ci-gitlab` packs add a `compass-check` job that runs it. To fix a failure, run `ac sync` and commit the result.
+Compass manages `.github/workflows/compass-check.yml` and `.gitlab/compass/check.yml`. Sync writes the path of the compass checkout into `COMPASS_DIR`.
+A project that has the older seed copy of one of these files keeps it as `kept`, so `ac check --frozen` fails. Delete the file and run `ac sync` to get the managed file.
+To keep your copy, add its path to `exclude`. The other CI files of the packs stay seed files.
 
 The `renovate` pack seeds a `renovate.json` with the `git-submodules` manager. Set `branch = <release tag>` for the compass submodule in `.gitmodules`.
 Renovate then proposes the next tag. Run `ac sync` in the update branch.

@@ -383,6 +383,153 @@ test('the real compass assets sync into an empty project and pass doctor', async
   assert.equal(doc.code, 0, JSON.stringify(doc.json?.checks))
 })
 
+// Sync safety: a stale compass checkout, conflict markers, the kept detail, Windows paths and the managed CI check.
+const gitIn = (dir) => (...args) => {
+  const r = spawnSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'protocol.file.allow=always', ...args], { encoding: 'utf8', timeout: 20_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } })
+  assert.equal(r.status, 0, r.stderr)
+  return r.stdout.trim()
+}
+const setLock = (host, change) => put(host, { '.agents/compass.lock.json': `${JSON.stringify({ ...JSON.parse(read(host, '.agents/compass.lock.json')), ...change }, null, 2)}\n` })
+
+test('a lock from a newer compass refuses the sync; --to goes back on purpose; a subdirectory finds the root', async () => {
+  const compass = makeCompass()
+  const git = gitIn(compass)
+  git('init', '-q')
+  git('add', '-A')
+  git('commit', '-qm', 'v1')
+  git('tag', 'v1')
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  setLock(host, { version: '9.0.0' })
+  const refused = await ac(compass, host, 'sync')
+  assert.equal(refused.code, 1)
+  assert.deepEqual(refused.json.errors, ['the lock is from compass 9.0.0; this checkout is 1.0.0-test; run "git submodule update --init" (or "ac sync --to <tag>" to go back on purpose)'])
+  assert.equal(JSON.parse(read(host, '.agents/compass.lock.json')).version, '9.0.0', 'a refused sync writes nothing')
+  const back = await ac(compass, host, 'sync', '--to', 'v1')
+  assert.equal(back.code, 0, back.stderr)
+  assert.equal(JSON.parse(read(host, '.agents/compass.lock.json')).version, '1.0.0-test')
+
+  mkdirSync(join(host, 'src/deep'), { recursive: true })
+  const sub = await runNode([join(compass, 'bin/ac.mjs'), 'check', '--json'], { cwd: join(host, 'src/deep') })
+  assert.equal(sub.code, 0, sub.stdout + sub.stderr)
+  assert.deepEqual(JSON.parse(sub.stdout).changes, [])
+})
+
+test('the lock keeps its tag only when the compass version is the same', async () => {
+  const compass = makeCompass()
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  setLock(host, { tag: 'v1' })
+  assert.equal((await ac(compass, host, 'sync')).code, 0)
+  assert.equal(JSON.parse(read(host, '.agents/compass.lock.json')).tag, 'v1', 'no tag data and the same version: the tag stays')
+  setLock(host, { tag: 'v0', version: '0.9.0' })
+  assert.equal((await ac(compass, host, 'sync')).code, 0)
+  assert.equal(JSON.parse(read(host, '.agents/compass.lock.json')).tag, null)
+})
+
+const CONFLICT = '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n'
+
+test('conflict markers in the lock or in a managed file give one clear error and no write', async () => {
+  const compass = makeCompass()
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  const lock = read(host, '.agents/compass.lock.json')
+  put(host, { '.agents/compass.lock.json': `${CONFLICT}${lock}` })
+  const r = await ac(compass, host, 'sync')
+  assert.equal(r.code, 1)
+  assert.deepEqual(r.json.errors, ['.agents/compass.lock.json has git conflict markers; take one side or delete the lock, then run "ac sync"'])
+  put(host, { '.agents/compass.lock.json': lock, '.claude/output-styles/compass.md': CONFLICT, 'AGENTS.md': `${read(host, 'AGENTS.md')}${CONFLICT}` })
+  const f = await ac(compass, host, 'sync')
+  assert.equal(f.code, 1)
+  assert.deepEqual(f.json.errors, ['.claude/output-styles/compass.md, AGENTS.md have git conflict markers; take one side or delete the lock, then run "ac sync"'])
+  assert.equal(read(host, '.claude/output-styles/compass.md'), CONFLICT)
+})
+
+test('kept says if compass has a newer version; check --diff shows the planned change', async () => {
+  const compass = makeCompass()
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  put(host, { '.claude/output-styles/compass.md': 'My style.\n', 'AGENTS.md': read(host, 'AGENTS.md').replace('Contract v1.', 'My contract.') })
+  const notes = (r) => r.json.changes.map((c) => `${c.action} ${c.path} ${c.note}`)
+  assert.deepEqual(notes(await ac(compass, host, 'check')), ['kept .claude/output-styles/compass.md no compass change', 'kept AGENTS.md no compass change'])
+  put(compass, { 'core/files/.claude/output-styles/compass.md': 'Style v2.\n' })
+  assert.deepEqual(notes(await ac(compass, host, 'check')), ['kept .claude/output-styles/compass.md compass has a newer version', 'kept AGENTS.md no compass change'])
+
+  const text = await runNode([join(compass, 'bin/ac.mjs'), 'check', '--diff', '--root', host])
+  assert.equal(text.code, 0, text.stderr)
+  assert.match(text.stdout, /kept {4}\.claude\/output-styles\/compass\.md {2}\(compass has a newer version\)/)
+  assert.match(text.stdout, /^--- a\/\.claude\/output-styles\/compass\.md\n\+\+\+ b\/\.claude\/output-styles\/compass\.md\n@@ -1 \+1 @@\n-My style\.\n\+Style v2\.$/m)
+  assert.match(text.stdout, /^-My contract\.\n\+Contract v1\.$/m)
+  assert.equal(read(host, '.claude/output-styles/compass.md'), 'My style.\n', '--diff writes nothing')
+  assert.equal((await ac(compass, host, 'sync', '--diff')).code, 2)
+})
+
+test('a path below the root is inside on POSIX and on Windows', async () => {
+  const { posix, win32 } = await import('node:path')
+  const { below } = await import('../engine/util.mjs')
+  assert.deepEqual([
+    below('/p', '/p/a', posix), below('/p', '/p', posix), below('/p', '/p2', posix), below('/p', '/', posix), below('/p', '/p/..x', posix),
+  ], [true, false, false, false, true])
+  assert.deepEqual([
+    below('C:\\p', 'C:\\p\\a', win32), below('C:\\p', 'c:\\P\\a', win32), below('C:\\p', 'C:\\p2', win32), below('C:\\p', 'D:\\p\\a', win32), below('C:\\p', 'C:\\', win32),
+  ], [true, true, false, false, false])
+})
+
+test('the compass-check CI files are managed and get the compass dir; an edited old seed stays kept', async () => {
+  const { relative, sep } = await import('node:path')
+  const { realpathSync } = await import('node:fs')
+  const host = makeHost({ '.agents/compass.json': JSON.stringify({ version: 1, packs: ['ci-github', 'ci-gitlab'], exclude: [] }) })
+  const r = await ac(REPO, host, 'sync')
+  assert.equal(r.code, 0, r.stderr)
+  const dir = relative(realpathSync(host), realpathSync(REPO)).split(sep).join('/')
+  assert.match(read(host, '.github/workflows/compass-check.yml'), new RegExp(`^ {2}COMPASS_DIR: ${dir.replace(/\./g, '\\.')}$`, 'm'))
+  assert.match(read(host, '.gitlab/compass/check.yml'), new RegExp(`^ {4}COMPASS_DIR: ${dir.replace(/\./g, '\\.')}$`, 'm'))
+  const lock = JSON.parse(read(host, '.agents/compass.lock.json'))
+  assert.equal(lock.files['.github/workflows/compass-check.yml'].owner, 'compass')
+  assert.equal(lock.files['.github/workflows/compass-security.yml'].owner, 'project', 'the other CI files stay seeds')
+
+  const old = makeHost({ '.agents/compass.json': JSON.stringify({ version: 1, packs: ['ci-github'], exclude: [] }), '.github/workflows/compass-check.yml': 'mine\n' })
+  assert.equal((await ac(REPO, old, 'sync')).code, 0)
+  setLock(old, { files: { ...JSON.parse(read(old, '.agents/compass.lock.json')).files, '.github/workflows/compass-check.yml': { sha: sha('mine\n'), owner: 'project' } } })
+  const kept = await ac(REPO, old, 'sync')
+  assert.deepEqual(kept.json.changes.map((c) => `${c.action} ${c.path}`), ['kept .github/workflows/compass-check.yml'])
+  assert.equal(read(old, '.github/workflows/compass-check.yml'), 'mine\n')
+})
+
+test('doctor: a host without git, the Codex hook trust, the user-level todo count, and a stale submodule', async () => {
+  const compass = makeCompass()
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  put(host, { '.codex/hooks.json': '{}\n' })
+  const checks = async () => (await ac(compass, host, 'doctor')).json.checks
+  const plain = await checks()
+  assert.ok(plain.some((c) => c.name === 'git' && c.status === 'warn' && /not a git repository/.test(c.detail)), JSON.stringify(plain))
+  assert.ok(plain.some((c) => c.name === 'codex' && c.status === 'ok' && /\/hooks/.test(c.detail)))
+  assert.ok(plain.some((c) => c.name === 'global' && /\d+ user-level item\(s\) to fix; run "ac doctor --global"|user-level setup has no open item/.test(c.detail)))
+
+  const git = gitIn(compass)
+  git('init', '-q')
+  git('add', '-A')
+  git('commit', '-qm', 'one')
+  git('tag', 'v1.0.0')
+  const hostGit = gitIn(host)
+  hostGit('init', '-q')
+  hostGit('submodule', 'add', '-q', compass, 'docs/agent-compass')
+  hostGit('commit', '-qm', 'add compass')
+  put(compass, { 'NEW.md': 'x\n' })
+  git('add', '-A')
+  git('commit', '-qm', 'two')
+  git('tag', 'v9.0.0')
+  const sub = join(host, 'docs/agent-compass')
+  const subGit = gitIn(sub)
+  subGit('fetch', '-q', '--tags')
+  const doc = async () => JSON.parse((await runNode([join(sub, 'bin/ac.mjs'), 'doctor', '--json', '--root', host])).stdout).checks.filter((c) => c.name === 'submodule')
+  const tagged = await doc()
+  assert.deepEqual(tagged.map((c) => [c.status, c.detail]), [['warn', 'the compass tag v9.0.0 is newer than this checkout (1.0.0-test); run "ac sync --to v9.0.0" to update']])
+  subGit('checkout', '-q', 'v9.0.0')
+  assert.ok((await doc()).some((c) => c.status === 'warn' && /is not at the commit that the project records/.test(c.detail)))
+})
+
 // Array keys: compass owns its entries in the array, not the array.
 const hook = (matcher, command, extra = {}) => ({ matcher, hooks: [{ type: 'command', command: `node ".agents/hooks/compass.mjs" ${command}`, timeout: 10, ...extra }] })
 const GUARD = hook('Read|Bash', 'guard')

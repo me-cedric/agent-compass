@@ -36,8 +36,9 @@ Each asset has an id. The mark is the entry that `exclude` takes to switch the a
 ## Stacks
 
 Detection reads dependencies and marker files in the whole workspace, three folder levels deep. `ac doctor` prints the result.
-The stack ids are `nestjs-api`, `angular-web`, `react-web`, `next-web`, `expo-mobile`, `android-compose`, `swift-ios`,
-`drizzle-postgres`, `bullmq`, `turbo-monorepo`, `gtk-desktop`, `winui-desktop`, `macos-desktop`, `spec-kit` and `openspec`.
+The stack ids are `nestjs-api`, `angular-web`, `react-web`, `next-web`, `expo-mobile`, `android-compose`, `android-java`, `swift-ios`,
+`drizzle-postgres`, `bullmq`, `turbo-monorepo`, `gtk-desktop`, `gtk-rust`, `gtk-meson`, `winui-desktop`, `macos-desktop`, `spec-kit` and `openspec`.
+`android-java` is an Android app with `.java` files in a `src/` folder. `gtk-rust` is a GTK app in Cargo. `gtk-meson` is a GTK app in Meson.
 
 ## Skills
 
@@ -79,8 +80,8 @@ A `seed/` file is written once. A folder `extras/` holds reference files that sy
 | `local-run` | `process-compose*.yaml` or a compose file exists | Skill `local-run`. |
 | `e2e` | A Playwright config, a `.maestro` folder or `@playwright/test` exists | Skill `e2e`. |
 | `security` | `.osv-scanner.toml` or `sonar-project*.properties` exists | Skill `vuln-triage`, seed `.osv-scanner.toml`. |
-| `ci-github` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | Five seed workflows `compass-*.yml`. |
-| `ci-gitlab` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | Five seed files in `.gitlab/compass/`. |
+| `ci-github` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | The managed workflow `compass-check.yml` and four seed workflows `compass-*.yml`. |
+| `ci-gitlab` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | The managed file `.gitlab/compass/check.yml` and four seed files in `.gitlab/compass/`. |
 | `renovate` | Opt in. Recommended with the compass submodule and no Renovate config. | Seed `renovate.json`. |
 
 Use the packs in [dev-loop.md](dev-loop.md) and [quality.md](quality.md).
@@ -106,8 +107,8 @@ The stack `*` means every project. A `suggest` signal (for example `github` or `
 | `playwright`, `chrome-devtools` | A local browser. Stacks `react-web`, `angular-web`, `next-web`. | Not applicable. Chrome DevTools has its statistics off. |
 | `storybook` | Components of a running Storybook | Not applicable |
 | `maestro`, `agent-device`, `xcodebuildmcp` | Mobile and Apple builds, on a device or simulator | Not applicable |
-| `process-compose` (Claude, Copilot) | State and logs of the local stack | Not applicable. Listens on port 3000. |
-| `codebase-memory` | Code graph of symbols, callers and architecture. On in every project (stack `*`). | Not applicable. The server indexes into a local database. |
+| `process-compose` (Claude, Copilot) | State and logs of the local stack. Version 1.120.0 or later (GHSA-5gm3-9crp-6g3v). | Not applicable. Listens on port 3000. |
+| `codebase-memory` | Code graph of symbols, callers and architecture. On in every project (stack `*`). | `--tool-profile=analysis` keeps the 11 read tools. The server indexes into a local database. |
 | `context7` | Library docs. Recommended, never installed by itself. | Not applicable |
 | `projectmem` (trial) | Durable project memory in `.projectmem/events.jsonl`. No stack selects it. Add it to `mcp`. | Not applicable. Never log a secret. |
 
@@ -115,6 +116,7 @@ A secret is the text `${VAR}` and nothing else. Compass never writes a value.
 Claude expands `${VAR}` itself and Copilot reads `${env:VAR}`. Codex cannot expand it, so the Codex entry names the variable.
 Sync writes each server to `.mcp.json` (`mcpServers`), `.codex/config.toml` (`mcp_servers`) and `.vscode/mcp.json` (`servers`).
 A server can also add a file in `.agents/mcp/` and deny rules in `.claude/settings.json`.
+A server with `minVersion` gets a check in `ac doctor`: it warns when `<command> --version` prints an older version.
 
 ## Claude plugins
 
@@ -122,13 +124,17 @@ The `plugins` object in `mcp/catalog.json` lists one language server (LSP) plugi
 `ac sync` writes `enabledPlugins.<id>` as `true` in `.claude/settings.json` for each plugin that fits a detected stack. Claude Code then asks the user to install it.
 A key that the project already has stays as it is: compass keeps it and `ac doctor` warns.
 
-| Plugin | Stacks |
-|---|---|
-| `typescript-lsp@claude-plugins-official` | `nestjs-api`, `react-web`, `next-web`, `angular-web`, `expo-mobile`, `turbo-monorepo` |
-| `swift-lsp@claude-plugins-official` | `swift-ios`, `macos-desktop` |
-| `kotlin-lsp@claude-plugins-official` | `android-compose` |
-| `csharp-lsp@claude-plugins-official` | `winui-desktop` |
-| `rust-analyzer-lsp@claude-plugins-official` | `gtk-desktop` |
+| Plugin | Stacks | Language server |
+|---|---|---|
+| `typescript-lsp@claude-plugins-official` | `nestjs-api`, `react-web`, `next-web`, `angular-web`, `expo-mobile`, `turbo-monorepo`, `drizzle-postgres`, `bullmq` | `typescript-language-server` |
+| `swift-lsp@claude-plugins-official` | `swift-ios`, `macos-desktop` | `sourcekit-lsp` |
+| `kotlin-lsp@claude-plugins-official` | `android-compose` | `kotlin-language-server` |
+| `jdtls-lsp@claude-plugins-official` | `android-java` | `jdtls` |
+| `csharp-lsp@claude-plugins-official` | `winui-desktop` | `csharp-ls` |
+| `rust-analyzer-lsp@claude-plugins-official` | `gtk-rust` | `rust-analyzer` |
+| `clangd-lsp@claude-plugins-official` | `gtk-meson` | `clangd` |
+
+The plugin starts the language server from PATH. `ac doctor` warns when the server is not on PATH and shows the install command (`install` in the catalog).
 
 Add a plugin that no stack selects with `plugins` in `.agents/compass.json`. Remove one with `plugin:<id>` in `exclude`.
 Only Claude Code reads the `enabledPlugins` setting.

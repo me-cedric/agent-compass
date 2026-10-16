@@ -177,7 +177,8 @@
       "suggest": ["local-run"],
       "providers": ["claude", "copilot"],
       "transport": "sse",
-      "url": "http://localhost:3000/sse"
+      "url": "http://localhost:3000/sse",
+      "minVersion": "1.120.0"
     },
     "codebase-memory": {
       "description": "Search a local code graph for symbols, callers and architecture.",
@@ -185,7 +186,8 @@
       "readOnly": "Not applicable. The server indexes the project into a local database.",
       "secrets": [],
       "stacks": ["*"],
-      "command": "codebase-memory-mcp"
+      "command": "codebase-memory-mcp",
+      "args": ["--tool-profile=analysis"]
     },
     "projectmem": {
       "description": "Keep durable project memory in .projectmem/events.jsonl.",
@@ -209,23 +211,45 @@
   "plugins": {
     "typescript-lsp@claude-plugins-official": {
       "description": "Language server for TypeScript and JavaScript: types, definitions and diagnostics.",
-      "stacks": ["nestjs-api", "react-web", "next-web", "angular-web", "expo-mobile", "turbo-monorepo"]
+      "stacks": ["nestjs-api", "react-web", "next-web", "angular-web", "expo-mobile", "turbo-monorepo", "drizzle-postgres", "bullmq"],
+      "command": "typescript-language-server",
+      "install": "npm install -g typescript-language-server typescript"
     },
     "swift-lsp@claude-plugins-official": {
       "description": "Language server for Swift: types, definitions and diagnostics.",
-      "stacks": ["swift-ios", "macos-desktop"]
+      "stacks": ["swift-ios", "macos-desktop"],
+      "command": "sourcekit-lsp",
+      "install": "install Xcode or the Swift toolchain (xcode-select --install)"
     },
     "kotlin-lsp@claude-plugins-official": {
       "description": "Language server for Kotlin: types, definitions and diagnostics.",
-      "stacks": ["android-compose"]
+      "stacks": ["android-compose"],
+      "command": "kotlin-language-server",
+      "install": "brew install kotlin-language-server"
     },
     "csharp-lsp@claude-plugins-official": {
       "description": "Language server for C#: types, definitions and diagnostics.",
-      "stacks": ["winui-desktop"]
+      "stacks": ["winui-desktop"],
+      "command": "csharp-ls",
+      "install": "dotnet tool install --global csharp-ls"
     },
     "rust-analyzer-lsp@claude-plugins-official": {
       "description": "Language server for Rust: types, definitions and diagnostics.",
-      "stacks": ["gtk-desktop"]
+      "stacks": ["gtk-rust"],
+      "command": "rust-analyzer",
+      "install": "rustup component add rust-analyzer"
+    },
+    "clangd-lsp@claude-plugins-official": {
+      "description": "Language server for C and C++: types, definitions and diagnostics.",
+      "stacks": ["gtk-meson"],
+      "command": "clangd",
+      "install": "install clangd from LLVM (brew install llvm, or apt install clangd)"
+    },
+    "jdtls-lsp@claude-plugins-official": {
+      "description": "Language server for Java: types, definitions and diagnostics.",
+      "stacks": ["android-java"],
+      "command": "jdtls",
+      "install": "brew install jdtls"
     }
   }
 }

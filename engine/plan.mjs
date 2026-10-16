@@ -23,8 +23,8 @@
 // An asset whose frontmatter has `stacks: [...]` installs only when one of those stacks is detected.
 // Skill, rule and block text gets the path placeholders of the resolved paths: {{DELIVERY_DIR}}, {{PERSONAS_FILE}} …
 
-import { existsSync, readFileSync, statSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { basename, join, relative, sep } from 'node:path'
 import { PATH_DEFAULTS, SCHEMA, schemaDir } from './config.mjs'
 import { detectPacks, detectStacks } from './detect.mjs'
 import { SCREENS_SEED, screensFile } from './docs.mjs'
@@ -38,9 +38,13 @@ const SKILL_ROOTS = ['.claude/skills', '.agents/skills']
 const TEXT = /\.(md|txt|json|ya?ml|toml)$/
 const LICENCE = /^(LICEN[CS]E|COPYING)([.-][\w.-]+)?$/i
 
-// {{DELIVERY_DIR}} for a directory key, {{PERSONAS_FILE}} for a file key.
-export const placeholders = (paths) => Object.fromEntries(Object.entries(paths)
-  .map(([key, value]) => [`${key.toUpperCase()}_${/\.\w+$/.test(PATH_DEFAULTS[key]) ? 'FILE' : 'DIR'}`, value]))
+// {{DELIVERY_DIR}} for a directory key, {{PERSONAS_FILE}} for a file key. {{COMPASS_DIR}} is the compass checkout
+// relative to the host root, with '/' separators (a managed CI file runs bin/ac.mjs from it).
+export const placeholders = (paths, { AC, root } = {}) => ({
+  ...Object.fromEntries(Object.entries(paths)
+    .map(([key, value]) => [`${key.toUpperCase()}_${/\.\w+$/.test(PATH_DEFAULTS[key]) ? 'FILE' : 'DIR'}`, value])),
+  ...(AC && root && { COMPASS_DIR: relative(realpathSync(root), realpathSync(AC)).split(sep).join('/') || '.' }),
+})
 
 const fill = (label, buf, vars, errors) => {
   if (!TEXT.test(label)) return buf
@@ -59,7 +63,7 @@ const fits = (text, stacks) => {
   return !want.length || want.some((s) => stacks.includes(s))
 }
 
-// Codex reads role agents as TOML. Frontmatter `codex-model` and `codex-effort` pin the Codex model.
+// Codex reads role agents as TOML. Frontmatter `codex-model`, `codex-effort` and `codex-sandbox` set the Codex model and sandbox.
 const codexAgent = (name, text) => {
   const { data, body } = frontmatter(text)
   return [
@@ -67,11 +71,13 @@ const codexAgent = (name, text) => {
     data.description && `description = ${tomlValue(data.description)}`,
     data['codex-model'] && `model = ${tomlValue(data['codex-model'])}`,
     data['codex-effort'] && `model_reasoning_effort = ${tomlValue(data['codex-effort'])}`,
+    data['codex-sandbox'] && `sandbox_mode = ${tomlValue(data['codex-sandbox'])}`,
     `developer_instructions = ${tomlText(body.trim())}`,
   ].filter(Boolean).join('\n') + '\n'
 }
 
 // Copilot ignores `model` in .claude/agents. Frontmatter `copilot-model` is a Copilot model display name.
+// `effort` gives the Copilot reasoning effort. `copilot-instructions: true` loads the custom instructions (AGENTS.md) into the agent.
 const copilotAgent = (name, text) => {
   const { data, body } = frontmatter(text)
   const head = [
@@ -79,6 +85,8 @@ const copilotAgent = (name, text) => {
     data.description && `description: ${JSON.stringify(data.description)}`,
     data.tools && `tools: [${list(data.tools).join(', ')}]`,
     `model: ${JSON.stringify(data['copilot-model'])}`,
+    data.effort && `reasoning-effort: ${data.effort}`,
+    data['copilot-instructions'] === 'true' && 'include-custom-instructions: true',
   ].filter(Boolean)
   return `---\n${head.join('\n')}\n---\n${body}`
 }
@@ -87,7 +95,7 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
   const errors = []
   const warnings = []
   const held = []
-  const vars = placeholders(paths)
+  const vars = placeholders(paths, { AC, root })
   const stacks = detectStacks(root, { openspecDir: paths.openspec })
   const excluded = (id) => config.exclude.some((e) => id === e || (e.endsWith('/') && id.startsWith(e)))
   const files = new Map()
@@ -158,7 +166,7 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
       if (!data.description) errors.push(`rules/${rel} needs a description for its Codex skill`)
       else if (addSkill(name)) addFile(`.agents/skills/${name}/SKILL.md`, Buffer.from(`---\nname: ${name}\ndescription: ${JSON.stringify(data.description)}\n---\n${body}`))
     }
-    for (const rel of walk(join(layer, 'files'))) copy(join(layer, 'files', rel), rel, 'managed')
+    for (const rel of walk(join(layer, 'files'))) addFile(rel, fill(`files/${rel}`, readFileSync(join(layer, 'files', rel)), vars, errors), 'managed', exec(join(layer, 'files', rel)))
     for (const rel of walk(join(layer, 'seed'))) copy(join(layer, 'seed', rel), rel, 'seed')
     for (const rel of walk(join(layer, 'blocks'))) {
       if (excluded(rel)) continue

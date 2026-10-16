@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -74,4 +75,31 @@ test('the repository passes its own release check', async () => {
   const r = await runNode([checker], { cwd: dirname(dirname(script)) })
   assert.equal(r.code, 0, r.stderr)
   assert.match(r.stdout, /release check passed/)
+})
+
+test('release lists the asset files that changed since the last tag, grouped, under the new heading', async () => {
+  const dir = makeRepo()
+  const git = (...args) => {
+    const r = spawnSync('git', ['-C', dir, '-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { encoding: 'utf8', timeout: 10_000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } })
+    assert.equal(r.status, 0, r.stderr)
+  }
+  const put = (file, text) => { mkdirSync(dirname(join(dir, file)), { recursive: true }); writeFileSync(join(dir, file), text) }
+  put('core/old.md', 'old\n')
+  put('skills/a/SKILL.md', 'a\n')
+  put('engine/x.mjs', 'x\n')
+  git('init', '-q')
+  git('add', '-A')
+  git('commit', '-qm', 'one')
+  git('tag', 'v1.2.3')
+  rmSync(join(dir, 'core/old.md'))
+  put('skills/a/SKILL.md', 'a2\n')
+  put('mcp/catalog.json', '{}\n')
+  put('upstream.json', '{}\n')
+  put('engine/x.mjs', 'x2\n')
+  git('add', '-A')
+  git('commit', '-qm', 'two')
+  const r = await runNode([script, '2.0.0'], { cwd: dir })
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(read(dir, 'CHANGELOG.md'), /^# Changelog\n\n## 2\.0\.0 — \d{4}-\d{2}-\d{2}\n\nAsset changes since v1\.2\.3:\n\n- Added: mcp\/catalog\.json, upstream\.json\n- Changed: skills\/a\/SKILL\.md\n- Removed: core\/old\.md\n\n## 1\.2\.3 — 2026-01-01\n/)
+  assert.equal((await runNode([checker, dir])).code, 0)
 })

@@ -4,6 +4,9 @@
 // env_http_headers) and never holds "${".
 // `stacks` lists the stacks that add a server by themselves. `suggest` lists the signals (detectSignals) or "*" that make
 // assets.mjs recommend a server. A recommended server is not installed until the project picks it in "mcp".
+// `minVersion` on a server is the oldest safe version of its command (the server name when it has no command): ac doctor
+// warns when "<command> --version" is older. `command` and `install` on a plugin name its language server binary and
+// how to install it: ac doctor warns when the binary is not on PATH.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -79,6 +82,7 @@ const shape = (name, e) => {
   if (!/^[a-z][a-z0-9-]*$/.test(name)) return `${CATALOG}: "${name}" is not a valid server name`
   if (typeof (e.command ?? e.url) !== 'string') return `${CATALOG}: ${name} needs a command or a url`
   if ((e.args || []).some((a) => String(a).includes('${'))) return `${CATALOG}: ${name} has "\${" in args`
+  if (e.minVersion !== undefined && !/^\d+\.\d+\.\d+$/.test(e.minVersion)) return `${CATALOG}: ${name} has a minVersion that is not x.y.z`
   const bad = [...Object.values(e.env || {}), ...Object.entries(e.headers || {}).map(([k, v]) => (k === 'Authorization' && BEARER.test(v) ? '' : v))]
     .find((v) => typeof v !== 'string' || (v.includes('${') && !REF.test(v)))
   return bad === undefined ? null : `${CATALOG}: ${name} has a value that compass cannot write: use "\${VAR}"`
@@ -87,6 +91,7 @@ const shape = (name, e) => {
 // Picks: .agents/compass.json "mcp" and "plugins", plus the servers and plugins that list a detected stack (or "*").
 // "mcp:<name>" and "plugin:<id>" in "exclude" remove one. A plugin becomes the key enabledPlugins.<id> in .claude/settings.json:
 // Claude Code asks the user to install it. "commands" maps each stdio command to its servers (ac doctor checks PATH).
+// "lsp" lists the language server of each enabled plugin and "versions" the minimum version of each selected server.
 export const mcpPlan = ({ AC, config, stacks }) => {
   const { servers, plugins, error } = loadCatalog(AC)
   const errors = error ? [error] : []
@@ -133,5 +138,7 @@ export const mcpPlan = ({ AC, config, stacks }) => {
       else errors.push(`${CATALOG}: ${name} lists the file ${src}, which compass cannot use`)
     }
   }
-  return { keys, files: [...files], deny: [...deny], selected, plugins: enabled, commands, errors, warnings }
+  const lsp = enabled.filter((id) => typeof plugins[id].command === 'string').map((id) => ({ id, command: plugins[id].command, install: plugins[id].install ?? '' }))
+  const versions = selected.filter((name) => servers[name].minVersion).map((name) => ({ name, command: servers[name].command ?? name, min: servers[name].minVersion }))
+  return { keys, files: [...files], deny: [...deny], selected, plugins: enabled, commands, lsp, versions, errors, warnings }
 }

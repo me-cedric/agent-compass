@@ -5,6 +5,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '.turbo', '.venv'])
+const GTK = /\b(gtk4|libadwaita|relm4)\b/
 const FILE_MARKERS = [
   'turbo.json', 'drizzle.config.ts', '.specify', 'angular.json',
   'AndroidManifest.xml', 'Package.swift', 'Podfile',
@@ -23,7 +24,8 @@ const NAME_MARKERS = [
 // Dependency names + marker files across the whole workspace. Monorepos keep
 // their real stacks in apps/*/package.json, not the root — root-only scanning
 // detects "turbo" and nothing else.
-const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new Set() }) => {
+// `srcs` lists the src/ dirs. stacksOf looks for Java sources in them only for an Android app.
+const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new Set(), srcs: [] }) => {
   if (depth < 0 || !existsSync(root)) return acc
   try {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
@@ -41,10 +43,11 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
   }
   // A Gradle build is only an Android build when a build file applies an Android
   // plugin — a Kotlin service uses the same file names.
-  // Desktop toolkits: GTK 4 in Cargo or Meson, WinUI 3 in a .csproj, macOS in an Xcode project.
+  // Desktop toolkits: GTK 4 in Cargo (Rust) or Meson (C and C++), WinUI 3 in a .csproj, macOS in an Xcode project.
   // ponytail: a SwiftPM-only macOS app is not detected; Package.swift cannot tell an app from a CLI or a server.
   const text = (file) => { try { return readFileSync(join(root, file), 'utf8') } catch { return '' } }
-  if (/\b(gtk4|libadwaita|relm4)\b/.test(text('Cargo.toml') + text('meson.build'))) acc.markers.add('gtk')
+  if (GTK.test(text('Cargo.toml'))) acc.markers.add('gtk-cargo')
+  if (GTK.test(text('meson.build'))) acc.markers.add('gtk-meson')
   for (const build of ['build.gradle.kts', 'build.gradle']) {
     const file = join(root, build)
     if (!existsSync(file)) continue
@@ -63,6 +66,7 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
       if (entry.isFile() && entry.name.endsWith('.csproj') && /Microsoft\.WindowsAppSDK|<UseWinUI>\s*true/i.test(text(entry.name))) {
         acc.markers.add('winui')
       }
+      if (entry.isDirectory() && entry.name === 'src') acc.srcs.push(join(root, entry.name))
       if (entry.isDirectory() && !SCAN_IGNORE.has(entry.name) && !entry.name.startsWith('.')) {
         collectWorkspace(join(root, entry.name), depth - 1, acc)
       }
@@ -75,18 +79,29 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
 // prefixes), never substrings — "@next/eslint-plugin-next" is not Next.js.
 const isDir = (path) => { try { return statSync(path).isDirectory() } catch { return false } }
 
+// True when a .java file is below dir, at most `depth` levels down. It stops at the first hit.
+const hasJava = (dir, depth = 8) => {
+  if (depth < 0) return false
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true })
+    return entries.some((e) => e.isFile() && e.name.endsWith('.java')) ||
+      entries.some((e) => e.isDirectory() && !SCAN_IGNORE.has(e.name) && !e.name.startsWith('.') && hasJava(join(dir, e.name), depth - 1))
+  } catch { return false }
+}
+
 // Every id that detectStacks can return. Asset frontmatter `stacks` must use these.
 export const STACK_IDS = [
-  'nestjs-api', 'angular-web', 'react-web', 'next-web', 'expo-mobile', 'android-compose', 'swift-ios', 'drizzle-postgres',
-  'bullmq', 'turbo-monorepo', 'gtk-desktop', 'winui-desktop', 'macos-desktop', 'spec-kit', 'openspec',
+  'nestjs-api', 'angular-web', 'react-web', 'next-web', 'expo-mobile', 'android-compose', 'android-java', 'swift-ios', 'drizzle-postgres',
+  'bullmq', 'turbo-monorepo', 'gtk-desktop', 'gtk-rust', 'gtk-meson', 'winui-desktop', 'macos-desktop', 'spec-kit', 'openspec',
 ]
 
-const stacksOf = ({ deps, markers }, root, openspecDir) => {
+const stacksOf = ({ deps, markers, srcs }, root, openspecDir) => {
   const anyDep = (pred) => [...deps].some(pred)
   // A cross-platform toolkit generates the native `android/` and `ios/` trees, so
   // its markers are build output, not a native app to route work to.
   const crossPlatform = deps.has('expo') || deps.has('react-native') || markers.has('flutter')
   const reactNative = deps.has('expo') || deps.has('react-native')
+  const android = !crossPlatform && (markers.has('AndroidManifest.xml') || markers.has('android-gradle-plugin'))
   return [
     anyDep((n) => n.startsWith('@nestjs/')) && 'nestjs-api',
     (anyDep((n) => n.startsWith('@angular/')) || markers.has('angular.json')) && 'angular-web',
@@ -95,12 +110,15 @@ const stacksOf = ({ deps, markers }, root, openspecDir) => {
     reactNative && 'expo-mobile',
     // React Native and Flutter both ship generated `android/` and `ios/` trees, so
     // the native markers below only mean "native app" when neither is present.
-    !crossPlatform && (markers.has('AndroidManifest.xml') || markers.has('android-gradle-plugin')) && 'android-compose',
+    android && 'android-compose',
+    android && srcs.some((dir) => hasJava(dir)) && 'android-java',
     !crossPlatform && (markers.has('xcode-project') || markers.has('Podfile') || markers.has('Package.swift')) && 'swift-ios',
     (anyDep((n) => n.includes('drizzle')) || markers.has('drizzle.config.ts')) && 'drizzle-postgres',
     (deps.has('bullmq') || deps.has('@nestjs/bullmq')) && 'bullmq',
     (deps.has('turbo') || markers.has('turbo.json')) && 'turbo-monorepo',
-    markers.has('gtk') && 'gtk-desktop',
+    (markers.has('gtk-cargo') || markers.has('gtk-meson')) && 'gtk-desktop',
+    markers.has('gtk-cargo') && 'gtk-rust',
+    markers.has('gtk-meson') && 'gtk-meson',
     markers.has('winui') && 'winui-desktop',
     !crossPlatform && markers.has('macos') && 'macos-desktop',
     markers.has('.specify') && 'spec-kit',

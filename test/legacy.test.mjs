@@ -341,7 +341,7 @@ test('a host array key is merged, so it gets no exclude; a host value that is no
   assert.equal(settings.permissions.deny, 'oops')
   assert.equal(settings.hooks.Stop.length, 2, 'the compass gate goes after the host group')
   assert.deepEqual(settings.hooks.PreToolUse, [ours, edited], 'an edited compass group stays and compass adds no second one')
-  assert.deepEqual(r.sync.changes.filter((c) => c.action === 'kept'), [{ action: 'kept', path: '.claude/settings.json', key: 'hooks.PreToolUse' }], 'the merge reports it and the migration does not exclude it')
+  assert.deepEqual(r.sync.changes.filter((c) => c.action === 'kept'), [{ action: 'kept', path: '.claude/settings.json', key: 'hooks.PreToolUse', note: 'compass has a newer version' }], 'the merge reports it and the migration does not exclude it')
 })
 
 test('a submodule is reported, its credentials are not, and its path matches the pointers', { skip: needTag }, () => {

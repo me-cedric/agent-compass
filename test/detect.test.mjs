@@ -101,13 +101,31 @@ test('detectStacks finds GTK, WinUI and macOS desktop apps', async () => {
     await writeFile(join(host, 'apps/windows/App.csproj'), '<Project><PropertyGroup><UseWinUI>true</UseWinUI></PropertyGroup></Project>\n')
     await mkdir(join(host, 'apps/mac/App.xcodeproj'), { recursive: true })
     await writeFile(join(host, 'apps/mac/App.xcodeproj/project.pbxproj'), 'SDKROOT = macosx;\n')
-    assert.deepEqual(detectStacks(host), ['swift-ios', 'gtk-desktop', 'winui-desktop', 'macos-desktop'])
+    assert.deepEqual(detectStacks(host), ['swift-ios', 'gtk-desktop', 'gtk-rust', 'winui-desktop', 'macos-desktop'])
 
     await writeFile(join(host, 'apps/windows/App.csproj'), '<Project Sdk="Microsoft.NET.Sdk" />\n')
     await writeFile(join(host, 'apps/linux/Cargo.toml'), '[dependencies]\nserde = "1"\n')
     await writeFile(join(host, 'apps/mac/App.xcodeproj/project.pbxproj'), 'SDKROOT = iphoneos;\n')
     await writeFile(join(host, 'Package.swift'), 'platforms: [.macOS(.v13)], targets: [.executableTarget(name: "App")]\n')
     assert.deepEqual(detectStacks(host), ['swift-ios'], 'a Swift package that lists macOS can be a CLI or a server')
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('detectStacks splits GTK by build system and finds Java sources in an Android app', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-detect-lang-'))
+  try {
+    await writeFile(join(host, 'meson.build'), "project('app', 'c')\ngtk = dependency('gtk4')\n")
+    assert.deepEqual(detectStacks(host), ['gtk-desktop', 'gtk-meson'])
+    await rm(join(host, 'meson.build'))
+
+    await writeFile(join(host, 'build.gradle.kts'), 'plugins { id("com.android.application") }')
+    await mkdir(join(host, 'app/src/main/java/com/example'), { recursive: true })
+    await writeFile(join(host, 'app/src/main/java/com/example/Main.kt'), 'class Main\n')
+    assert.deepEqual(detectStacks(host), ['android-compose'], 'a java/ dir with Kotlin sources is not Java')
+    await writeFile(join(host, 'app/src/main/java/com/example/Legacy.java'), 'class Legacy {}\n')
+    assert.deepEqual(detectStacks(host), ['android-compose', 'android-java'])
   } finally {
     await rm(host, { recursive: true, force: true })
   }

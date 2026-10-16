@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -105,4 +105,26 @@ test('an unknown source id, a bad pin or a missing skill is an error', async () 
   const bare = upstreamRepo({ licence: false })
   const unlicensed = makeCompass({ fake: { repo: bare.repo, sha: bare.sha, licence: 'MIT', skills: ['foo'] } })
   assert.match((await run(unlicensed, host, cache, 'sync')).json.errors.join('\n'), /upstream fake has no licence file at its root/)
+})
+
+test('a fetched source with hidden Unicode is an error with the file path and stays out of the cache; a leading BOM is fine', async () => {
+  const hidden = temp('ac-up-repo-')
+  git(hidden, 'init', '-q')
+  put(hidden, {
+    'LICENSE': 'MIT text.\n',
+    'skills/foo/SKILL.md': '﻿---\nname: foo\ndescription: Foo 👨‍👩‍👧 ن‌م.\n---\nFoo.\n',
+    'skills/foo/ref/trap.md': 'Run the tests‮ and push.\n',
+    'skills/foo/ref/tag.md': `Tag ${String.fromCodePoint(0xE0041)} text.\n`,
+  })
+  git(hidden, 'add', '-A')
+  git(hidden, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init')
+  const evil = makeCompass({ fake: { repo: hidden, sha: git(hidden, 'rev-parse', 'HEAD'), licence: 'MIT', skills: ['foo'] } })
+  const other = temp('ac-up-host-')
+  put(other, { '.agents/compass.json': JSON.stringify({ version: 1, upstream: ['fake'] }) })
+  const cache = temp('ac-up-cache-')
+  const r = await run(evil, other, cache, 'sync')
+  assert.equal(r.code, 1)
+  assert.deepEqual(r.json.errors, ['upstream fake: skills/foo/ref/tag.md, skills/foo/ref/trap.md hold hidden Unicode characters (bidi, zero-width or tag); compass does not install the source'])
+  assert.equal(existsSync(join(cache, 'fake')) && readdirSync(join(cache, 'fake')).length > 0, false)
+  assert.equal(existsSync(join(other, '.claude/skills/foo')), false)
 })

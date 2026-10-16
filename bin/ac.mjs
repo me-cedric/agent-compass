@@ -13,10 +13,14 @@ import { pinTag } from '../engine/git.mjs'
 import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
 import { stageSpecs } from '../engine/stage.mjs'
 import { syncHost } from '../engine/sync.mjs'
-import { hostRoot } from '../engine/util.mjs'
+import { findRoot, hostRoot } from '../engine/util.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const COMMANDS = ['init', 'sync', 'check', 'doctor', 'migrate']
+// Without --root, these commands find the project root above the current directory.
+const WALK_UP = ['sync', 'check', 'doctor']
+// ac sync --to sets this variable for the sync that it starts: the lock can be from a newer compass on purpose.
+const DOWNGRADE = 'AC_SYNC_TO'
 // These commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
 const OWN_CLI = {
   env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', promote: 'engine/promote.mjs', assets: 'engine/assets.mjs', ui: 'ui/server.mjs',
@@ -51,10 +55,12 @@ Commands:
 Use "ac <env|dev|run|usage|promote|assets|ui> --help" for the options of these commands.
 
 Options:
-  --root <dir>   Use this project root. The default is the current directory.
+  --root <dir>   Use this project root. The default is the current directory. sync, check
+                 and doctor use the nearest dir up with .agents/compass.json or .git.
   --dry          Show the changes. Write nothing.
   --json         Print the result as JSON.
   --frozen       With check: exit 1 if the project is different from the lock.
+  --diff         With check: show a unified diff of each kept item against the compass version.
   --to <tag>     With sync: check out this compass tag, then sync with it.
   --tokens       With doctor: measure the always-on context and check the budgets.
   --global       With doctor: report the user-level Claude Code and Codex setup (plugins, MCP
@@ -138,7 +144,8 @@ const print = (command, opts, result, failed, root) => {
   }
   console.log(`ac ${command}${opts.dry ? ' (dry)' : ''} → ${root}  (compass ${result.version}${result.tag ? ` ${result.tag}` : ''})`)
   for (const w of result.warnings) console.log(`  warn    ${w}`)
-  for (const c of result.changes) console.log(`  ${c.action.padEnd(7)} ${c.path}${c.key ? `#${c.key}` : ''}`)
+  for (const c of result.changes) console.log(`  ${c.action.padEnd(7)} ${c.path}${c.key ? `#${c.key}` : ''}${c.note ? `  (${c.note})` : ''}`)
+  for (const d of result.diffs ?? []) console.log(d.diff)
   for (const [action, hint] of Object.entries(HINTS)) if (result.changes.some((c) => c.action === action)) console.log(hint)
   for (const e of result.errors) console.error(`error: ${e}`)
   if (result.ok) console.log(result.drift ? `${result.changes.length} change(s).` : 'Up to date.')
@@ -166,6 +173,7 @@ const main = async () => {
         dry: { type: 'boolean' },
         json: { type: 'boolean' },
         frozen: { type: 'boolean' },
+        diff: { type: 'boolean' },
         to: { type: 'string' },
         tokens: { type: 'boolean' },
         global: { type: 'boolean' },
@@ -187,6 +195,7 @@ const main = async () => {
   if (!COMMANDS.includes(command)) return usage(command ? `Unknown command: ${command}` : 'A command is necessary.')
   if (extra.length) return usage(`Unexpected argument: ${extra[0]}`)
   if (opts.frozen && command !== 'check') return usage('--frozen applies to check only.')
+  if (opts.diff && command !== 'check') return usage('--diff applies to check only.')
   if (opts.to !== undefined && command !== 'sync') return usage('--to applies to sync only.')
   if (opts.tokens && command !== 'doctor') return usage('--tokens applies to doctor only.')
   if (opts.global && command !== 'doctor') return usage('--global applies to doctor only.')
@@ -208,7 +217,7 @@ const main = async () => {
     else console.error(`error: ${message}`)
     return 1
   }
-  const host = hostRoot(AC, opts.root)
+  const host = hostRoot(AC, opts.root ?? (WALK_UP.includes(command) ? findRoot(process.cwd()) : undefined))
   if (host.error) return fail(host.error)
   const { root } = host
 
@@ -223,7 +232,7 @@ const main = async () => {
     else console.log(pin.message)
     // Sync with the engine of the new tag, not with the code that is already loaded.
     const args = [join(AC, 'bin/ac.mjs'), 'sync', '--root', root, ...(opts.json ? ['--json'] : [])]
-    return spawnSync(process.execPath, args, { stdio: 'inherit', timeout: 300_000 }).status ?? 1
+    return spawnSync(process.execPath, args, { stdio: 'inherit', timeout: 300_000, env: { ...process.env, [DOWNGRADE]: opts.to } }).status ?? 1
   }
 
   const apply = command !== 'check' && !opts.dry
@@ -246,7 +255,8 @@ const main = async () => {
   } else {
     // --from-specs stages first, so the sync sees the new OpenSpec dir and installs the schema there.
     const stage = opts['from-specs'] !== undefined ? stageSpecs({ AC, root, input: opts['from-specs'], apply }) : null
-    result = stage && !stage.ok ? { ok: false, errors: [], warnings: [], changes: [], stage } : syncHost({ AC, root, init: command === 'init', apply })
+    const downgrade = command !== 'check' && Boolean(process.env[DOWNGRADE])
+    result = stage && !stage.ok ? { ok: false, errors: [], warnings: [], changes: [], stage } : syncHost({ AC, root, init: command === 'init', apply, diff: Boolean(opts.diff), downgrade })
     if (stage) result = { ...result, stage }
     if (command === 'check') result = { ...result, docs: checkDocs({ AC, root }) }
   }

@@ -2,8 +2,8 @@
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import nodePath, { dirname, isAbsolute, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
 export const sha = (data) => createHash('sha256').update(data).digest('hex').slice(0, 16)
@@ -24,6 +24,30 @@ export const sorted = (v) => (isObj(v)
 // A repo-relative path from config or lock data. Refuse anything that can leave the root.
 export const safeRel = (rel) => typeof rel === 'string' && rel !== '' && !isAbsolute(rel) && !rel.includes('\\') &&
   rel.split('/').every((part) => part !== '' && part !== '.' && part !== '..')
+
+// True when path p is strictly below the directory top. `path` is node:path, or path.win32 / path.posix in a test.
+export const below = (top, p, path = nodePath) => {
+  const rel = path.relative(top, p)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)
+}
+
+// Compare two versions by major.minor.patch: -1, 0 or 1. A version without three numbers compares as equal.
+// ponytail: a pre-release suffix is ignored, so 1.0.0-rc.1 and 1.0.0 are equal.
+export const versionCmp = (a, b) => {
+  const [x, y] = [a, b].map((v) => /(\d+)\.(\d+)\.(\d+)/.exec(String(v ?? ''))?.slice(1).map(Number))
+  if (!x || !y) return 0
+  const i = x.findIndex((n, k) => n !== y[k])
+  return i < 0 ? 0 : x[i] > y[i] ? 1 : -1
+}
+
+// The project root for a command that runs in a subdirectory: the nearest dir up from start with
+// .agents/compass.json or .git. Start itself when no dir up has one.
+export const findRoot = (start) => {
+  for (let dir = resolve(start); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, '.agents/compass.json')) || existsSync(join(dir, '.git'))) return dir
+    if (dirname(dir) === dir) return resolve(start)
+  }
+}
 
 // Files below dir as sorted, '/'-joined relative paths.
 export const walk = (dir, base = '') => {

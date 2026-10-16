@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, dirname, join } from 'node:path'
 import test from 'node:test'
@@ -33,7 +33,7 @@ const put = (root, files) => {
 
 const VAR = /^\$\{([A-Z][A-Z0-9_]*)\}$/
 const BEARER = /^Bearer \$\{([A-Z][A-Z0-9_]*)\}$/
-const ENTRY_KEYS = ['description', 'status', 'readOnly', 'secrets', 'stacks', 'suggest', 'providers', 'deny', 'files', 'transport', 'command', 'args', 'env', 'url', 'headers']
+const ENTRY_KEYS = ['description', 'status', 'readOnly', 'secrets', 'stacks', 'suggest', 'providers', 'deny', 'files', 'transport', 'command', 'args', 'env', 'url', 'headers', 'minVersion']
 
 test('the catalog: every entry has a valid shape', () => {
   assert.equal(catalog.version, 1)
@@ -54,7 +54,10 @@ test('the catalog: every entry has a valid shape', () => {
     if (e.deny) assert.ok((e.providers || ['claude']).includes('claude') && e.deny.every((d) => d.startsWith(`mcp__${name}__`)), `${name}: deny`)
     assert.ok(!(e.args || []).some((a) => a.includes('${')), `${name}: "\${" in args`)
     if (e.secrets.length) assert.deepEqual(e.stacks, [], `${name}: a server with secrets is never recommended`)
+    if (e.minVersion !== undefined) assert.match(e.minVersion, /^\d+\.\d+\.\d+$/, `${name}: minVersion`)
   }
+  assert.deepEqual(catalog.servers['codebase-memory'].args, ['--tool-profile=analysis'], 'the code graph exposes its read tools only')
+  assert.equal(catalog.servers['process-compose'].minVersion, '1.120.0', 'GHSA-5gm3-9crp-6g3v')
 })
 
 test('the catalog: a secret is "${VAR}" and every listed secret is used', () => {
@@ -195,19 +198,22 @@ test('selection: an unknown name is an error, a bad entry is an error, and a mis
 
 const TS = 'typescript-lsp@claude-plugins-official'
 const LSP = {
-  [TS]: ['nestjs-api', 'react-web', 'next-web', 'angular-web', 'expo-mobile', 'turbo-monorepo'],
+  [TS]: ['nestjs-api', 'react-web', 'next-web', 'angular-web', 'expo-mobile', 'turbo-monorepo', 'drizzle-postgres', 'bullmq'],
   'swift-lsp@claude-plugins-official': ['swift-ios', 'macos-desktop'],
   'kotlin-lsp@claude-plugins-official': ['android-compose'],
   'csharp-lsp@claude-plugins-official': ['winui-desktop'],
-  'rust-analyzer-lsp@claude-plugins-official': ['gtk-desktop'],
+  'rust-analyzer-lsp@claude-plugins-official': ['gtk-rust'],
+  'clangd-lsp@claude-plugins-official': ['gtk-meson'],
+  'jdtls-lsp@claude-plugins-official': ['android-java'],
 }
 
 test('the catalog: plugins hold one LSP plugin per language, with real stack ids', () => {
   assert.deepEqual(Object.fromEntries(Object.entries(catalog.plugins).map(([id, e]) => [id, e.stacks])), LSP)
   for (const [id, e] of Object.entries(catalog.plugins)) {
     assert.match(id, /^[a-z][a-z0-9-]*@[a-z][a-z0-9-]*$/)
-    assert.deepEqual(Object.keys(e).sort(), ['description', 'stacks'], id)
+    assert.deepEqual(Object.keys(e).sort(), ['command', 'description', 'install', 'stacks'], id)
     assert.ok(e.description.length > 10 && e.stacks.every((s) => STACK_IDS.includes(s)), id)
+    assert.ok(/^[\w.-]+$/.test(e.command) && e.install.length > 10, `${id}: command and install hint`)
   }
 })
 
@@ -216,7 +222,11 @@ test('plugins: a stack enables its plugin; the list adds one; plugin:<id> remove
   const p = plan(REPO, {}, ['react-web'])
   assert.deepEqual([p.errors, p.plugins, keyOf(p, '.claude/settings.json', key)], [[], [TS], true])
   assert.deepEqual(plan(REPO, {}, ['react-web', 'nestjs-api']).plugins, [TS])
-  assert.deepEqual(plan(REPO, {}, ['gtk-desktop']).plugins, ['rust-analyzer-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['gtk-desktop']).plugins, [])
+  assert.deepEqual(plan(REPO, {}, ['gtk-desktop', 'gtk-rust']).plugins, ['rust-analyzer-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['gtk-desktop', 'gtk-meson']).plugins, ['clangd-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['android-compose', 'android-java']).plugins, ['jdtls-lsp@claude-plugins-official', 'kotlin-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['bullmq']).plugins, [TS])
   assert.deepEqual(plan(REPO, {}, ['swift-ios', 'macos-desktop']).plugins, ['swift-lsp@claude-plugins-official'])
   assert.deepEqual(plan(REPO, {}, ['openspec']).plugins, [])
   assert.equal(plan(REPO, {}, []).keys.has('.claude/settings.json'), false)
@@ -368,7 +378,7 @@ test('config: "plugins" must be a list of plugin ids', async () => {
   assert.match(r.json.errors[0], /"plugins" must be a list of Claude plugin ids/)
 })
 
-test('doctor: one warning for each command of a selected MCP server that is not on PATH', () => {
+test('doctor: one warning for each command of a selected MCP server that is not on PATH', { skip: process.platform === 'win32' }, () => {
   const bin = temp('ac-mcp-bin-')
   put(bin, { 'have-cmd': '#!/bin/sh\n', 'not-exec': 'x' })
   chmodSync(join(bin, 'have-cmd'), 0o755)
@@ -388,4 +398,61 @@ test('doctor: one warning for each command of a selected MCP server that is not 
   } finally { process.env.PATH = old }
   put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], mcp: ['nope'] }) })
   assert.deepEqual(warns(), [], 'a broken config reports its error and no PATH warning')
+})
+
+// A fake command on PATH: a shell script. Windows has no sh, so these tests run on POSIX only.
+const POSIX = { skip: process.platform === 'win32' }
+const fakeBin = (scripts) => {
+  const bin = temp('ac-mcp-fake-bin-')
+  for (const [name, body] of Object.entries(scripts)) {
+    put(bin, { [name]: `#!/bin/sh\n${body}\n` })
+    chmodSync(join(bin, name), 0o755)
+  }
+  return bin
+}
+const withPath = (bin, fn) => {
+  const old = process.env.PATH
+  try { process.env.PATH = `${bin}${delimiter}${old}`; return fn() } finally { process.env.PATH = old }
+}
+
+test('doctor: an enabled LSP plugin warns when its language server is not on PATH', POSIX, () => {
+  const lsp = { description: 'Language server for the test.', stacks: [], command: 'fake-ls', install: 'npm install -g fake-ls' }
+  const AC = fakeCompass({ version: 1, servers: {}, plugins: { 'fake-lsp@market': lsp } })
+  const host = temp('ac-mcp-host-')
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], plugins: ['fake-lsp@market'] }) })
+  const lspChecks = () => doctor({ AC, root: host }).checks.filter((c) => c.name === 'lsp')
+  withPath(temp('ac-mcp-empty-'), () => assert.deepEqual(lspChecks(), [
+    { name: 'lsp', status: 'warn', detail: '"fake-ls" is not on PATH, so the plugin fake-lsp@market cannot start; install it: npm install -g fake-ls' },
+  ]))
+  withPath(fakeBin({ 'fake-ls': 'exit 0' }), () => assert.deepEqual(lspChecks(), []))
+})
+
+test('doctor: the code graph index status, and a server command older than its minVersion', POSIX, () => {
+  const entry = (extra) => ({ description: 'A server.', status: 'adopt', readOnly: 'Not applicable.', secrets: [], stacks: [], ...extra })
+  const AC = fakeCompass({ version: 1, servers: { 'codebase-memory': entry({ command: 'codebase-memory-mcp' }), 'process-compose': entry({ url: 'http://localhost:3000/sse', transport: 'sse', minVersion: '1.120.0' }) } })
+  const host = temp('ac-mcp-host-')
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], mcp: ['codebase-memory', 'process-compose'] }) })
+  const project = realpathSync(host).replace(/^\//, '').split('/').join('-')
+  const graph = `if [ "$3" = index_status ] && [ "$5" = "$WANT" ]; then echo '{"structuredContent":{"status":"ready","nodes":12}}'; exit 0; fi
+echo '{"structuredContent":{"error":"project not found or not indexed"},"isError":true}'; exit 1`
+  const pick = (names) => doctor({ AC, root: host }).checks.filter((c) => names.includes(c.name)).map((c) => [c.name, c.status, c.detail])
+  const bin = fakeBin({ 'codebase-memory-mcp': graph, 'process-compose': 'echo "Version: v1.110.0"' })
+  const old = process.env.WANT
+  try {
+    process.env.WANT = 'another-project'
+    withPath(bin, () => assert.deepEqual(pick(['graph', 'version']), [
+      ['graph', 'warn', 'the project has no code graph index; ask the agent to run the codebase-memory tool index_repository once'],
+      ['version', 'warn', 'process-compose 1.110.0 is older than 1.120.0, the minimum for the MCP server process-compose'],
+    ]))
+    process.env.WANT = project
+    withPath(fakeBin({ 'codebase-memory-mcp': graph, 'process-compose': 'echo "process-compose version 1.130.0"' }), () => assert.deepEqual(pick(['graph', 'version']), [
+      ['graph', 'ok', 'the project has a code graph index: ready, 12 nodes'],
+    ]))
+    withPath(fakeBin({ 'codebase-memory-mcp': 'echo boom >&2; exit 3' }), () => {
+      const [g] = pick(['graph'])
+      assert.deepEqual(g.slice(0, 2), ['graph', 'warn'])
+      assert.match(g[2], /^codebase-memory-mcp cli failed: boom/)
+      assert.equal(doctor({ AC, root: host }).ok, true, 'a graph warning does not fail doctor')
+    })
+  } finally { if (old === undefined) delete process.env.WANT; else process.env.WANT = old }
 })

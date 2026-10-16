@@ -3,15 +3,25 @@
 // An optional "stacks" list on a source names the stacks that it fits. assets.mjs recommends it for those stacks only.
 // An optional "recommend": "user" (the compass-user plugin covers it) or "manual" (a large set) keeps it out of the recommended set.
 // The cache key is the commit sha, so a cached source never changes and a second fetch does nothing.
+// A fetched text file with hidden Unicode (bidi controls, zero-width or tag characters) stops the sync: the text can hide
+// instructions from a reviewer. A byte order mark at the start of a file is allowed.
 
-import { existsSync, mkdirSync, renameSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { isDir, isObj, readJson, run, safeRel } from './util.mjs'
+import { isDir, isObj, readJson, run, safeRel, walk } from './util.mjs'
 
 export const UPSTREAM = 'upstream.json'
 const SHA = /^[0-9a-f]{40}$/
 const REPO = /^(https:\/\/|file:\/\/|\/)/
+// U+200C and U+200D (the zero-width non-joiner and joiner) stay allowed: Arabic, Indic scripts and emoji sequences use them.
+const HIDDEN = /[\u202A-\u202E\u2066-\u2069\u200B\u200E\u200F\u2060\u{E0000}-\u{E007F}]|(?<!^)\uFEFF/u
+
+// The files of a fetched tree that hold hidden Unicode. A file with a NUL byte is binary and is not checked.
+export const hiddenText = (dir) => walk(dir).filter((rel) => {
+  const buf = readFileSync(join(dir, rel))
+  return !buf.includes(0) && HIDDEN.test(buf.toString('utf8'))
+})
 
 export const cacheRoot = () => process.env.AC_CACHE ||
   join(process.env.XDG_CACHE_HOME || join(homedir(), '.cache'), 'agent-compass', 'upstream')
@@ -52,6 +62,11 @@ const fetchOne = (id, src) => {
     }
   }
   rmSync(join(tmp, '.git'), { recursive: true, force: true })
+  const hidden = hiddenText(tmp)
+  if (hidden.length) {
+    rmSync(tmp, { recursive: true, force: true })
+    return { error: `upstream ${id}: ${hidden.join(', ')} ${hidden.length > 1 ? 'hold' : 'holds'} hidden Unicode characters (bidi, zero-width or tag); compass does not install the source` }
+  }
   try { renameSync(tmp, dir) } catch (err) {
     rmSync(tmp, { recursive: true, force: true })
     if (!isDir(dir)) return `upstream ${id}: ${err.message}`
@@ -59,8 +74,10 @@ const fetchOne = (id, src) => {
   return null
 }
 
-// Fetch the listed sources that are not in the cache. A failure is a warning: offline work goes on.
+// Fetch the listed sources that are not in the cache. A failed fetch is a warning: offline work goes on.
+// A source with hidden Unicode is an error and stays out of the cache.
 export const fetchUpstream = (AC, ids) => {
   const { sources } = loadUpstream(AC)
-  return ids.filter((id) => Object.hasOwn(sources, id)).map((id) => fetchOne(id, sources[id])).filter(Boolean)
+  const results = ids.filter((id) => Object.hasOwn(sources, id)).map((id) => fetchOne(id, sources[id])).filter(Boolean)
+  return { warnings: results.filter((r) => typeof r === 'string'), errors: results.filter((r) => r.error).map((r) => r.error) }
 }

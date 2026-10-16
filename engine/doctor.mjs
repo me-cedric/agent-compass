@@ -1,15 +1,18 @@
 // doctor.mjs — check the tools, the compass checkout, the configuration and the ownership rules.
 // A "fail" check makes `ac doctor` exit 1. A "warn" check does not. `tokens` adds the context budget checks.
+// A child process (git, a language server, the code graph CLI) runs with a timeout. Its failure is a warning, never a fail.
 
-import { accessSync, constants, statSync } from 'node:fs'
+import { accessSync, constants, existsSync, realpathSync, statSync } from 'node:fs'
 import { delimiter, join } from 'node:path'
 import { konvoyOwns, loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
+import { newerTag, submoduleMoved } from './git.mjs'
+import { doctorGlobal } from './global.mjs'
 import { mcpPlan } from './mcp.mjs'
 import { jsonGet } from './merge.mjs'
 import { buildPlan } from './plan.mjs'
 import { syncHost } from './sync.mjs'
 import { BUDGET, measureTokens } from './tokens.mjs'
-import { readJson, run } from './util.mjs'
+import { readJson, run, versionCmp } from './util.mjs'
 
 // True when an executable file with this name is in a directory of PATH.
 export const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((dir) => {
@@ -17,11 +20,55 @@ export const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((
 })
 
 // One warning for each command of a selected MCP server that is not on PATH. No network.
-const commandChecks = ({ AC, root, sync }) => {
-  if (!sync.ok) return []
-  const { commands } = mcpPlan({ AC, config: loadConfig(root, AC, { init: true }).config, stacks: sync.stacks })
-  return Object.entries(commands).filter(([cmd]) => !onPath(cmd))
-    .map(([cmd, names]) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names.join(', ')} cannot start` }))
+const commandChecks = ({ commands }) => Object.entries(commands).filter(([cmd]) => !onPath(cmd))
+  .map(([cmd, names]) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names.join(', ')} cannot start` }))
+
+// One warning for each enabled LSP plugin whose language server is not on PATH.
+const lspChecks = ({ lsp }) => lsp.filter((p) => !onPath(p.command))
+  .map((p) => ({ name: 'lsp', status: 'warn', detail: `"${p.command}" is not on PATH, so the plugin ${p.id} cannot start; install it: ${p.install}` }))
+
+// The code graph index of the project. codebase-memory-mcp names a project after its path: "/a/b" is "a-b".
+const GRAPH = 'codebase-memory-mcp'
+const graphChecks = ({ selected }, root) => {
+  if (!selected.includes('codebase-memory') || !onPath(GRAPH)) return []
+  const project = realpathSync(root).replace(/^\//, '').split('/').join('-')
+  const r = run(GRAPH, ['cli', '--json', 'index_status', '--project', project], { timeout: 10_000 })
+  let data
+  try { data = JSON.parse(r.out.split('\n').at(-1)).structuredContent } catch { data = null }
+  if (data?.status) return [{ name: 'graph', status: 'ok', detail: `the project has a code graph index: ${data.status}, ${data.nodes ?? 0} nodes` }]
+  if (/not (found|indexed)/.test(data?.error ?? '')) {
+    return [{ name: 'graph', status: 'warn', detail: 'the project has no code graph index; ask the agent to run the codebase-memory tool index_repository once' }]
+  }
+  return [{ name: 'graph', status: 'warn', detail: `${GRAPH} cli failed: ${(data?.error || r.err || 'no output').split('\n')[0]}` }]
+}
+
+// One warning for each selected server whose command is older than its catalog minVersion. An unknown version is skipped.
+const versionChecks = ({ versions }) => versions.filter((v) => onPath(v.command)).flatMap((v) => {
+  const r = run(v.command, ['--version'], { timeout: 10_000 })
+  const found = /(\d+\.\d+\.\d+)/.exec(`${r.out}\n${r.err}`)?.[1]
+  return found && versionCmp(found, v.min) < 0
+    ? [{ name: 'version', status: 'warn', detail: `${v.command} ${found} is older than ${v.min}, the minimum for the MCP server ${v.name}` }]
+    : []
+})
+
+// The project and its compass checkout: git, the submodule commit, a newer tag, the Codex hook trust and the user-level todo count.
+const hostChecks = ({ AC, root, version, gitOk }) => {
+  const checks = []
+  if (gitOk && !run('git', ['-C', root, 'rev-parse', '--is-inside-work-tree'], { timeout: 10_000 }).ok) {
+    checks.push({ name: 'git', status: 'warn', detail: 'the project is not a git repository; the Codex hooks use "git rev-parse" to find the project root' })
+  }
+  const moved = gitOk && submoduleMoved(root, AC)
+  if (moved) checks.push({ name: 'submodule', status: 'warn', detail: `the compass checkout ${moved} is not at the commit that the project records; run "git submodule update --init" or commit the new commit` })
+  const tag = gitOk && newerTag(AC, version)
+  if (tag) checks.push({ name: 'submodule', status: 'warn', detail: `the compass tag ${tag} is newer than this checkout (${version}); run "ac sync --to ${tag}" to update` })
+  if (existsSync(join(root, '.codex/hooks.json'))) {
+    checks.push({ name: 'codex', status: 'ok', detail: 'Codex runs the project hooks only after you trust them: run /hooks in Codex once' })
+  }
+  try {
+    const todo = doctorGlobal({ AC, root }).recommended.filter((c) => !c.ok).length
+    checks.push({ name: 'global', status: 'ok', detail: todo ? `${todo} user-level item(s) to fix; run "ac doctor --global"` : 'the user-level setup has no open item' })
+  } catch (err) { checks.push({ name: 'global', status: 'warn', detail: `ac doctor --global failed: ${err.message}` }) }
+  return checks
 }
 
 // An exclude that a host array needed before the per-entry merge. It is advice only when the key is a planned array that the host holds as an array
@@ -66,7 +113,10 @@ export const doctor = ({ AC, root, tokens = false }) => {
     })),
     ...sync.errors.map((detail) => ({ name: 'error', status: 'fail', detail })),
   ]
-  checks.push(...excludeChecks({ AC, root }), ...commandChecks({ AC, root, sync }))
+  const mcp = sync.ok ? mcpPlan({ AC, config: loadConfig(root, AC, { init: true }).config, stacks: sync.stacks }) : null
+  checks.push(...excludeChecks({ AC, root }))
+  if (mcp) checks.push(...commandChecks(mcp), ...lspChecks(mcp), ...graphChecks(mcp, root), ...versionChecks(mcp))
+  checks.push(...hostChecks({ AC, root, version: sync.version, gitOk: git.ok }))
   if (sync.ok) {
     checks.push({ name: 'sync', status: sync.drift ? 'warn' : 'ok', detail: sync.drift ? `${sync.changes.length} pending change(s); run "ac sync"` : 'up to date' })
   }

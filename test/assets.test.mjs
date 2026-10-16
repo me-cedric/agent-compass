@@ -403,6 +403,7 @@ test('key assets: one per owned key; off drops the key from the plan and on rest
     '.claude/settings.json#hooks.SessionStart': 'start',
     '.claude/settings.json#permissions.deny': 'tracker deny',
     '.claude/settings.json#permissions.ask': 'tracker ask',
+    '.claude/settings.json#attribution': 'attribution',
     '.codex/config.toml#model_verbosity': 'Codex verbosity',
     '.codex/config.toml#model_reasoning_summary': 'Codex reasoning summary',
     '.codex/hooks.json#hooks.PreToolUse': 'Codex guard',
@@ -471,7 +472,7 @@ test('the key asset of permissions.deny also drops the MCP deny patterns', () =>
 test('seed assets: one per seed file; off drops the file from the plan and on restores it', () => {
   const root = makeHost(WEB_HOST)
   const list = listAssets({ AC: REPO, root })
-  assert.ok(list.assets.filter((a) => a.kind === 'seed').length >= 12)
+  assert.ok(list.assets.filter((a) => a.kind === 'seed').length >= 10)
   const osv = find(list, 'seed', '.osv-scanner.toml')
   assert.deepEqual([osv.source, osv.on, osv.available, osv.recommended, osv.reason], ['pack:security', true, true, true, 'pack security detected'])
   assert.ok(osv.title && osv.description)
@@ -479,11 +480,11 @@ test('seed assets: one per seed file; off drops the file from the plan and on re
   assert.deepEqual(off.exclude, ['.osv-scanner.toml'])
   assert.ok(planOf(root, cfgOf(root)).files.has('.osv-scanner.toml') && !planOf(root, off).files.has('.osv-scanner.toml'))
   assert.ok(planOf(root, setAsset(off, osv, true)).files.has('.osv-scanner.toml'))
-  const check = find(list, 'seed', '.github/workflows/compass-check.yml')
+  const check = find(list, 'seed', '.github/workflows/compass-security.yml')
   assert.deepEqual([check.source, check.on, check.recommended], ['pack:ci-github', false, false])
   const next = setAsset(cfgOf(root), check, true)
   assert.deepEqual(next.packs, ['ci-github'], 'a seed of an inactive pack turns the pack on')
-  assert.equal(planOf(root, next).files.get('.github/workflows/compass-check.yml').mode, 'seed')
+  assert.equal(planOf(root, next).files.get('.github/workflows/compass-security.yml').mode, 'seed')
 })
 
 test('the schema asset is the OpenSpec schema dir: exclude switches it, the paths move it, Konvoy owns it', () => {

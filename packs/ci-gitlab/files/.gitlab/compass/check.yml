@@ -1,5 +1,6 @@
 # compass-check: fail when the project is different from the compass lock.
 # To fix a failure, run "ac sync" and commit the result.
+# Compass writes this file. To own it, add its path to "exclude" in .agents/compass.json.
 # Include it from .gitlab-ci.yml:
 #   include:
 #     - local: .gitlab/compass/check.yml
@@ -10,7 +11,7 @@ compass-check:
   stage: test
   image: node:24-alpine
   variables:
-    COMPASS_DIR: docs/agent-compass # edit: the path of the compass submodule
+    COMPASS_DIR: {{COMPASS_DIR}}
     GIT_SUBMODULE_STRATEGY: normal
   script:
     - node "$COMPASS_DIR/bin/ac.mjs" check --frozen
