@@ -14,6 +14,7 @@ Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 Every command takes `--dry` (show the changes, write nothing) and `--json`.
 
 Commands that exist: `ac init`, `ac sync`, `ac sync --to <tag>`, `ac check --frozen`, `ac doctor --tokens`.
+Dev-loop commands: `ac env`, `ac dev` and `ac run`. The skills `env`, `local-run` and `e2e` tell how to use them.
 Compass owns the text between its markers and the files that `ac sync` lists. Put project rules outside the markers.
 
 ## init

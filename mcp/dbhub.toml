@@ -1,0 +1,15 @@
+# Compass writes this file. The DBHub MCP server reads it with --config.
+# The server replaces ${DSN} with the DSN environment variable.
+[[sources]]
+id = "default"
+dsn = "${DSN}"
+
+[[tools]]
+name = "execute_sql"
+source = "default"
+readonly = true
+max_rows = 1000
+
+[[tools]]
+name = "search_objects"
+source = "default"

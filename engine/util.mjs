@@ -2,8 +2,8 @@
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { isAbsolute, join } from 'node:path'
+import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
+import { isAbsolute, join, resolve } from 'node:path'
 
 export const sha = (data) => createHash('sha256').update(data).digest('hex').slice(0, 16)
 
@@ -66,4 +66,12 @@ export const run = (cmd, args, { cwd, timeout = 30_000, env } = {}) => {
     env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: process.env.GIT_SSH_COMMAND || 'ssh -o BatchMode=yes', ...env },
   })
   return { ok: r.status === 0, out: (r.stdout || '').trim(), err: (r.stderr || r.error?.message || '').trim() }
+}
+
+// The host project root for a command: --root or the current directory. Never the compass checkout itself.
+export const hostRoot = (AC, dir) => {
+  const root = resolve(dir || process.cwd())
+  let same
+  try { same = realpathSync(root) === realpathSync(AC) } catch { return { error: `the project root ${root} does not exist` } }
+  return same ? { error: 'run ac from the project root, not from the compass checkout' } : { root }
 }

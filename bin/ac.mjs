@@ -2,8 +2,7 @@
 // ac — the agent-compass engine CLI. No prompts. Exit 0: success. Exit 1: errors or drift. Exit 2: usage error.
 
 import { spawnSync } from 'node:child_process'
-import { realpathSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { checkDocs } from '../engine/docs.mjs'
@@ -11,9 +10,12 @@ import { doctor } from '../engine/doctor.mjs'
 import { pinTag } from '../engine/git.mjs'
 import { migrateDocs, stageSpecs } from '../engine/migrate.mjs'
 import { syncHost } from '../engine/sync.mjs'
+import { hostRoot } from '../engine/util.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const COMMANDS = ['init', 'sync', 'check', 'doctor', 'migrate']
+// Dev-loop commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
+const DEV_LOOP = { env: 'env.mjs', dev: 'dev.mjs', run: 'run.mjs' }
 const USAGE = `Usage: ac <command> [options]
 
 Commands:
@@ -24,6 +26,13 @@ Commands:
   doctor   Check the tools, the configuration and the ownership rules.
   migrate  With --docs: move spec-kit specs, a root specs/ folder and single-file question
            registers to the Konvoy layout. Each source moves under migrated/.
+  env      check | export | import | run: check the env catalog, templates, code reads and
+           local files; share values encrypted with age; start a command with the values.
+  dev      up | down | status | logs: start and stop the local stack with process-compose.
+  run      Run a command from agent-compass.commands.json by name. Store the result in
+           .agents/runs/<timestamp>/.
+
+Use "ac <env|dev|run> --help" for the options of a dev-loop command.
 
 Options:
   --root <dir>   Use this project root. The default is the current directory.
@@ -103,7 +112,12 @@ const print = (command, opts, result, failed, root) => {
   if (result.docs) printDocs(result.docs)
 }
 
-const main = () => {
+const main = async () => {
+  const first = process.argv[2]
+  if (Object.hasOwn(DEV_LOOP, first)) {
+    const { cli } = await import(`../engine/${DEV_LOOP[first]}`)
+    return cli(process.argv.slice(3), { AC })
+  }
   let parsed
   try {
     parsed = parseArgs({
@@ -145,10 +159,9 @@ const main = () => {
     else console.error(`error: ${message}`)
     return 1
   }
-  const root = resolve(opts.root || process.cwd())
-  let same
-  try { same = realpathSync(root) === realpathSync(AC) } catch { return fail(`the project root ${root} does not exist`) }
-  if (same) return fail('run ac from the project root, not from the compass checkout')
+  const host = hostRoot(AC, opts.root)
+  if (host.error) return fail(host.error)
+  const { root } = host
 
   if (opts.to !== undefined) {
     const pin = pinTag(AC, opts.to, { dry: opts.dry })
@@ -186,7 +199,7 @@ const main = () => {
 
 // exitCode, not exit(): exit() can cut piped output short.
 try {
-  process.exitCode = main()
+  process.exitCode = await main()
 } catch (err) {
   console.error(`error: ${err.message}`)
   process.exitCode = 1

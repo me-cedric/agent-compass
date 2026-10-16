@@ -1,0 +1,7 @@
+# Compass writes this file. The kubernetes MCP server reads it with --config.
+read_only = true
+
+[[denied_resources]]
+group = ""
+version = "v1"
+kind = "Secret"

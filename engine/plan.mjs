@@ -11,18 +11,22 @@
 //   seed/**          seed files       → written once, then the project owns them
 //   blocks/<path>    Markdown block   → the compass block in <path>
 //   keys.json        owned keys       → { "<host .json or .toml file>": { "<dotted.key>": value } }
-// Layers: the compass root, core/, then each pack in compass.json "packs". Then the upstream sources
+// Layers: the compass root, core/, then each pack in compass.json "packs" and each detected pack (detectPacks:
+// env, local-run, e2e). A detected pack that is not in the compass checkout is skipped. Then the upstream sources
 // in compass.json "upstream", from the user cache (upstream.mjs).
 // Docs layout: core/openspec/<schema>/ → {{OPENSPEC_DIR}}/schemas/<schema>/ when that dir exists and the Konvoy
 // ledger does not (Konvoy owns the schema otherwise). An empty {{DESIGNS_DIR}}/screens.json seeds into a designs dir.
+// MCP: mcp/catalog.json and compass.json "mcp" → keys in .mcp.json, .codex/config.toml, .vscode/mcp.json, plus
+// deny patterns in .claude/settings.json (mcp.mjs).
 // An asset whose frontmatter has `stacks: [...]` installs only when one of those stacks is detected.
 // Skill, rule and block text gets the path placeholders of the resolved paths: {{DELIVERY_DIR}}, {{PERSONAS_FILE}} …
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { PATH_DEFAULTS, SCHEMA, schemaDir } from './config.mjs'
-import { detectStacks } from './detect.mjs'
+import { detectPacks, detectStacks } from './detect.mjs'
 import { SCREENS_SEED, screensFile } from './docs.mjs'
+import { mcpPlan } from './mcp.mjs'
 import { tomlText, tomlValue } from './merge.mjs'
 import { loadUpstream, sourceDir } from './upstream.mjs'
 import { dirs, frontmatter, isDir, list, safeRel, walk } from './util.mjs'
@@ -102,22 +106,26 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
     return true
   }
 
+  const putKeys = (file, entries) => {
+    const target = new Map(keys.get(file))
+    for (const [key, value] of entries) {
+      if (excluded(`${file}#${key}`)) continue
+      if (target.has(key)) errors.push(`two sources set ${file}#${key}`)
+      target.set(key, value)
+    }
+    keys.set(file, target)
+  }
   const addKeys = (source) => {
     let data
     try { data = JSON.parse(readFileSync(source, 'utf8')) } catch (err) { errors.push(`${source}: ${err.message}`); return }
     for (const [file, map] of Object.entries(data)) {
       if (!safeRel(file) || !/\.(json|toml)$/.test(file)) { errors.push(`${source}: ${file} is not a .json or .toml path`); continue }
-      const target = new Map(keys.get(file))
-      for (const [key, value] of Object.entries(map)) {
-        if (excluded(`${file}#${key}`)) continue
-        if (target.has(key)) errors.push(`two sources set ${file}#${key}`)
-        target.set(key, value)
-      }
-      keys.set(file, target)
+      putKeys(file, Object.entries(map))
     }
   }
 
-  const layers = [AC, join(AC, 'core'), ...config.packs.map((p) => join(AC, 'packs', p))]
+  const packs = [...new Set([...config.packs, ...detectPacks(root).filter((p) => isDir(join(AC, 'packs', p)))])]
+  const layers = [AC, join(AC, 'core'), ...packs.map((p) => join(AC, 'packs', p))]
   for (const layer of layers) {
     for (const name of dirs(join(layer, 'skills'))) {
       const dir = join(layer, 'skills', name)
@@ -154,6 +162,19 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
       else blocks.set(rel, fill(`blocks/${rel}`, readFileSync(join(layer, 'blocks', rel)), vars, errors).toString('utf8'))
     }
     if (existsSync(join(layer, 'keys.json'))) addKeys(join(layer, 'keys.json'))
+  }
+
+  // MCP servers: the keys go into the provider files. Deny patterns join the planned permissions.deny list.
+  const mcp = mcpPlan({ AC, config, stacks })
+  errors.push(...mcp.errors)
+  warnings.push(...mcp.warnings)
+  for (const [file, map] of mcp.keys) putKeys(file, map)
+  for (const [dest, abs] of mcp.files) copy(abs, dest, 'managed')
+  const settings = '.claude/settings.json'
+  if (mcp.deny.length && !excluded(`${settings}#permissions.deny`)) {
+    const target = new Map(keys.get(settings))
+    target.set('permissions.deny', [...new Set([...(target.get('permissions.deny') || []), ...mcp.deny])])
+    keys.set(settings, target)
   }
 
   const schema = join(AC, 'core/openspec', SCHEMA)
@@ -196,5 +217,5 @@ export const buildPlan = ({ AC, root, config, paths, konvoy = false }) => {
     if (keys.has(path) || blocks.has(path)) errors.push(`${path} is both a whole file and a merged file`)
   }
   for (const path of blocks.keys()) if (keys.has(path)) errors.push(`${path} has both a block and owned keys`)
-  return { files, keys, blocks, skills, stacks, errors, warnings, held }
+  return { files, keys, blocks, skills, stacks, packs, errors, warnings, held }
 }

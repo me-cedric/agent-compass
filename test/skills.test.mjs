@@ -16,10 +16,15 @@ const temps = []
 test.after(() => { for (const d of temps) rmSync(d, { recursive: true, force: true }) })
 const temp = (prefix) => { const d = mkdtempSync(join(tmpdir(), prefix)); temps.push(d); return d }
 
-const skills = dirs(join(REPO, 'skills')).filter((n) => existsSync(join(REPO, 'skills', n, 'SKILL.md')))
-const skillText = (n) => readFileSync(join(REPO, 'skills', n, 'SKILL.md'), 'utf8')
+// Own skills and pack skills: skills/<n>/ and packs/<p>/skills/<n>/. A pack can install with the own skills.
+const skillDirs = [
+  ...dirs(join(REPO, 'skills')).map((n) => `skills/${n}`),
+  ...dirs(join(REPO, 'packs')).flatMap((p) => dirs(join(REPO, 'packs', p, 'skills')).map((n) => `packs/${p}/skills/${n}`)),
+].filter((d) => existsSync(join(REPO, d, 'SKILL.md')))
+const skills = skillDirs.map((d) => d.split('/').pop())
+const skillText = (n) => readFileSync(join(REPO, skillDirs[skills.indexOf(n)], 'SKILL.md'), 'utf8')
 const rules = walk(join(REPO, 'rules')).filter((f) => f.endsWith('.md'))
-const assets = [...walk(join(REPO, 'skills')).map((f) => `skills/${f}`), ...rules.map((f) => `rules/${f}`)]
+const assets = [...skillDirs.flatMap((d) => walk(join(REPO, d)).map((f) => `${d}/${f}`)), ...rules.map((f) => `rules/${f}`)]
 
 test('the model-invoked skill listing is 3,000 characters or fewer', () => {
   const lines = skills.map((n) => frontmatter(skillText(n)).data)
@@ -30,6 +35,7 @@ test('the model-invoked skill listing is 3,000 characters or fewer', () => {
 })
 
 test('every skill names its dir and every asset uses known stack ids', () => {
+  assert.deepEqual(skills.filter((n, i) => skills.indexOf(n) !== i), [], 'two skill dirs share a name')
   for (const n of skills) assert.equal(frontmatter(skillText(n)).data.name, n)
   for (const rel of assets.filter((f) => f.endsWith('.md'))) {
     for (const id of list(frontmatter(readFileSync(join(REPO, rel), 'utf8')).data.stacks)) assert.ok(STACK_IDS.includes(id), `${rel}: unknown stack ${id}`)

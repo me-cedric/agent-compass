@@ -8,7 +8,7 @@
     "ac": "bin/ac.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "scripts": {
     "evidence": "node scripts/evidence.mjs",

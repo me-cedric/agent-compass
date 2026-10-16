@@ -8,6 +8,14 @@ const SCAN_IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage'
 const FILE_MARKERS = [
   'turbo.json', 'drizzle.config.ts', '.specify', 'angular.json',
   'AndroidManifest.xml', 'Package.swift', 'Podfile',
+  'env.catalog.json', '.maestro',
+]
+// Name patterns for the dev-loop packs (detectPacks).
+const NAME_MARKERS = [
+  [/^\.env(\.[\w-]+)*\.(example|sample|template)$/, 'env-template'],
+  [/^process-compose(\.[\w-]+)?\.ya?ml$/, 'process-compose'],
+  [/^(docker-)?compose(\.[\w-]+)?\.ya?ml$/, 'docker-compose'],
+  [/^playwright\.config\.[cm]?[jt]s$/, 'playwright'],
 ]
 
 // Dependency names + marker files across the whole workspace. Monorepos keep
@@ -49,6 +57,7 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
         acc.markers.add('xcode-project')
         if (/SDKROOT = macosx/.test(text(join(entry.name, 'project.pbxproj')))) acc.markers.add('macos')
       }
+      for (const [re, marker] of NAME_MARKERS) if (entry.isFile() && re.test(entry.name)) acc.markers.add(marker)
       if (entry.isFile() && entry.name.endsWith('.csproj') && /Microsoft\.WindowsAppSDK|<UseWinUI>\s*true/i.test(text(entry.name))) {
         acc.markers.add('winui')
       }
@@ -96,5 +105,16 @@ export const detectStacks = (root, { openspecDir } = {}) => {
     markers.has('.specify') && 'spec-kit',
     // A declared path (compass.json or konvoy.json `paths`) wins over the conventional locations.
     [openspecDir, 'docs/openspec', 'openspec', '.openspec'].some((d) => d && isDir(join(root, d))) && 'openspec',
+  ].filter(Boolean)
+}
+
+// Dev-loop packs that fit the project. `ac sync` installs them in addition to compass.json "packs".
+// ponytail: a second workspace scan; merge it with detectStacks when the scan time matters.
+export const detectPacks = (root) => {
+  const { deps, markers } = collectWorkspace(root)
+  return [
+    (markers.has('env-template') || markers.has('env.catalog.json')) && 'env',
+    (markers.has('process-compose') || markers.has('docker-compose')) && 'local-run',
+    (markers.has('playwright') || markers.has('.maestro') || deps.has('@playwright/test') || deps.has('playwright')) && 'e2e',
   ].filter(Boolean)
 }

@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "servers": {
+    "grafana": {
+      "description": "Query Grafana dashboards, logs and metrics.",
+      "status": "adopt",
+      "readOnly": "The flag --disable-write removes the write tools.",
+      "secrets": ["GRAFANA_URL", "GRAFANA_SERVICE_ACCOUNT_TOKEN"],
+      "stacks": [],
+      "command": "uvx",
+      "args": ["mcp-grafana@2.0.2", "--disable-write"],
+      "env": { "GRAFANA_URL": "${GRAFANA_URL}", "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" }
+    },
+    "argocd": {
+      "description": "Read the state of Argo CD applications.",
+      "status": "adopt",
+      "readOnly": "The variable MCP_READ_ONLY=true blocks changes to applications and resources.",
+      "secrets": ["ARGOCD_BASE_URL", "ARGOCD_API_TOKEN"],
+      "stacks": [],
+      "command": "npx",
+      "args": ["-y", "argocd-mcp@0.9.0", "stdio"],
+      "env": { "ARGOCD_BASE_URL": "${ARGOCD_BASE_URL}", "ARGOCD_API_TOKEN": "${ARGOCD_API_TOKEN}", "MCP_READ_ONLY": "true" }
+    },
+    "kubernetes": {
+      "description": "Inspect Kubernetes resources with the current kubeconfig context.",
+      "status": "adopt",
+      "readOnly": "The flag --read-only blocks writes. The config file denies the Secret resource.",
+      "secrets": [],
+      "stacks": [],
+      "command": "npx",
+      "args": ["-y", "kubernetes-mcp-server@0.0.67", "--read-only", "--config", ".agents/mcp/kubernetes.toml"],
+      "files": { ".agents/mcp/kubernetes.toml": "mcp/kubernetes.toml" }
+    },
+    "scaleway": {
+      "description": "Inspect Scaleway resources with the scw CLI profile.",
+      "status": "trial",
+      "readOnly": "The flag --read-only registers only get and list commands.",
+      "secrets": [],
+      "stacks": [],
+      "command": "scw",
+      "args": ["mcp", "server", "serve", "--read-only"]
+    },
+    "mcp-atlassian": {
+      "description": "Read Jira issues with a personal access token.",
+      "status": "adopt",
+      "readOnly": "The variable READ_ONLY_MODE=true removes the write tools. The Claude deny rules in core stay active.",
+      "secrets": ["JIRA_URL", "JIRA_PERSONAL_TOKEN"],
+      "stacks": [],
+      "command": "uvx",
+      "args": ["mcp-atlassian@0.23.1"],
+      "env": { "JIRA_URL": "${JIRA_URL}", "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}", "READ_ONLY_MODE": "true" }
+    },
+    "github": {
+      "description": "Read GitHub repositories, issues and pull requests through the hosted server.",
+      "status": "adopt",
+      "readOnly": "The header X-MCP-Readonly: true enables only the read tools.",
+      "secrets": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "stacks": [],
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}", "X-MCP-Readonly": "true" }
+    },
+    "sonarqube": {
+      "description": "Read SonarQube Server issues, quality gates and metrics.",
+      "status": "adopt",
+      "readOnly": "The variable SONARQUBE_READ_ONLY=true disables the write operations.",
+      "secrets": ["SONARQUBE_TOKEN", "SONARQUBE_URL"],
+      "stacks": [],
+      "command": "docker",
+      "args": ["run", "--init", "--rm", "-i", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_URL", "-e", "SONARQUBE_READ_ONLY", "sonarsource/sonarqube-mcp:1.29.0.4488"],
+      "env": { "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}", "SONARQUBE_URL": "${SONARQUBE_URL}", "SONARQUBE_READ_ONLY": "true" }
+    },
+    "dbhub": {
+      "description": "Explore a database schema and run read-only SQL.",
+      "status": "adopt",
+      "readOnly": "The config file sets readonly = true on the execute_sql tool. Use a read-only database role too.",
+      "secrets": ["DSN"],
+      "stacks": [],
+      "command": "npx",
+      "args": ["-y", "@bytebase/dbhub@1.5.0", "--transport", "stdio", "--config", ".agents/mcp/dbhub.toml"],
+      "env": { "DSN": "${DSN}" },
+      "files": { ".agents/mcp/dbhub.toml": "mcp/dbhub.toml" }
+    },
+    "playwright": {
+      "description": "Drive a browser from accessibility snapshots.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server controls a local browser and does not write to a remote system.",
+      "secrets": [],
+      "stacks": ["react-web", "angular-web", "next-web"],
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83"]
+    },
+    "chrome-devtools": {
+      "description": "Inspect, profile and debug a Chrome page.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server controls a local browser. The flags turn off usage statistics and CrUX lookups.",
+      "secrets": [],
+      "stacks": ["react-web", "angular-web", "next-web"],
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@1.11.0", "--no-usage-statistics", "--no-performance-crux"]
+    },
+    "figma": {
+      "description": "Read Figma designs and variables through the hosted server.",
+      "status": "adopt",
+      "readOnly": "The deny rules block the tools that write to Figma files.",
+      "secrets": [],
+      "stacks": [],
+      "providers": ["claude"],
+      "url": "https://mcp.figma.com/mcp",
+      "deny": [
+        "mcp__figma__add_code_connect_map",
+        "mcp__figma__send_code_connect_mappings",
+        "mcp__figma__create_new_file",
+        "mcp__figma__generate_diagram",
+        "mcp__figma__generate_figma_design",
+        "mcp__figma__generate_image",
+        "mcp__figma__html_to_figma",
+        "mcp__figma__upload_assets",
+        "mcp__figma__use_figma",
+        "mcp__figma__send_code_to_figma",
+        "mcp__figma__create_generative_plugin",
+        "mcp__figma__update_generative_plugin",
+        "mcp__figma__create_shader",
+        "mcp__figma__update_shader",
+        "mcp__figma__weave_upload_asset",
+        "mcp__figma__weave_run_tool",
+        "mcp__figma__weave_run_model"
+      ]
+    },
+    "storybook": {
+      "description": "List components and docs from a running Storybook.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server reads the local Storybook. Start Storybook with the MCP addon first.",
+      "secrets": [],
+      "stacks": [],
+      "url": "http://localhost:6006/mcp"
+    },
+    "maestro": {
+      "description": "Run Maestro mobile UI flows on a device or simulator.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server drives a local device or simulator.",
+      "secrets": [],
+      "stacks": ["expo-mobile"],
+      "command": "maestro",
+      "args": ["mcp"]
+    },
+    "agent-device": {
+      "description": "Inspect and control mobile apps on iOS and Android devices.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server drives a local device or simulator.",
+      "secrets": [],
+      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
+      "command": "npx",
+      "args": ["-y", "agent-device@0.21.28", "mcp"]
+    },
+    "xcodebuildmcp": {
+      "description": "Build, run and test iOS and macOS apps with Xcode.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server runs local Xcode builds.",
+      "secrets": [],
+      "stacks": ["swift-ios", "macos-desktop"],
+      "command": "npx",
+      "args": ["-y", "xcodebuildmcp@2.7.0", "mcp"]
+    },
+    "process-compose": {
+      "description": "Read the logs and state of the local stack when the host enables mcp_server in process-compose.yaml and keeps expose_control_tools off.",
+      "status": "adopt",
+      "readOnly": "The control tools stay off while expose_control_tools is not set. The server reads logs and state only.",
+      "secrets": [],
+      "stacks": [],
+      "providers": ["claude", "copilot"],
+      "transport": "sse",
+      "url": "http://localhost:3000/sse"
+    },
+    "codebase-memory": {
+      "description": "Search a local code graph for symbols, callers and architecture.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server indexes the project into a local database.",
+      "secrets": [],
+      "stacks": [],
+      "command": "codebase-memory-mcp"
+    },
+    "context7": {
+      "description": "Fetch current library documentation.",
+      "status": "adopt",
+      "readOnly": "Not applicable. The server only reads public documentation.",
+      "secrets": [],
+      "stacks": [],
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}

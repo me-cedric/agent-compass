@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { detectStacks } from '../engine/detect.mjs'
+import { detectPacks, detectStacks } from '../engine/detect.mjs'
 
 test('detectStacks maps dependencies to stack ids', async () => {
   const host = await mkdtemp(join(tmpdir(), 'ac-profiles-'))
@@ -108,6 +108,27 @@ test('detectStacks finds GTK, WinUI and macOS desktop apps', async () => {
     await writeFile(join(host, 'apps/mac/App.xcodeproj/project.pbxproj'), 'SDKROOT = iphoneos;\n')
     await writeFile(join(host, 'Package.swift'), 'platforms: [.macOS(.v13)], targets: [.executableTarget(name: "App")]\n')
     assert.deepEqual(detectStacks(host), ['swift-ios'], 'a Swift package that lists macOS can be a CLI or a server')
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})
+
+test('detectPacks finds env templates, compose files and e2e suites in workspace packages', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-detect-packs-'))
+  try {
+    assert.deepEqual(detectPacks(host), [])
+    await mkdir(join(host, 'apps/api'), { recursive: true })
+    await writeFile(join(host, 'apps/api/.env.docker.example'), 'A=\n')
+    assert.deepEqual(detectPacks(host), ['env'])
+    await writeFile(join(host, 'apps/api/docker-compose.local.yml'), 'services: {}\n')
+    await writeFile(join(host, 'apps/api/package.json'), JSON.stringify({ devDependencies: { '@playwright/test': '1' } }))
+    assert.deepEqual(detectPacks(host), ['env', 'local-run', 'e2e'])
+    const other = await mkdtemp(join(tmpdir(), 'ac-detect-packs-'))
+    await writeFile(join(other, '.env.local'), 'A=1\n')
+    await writeFile(join(other, 'process-compose.yaml'), 'version: "0.5"\n')
+    await mkdir(join(other, '.maestro'))
+    assert.deepEqual(detectPacks(other), ['local-run', 'e2e'], 'a local .env file is not a template')
+    await rm(other, { recursive: true, force: true })
   } finally {
     await rm(host, { recursive: true, force: true })
   }
