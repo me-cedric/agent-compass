@@ -38,6 +38,6 @@ The `compass` skill has the steps to add a skill, a rule or a pack (section "ext
 ## Check your change
 
 - `npm test` runs the unit and fixture tests.
-- `npm run check` runs the tests and the lints: GitHub Action versions, naming and docs links.
+- `npm run check` runs the tests and the lints: GitHub Action versions, naming, docs links, release versions and the size budgets (`scripts/check-budget.mjs`: 220 files, 4,000 lines of engine + UI + CLI, 150 lines for AGENTS.md and README.md, 120 lines for the compass block).
 - Run `node --check scripts/<file>.mjs` on a script that you edit.
 - Do not commit, push or tag unless the owner asks.

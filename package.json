@@ -16,12 +16,13 @@
     "check-companions": "node scripts/check-change-companions.mjs",
     "redact": "node scripts/redact.mjs",
     "test": "node --test",
-    "check": "npm test && npm run lint:actions && npm run lint:naming && npm run lint:docs && npm run lint:release",
+    "check": "npm test && npm run lint:actions && npm run lint:naming && npm run lint:docs && npm run lint:release && npm run lint:budget",
     "lint:actions": "node scripts/check-actions.mjs",
     "lint:naming": "node scripts/check-naming.mjs",
     "lint:docs": "node scripts/check-docs.mjs",
     "release": "node scripts/release.mjs",
-    "lint:release": "node scripts/check-release.mjs"
+    "lint:release": "node scripts/check-release.mjs",
+    "lint:budget": "node scripts/check-budget.mjs"
   },
   "license": "MIT"
 }
