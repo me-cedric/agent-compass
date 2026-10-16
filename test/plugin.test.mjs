@@ -23,7 +23,7 @@ test('the plugin copies the core output style and the core hook byte for byte', 
 
 test('hooks.json wires the same events, matchers and modes as the core Claude settings', () => {
   const wire = (hooks, prefix) => Object.fromEntries(Object.entries(hooks).map(([event, groups]) => [event, groups.map((g) => ({
-    matcher: g.matcher, modes: g.hooks.map((h) => h.command.replace(prefix, '')),
+    matcher: g.matcher, modes: g.hooks.map((h) => [h.command.replace(prefix, ''), h.onFailure]),
   }))]))
   const core = Object.fromEntries(Object.entries(json('core/keys.json')['.claude/settings.json'])
     .filter(([key]) => key.startsWith('hooks.')).map(([key, groups]) => [key.slice(6), groups]))
@@ -31,6 +31,7 @@ test('hooks.json wires the same events, matchers and modes as the core Claude se
     wire(json('plugins/compass-user/hooks/hooks.json').hooks, 'node "${CLAUDE_PLUGIN_ROOT}/hooks/compass.mjs" '),
     wire(core, 'node "${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs" '),
   )
+  assert.equal(json('plugins/compass-user/hooks/hooks.json').hooks.PreToolUse[0].hooks[0].onFailure, 'block')
 })
 
 test('the manifests, the marketplaces and the package have one version and one plugin name', () => {

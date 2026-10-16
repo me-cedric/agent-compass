@@ -4,7 +4,9 @@ description: Makes one bounded change on named files, runs the named checks, and
 model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 codex-model: gpt-6.1-sol
+codex-sandbox: workspace-write
 copilot-model: Claude Sonnet 5.5
+copilot-instructions: true
 ---
 
 You are a worker. You make one bounded change.

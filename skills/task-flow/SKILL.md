@@ -4,7 +4,6 @@ description: Move work through the tracker lifecycle on Jira Cloud, Jira Server 
 risk_level: medium
 writes_files: true
 requires_tools: [gh, glab]
-disable-model-invocation: true
 ---
 
 # task-flow

@@ -4,8 +4,10 @@ description: Read-only lookup. Finds files, symbols and facts. Returns a short a
 model: haiku
 effort: low
 tools: Read, Grep, Glob, Bash
+omitClaudeMd: true
 codex-model: gpt-6-luna
 codex-effort: low
+codex-sandbox: read-only
 copilot-model: Claude Haiku 5.5
 ---
 

@@ -56,6 +56,85 @@ test('guard allows .env.example and commands that only name env variables', asyn
   assert.equal((await read('/repo/src/env.ts')).code, 0)
 })
 
+const tool = (tool_name, tool_input) => hook('guard', { tool_name, tool_input })
+
+test('guard blocks a read of a key, a credential or a keystore, and allows a public key', async () => {
+  const secrets = ['/home/u/.ssh/config', '/home/u/.ssh/id_ed25519', '/repo/id_rsa', '/repo/certs/server.pem', '/repo/tls.key',
+    '/home/u/.netrc', '/repo/cert.p12', '/repo/android/release.keystore', '/repo/android/app/google-services.json', '/repo/ios/GoogleService-Info.plist']
+  for (const p of secrets) {
+    const r = await read(p)
+    assert.equal(r.code, 2, p)
+    assert.match(r.stderr, /^compass: the read of .+ is blocked because the file holds a key, a token or a credential\./, p)
+  }
+  for (const command of ['cat ~/.ssh/id_rsa', 'grep -r token ~/.ssh']) assert.equal((await bash(command)).code, 2, command)
+  assert.equal((await tool('Grep', { pattern: 'x', path: '/home/u/.ssh' })).code, 2)
+  const keys = join(dir, 'keys')
+  mkdirSync(join(keys, 'certs'), { recursive: true })
+  for (const f of ['certs/server.pem', 'id_rsa', 'obj.txt']) writeFileSync(join(keys, f), 'x')
+  const inKeys = (command) => runNode([HOOK, 'guard'], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command } }), cwd: keys })
+  for (const command of ['openssl x509 -in certs/server.pem -text', 'cat id_rsa']) assert.equal((await inKeys(command)).code, 2, command)
+  for (const command of ['grep -n "e.key" src', 'node -e "console.log(obj.key)"', 'jq .key obj.txt']) assert.equal((await inKeys(command)).code, 0, `${command}: a word that is not a file passes`)
+  for (const p of ['/repo/keys/id_rsa.pub', '/repo/src/keymap.ts', '/repo/docs/ssh.md']) assert.equal((await read(p)).code, 0, p)
+})
+
+test('guard blocks a read of an .npmrc that holds a literal token, and allows a ${VAR} reference', async () => {
+  const npmrc = (name, text) => { const p = join(dir, name); mkdirSync(p, { recursive: true }); writeFileSync(join(p, '.npmrc'), text); return join(p, '.npmrc') }
+  assert.equal((await read(npmrc('tok', '//registry.npmjs.org/:_authToken=npm_abc123\n'))).code, 2)
+  assert.equal((await read(npmrc('ref', '//registry.npmjs.org/:_authToken=${NPM_TOKEN}\n'))).code, 0)
+  assert.equal((await read(npmrc('plain', 'registry=https://registry.npmjs.org/\n'))).code, 0)
+  assert.equal((await read(join(dir, 'missing/.npmrc'))).code, 0)
+})
+
+test('guard blocks an edit of a lock file in Claude and Codex shapes', async () => {
+  const locks = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', 'ios/Podfile.lock', 'App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved', 'gradle.lockfile']
+  for (const name of ['Edit', 'Write', 'MultiEdit']) {
+    for (const lock of locks) {
+      const r = await tool(name, { file_path: `/repo/${lock}` })
+      assert.equal(r.code, 2, `${name} ${lock}`)
+      assert.match(r.stderr, /^compass: the edit of .+ is blocked\. Run the package manager to change a lock file\./)
+    }
+  }
+  const own = await tool('Write', { file_path: '/repo/.agents/compass.lock.json' })
+  assert.equal(own.code, 2)
+  assert.match(own.stderr, /Run ac sync to change it\./)
+  assert.equal((await tool('NotebookEdit', { notebook_path: '/repo/yarn.lock' })).code, 2)
+  for (const name of ['Edit', 'Write']) assert.equal((await tool(name, { file_path: '/repo/src/a.ts' })).code, 0, name)
+  assert.equal((await tool('Write', { file_path: '/repo/.env' })).code, 0, 'an edit is not a read')
+
+  const patch = (path) => `*** Begin Patch\n*** Update File: ${path}\n@@\n-a\n+b\n*** End Patch\n`
+  assert.equal((await tool('apply_patch', { command: patch('package-lock.json') })).code, 2)
+  assert.equal((await tool('apply_patch', { input: patch('sub/yarn.lock') })).code, 2)
+  assert.equal((await tool('apply_patch', { command: ['apply_patch', patch('.agents/compass.lock.json')] })).code, 2)
+  assert.equal((await tool('apply_patch', { command: `*** Begin Patch\n*** Add File: src/a.ts\n+x\n*** End Patch\n` })).code, 0)
+  assert.equal((await tool('apply_patch', { command: patch('src/package-lock.json.md') })).code, 0)
+})
+
+test('guard blocks a worklog or delete MCP tool (Codex has no deny rules) and passes other MCP tools', async () => {
+  for (const name of ['mcp__mcp-atlassian__jira_add_worklog', 'mcp__mcp-atlassian__confluence_delete_page', 'mcp__github__delete_file']) {
+    const r = await tool(name, {})
+    assert.equal(r.code, 2, name)
+    assert.match(r.stderr, /^compass: the tool .+ is blocked because the contract forbids a worklog or a delete\. Ask the user to do it\./)
+  }
+  for (const name of ['mcp__mcp-atlassian__jira_create_issue', 'mcp__github__get_issue', 'mcp__codebase-memory-mcp__search_graph']) {
+    assert.deepEqual(await tool(name, {}), { code: 0, stdout: '', stderr: '' }, name)
+  }
+})
+
+test('guard blocks a destructive git or rm command and passes the safe forms', async () => {
+  const blocked = ['git push --force', 'git push -f origin main', 'git push origin +main', 'git push --force-with-lease origin x',
+    'git reset --hard HEAD~1', 'git clean -fd', 'git -C sub clean -xdf', 'npm test && git reset --hard',
+    'rm -rf /', 'rm -rf ~', 'rm -rf ~/', 'rm -rf .', 'rm -rf ./', 'rm -rf ..', 'rm -rf ../other', 'rm -rf /tmp/x', 'rm -fr "$HOME"', 'rm -r -f *', 'sudo rm -Rf /etc']
+  for (const command of blocked) {
+    const r = await bash(command)
+    assert.equal(r.code, 2, command)
+    assert.match(r.stderr, /^compass: the command .+ is blocked because you cannot undo it\. Ask the user to run it\./, command)
+  }
+  assert.equal((await tool('Bash', { command: ['bash', '-lc', 'git push --force'] })).code, 2)
+  const safe = ['git push origin x', 'git push -u origin feature-fix', 'git reset --soft HEAD~1', 'git clean -n', 'git status',
+    'rm file.txt', 'rm -rf node_modules', 'rm -rf ./dist build', 'rm -r coverage', 'echo "rm -rf is bad"', 'git log --grep=force']
+  for (const command of safe) assert.equal((await bash(command)).code, 0, command)
+})
+
 test('a hook with bad input exits 0 and an unknown mode exits 1', async () => {
   assert.equal((await hook('guard', 'not json')).code, 0)
   assert.equal((await hook('gate', '{}')).code, 0)

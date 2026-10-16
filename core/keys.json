@@ -1,14 +1,20 @@
 {
   ".claude/settings.json": {
     "outputStyle": "compass",
+    "attribution": {
+      "commit": "",
+      "pr": "",
+      "sessionUrl": false
+    },
     "hooks.PreToolUse": [
       {
-        "matcher": "Read|Grep|Bash",
+        "matcher": "Read|Grep|Glob|Bash|Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs\" guard",
-            "timeout": 10
+            "timeout": 10,
+            "onFailure": "block"
           }
         ]
       }
@@ -37,22 +43,58 @@
       }
     ],
     "permissions.deny": [
-      "mcp__mcp-atlassian__jira_add_worklog",
-      "mcp__mcp-atlassian__*_delete_*",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.*.local)",
+      "Read(**/.envrc)",
+      "mcp__mcp-atlassian__*worklog*",
+      "mcp__mcp-atlassian__*delete*",
       "mcp__github__*delete*",
+      "mcp__plugin_github_github__*delete*",
       "Bash(gh issue delete *)",
-      "Bash(glab issue delete *)"
+      "Bash(gh repo delete *)",
+      "Bash(glab issue delete *)",
+      "Bash(glab repo delete *)",
+      "Bash(jira issue delete *)",
+      "Bash(jira issue worklog *)",
+      "Bash(acli *worklog*)"
     ],
     "permissions.ask": [
-      "mcp__mcp-atlassian__jira_transition_issue",
-      "mcp__mcp-atlassian__*_comment",
       "mcp__mcp-atlassian__*create*",
+      "mcp__mcp-atlassian__*update*",
+      "mcp__mcp-atlassian__*_add_*",
+      "mcp__mcp-atlassian__*_remove_*",
+      "mcp__mcp-atlassian__*_edit_*",
+      "mcp__mcp-atlassian__*_comment",
+      "mcp__mcp-atlassian__*_transition_*",
+      "mcp__mcp-atlassian__*_assign_*",
+      "mcp__mcp-atlassian__*_move_*",
+      "mcp__mcp-atlassian__*_link_to_*",
+      "mcp__mcp-atlassian__*upload*",
       "mcp__github__create_*",
-      "mcp__github__*comment*",
-      "mcp__github__issue_write",
+      "mcp__github__add_*",
       "mcp__github__update_*",
+      "mcp__github__*_write",
       "mcp__github__merge_*",
       "mcp__github__push_*",
+      "mcp__github__run_*",
+      "mcp__github__rerun_*",
+      "mcp__github__assign_*",
+      "mcp__github__request_*",
+      "mcp__github__submit_*",
+      "mcp__plugin_github_github__create_*",
+      "mcp__plugin_github_github__add_*",
+      "mcp__plugin_github_github__update_*",
+      "mcp__plugin_github_github__*_write",
+      "mcp__plugin_github_github__merge_*",
+      "mcp__plugin_github_github__push_*",
+      "mcp__plugin_github_github__run_*",
+      "mcp__plugin_github_github__rerun_*",
+      "mcp__plugin_github_github__assign_*",
+      "mcp__plugin_github_github__request_*",
+      "mcp__plugin_github_github__submit_*",
       "Bash(gh issue create *)",
       "Bash(gh issue comment *)",
       "Bash(gh issue close *)",
@@ -60,13 +102,53 @@
       "Bash(gh pr create *)",
       "Bash(gh pr comment *)",
       "Bash(gh pr merge *)",
+      "Bash(gh pr review *)",
+      "Bash(gh pr close *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh release create *)",
+      "Bash(gh api *-X *)",
+      "Bash(gh api *--method *)",
+      "Bash(gh api *-f *)",
+      "Bash(gh api *-F *)",
+      "Bash(gh api *--field *)",
+      "Bash(gh api *--raw-field *)",
+      "Bash(gh api *--input *)",
       "Bash(glab issue create *)",
       "Bash(glab issue note *)",
       "Bash(glab issue close *)",
       "Bash(glab issue update *)",
       "Bash(glab mr create *)",
       "Bash(glab mr note *)",
-      "Bash(glab mr merge *)"
+      "Bash(glab mr merge *)",
+      "Bash(glab mr approve *)",
+      "Bash(glab mr update *)",
+      "Bash(glab mr close *)",
+      "Bash(jira issue create *)",
+      "Bash(jira issue edit *)",
+      "Bash(jira issue assign *)",
+      "Bash(jira issue move *)",
+      "Bash(jira issue link *)",
+      "Bash(jira issue unlink *)",
+      "Bash(jira issue clone *)",
+      "Bash(jira issue comment *)",
+      "Bash(jira issue watch *)",
+      "Bash(jira sprint add *)",
+      "Bash(jira epic create *)",
+      "Bash(jira epic add *)",
+      "Bash(jira epic remove *)",
+      "Bash(acli *)",
+      "Bash(git push *--force*)",
+      "Bash(git push *-f)",
+      "Bash(git push *-f *)",
+      "Bash(git push * +*)",
+      "Bash(git reset *--hard*)",
+      "Bash(git clean *)",
+      "Bash(git branch *-D *)",
+      "Bash(rm -r*)",
+      "Bash(rm -fr*)",
+      "Bash(rm -R*)",
+      "Bash(rm -fR*)",
+      "Bash(rm *--recursive*)"
     ]
   },
   ".codex/config.toml": {
@@ -76,7 +158,7 @@
   ".codex/hooks.json": {
     "hooks.PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|apply_patch|mcp__.*",
         "hooks": [
           {
             "type": "command",

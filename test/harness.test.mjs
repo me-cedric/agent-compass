@@ -36,9 +36,13 @@ test('init installs the harness and every generated JSON and TOML file parses', 
   assert.equal(r.code, 0, r.stderr)
   const settings = JSON.parse(read(host, '.claude/settings.json'))
   assert.equal(settings.outputStyle, 'compass')
-  assert.ok(settings.permissions.deny.includes('mcp__mcp-atlassian__jira_add_worklog'))
-  assert.ok(settings.permissions.ask.includes('mcp__mcp-atlassian__jira_transition_issue'))
-  assert.deepEqual(Object.keys(JSON.parse(read(host, '.codex/hooks.json')).hooks), ['PreToolUse', 'Stop', 'SessionStart'])
+  assert.deepEqual(settings.attribution, { commit: '', pr: '', sessionUrl: false })
+  assert.equal(settings.hooks.PreToolUse[0].matcher, 'Read|Grep|Glob|Bash|Edit|Write|MultiEdit|NotebookEdit')
+  assert.equal(settings.hooks.PreToolUse[0].hooks[0].onFailure, 'block')
+  assert.equal(settings.hooks.Stop[0].hooks[0].onFailure, undefined, 'Stop does not take onFailure')
+  const codexHooks = JSON.parse(read(host, '.codex/hooks.json')).hooks
+  assert.deepEqual(Object.keys(codexHooks), ['PreToolUse', 'Stop', 'SessionStart'])
+  assert.equal(codexHooks.PreToolUse[0].matcher, 'Bash|apply_patch|mcp__.*')
 
   const config = parseToml(read(host, '.codex/config.toml'))
   assert.deepEqual(config, { model_verbosity: 'low', model_reasoning_summary: 'none' })
@@ -51,12 +55,18 @@ test('init installs the harness and every generated JSON and TOML file parses', 
   }
   assert.match(read(host, '.claude/agents/scout.md'), /^model: haiku$/m)
   assert.match(read(host, '.claude/agents/reviewer.md'), /^model: sonnet$/m)
-  assert.match(read(host, '.github/agents/scout.agent.md'), /^---\nname: scout\ndescription: ".+"\ntools: \[Read, Grep, Glob, Bash\]\nmodel: "Claude Haiku 5.5"\n---\n/)
+  assert.match(read(host, '.github/agents/scout.agent.md'), /^---\nname: scout\ndescription: ".+"\ntools: \[Read, Grep, Glob, Bash\]\nmodel: "Claude Haiku 5.5"\nreasoning-effort: low\n---\n/)
+  for (const name of ['worker', 'reviewer']) assert.match(read(host, `.github/agents/${name}.agent.md`), /^include-custom-instructions: true$/m, name)
+  assert.doesNotMatch(read(host, '.github/agents/scout.agent.md'), /include-custom-instructions/)
+  const sandbox = { scout: 'read-only', reviewer: 'read-only', worker: 'workspace-write' }
+  for (const [name, mode] of Object.entries(sandbox)) assert.equal(parseToml(read(host, `.codex/agents/${name}.toml`)).sandbox_mode, mode, name)
+  assert.match(read(host, '.claude/agents/scout.md'), /^omitClaudeMd: true$/m)
   assert.match(read(host, '.claude/output-styles/compass.md'), /^keep-coding-instructions: true$/m)
   assert.match(read(host, 'CLAUDE.md'), /^@AGENTS\.md$/m)
 
   const block = read(REPO, 'core/blocks/AGENTS.md').trimEnd().split('\n')
   assert.ok(block.length <= 120, `${block.length} lines`)
+  assert.ok(block.join('\n').length <= 2800, `${block.join('\n').length} chars: the block must stay under 700 tokens`)
   const claudeLines = read(host, 'CLAUDE.md').split('\n').filter((l) => l.trim() && !l.startsWith('<!--') && l !== '@AGENTS.md')
   assert.ok(claudeLines.length <= 15, `${claudeLines.length} Claude lines`)
 })
@@ -69,7 +79,54 @@ test('the installed hook commands block cat .env and Read .env, and allow .env.e
     assert.equal(shell(command, host, { tool_name: 'Read', tool_input: { file_path: join(host, '.env') } }).status, 2, command)
     assert.equal(shell(command, host, { tool_name: 'Bash', tool_input: { command: 'cat .env.example' } }).status, 0, command)
     assert.equal(shell(command, host, { tool_name: 'Read', tool_input: { file_path: join(host, '.env.example') } }).status, 0, command)
+    assert.equal(shell(command, host, { tool_name: 'Bash', tool_input: { command: 'git push --force' } }).status, 2, command)
   }
+  assert.equal(shell(settings.hooks.PreToolUse[0].hooks[0].command, host, { tool_name: 'Edit', tool_input: { file_path: join(host, 'package-lock.json') } }).status, 2)
+  assert.equal(shell(codex.hooks.PreToolUse[0].hooks[0].command, host, { tool_name: 'mcp__mcp-atlassian__jira_add_worklog', tool_input: {} }).status, 2)
+})
+
+// Claude permission rules: `*` matches any run of characters, in the tool name and inside Bash(...).
+const globRe = (glob) => new RegExp(`^${glob.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*')}$`)
+const hits = (rules, call) => rules.some((r) => globRe(r).test(call))
+const jira = (t) => `mcp__mcp-atlassian__${t}`
+const gh = (t) => [`mcp__github__${t}`, `mcp__plugin_github_github__${t}`]
+
+test('the permission rules deny, ask and pass the listed tools and commands', () => {
+  const { deny, ask } = JSON.parse(read(host, '.claude/settings.json')).permissions
+  const denied = [
+    ...['jira_add_worklog', 'jira_get_worklog', 'jira_delete_issue', 'confluence_delete_page'].map(jira), ...gh('delete_file'),
+    'Read(./.env)', 'Read(app/.env.local)', 'Read(./.env.production)', 'Read(./.envrc)',
+    ...['gh issue delete 1', 'gh repo delete o/r', 'glab issue delete 1', 'glab repo delete g/r', 'jira issue delete X-1', 'jira issue worklog add X-1 1h'].map((c) => `Bash(${c})`),
+  ]
+  const asked = [
+    ...['jira_transition_issue', 'jira_add_comment', 'jira_edit_comment', 'jira_create_issue', 'jira_update_issue', 'jira_assign_issue',
+      'jira_create_issue_link', 'jira_remove_issue_link', 'jira_link_to_epic', 'jira_move_issue', 'jira_add_issues_to_sprint', 'jira_update_sprint',
+      'jira_create_version', 'jira_add_watcher', 'jira_remove_watcher', 'jira_update_proforma_form_answers',
+      'confluence_create_page', 'confluence_update_page', 'confluence_add_comment', 'confluence_reply_to_comment', 'confluence_add_label'].map(jira),
+    ...['create_pull_request', 'add_issue_comment', 'issue_write', 'pull_request_review_write', 'update_pull_request', 'merge_pull_request',
+      'push_files', 'run_workflow', 'rerun_workflow_run', 'assign_copilot_to_issue', 'request_copilot_review', 'create_or_update_file'].flatMap(gh),
+    ...['gh api -X POST repos/o/r/issues', 'gh api repos/o/r/issues -f title=x', 'gh api repos/o/r --method PATCH', 'gh api repos/o/r -F a=1',
+      'gh api repos/o/r --input body.json', 'gh pr review 1 --approve', 'gh pr close 1', 'gh pr edit 1 --title x', 'gh release create v1',
+      'glab mr approve 1', 'glab mr update 1', 'glab mr close 1', 'jira issue create -tBug', 'jira issue edit X-1', 'jira issue move X-1 Done',
+      'jira issue assign X-1 me', 'jira issue comment add X-1 hi', 'jira issue link X-1 X-2 Blocks', 'acli jira workitem create',
+      'git push --force', 'git push origin x --force-with-lease', 'git push -f origin x', 'git push origin +main', 'git reset --hard HEAD',
+      'git reset HEAD~1 --hard', 'git clean -fd', 'git branch -D x', 'rm -rf dist', 'rm -r dist', 'rm -fr dist', 'rm -R dist'].map((c) => `Bash(${c})`),
+  ]
+  const passed = [
+    ...['jira_search', 'jira_get_issue', 'jira_get_sprint_issues', 'jira_get_project_versions', 'jira_get_issue_watchers', 'jira_get_link_types',
+      'confluence_search', 'confluence_get_page'].map(jira),
+    ...['get_issue', 'list_pull_requests', 'get_issue_comments', 'search_code'].flatMap(gh),
+    'Read(./.env.example)', 'Read(./.env.sample)', 'Read(src/env.ts)',
+    ...['jira issue list', 'jira issue view X-1', 'gh pr view 1', 'glab mr view 1', 'git push origin x', 'git push -u origin feature-fix',
+      'gh api repos/o/r/pulls', 'git reset --soft HEAD~1', 'rm file.txt', 'git branch -d x'].map((c) => `Bash(${c})`),
+  ]
+  for (const call of denied) assert.ok(hits(deny, call), `deny ${call}`)
+  for (const call of asked) assert.ok(hits(ask, call) && !hits(deny, call), `ask ${call}`)
+  for (const call of passed) assert.ok(!hits(ask, call) && !hits(deny, call), `pass ${call}`)
+})
+
+test('task-flow is model-invoked; its tracker writes stay behind ask rules', () => {
+  assert.doesNotMatch(read(REPO, 'skills/task-flow/SKILL.md'), /^disable-model-invocation:/m)
 })
 
 test('doctor --tokens passes on a fresh host and fails over budget', async () => {

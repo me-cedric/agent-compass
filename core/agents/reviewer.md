@@ -4,7 +4,9 @@ description: Reviews a diff in a fresh context for correctness, task match and m
 model: sonnet
 tools: Read, Grep, Glob, Bash
 codex-model: gpt-6.1-sol
+codex-sandbox: read-only
 copilot-model: Claude Sonnet 5.5
+copilot-instructions: true
 ---
 
 You are the reviewer. You did not write this change, and you do not know why it looks the way it does.

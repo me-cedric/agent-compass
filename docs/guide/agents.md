@@ -64,7 +64,13 @@ Next step:     up to 3 items
 
 Three hooks enforce the basics. Their code is `.agents/hooks/compass.mjs`.
 
-- `guard` (before Read, Grep or Bash) blocks a call that names a `.env` file that is not a template.
+- `guard` runs before a tool call. Claude runs it for Read, Grep, Glob, Bash and the edit tools. Codex runs it for Bash, `apply_patch` and MCP tools. It blocks:
+  - a read of a `.env` file that is not a template;
+  - a read of a key or credential file: a file under `.ssh`, `*.pem`, `*.key`, `*.p12`, `*.keystore`, `id_rsa`, `.netrc`, `google-services.json`, `GoogleService-Info.plist`, or an `.npmrc` with a literal token. In a shell command, the guard checks only the words that name a file that exists;
+  - an edit of a lock file (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Podfile.lock`, `Package.resolved` and others). Run the package manager. For `.agents/compass.lock.json`, run `ac sync`;
+  - an MCP tool with `worklog` or `delete` in its name. Codex has no permission rules, so this rule copies the Claude deny rules;
+  - `git push --force`, `git push -f`, a `+` refspec, `git reset --hard`, `git clean -f`, and a recursive `rm` on `/`, `~`, `.`, `..`, `*` or a path outside the project. Ask the user to run the command.
+  The Claude guard entry has `"onFailure": "block"`: when the script cannot start or times out, the tool call stops.
 - `gate` (at Stop) asks once for the summary after a turn that edited files and ended with no result word.
 - `start` (at SessionStart) prints a short reminder of the style contract.
 
@@ -75,6 +81,12 @@ Three hooks enforce the basics. Their code is `.agents/hooks/compass.mjs`.
 | `scout` | Haiku, low effort / `gpt-6-luna` | Read-only lookups. Reports in 200 words or fewer, with `path:line`. |
 | `worker` | Sonnet / `gpt-6.1-sol` | One bounded change on named files. Runs the named checks. Never commits. |
 | `reviewer` | Sonnet / `gpt-6.1-sol` | Reviews a diff in a fresh context. Edits nothing. |
+
+The agent frontmatter sets the provider options:
+
+- Claude: `omitClaudeMd: true` on `scout`. A lookup does not need the project files, and the delegation prompt carries the contract.
+- Codex: `codex-sandbox` gives `sandbox_mode`: `read-only` for `scout` and `reviewer`, `workspace-write` for `worker`.
+- Copilot: `effort` gives `reasoning-effort`. `copilot-instructions: true` gives `include-custom-instructions: true` for `worker` and `reviewer`.
 
 The main model plans, reviews and verifies. Push the bulk down to cheaper executors when:
 
@@ -129,10 +141,21 @@ A headless agent cannot answer a prompt, so each CLI needs a mode. Three tiers e
 The flags change between CLI versions. Check them with `--help` before you rely on them. Bypass removes the guardrails of the CLI. It does not remove the rules of the contract.
 A blocked tool is not an error. Read the refusal and name the setting that would allow it.
 
-`ac sync` writes these permission rules to `.claude/settings.json`:
+`ac sync` writes these permission rules to `.claude/settings.json`. A deny rule wins over an ask rule.
 
-- Deny: the Jira worklog tool, each Jira delete tool, each GitHub delete tool, `gh issue delete` and `glab issue delete`.
-- Ask: a Jira transition, comment or create. A GitHub create, comment, update, merge or push. `gh` and `glab` create, comment, close, edit and merge commands.
+- Deny:
+  - the `.env` reads: `.env`, `.env.local`, `.env.development`, `.env.production`, `.env.*.local` and `.envrc`. The list names each file, because `Read(**/.env.*)` also blocks `.env.example`;
+  - each Atlassian tool with `worklog` or `delete` in its name, and each GitHub delete tool (`mcp__github__` and `mcp__plugin_github_github__`);
+  - `gh issue delete`, `gh repo delete`, `glab issue delete`, `glab repo delete`, `jira issue delete`, `jira issue worklog` and an `acli` worklog command.
+- Ask:
+  - Atlassian: the write verbs `create`, `update`, `_add_`, `_remove_`, `_edit_`, `_comment`, `_transition_`, `_assign_`, `_move_`, `_link_to_` and `upload`. The rules use verbs, not nouns such as `sprint` or `watcher`, so a read tool (`jira_get_sprint_issues`) runs with no prompt;
+  - GitHub, for both prefixes: `create_`, `add_`, `update_`, `*_write`, `merge_`, `push_`, `run_`, `rerun_`, `assign_`, `request_` and `submit_`. `get_` and `list_` tools run with no prompt;
+  - `gh` and `glab` write commands: issue and PR or MR create, comment or note, close, edit or update, merge, review or approve, `gh release create`, and `gh api` with `-X`, `--method`, `-f`, `-F`, `--field`, `--raw-field` or `--input`;
+  - `jira issue` create, edit, assign, move, link, unlink, clone, comment and watch, `jira sprint add`, `jira epic` create, add and remove, and every `acli` command. `jira issue list` and `jira issue view` run with no prompt;
+  - destructive git and shell: `git push` with `--force`, `-f` or a `+` refspec, `git reset --hard`, `git clean`, `git branch -D` and a recursive `rm`. The guard hook blocks the worst cases first.
+
+`attribution` is `{ "commit": "", "pr": "", "sessionUrl": false }`. It removes the Claude attribution lines from commits and PRs.
+Do not use the boolean form `false`: an older Claude Code then skips the whole settings file.
 
 A server in the MCP catalog adds its own deny rules. The Figma server denies each tool that writes to Figma.
 
