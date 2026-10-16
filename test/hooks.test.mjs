@@ -43,6 +43,10 @@ test('guard blocks a read of .env in Bash, Read and Grep', async () => {
   for (const glob of ['*.ts', '*.env.example', '!.env']) {
     assert.equal((await hook('guard', { tool_name: 'Grep', tool_input: { pattern: 'KEY', glob } })).code, 0, glob)
   }
+  // Glob lists names and reads no content, so no pattern is a secret read.
+  for (const pattern of ['**/*', '*', 'src/*', '**/*.*', '**', '.env*']) {
+    assert.equal((await hook('guard', { tool_name: 'Glob', tool_input: { pattern } })).code, 0, pattern)
+  }
   assert.equal((await hook('guard', { tool_name: 'Bash', tool_input: { command: ['bash', '-lc', 'cat .env'] } })).code, 2)
 })
 
@@ -123,7 +127,8 @@ test('guard blocks a worklog or delete MCP tool (Codex has no deny rules) and pa
 test('guard blocks a destructive git or rm command and passes the safe forms', async () => {
   const blocked = ['git push --force', 'git push -f origin main', 'git push origin +main', 'git push --force-with-lease origin x',
     'git reset --hard HEAD~1', 'git clean -fd', 'git -C sub clean -xdf', 'npm test && git reset --hard',
-    'rm -rf /', 'rm -rf ~', 'rm -rf ~/', 'rm -rf .', 'rm -rf ./', 'rm -rf ..', 'rm -rf ../other', 'rm -rf /tmp/x', 'rm -fr "$HOME"', 'rm -r -f *', 'sudo rm -Rf /etc']
+    'rm -rf /', 'rm -rf ~', 'rm -rf ~/', 'rm -rf .', 'rm -rf ./', 'rm -rf ..', 'rm -rf ../other', 'rm -rf /tmp/x', 'rm -fr "$HOME"', 'rm -r -f *', 'sudo rm -Rf /etc',
+    'rm -rf ./*', '/bin/rm -rf ~', 'rm -vrf ~']
   for (const command of blocked) {
     const r = await bash(command)
     assert.equal(r.code, 2, command)
@@ -131,7 +136,8 @@ test('guard blocks a destructive git or rm command and passes the safe forms', a
   }
   assert.equal((await tool('Bash', { command: ['bash', '-lc', 'git push --force'] })).code, 2)
   const safe = ['git push origin x', 'git push -u origin feature-fix', 'git reset --soft HEAD~1', 'git clean -n', 'git status',
-    'rm file.txt', 'rm -rf node_modules', 'rm -rf ./dist build', 'rm -r coverage', 'echo "rm -rf is bad"', 'git log --grep=force']
+    'rm file.txt', 'rm -rf node_modules', 'rm -rf ./dist build', 'rm -r coverage', 'echo "rm -rf is bad"', 'git log --grep=force',
+    'rm -rf build > /dev/null 2>&1', 'git rm -r --cached .', 'git commit -m "docs: explain rm -rf ../tmp usage"', 'rm -rf dist 2>/tmp/err']
   for (const command of safe) assert.equal((await bash(command)).code, 0, command)
 })
 

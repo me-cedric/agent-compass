@@ -276,7 +276,13 @@ const unifiedDiff = (root, rel, content) => {
 
 // The managed paths that hold git conflict markers. Seed files belong to the project, so they are not checked.
 const conflicted = (root, plan) => [...[...plan.files].filter(([, w]) => w.mode !== 'seed').map(([rel]) => rel), ...plan.keys.keys(), ...plan.blocks.keys()]
-  .filter((rel) => statSync(join(root, rel), { throwIfNoEntry: false })?.isFile() && MARKERS.test(readFileSync(join(root, rel), 'utf8')))
+  .filter((rel) => {
+    if (!statSync(join(root, rel), { throwIfNoEntry: false })?.isFile()) return false
+    const text = readFileSync(join(root, rel), 'utf8')
+    // A block file belongs to the project outside the markers; only the compass block is checked.
+    if (!plan.blocks.has(rel)) return MARKERS.test(text)
+    try { return MARKERS.test(blockFind(text)?.inner ?? '') } catch { return false }
+  })
   .sort()
 
 const CODEX_HOOKS = '.codex/hooks.json'

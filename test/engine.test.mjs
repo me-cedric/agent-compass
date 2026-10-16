@@ -432,6 +432,13 @@ test('the lock keeps its tag only when the compass version is the same', async (
 
 const CONFLICT = '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n'
 
+test('conflict markers in the host part of a block file are not an error', async () => {
+  const compass = makeCompass()
+  const host = makeHost({ 'AGENTS.md': '# Project\n\n```\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> main\n```\n' })
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0, 'a fenced example in the host text is not a conflict')
+})
+
 test('conflict markers in the lock or in a managed file give one clear error and no write', async () => {
   const compass = makeCompass()
   const host = makeHost()
@@ -441,7 +448,7 @@ test('conflict markers in the lock or in a managed file give one clear error and
   const r = await ac(compass, host, 'sync')
   assert.equal(r.code, 1)
   assert.deepEqual(r.json.errors, ['.agents/compass.lock.json has git conflict markers; take one side or delete the lock, then run "ac sync"'])
-  put(host, { '.agents/compass.lock.json': lock, '.claude/output-styles/compass.md': CONFLICT, 'AGENTS.md': `${read(host, 'AGENTS.md')}${CONFLICT}` })
+  put(host, { '.agents/compass.lock.json': lock, '.claude/output-styles/compass.md': CONFLICT, 'AGENTS.md': read(host, 'AGENTS.md').replace('<!-- compass:end -->', `${CONFLICT}<!-- compass:end -->`) })
   const f = await ac(compass, host, 'sync')
   assert.equal(f.code, 1)
   assert.deepEqual(f.json.errors, ['.claude/output-styles/compass.md, AGENTS.md have git conflict markers; take one side or delete the lock, then run "ac sync"'])

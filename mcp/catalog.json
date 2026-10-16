@@ -224,8 +224,8 @@
     "kotlin-lsp@claude-plugins-official": {
       "description": "Language server for Kotlin: types, definitions and diagnostics.",
       "stacks": ["android-compose"],
-      "command": "kotlin-language-server",
-      "install": "brew install kotlin-language-server"
+      "command": "kotlin-lsp",
+      "install": "brew install JetBrains/utils/kotlin-lsp"
     },
     "csharp-lsp@claude-plugins-official": {
       "description": "Language server for C#: types, definitions and diagnostics.",

@@ -17,8 +17,9 @@ const REPO = /^(https:\/\/|file:\/\/|\/)/
 // U+200C and U+200D (the zero-width non-joiner and joiner) stay allowed: Arabic, Indic scripts and emoji sequences use them.
 const HIDDEN = /[\u202A-\u202E\u2066-\u2069\u200B\u200E\u200F\u2060\u{E0000}-\u{E007F}]|(?<!^)\uFEFF/u
 
-// The files of a fetched tree that hold hidden Unicode. A file with a NUL byte is binary and is not checked.
-export const hiddenText = (dir) => walk(dir).filter((rel) => {
+// The files of the listed skill dirs of a fetched tree that hold hidden Unicode. A file with a NUL byte is binary and is not checked.
+// Other files of the repository are not installed, so they are not checked.
+export const hiddenText = (dir, skills = ['.']) => walk(dir).filter((rel) => skills.some((s) => s === '.' || rel === s || rel.startsWith(`${s}/`) || rel.split('/').includes(s))).filter((rel) => {
   const buf = readFileSync(join(dir, rel))
   return !buf.includes(0) && HIDDEN.test(buf.toString('utf8'))
 })
@@ -62,7 +63,7 @@ const fetchOne = (id, src) => {
     }
   }
   rmSync(join(tmp, '.git'), { recursive: true, force: true })
-  const hidden = hiddenText(tmp)
+  const hidden = hiddenText(tmp, src.skills)
   if (hidden.length) {
     rmSync(tmp, { recursive: true, force: true })
     return { error: `upstream ${id}: ${hidden.join(', ')} ${hidden.length > 1 ? 'hold' : 'holds'} hidden Unicode characters (bidi, zero-width or tag); compass does not install the source` }

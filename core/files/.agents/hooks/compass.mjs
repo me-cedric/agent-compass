@@ -59,13 +59,16 @@ const gitDanger = (w) => {
   return false
 }
 const RISKY = new Set(['/', '~', '~/', '.', './', '..', '../', '*', '$HOME', '${HOME}'])
+// `git rm` is undoable. A redirection ends the arguments. The command may be a path such as /bin/rm.
 const rmDanger = (w, cwd, root) => {
-  const i = w.indexOf('rm')
+  if (w.some((x) => basename(x) === 'git')) return false
+  const i = w.findIndex((x) => basename(x) === 'rm')
   if (i < 0) return false
-  const args = w.slice(i + 1)
+  const stop = w.findIndex((x, n) => n > i && /^\d*>/.test(x))
+  const args = w.slice(i + 1, stop < 0 ? undefined : stop)
   if (!args.includes('--recursive') && !shortFlag(args, 'r') && !shortFlag(args, 'R')) return false
   return args.filter((a) => !a.startsWith('-')).some((a) => {
-    if (RISKY.has(a)) return true
+    if (RISKY.has(a) || /^(\.\/)?\*$/.test(a)) return true
     const rel = relative(root, resolve(cwd, home(a)))
     return rel === '' || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)
   })
@@ -87,7 +90,8 @@ const guard = (input) => {
     return lockEdit([t.file_path, t.notebook_path, ...[...patch.matchAll(PATCH_FILE)].map((m) => m[1].trim())].filter((p) => typeof p === 'string'))
   }
   const paths = [t.file_path, t.path, t.notebook_path].filter((p) => typeof p === 'string')
-  const glob = name === 'Glob' ? t.pattern : t.glob
+  // Glob lists file names and reads no content, so only the Grep glob counts.
+  const glob = name === 'Glob' ? undefined : t.glob
   const env = [...paths, ...words(cmd)].find(envFile) || (typeof glob === 'string' && globHit(glob))
   if (env) return `compass: the read of ${env} is blocked because .env files hold secrets. Read .env.example, or ask the user for the variable names.`
   const key = paths.find(keyFile) || words(cmd).find(keyWord)

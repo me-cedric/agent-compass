@@ -128,7 +128,7 @@ A key that the project already has stays as it is: compass keeps it and `ac doct
 |---|---|---|
 | `typescript-lsp@claude-plugins-official` | `nestjs-api`, `react-web`, `next-web`, `angular-web`, `expo-mobile`, `turbo-monorepo`, `drizzle-postgres`, `bullmq` | `typescript-language-server` |
 | `swift-lsp@claude-plugins-official` | `swift-ios`, `macos-desktop` | `sourcekit-lsp` |
-| `kotlin-lsp@claude-plugins-official` | `android-compose` | `kotlin-language-server` |
+| `kotlin-lsp@claude-plugins-official` | `android-compose` | `kotlin-lsp` |
 | `jdtls-lsp@claude-plugins-official` | `android-java` | `jdtls` |
 | `csharp-lsp@claude-plugins-official` | `winui-desktop` | `csharp-ls` |
 | `rust-analyzer-lsp@claude-plugins-official` | `gtk-rust` | `rust-analyzer` |

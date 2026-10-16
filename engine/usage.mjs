@@ -176,7 +176,7 @@ const codexRow = (lines, graph) => {
   const [input, cached, output] = [n(total.input_tokens), n(total.cached_input_tokens), n(total.output_tokens)]
   const model = json(context)?.payload?.model
   return {
-    key: null, provider: 'codex', t: at.getTime(), day: localDay(at), branch: '(none)', effort: null, cwd: meta.cwd || '(unknown)', model: typeof model === 'string' && model ? model : '(unknown)', side: Boolean(meta.source?.subagent),
+    key: null, provider: 'codex', t: at.getTime(), day: localDay(at), branch: meta.git?.branch || '(none)', effort: null, cwd: meta.cwd || '(unknown)', model: typeof model === 'string' && model ? model : '(unknown)', side: Boolean(meta.source?.subagent),
     usage: { input_tokens: input - cached + Math.max(0, n(total.total_tokens) - input - output), output_tokens: output, cache_read_input_tokens: cached },
     session: meta.id || '(unknown)', graph, messages: steps,
   }

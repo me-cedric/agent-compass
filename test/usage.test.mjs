@@ -250,7 +250,7 @@ const OLD = { input_tokens: 0, cached_input_tokens: 0, output_tokens: 0, reasoni
 // c1: the final total counts, a repeated total is one step, an event without info is skipped, the last turn_context names the model.
 // c2: a sub-agent thread on another day and project. c3: an old file with only total_tokens. c4: no token_count. c5: no session_meta.
 const codexFiles = (codex) => {
-  putCodex(codex, 'c1', [header('c1', '/x/repo'), ...context('gpt-test-1'), event('event_msg', { type: 'token_count', info: null }), count(totals(1000, 800, 100, 40)), count(totals(1000, 800, 100, 40)),
+  putCodex(codex, 'c1', [header('c1', '/x/repo', { git: { branch: 'feat/codex' } }), ...context('gpt-test-1'), event('event_msg', { type: 'token_count', info: null }), count(totals(1000, 800, 100, 40)), count(totals(1000, 800, 100, 40)),
     ...context('gpt-test-2'), count(totals(5000, 4000, 400, 150)), toolCall('codebase-memory-mcp')])
   putCodex(codex, 'c2', [header('c2', '/y/other', { timestamp: at(3, 11), source: { subagent: 'review' } }), ...context('gpt-test-1'), count(totals(300, 100, 50)), toolCall('playwright')], '2026/03/11')
   putCodex(codex, 'c3', [header('c3', '/x/repo'), count(OLD)])
@@ -280,6 +280,7 @@ test('readUsage: a Codex session is one row from the final token_count, with its
     ['codex', 'c3', '/x/repo', '2026-03-10', '2026-03-10', 303, 1, false],
   ])
   const c1 = u.bySession[0]
+  assert.ok(u.byBranch.some((r) => r.branch === 'feat/codex' && r.project === '/x/repo'), 'a Codex session takes its branch from session_meta.git')
   assert.deepEqual([c1.input, c1.cacheRead, c1.output, c1.cacheWrite, c1.cost], [1000, 4000, 400, 0, 0])
   close(c1.cacheHit, 4000 / 5000)
   assert.deepEqual(u.byModel.map((m) => [m.model, m.tokens]), [['gpt-test-2', 5400], ['gpt-test-1', 350], ['(unknown)', 303]])
