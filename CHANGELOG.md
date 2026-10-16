@@ -6,14 +6,15 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 ### Engine
 
-- The `ac` command has `init`, `sync`, `check`, `doctor` and `migrate`. Each command has `--dry` and `--json`. Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
+- The `ac` command has `init`, `sync`, `check`, `doctor` and `migrate`. These five take `--root`, `--dry` and `--json`. Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 - `ac sync` writes files, JSON and TOML keys, and text blocks into the project. It records each one in `.agents/compass.lock.json`. Two syncs give no diff.
 - A file that the project edited stays as it is. `ac doctor` lists it as `kept`.
 - `ac check --frozen` fails when the project is different from the lock.
 - Pinned upstream skill sources are in `upstream.json`. The sync fetches them with a timeout and keeps a cache.
 - `.agents/konvoy.json` marks the items that Konvoy owns. Compass does not write them.
 - `ac doctor --tokens` measures the always-on context against a budget of 2,000 tokens.
-- `ac doctor --global` reports the user-level Claude Code and Codex setup. It only reads files. `--measure` runs each SessionStart hook once and counts its output.
+- `ac doctor` warns when the command of a selected MCP server is not on PATH.
+- `ac doctor --global` reports the user-level Claude Code and Codex setup. It only reads files. It warns about a hook that is listed more than once. `--measure` runs each SessionStart hook once and counts its output.
 - The licence is MIT.
 
 ### Harness
@@ -35,13 +36,15 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 - `env`, `local-run` and `e2e`: `ac env` checks the env catalog and shares values with age. `ac dev` starts the local stack with process-compose. `ac run` runs a named command from `agent-compass.commands.json`.
 - `security`, `ci-github`, `ci-gitlab` and `renovate`: the `vuln-triage` skill, a SARIF merge script and opt-in CI seeds.
-- `mcp/catalog.json` has 18 read-only MCP servers with pinned versions. The sync writes the chosen servers for Claude Code, Codex and VS Code.
+- `mcp/catalog.json` has 19 read-only MCP servers with pinned versions. The sync writes the chosen servers for Claude Code, Codex and VS Code. `codebase-memory` is on in every project; `projectmem` is a trial.
+- The catalog also has the Claude LSP plugins for each stack (TypeScript, Swift, Kotlin, C#, Rust). The sync turns them on in `.claude/settings.json`.
 
 ### UI
 
 - `ac ui` starts a local web UI on `127.0.0.1`. The tabs are Projects, Assets, Env, Run, Tests, Usage, Delivery and Promote.
-- The Assets tab switches each skill, rule, agent, pack, MCP server and upstream source on or off.
-- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code transcripts.
+- The Assets tab switches each skill, rule, agent, pack, MCP server, Claude plugin, upstream source, managed file and block on or off. It shows the set that fits the stack and applies it with one button.
+- The Delivery tab pulls GitHub or GitLab issues, read only.
+- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code transcripts. `--by session` gives the tokens of each session, with and without the code graph.
 - `ac promote` copies a project skill into compass.
 
 ### Migration
@@ -50,12 +53,13 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 - `ac migrate --docs` moves spec-kit specs, a root `specs/` folder and question registers to the Konvoy docs layout. Each source moves under `migrated/`.
 - `ac init --from-specs <dir>` creates the docs layout and copies the documents into the OpenSpec inbox.
 - `ac check --docs` checks the docs layout.
+- The migration code is in `migrate/` and loads only for `ac migrate`.
 
 ### User plugin
 
 - The plugin `compass-user` works in every repository. Install it from this repository: `claude plugin marketplace add <path>`, then `claude plugin install compass-user@agent-compass`. Codex and Copilot CLI use the same marketplace.
 - It has the hooks, the `compass` output style, the `compass-style` skill and the script `scripts/statusline.mjs`. The status line shows the model, the directory, the cache share and the context size.
-- The plugin hook does nothing in a project that has `.agents/compass.lock.json`, because the project hook runs there.
+- In a project with `.agents/compass.lock.json`, the plugin hook steps back for each event that the project hook runs. A project that keeps its own hooks still gets the `.env` guard.
 - `npm run release -- <version>` sets the version in every file that carries it and adds a CHANGELOG heading. `npm run lint:release` checks that the versions agree.
 
 ### Removed
