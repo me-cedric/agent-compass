@@ -73,7 +73,7 @@ const CHECK_CLASS = { ok: 'ok', warn: 'warn', fail: 'err' }
 
 // The checks and the token items of `ac doctor --tokens`. It runs after the tab is drawn.
 const doctorBox = () => {
-  const out = h('div', note('Running the checks.'))
+  const out = h('div', {}, note('Running the checks.'))
   api('doctor').then((d) => fill(out, errors(d),
     table(['Status', 'Check', 'Detail'], d.checks.map((c) => [h('span', { className: CHECK_CLASS[c.status] ?? 'muted' }, c.status), c.name, c.detail])),
     d.tokens ? [h('div', { className: 'tiles' }, tile('Always-on tokens', num(d.tokens.total)), tile('SessionStart chars', num(d.tokens.startChars))),
@@ -85,7 +85,7 @@ const doctorBox = () => {
 async function projects(box) {
   const [p, s] = await Promise.all([api('project'), api('sync')])
   $('root').textContent = p.root
-  const others = h('div', note('Loading other projects. This can take 10 s or more.'))
+  const others = h('div', {}, note('Loading other projects. This can take 10 s or more.'))
   api('project/others').then((o) => others.replaceChildren(o.others.length
     ? table(['Project', ''], o.others.map((root) => [root, act('Switch', async () => { await api('project', { root }); reload() })]))
     : note('The usage data of the last 90 days has no other project with .agents/compass.json.')), (err) => others.replaceChildren(note(err.message, 'err')))
