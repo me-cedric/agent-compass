@@ -36,9 +36,10 @@ See [docs/guide/install.md](docs/guide/install.md).
 | `ac run` | Run a command from `agent-compass.commands.json`. Store the result in `.agents/runs/`. |
 | `ac usage` | Show tokens, cost, cache hit rate and sub-agent share from the Claude Code transcripts. |
 | `ac promote` | Copy a project skill into compass. |
+| `ac assets` | List the assets with their tokens. `on`, `off` and `recommended` switch assets in `.agents/compass.json`. |
 | `ac ui` | Start the local web UI on `127.0.0.1`. |
 
-`init`, `sync`, `check`, `doctor` and `migrate` take `--root <dir>`, `--dry` and `--json`. Every command has `--help`; read it for the options of `env`, `dev`, `run`, `usage`, `promote` and `ui`. Exit 0 is success, 1 is an error or drift, 2 is a usage error.
+`init`, `sync`, `check`, `doctor` and `migrate` take `--root <dir>`, `--dry` and `--json`. Every command has `--help`; read it for the options of `env`, `dev`, `run`, `usage`, `promote`, `assets` and `ui`. Exit 0 is success, 1 is an error or drift, 2 is a usage error.
 
 ## Providers
 

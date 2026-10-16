@@ -19,7 +19,7 @@ const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const COMMANDS = ['init', 'sync', 'check', 'doctor', 'migrate']
 // These commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
 const OWN_CLI = {
-  env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', promote: 'engine/promote.mjs', ui: 'ui/server.mjs',
+  env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', promote: 'engine/promote.mjs', assets: 'engine/assets.mjs', ui: 'ui/server.mjs',
 }
 const USAGE = `Usage: ac <command> [options]
 
@@ -43,9 +43,12 @@ Commands:
            hit rate and sub-agent share by day, project and model.
   promote  List the project skills that compass does not own. With a name: check a skill
            and copy it into skills/ of this compass checkout.
+  assets   List the assets (skills, rules, agents, packs, MCP servers, keys, seeds, and more)
+           with the tokens that each one adds. "on" and "off" switch one asset in
+           .agents/compass.json; "recommended" switches on the recommended set.
   ui       Start the local web UI on 127.0.0.1.
 
-Use "ac <env|dev|run|usage|promote|ui> --help" for the options of these commands.
+Use "ac <env|dev|run|usage|promote|assets|ui> --help" for the options of these commands.
 
 Options:
   --root <dir>   Use this project root. The default is the current directory.
