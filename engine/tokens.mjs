@@ -39,7 +39,7 @@ const runHook = (root, command, event) => {
 export const measureTokens = ({ AC, root }) => {
   const cfg = loadConfig(root, AC)
   const kv = loadKonvoy(root)
-  if (cfg.errors.length || kv.errors.length) return { ok: false, items: [], total: 0, errors: [...cfg.errors, ...kv.errors] }
+  if (cfg.errors.length || kv.errors.length) return { ok: false, items: [], total: 0, errors: [...cfg.errors, ...kv.errors], warnings: [] }
   const plan = buildPlan({ AC, root, config: cfg.config, paths: resolvePaths(cfg.config, kv.konvoy).paths })
   const errors = []
   const items = []
@@ -64,8 +64,10 @@ export const measureTokens = ({ AC, root }) => {
     }
   }
 
+  // A held upstream source is not in the cache, so its skills are not in the listing yet.
+  const warnings = plan.held.length ? ['some upstream skills are not in the cache, so the skill listing is not complete; run "ac sync"'] : []
   const total = items.reduce((sum, i) => sum + i.tokens, 0)
   if (total > BUDGET.tokens) errors.push(`the always-on context is about ${total} tokens; the budget is ${BUDGET.tokens}`)
   if (startChars > BUDGET.sessionStartChars) errors.push(`the SessionStart output is ${startChars} characters; the budget is ${BUDGET.sessionStartChars}`)
-  return { ok: !errors.length, items, total, startChars, errors }
+  return { ok: !errors.length, items, total, startChars, errors, warnings }
 }

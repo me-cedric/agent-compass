@@ -1,7 +1,7 @@
 # External Skill Sources
 
 Agent Compass tracks every external skill source in
-[`skills/upstream-sources.json`](../../skills/upstream-sources.json). **No
+`skills/upstream-sources.json`. **No
 external skill is stored in this repository.** Every source uses
 `"strategy": "reference"`: the registry holds the pin, the licence, the upstream
 inventory, and Agent Compass's own curation, and

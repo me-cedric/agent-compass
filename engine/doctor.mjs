@@ -7,6 +7,7 @@ import { run } from './util.mjs'
 
 const tokenChecks = (t) => [
   ...t.items.map((i) => ({ name: 'tokens', status: 'ok', detail: `${i.name}: ${i.chars} chars, about ${i.tokens} tokens` })),
+  ...t.warnings.map((detail) => ({ name: 'budget', status: 'warn', detail })),
   ...t.errors.map((detail) => ({ name: 'budget', status: 'fail', detail })),
   ...(t.errors.length ? [] : [{ name: 'budget', status: 'ok', detail: `about ${t.total} of ${BUDGET.tokens} tokens; SessionStart ${t.startChars} of ${BUDGET.sessionStartChars} chars` }]),
 ]

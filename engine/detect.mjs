@@ -31,6 +31,10 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
   }
   // A Gradle build is only an Android build when a build file applies an Android
   // plugin — a Kotlin service uses the same file names.
+  // Desktop toolkits: GTK 4 in Cargo or Meson, WinUI 3 in a .csproj, macOS in an Xcode project.
+  // ponytail: a SwiftPM-only macOS app is not detected; Package.swift cannot tell an app from a CLI or a server.
+  const text = (file) => { try { return readFileSync(join(root, file), 'utf8') } catch { return '' } }
+  if (/\b(gtk4|libadwaita|relm4)\b/.test(text('Cargo.toml') + text('meson.build'))) acc.markers.add('gtk')
   for (const build of ['build.gradle.kts', 'build.gradle']) {
     const file = join(root, build)
     if (!existsSync(file)) continue
@@ -43,6 +47,10 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
       // An Xcode project or workspace is a directory, not a file.
       if (entry.isDirectory() && (entry.name.endsWith('.xcodeproj') || entry.name.endsWith('.xcworkspace'))) {
         acc.markers.add('xcode-project')
+        if (/SDKROOT = macosx/.test(text(join(entry.name, 'project.pbxproj')))) acc.markers.add('macos')
+      }
+      if (entry.isFile() && entry.name.endsWith('.csproj') && /Microsoft\.WindowsAppSDK|<UseWinUI>\s*true/i.test(text(entry.name))) {
+        acc.markers.add('winui')
       }
       if (entry.isDirectory() && !SCAN_IGNORE.has(entry.name) && !entry.name.startsWith('.')) {
         collectWorkspace(join(root, entry.name), depth - 1, acc)
@@ -55,6 +63,12 @@ const collectWorkspace = (root, depth = 3, acc = { deps: new Set(), markers: new
 // Detect stack ids for a host repo. Matches exact dependency names (or scoped
 // prefixes), never substrings — "@next/eslint-plugin-next" is not Next.js.
 const isDir = (path) => { try { return statSync(path).isDirectory() } catch { return false } }
+
+// Every id that detectStacks can return. Asset frontmatter `stacks` must use these.
+export const STACK_IDS = [
+  'nestjs-api', 'angular-web', 'react-web', 'next-web', 'expo-mobile', 'android-compose', 'swift-ios', 'drizzle-postgres',
+  'bullmq', 'turbo-monorepo', 'gtk-desktop', 'winui-desktop', 'macos-desktop', 'spec-kit', 'openspec',
+]
 
 export const detectStacks = (root, { openspecDir } = {}) => {
   const { deps, markers } = collectWorkspace(root)
@@ -76,6 +90,9 @@ export const detectStacks = (root, { openspecDir } = {}) => {
     (anyDep((n) => n.includes('drizzle')) || markers.has('drizzle.config.ts')) && 'drizzle-postgres',
     (deps.has('bullmq') || deps.has('@nestjs/bullmq')) && 'bullmq',
     (deps.has('turbo') || markers.has('turbo.json')) && 'turbo-monorepo',
+    markers.has('gtk') && 'gtk-desktop',
+    markers.has('winui') && 'winui-desktop',
+    !crossPlatform && markers.has('macos') && 'macos-desktop',
     markers.has('.specify') && 'spec-kit',
     // A declared path (compass.json or konvoy.json `paths`) wins over the conventional locations.
     [openspecDir, 'docs/openspec', 'openspec', '.openspec'].some((d) => d && isDir(join(root, d))) && 'openspec',

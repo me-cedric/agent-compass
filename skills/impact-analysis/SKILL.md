@@ -1,149 +1,97 @@
 ---
 name: impact-analysis
-description: >
-  Analyse what changed since a base git reference and produce the developer
-  action plan — technical impacts, blast radius, and the exact project documents
-  that are now stale. Use when the user asks for the impact of a change, what a
-  branch breaks, what a diff affects, which docs to update after a change, or a
-  technical action plan before merging.
+description: Analyse what changed since a base git reference and write the developer action plan with technical impacts, blast radius and the project documents that are now stale. Use for the impact of a branch or diff before merge.
 risk_level: low
 writes_files: true
 requires_tools: [git]
-license: MIT
-metadata:
-  version: "1"
+disable-model-invocation: true
 ---
 
-# Impact analysis
+# impact-analysis
 
-Answer one question for the team: **given what changed, what else has to change?**
+Answer one question: given what changed, what else must change?
+This is the developer half of the delivery flow. `delivery-digest` is the Product Owner half. Never mix the two in one file.
 
-The output is the developer-facing half of the delivery flow. Its twin is
-[`delivery-digest`](../delivery-digest/SKILL.md), which says the same thing to a
-Product Owner. Never mix the two audiences in one file.
-
-## Paths
-
-This skill uses the default compass layout below. When the host project puts an
-artifact somewhere else, use the host path and say so in the report.
-
-| Artifact | Default path |
-| --- | --- |
-| Specs | `specs/` |
-| Decisions | `docs/decisions/` |
-| Delivery outputs | `docs/delivery/` |
-
-## Read the change first
+## Read the change
 
 ```bash
-git diff --stat <base>...HEAD    # committed work
-git status --short               # work in progress
-git diff <base>                  # the actual patch
+git diff --stat <base>...HEAD
+git status --short
+git diff <base>
 ```
 
-`<base>` is whatever the user names (a branch, a tag, `HEAD~5`). If they do not
-name one, ask — guessing the base makes every number in the report wrong.
+Ask the user for `<base>` when it is missing. A guessed base makes every number wrong.
+Never claim an impact that you did not confirm in the file. A grep hit is a lead, not a finding.
 
-**Never claim an impact you have not opened the file to confirm.** A grep hit is
-a lead, not a finding.
+## Seven axes
 
-## The seven impact axes
+Walk all seven. Write `None.` for an empty axis. A silent axis reads as "not checked".
 
-Walk all seven. Report `none` explicitly for the ones that came back empty —
-a silent axis reads as "not checked".
+1. Behavior: what a user or caller can now do, or can no longer do. A breaking change gets its own line.
+2. Contracts: routes, methods, status codes, payloads, DTOs, shared types, events, queue messages. Each consumer of a changed contract is an impact. See `api-contract-sync`.
+3. Data: schema, migrations, backfills, indexes, retention. Say if the migration is reversible.
+4. Configuration: env vars, flags, secrets, infrastructure values. An added variable lands on every surface: the validation schema, `.env.example` and the deployment config.
+5. Security and privacy: authn and authz, ownership checks on by-id paths, input validation, injection surface, sensitive logging, new dependencies.
+6. Operations: build, CI, deployment order, rollback path, and a signal for each new failure mode.
+7. Delivery documents: the table below.
 
-1. **Behaviour** — what a user or a caller can now do, or can no longer do.
-   Breaking changes get their own line.
-2. **Contracts** — API routes, methods, status codes, payloads, DTOs, shared
-   types, events, queue message shapes. Any consumer of a changed contract is an
-   impact even if its own files are untouched. See
-   [`api-contract-sync`](../api-contract-sync/SKILL.md).
-3. **Data** — schema changes, migrations, backfills, indexes, retention. Say
-   whether the migration is reversible.
-4. **Configuration** — env vars, feature flags, secrets, infrastructure values.
-   An added variable must land on every surface: validation schema, `.env`
-   example, deployment config. See
-   [`env-var-sync`](../../knowledge/instincts/env-var-sync.md).
-5. **Security & privacy** — authn/authz, ownership checks on by-id paths, input
-   validation, injection surface, logging of sensitive values, new dependencies.
-6. **Operations** — build, CI, deployment order, rollback path, observability
-   (does a new failure mode have a signal?).
-7. **Delivery artifacts** — the documents listed below.
+## Documents to check
 
-## Documents to check for staleness
+For each document write `up to date`, `stale` with the change to make, or `not affected`.
 
-For each, state `up to date`, `stale — <what to change>`, or `not affected`.
-
-| Artifact | Default path | Goes stale when |
-| --- | --- | --- |
-| Specs | `specs/` | behaviour changed, or a requirement is now implemented |
-| Decisions | `docs/decisions/` | a choice was made or reversed that no ADR records |
-| API contracts | the OpenAPI source and request collection | any route, payload, status code or auth rule moved |
-| Data models | `docs/data-models/` | a table, column, relation or enum changed |
-| Diagrams | `docs/diagrams/` | a component, container or dependency appeared or vanished |
-| Network flows | `docs/infra/network-flows.json` | a new port, protocol, source or destination is required |
-| Design system | `design.md` | tokens, components or UI rules changed |
-| Assignments | `docs/delivery/assignments.json` | scope moved between profiles, or a gate cleared |
-| Module docs | `**/README.md`, `**/DESIGN.md` | a module's public API, files or configuration changed |
+| Document | Location | Stale when |
+|---|---|---|
+| Specs | `{{OPENSPEC_DIR}}` | Behavior changed or a requirement is now built |
+| Decisions | `{{ADR_DIR}}` | A choice was made or reversed and no ADR records it |
+| API contracts | `{{OPENAPI_DIR}}` and the request collection | A route, payload, status code or auth rule moved |
+| Data models | `{{DATA_MODELS_DIR}}` | A table, column, relation or enum changed |
+| Diagrams | `{{DIAGRAMS_DIR}}` | A component or dependency appeared or vanished |
+| Network flows | `{{FLOWS_FILE}}` | A new port, protocol, source or destination is needed |
+| Designs | `{{DESIGNS_DIR}}` | Tokens, components or UI rules changed |
+| Assignments | `{{DELIVERY_DIR}}/assignments.json` | Scope moved between profiles or a gate cleared |
+| Module docs | `**/README.md`, `**/DESIGN.md` | A module's public API, files or configuration changed |
 
 ## Output
 
-File: `docs/delivery/impacts/<YYYY-MM-DD>-<kebab-slug>.md`
+Write `{{DELIVERY_DIR}}/impacts/<YYYY-MM-DD>-<slug>.md`.
 
 ```markdown
 ---
-title: <one line, what this change is>
+title: <one line>
 date: <YYYY-MM-DD>
-base: <the base reference>
+base: <base reference>
 audience: dev
 ---
 
 # <title>
 
 ## Change set
-
-<n> files, +<insertions> / −<deletions>. Commits: <n>.
-One line per meaningful group of files — not a file listing.
+<n> files, +<added> / -<removed>, <n> commits. One line for each group of files.
 
 ## Impacts
-
-### Behaviour
+### Behavior
 ### Contracts
 ### Data
 ### Configuration
-### Security & privacy
+### Security and privacy
 ### Operations
 
-Each axis: findings, or `None.`
-
 ## Documents to update
-
 | Document | State | Action |
-| --- | --- | --- |
 
 ## Action plan
-
-Ordered checklist. Each item names a file or a command, and an owner profile
-when `docs/delivery/assignments.json` says who owns that scope.
-
-- [ ] …
+- [ ] <item with a file or a command, and an owner profile when assignments name one>
 
 ## Risks
 
-What could still break, and how you would notice.
-
 ## Validation
-
-The commands that prove this change works, and their result:
-`passed` | `failed` | `partial` | `not run` + reason.
+<each command with its result: passed, failed, partial or not run, with the reason>
 ```
 
 ## Rules
 
-- Order the action plan by dependency, not by severity. A blocked item first is
-  a stalled plan.
-- An item nobody can act on is a **risk**, not a task.
+- Order the action plan by dependency, not by severity.
+- An item that nobody can act on is a risk, not a task.
 - If the diff is truncated, say so and name what you did not read.
-- Do not fix anything from this skill. It produces the plan; a separate task
-  executes it.
-- Do not commit or push. The user commits.
+- Do not fix anything. This skill writes the plan. A separate task does the work.
+- Do not commit.

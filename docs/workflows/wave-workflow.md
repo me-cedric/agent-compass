@@ -20,7 +20,7 @@ well as code.
    file.
 2. **Name each wave's clusters with disjoint file sets.** One writer per file,
    always. Two agents in one file is how a request loses a day. See
-   [`../../skills/work-splitting/SKILL.md`](../../skills/work-splitting/SKILL.md).
+   `../../skills/work-splitting/SKILL.md`.
 3. **Cap the concurrent subagents**, and pass the model and the reasoning effort
    explicitly on every call — see [`../tooling/model-routing.md`](../tooling/model-routing.md).
    Five at once is a workable ceiling; more than that and the review queue, not

@@ -276,5 +276,5 @@ them for spec-kit headings stops `openspec validate` from understanding the file
 
 - [spec-driven-development.md](spec-driven-development.md) — the layout-neutral flow.
 - `openspec-artifact-chain` — the instinct.
-- [`spec-drift-triage`](../../skills/spec-drift-triage/SKILL.md) — when code and spec already disagree.
-- [`progress-audit`](../../skills/progress-audit/SKILL.md) — what is built against what is specified.
+- `spec-drift-triage` — when code and spec already disagree.
+- `progress-audit` — what is built against what is specified.

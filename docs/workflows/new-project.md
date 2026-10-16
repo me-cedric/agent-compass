@@ -4,7 +4,7 @@ Goal: from nothing to a running, standards-compliant project — and the same
 answers produce the same project for any teammate.
 
 Delegating the whole mission to an agent? Use
-[`skills/compass-bootstrap/SKILL.md`](../../skills/compass-bootstrap/SKILL.md) —
+`skills/compass-bootstrap/SKILL.md` —
 it translates architecture guidelines into the answers file and executes the
 steps below end-to-end.
 
@@ -44,7 +44,7 @@ the agent to:
 2. Scaffold the monorepo from [`templates/monorepo/`](../../templates/monorepo/)
    (turbo, pnpm, tsconfig, prettier, commitlint, husky, OSV).
 3. Pin versions ([version-pinning](../tooling/version-pinning.md)).
-4. Create the chosen apps from their [stack presets](../../stacks/).
+4. Create the chosen apps from their stack presets.
 5. Apply the architecture principles selected ([resilience](../architecture/resilience.md),
    [observability](../architecture/observability.md),
    [feature-flags](../architecture/feature-flags.md), …).

@@ -26,7 +26,7 @@ Two entry points:
   research-first, produces the first ADR(s).
 - **Ongoing decisions as the project runs:** capture them as they happen. If the
   decision was made in a meeting, hand the transcript to the
-  [`adr-from-meeting`](../../skills/adr-from-meeting/SKILL.md) skill.
+  `adr-from-meeting` skill.
 
 ## The shape
 

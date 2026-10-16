@@ -14,6 +14,7 @@ import { CONFIG, DEFAULT_CONFIG, loadConfig, loadKonvoy, ownershipErrors, resolv
 import { tagOf } from './git.mjs'
 import { blockFind, blockInner, blockRemove, blockSet, jsonDelete, jsonGet, jsonSet, tomlDelete, tomlGet, tomlRender, tomlSet } from './merge.mjs'
 import { buildPlan } from './plan.mjs'
+import { fetchUpstream } from './upstream.mjs'
 import { isObj, readJson, safeRel, sha, sorted } from './util.mjs'
 
 export const LOCK = '.agents/compass.lock.json'
@@ -70,6 +71,7 @@ export const reconcile = (root, plan, lock) => {
   }
   for (const [rel, prev] of Object.entries(lock.files)) {
     if (plan.files.has(rel) || prev.owner !== 'compass') continue
+    if (plan.held?.some((p) => rel.startsWith(p))) { files[rel] = prev; continue }
     if (claimed(rel)) { note('release', rel); continue }
     const have = read(rel)
     if (!have) continue
@@ -203,8 +205,9 @@ const steps = ({ AC, root, apply, init }, version, tag) => {
   if (early.length) return { errors: early }
 
   const { paths, from, warnings } = resolvePaths(cfg.config, kv.konvoy)
+  const fetched = apply ? fetchUpstream(AC, cfg.config.upstream) : []
   const plan = buildPlan({ AC, root, config: cfg.config, paths })
-  const out = { paths, pathsFrom: from, warnings, stacks: plan.stacks }
+  const out = { paths, pathsFrom: from, warnings: [...warnings, ...fetched, ...plan.warnings], stacks: plan.stacks }
   const planErrors = [...plan.errors, ...ownershipErrors(plan, lk.lock, kv.konvoy)]
   if (planErrors.length) return { ...out, errors: planErrors }
 

@@ -20,8 +20,8 @@ contents:
 - **Test command** — how to run this module's tests.
 
 Examples:
-[`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md),
-[`module-readme.external-service.example.md`](../../knowledge/examples/module-readme.external-service.example.md).
+`knowledge/examples/module-readme.resilience.example.md`,
+`module-readme.external-service.example.md`.
 
 ## DESIGN.md — one fixed section list
 

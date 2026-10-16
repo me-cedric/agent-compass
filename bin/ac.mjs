@@ -16,7 +16,8 @@ const USAGE = `Usage: ac <command> [options]
 
 Commands:
   init     Create .agents/compass.json if it is missing. Then sync.
-  sync     Write the compass files, keys and blocks into the project.
+  sync     Fetch the upstream sources that .agents/compass.json lists. Then write the
+           compass files, keys and blocks into the project.
   check    Compare the project with the compass state. Write nothing.
   doctor   Check the tools, the configuration and the ownership rules.
 

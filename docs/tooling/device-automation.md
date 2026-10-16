@@ -5,7 +5,7 @@ an agent drive and inspect a running app on an iOS simulator or device, an
 Android emulator or device, and more. It is a CLI, an MCP server and a typed
 Node.js API over one runtime. Agent Compass tracks it as a `reference` source:
 the pin, the licence and the skill inventory live in
-[`skills/upstream-sources.json`](../../skills/upstream-sources.json), and no
+`skills/upstream-sources.json`, and no
 upstream file is copied. The method that uses it is
 [mobile-visual-check](../workflows/mobile-visual-check.md).
 

@@ -29,7 +29,7 @@ brokers — is wrapped in resilience policies. Implementation:
 - Pair every policy with a span and a log so you can see it work — see
   [observability.md](observability.md).
 
-Reference example: [`knowledge/examples/module-readme.resilience.example.md`](../../knowledge/examples/module-readme.resilience.example.md)
+Reference example: `knowledge/examples/module-readme.resilience.example.md`
 and the `resilience-policy-pattern` instinct in
 [`knowledge/instincts/`](../../knowledge/instincts/).
 

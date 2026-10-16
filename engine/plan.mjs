@@ -4,21 +4,46 @@
 //   skills/<name>/   one skill dir    → .claude/skills/<name>/ and .agents/skills/<name>/ (same bytes)
 //   agents/<name>.md one role agent   → .claude/agents/<name>.md, .codex/agents/<name>.toml and,
 //                                       with `copilot-model`, .github/agents/<name>.agent.md
-//   rules/**/*.md    rule files       → .claude/rules/ (Copilot reads .claude/* too)
+//   rules/**/*.md    rule files       → .claude/rules/ (Copilot reads .claude/* too). A top-level
+//                                       rules/stack-<n>.md also installs as the Codex skill
+//                                       .agents/skills/stack-<n>/ (Codex has no path-scoped rules)
 //   files/**         managed files    → the same path in the host
 //   seed/**          seed files       → written once, then the project owns them
 //   blocks/<path>    Markdown block   → the compass block in <path>
 //   keys.json        owned keys       → { "<host .json or .toml file>": { "<dotted.key>": value } }
-// Layers: the compass root, core/, then each pack in compass.json "packs".
+// Layers: the compass root, core/, then each pack in compass.json "packs". Then the upstream sources
+// in compass.json "upstream", from the user cache (upstream.mjs).
 // An asset whose frontmatter has `stacks: [...]` installs only when one of those stacks is detected.
+// Skill, rule and block text gets the path placeholders of the resolved paths: {{DELIVERY_DIR}}, {{PERSONAS_FILE}} …
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
+import { PATH_DEFAULTS } from './config.mjs'
 import { detectStacks } from './detect.mjs'
 import { tomlText, tomlValue } from './merge.mjs'
+import { loadUpstream, sourceDir } from './upstream.mjs'
 import { dirs, frontmatter, list, safeRel, walk } from './util.mjs'
 
 const SKILL_ROOTS = ['.claude/skills', '.agents/skills']
+
+const TEXT = /\.(md|txt|json|ya?ml|toml)$/
+const LICENCE = /^(LICEN[CS]E|COPYING)([.-][\w.-]+)?$/i
+
+// {{DELIVERY_DIR}} for a directory key, {{PERSONAS_FILE}} for a file key.
+export const placeholders = (paths) => Object.fromEntries(Object.entries(paths)
+  .map(([key, value]) => [`${key.toUpperCase()}_${/\.\w+$/.test(PATH_DEFAULTS[key]) ? 'FILE' : 'DIR'}`, value]))
+
+const fill = (label, buf, vars, errors) => {
+  if (!TEXT.test(label)) return buf
+  const text = buf.toString('utf8')
+  const out = text.replace(/\{\{([A-Z][A-Z0-9_]*)\}\}/g, (token, key) => {
+    if (key in vars) return vars[key]
+    const error = `${label}: unknown placeholder ${token}`
+    if (!errors.includes(error)) errors.push(error)
+    return token
+  })
+  return out === text ? buf : Buffer.from(out)
+}
 
 const fits = (text, stacks) => {
   const want = list(frontmatter(text).data.stacks)
@@ -51,6 +76,9 @@ const copilotAgent = (name, text) => {
 
 export const buildPlan = ({ AC, root, config, paths }) => {
   const errors = []
+  const warnings = []
+  const held = []
+  const vars = placeholders(paths)
   const stacks = detectStacks(root, { openspecDir: paths.openspec })
   const excluded = (id) => config.exclude.some((e) => id === e || (e.endsWith('/') && id.startsWith(e)))
   const files = new Map()
@@ -63,7 +91,13 @@ export const buildPlan = ({ AC, root, config, paths }) => {
     if (files.has(dest)) errors.push(`two sources write ${dest}`)
     else files.set(dest, { content, mode, exec })
   }
-  const copy = (abs, dest, mode) => addFile(dest, readFileSync(abs), mode, (statSync(abs).mode & 0o111) !== 0)
+  const exec = (abs) => (statSync(abs).mode & 0o111) !== 0
+  const copy = (abs, dest, mode) => addFile(dest, readFileSync(abs), mode, exec(abs))
+  const addSkill = (name) => {
+    if (skills.has(name)) { errors.push(`two sources ship skill ${name}`); return false }
+    skills.add(name)
+    return true
+  }
 
   const addKeys = (source) => {
     let data
@@ -86,9 +120,11 @@ export const buildPlan = ({ AC, root, config, paths }) => {
       const dir = join(layer, 'skills', name)
       const all = walk(dir)
       if (!all.includes('SKILL.md') || excluded(name) || !fits(readFileSync(join(dir, 'SKILL.md'), 'utf8'), stacks)) continue
-      if (skills.has(name)) { errors.push(`two sources ship skill ${name}`); continue }
-      skills.add(name)
-      for (const rel of all) for (const base of SKILL_ROOTS) copy(join(dir, rel), `${base}/${name}/${rel}`)
+      if (!addSkill(name)) continue
+      for (const rel of all) {
+        const content = fill(`skills/${name}/${rel}`, readFileSync(join(dir, rel)), vars, errors)
+        for (const base of SKILL_ROOTS) addFile(`${base}/${name}/${rel}`, content, 'managed', exec(join(dir, rel)))
+      }
     }
     for (const rel of walk(join(layer, 'agents')).filter((f) => /^[^/]+\.md$/.test(f))) {
       const text = readFileSync(join(layer, 'agents', rel), 'utf8')
@@ -98,22 +134,60 @@ export const buildPlan = ({ AC, root, config, paths }) => {
       if (frontmatter(text).data['copilot-model']) addFile(`.github/agents/${rel.slice(0, -3)}.agent.md`, Buffer.from(copilotAgent(rel.slice(0, -3), text)))
     }
     for (const rel of walk(join(layer, 'rules')).filter((f) => f.endsWith('.md'))) {
-      const abs = join(layer, 'rules', rel)
-      if (fits(readFileSync(abs, 'utf8'), stacks)) copy(abs, `.claude/rules/${rel}`)
+      const text = fill(`rules/${rel}`, readFileSync(join(layer, 'rules', rel)), vars, errors).toString('utf8')
+      const name = /^(stack-[a-z0-9-]+)\.md$/.exec(rel)?.[1]
+      if (!fits(text, stacks) || excluded(`.claude/rules/${rel}`) || (name && excluded(name))) continue
+      addFile(`.claude/rules/${rel}`, Buffer.from(text))
+      if (!name) continue
+      const { data, body } = frontmatter(text)
+      if (!data.description) errors.push(`rules/${rel} needs a description for its Codex skill`)
+      else if (addSkill(name)) addFile(`.agents/skills/${name}/SKILL.md`, Buffer.from(`---\nname: ${name}\ndescription: ${JSON.stringify(data.description)}\n---\n${body}`))
     }
     for (const rel of walk(join(layer, 'files'))) copy(join(layer, 'files', rel), rel, 'managed')
     for (const rel of walk(join(layer, 'seed'))) copy(join(layer, 'seed', rel), rel, 'seed')
     for (const rel of walk(join(layer, 'blocks'))) {
       if (excluded(rel)) continue
       if (blocks.has(rel)) errors.push(`two sources write the compass block in ${rel}`)
-      else blocks.set(rel, readFileSync(join(layer, 'blocks', rel), 'utf8'))
+      else blocks.set(rel, fill(`blocks/${rel}`, readFileSync(join(layer, 'blocks', rel)), vars, errors).toString('utf8'))
     }
     if (existsSync(join(layer, 'keys.json'))) addKeys(join(layer, 'keys.json'))
+  }
+
+  // Upstream skills are third-party text: copied as they are, with the source licence file beside each one.
+  // A source that is not in the cache holds its installed files, so offline work removes nothing.
+  const upstream = loadUpstream(AC)
+  errors.push(...upstream.errors)
+  for (const id of config.upstream) {
+    const src = upstream.sources[id]
+    if (!Object.hasOwn(upstream.sources, id)) { if (!upstream.errors.length) errors.push(`.agents/compass.json: unknown upstream source "${id}"`); continue }
+    const dir = sourceDir(id, src)
+    const cached = existsSync(dir)
+    if (!cached) warnings.push(`upstream ${id} is not in the cache; run "ac sync" online to install it`)
+    // walk() skips symlinks, so no upstream link can copy a file from outside the cache.
+    const tree = cached ? walk(dir) : []
+    const licences = tree.filter((f) => LICENCE.test(f))
+    if (cached && !licences.length) { errors.push(`upstream ${id} has no licence file at its root; compass does not install it`); continue }
+    for (const entry of src.skills) {
+      const name = entry === '.' ? id : basename(entry)
+      if (excluded(name) || !addSkill(name)) continue
+      if (!cached) { held.push(...SKILL_ROOTS.map((base) => `${base}/${name}/`)); continue }
+      const found = entry === '.' ? [''] : entry.includes('/') ? [`${entry}/`]
+        : tree.filter((f) => !/(^|\/)\./.test(f) && (f === `${name}/SKILL.md` || f.endsWith(`/${name}/SKILL.md`)))
+          .map((f) => f.slice(0, -'SKILL.md'.length))
+      if (found.length !== 1 || !tree.includes(`${found[0]}SKILL.md`)) {
+        errors.push(`upstream ${id}: skill "${entry}" ${found.length > 1 ? 'is in more than one dir; give its path' : 'has no SKILL.md'}`)
+        continue
+      }
+      const own = tree.filter((f) => f.startsWith(found[0]) && !/(^|\/)\./.test(f.slice(found[0].length)))
+        .map((f) => [join(dir, f), f.slice(found[0].length)])
+      for (const f of licences) if (!own.some(([, rel]) => rel === f)) own.push([join(dir, f), f])
+      for (const [abs, rel] of own) for (const base of SKILL_ROOTS) copy(abs, `${base}/${name}/${rel}`)
+    }
   }
 
   for (const path of files.keys()) {
     if (keys.has(path) || blocks.has(path)) errors.push(`${path} is both a whole file and a merged file`)
   }
   for (const path of blocks.keys()) if (keys.has(path)) errors.push(`${path} has both a block and owned keys`)
-  return { files, keys, blocks, skills, stacks, errors }
+  return { files, keys, blocks, skills, stacks, errors, warnings, held }
 }

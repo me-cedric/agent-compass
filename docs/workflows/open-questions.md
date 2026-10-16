@@ -20,7 +20,7 @@ the other two, and that costs the register its authority.
 
 | Feeder | What it holds | When a line rises into the register |
 | --- | --- | --- |
-| The per-finding question files of [`../../skills/harvest-questions/SKILL.md`](../../skills/harvest-questions/SKILL.md) | Every open question, risk, assumption, issue and dependency the specifications leave undecided | When it blocks code |
+| The per-finding question files of `../../skills/harvest-questions/SKILL.md` | Every open question, risk, assumption, issue and dependency the specifications leave undecided | When it blocks code |
 | The clarification markers of a spec corpus, resolved by [`spec-driven-development`](spec-driven-development.md) | Wording a spec left ambiguous | When it blocks code |
 
 ## 2. A question leaves the register only after its choice is registered

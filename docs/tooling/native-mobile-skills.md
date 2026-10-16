@@ -8,7 +8,7 @@ source holds, how to install one skill from it, and which Agent Compass rules
 still apply after it lands.
 
 The pinned commits, licences, and skill inventories live in
-[`skills/upstream-sources.json`](../../skills/upstream-sources.json) with
+`skills/upstream-sources.json` with
 `"strategy": "reference"`. See
 [upstream-sources.md](upstream-sources.md#reference-sources-tracked-not-copied)
 for what that strategy guarantees, and
@@ -129,7 +129,7 @@ third party a voice in the agent's decisions.
 | Rule | Native mobile form |
 | ---- | ------------------ |
 | Validation (§3) | Run the smallest real command: `./gradlew :app:lint :app:testDebugUnitTest` or `xcodebuild test -scheme <scheme> -destination '<simulator>'`. Never report a skill's example command as a result. |
-| Visual proof (§6) | A screen change owes a screenshot from a real emulator or simulator, not a class-name assertion. See [`ui-change-needs-visual-proof`](../../knowledge/instincts/ui-change-needs-visual-proof.md). |
+| Visual proof (§6) | A screen change owes a screenshot from a real emulator or simulator, not a class-name assertion. See `ui-change-needs-visual-proof`. |
 | Module docs (§7) | A Gradle module or a Swift package is a module. It carries a `README.md`. |
 | Decision records | A platform-minimum bump, a navigation library choice, or a persistence choice is an ADR under `docs/decisions/`. |
 | Platform freshness | Load the tracked skill before answering from memory. See `platform-skill-before-memory`. |

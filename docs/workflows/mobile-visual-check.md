@@ -49,7 +49,7 @@ The checks fail the test on a hit target under 44 x 44 pt (iOS) or 48 x 48 dp
 (Android), a clickable element with no label, and text under 4.5:1 against what
 is behind it. **Prove each check can fail** with one target that is too small
 and one label that is too faint: the platform checks are lenient (see
-[platform-a11y-audit-is-lenient](../../knowledge/instincts/platform-a11y-audit-is-lenient.md)).
+platform-a11y-audit-is-lenient).
 
 - Fail on a finding that names an element. Print a finding that names none, or
   one on an element that a bar covers or the window cuts.
@@ -82,7 +82,7 @@ Each of these is a fault, not a remark. Fix it or record it as a task.
   iOS-style control on Android. On iOS 26 a close action is
   `Button(role: .close)`.
 - A larger hit region that changed the drawn size of a control (see
-  [hit-region-keeps-drawn-size](../../knowledge/instincts/hit-region-keeps-drawn-size.md)).
+  hit-region-keeps-drawn-size).
 - A screen that is wrong in one appearance only.
 
 ## 4. Commit little
@@ -96,7 +96,7 @@ proof.
 ## 5. Gates and where they run
 
 - Run the snapshot comparison where the references were recorded (see
-  [snapshot-references-are-os-bound](../../knowledge/instincts/snapshot-references-are-os-bound.md)).
+  snapshot-references-are-os-bound).
 - A proof gate that refuses a branch which changes drawing code and adds no
   proof accepts a changed snapshot reference as proof.
 - After a merge, a failing snapshot is looked at, never recorded again blind.
@@ -113,4 +113,4 @@ which is most of the saving.
 When subagents do this work, each worker checks its own screens and reports
 what it saw under one heading; the reviewer opens the same images. Shared steps
 run in the session worktree (see
-[subagent-worktree-fence](../../knowledge/instincts/subagent-worktree-fence.md)).
+subagent-worktree-fence).

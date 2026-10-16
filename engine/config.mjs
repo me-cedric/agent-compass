@@ -56,7 +56,7 @@ const readPaths = (paths, label, errors, strict) => {
 
 export const loadConfig = (root, AC, { init = false } = {}) => {
   if (!existsSync(join(root, CONFIG))) {
-    return init ? { config: { ...DEFAULT_CONFIG, paths: {} }, created: true, errors: [] } : { errors: [`${CONFIG} not found; run "ac init" first`] }
+    return init ? { config: { ...DEFAULT_CONFIG, upstream: [], paths: {} }, created: true, errors: [] } : { errors: [`${CONFIG} not found; run "ac init" first`] }
   }
   const { data, error } = parse(root, CONFIG)
   if (error) return { errors: [error] }
@@ -64,13 +64,14 @@ export const loadConfig = (root, AC, { init = false } = {}) => {
   const errors = []
   const config = { ...DEFAULT_CONFIG, ...data }
   if (!strings(config.exclude)) errors.push(`${CONFIG}: "exclude" must be a list of names and paths`)
+  if (data.upstream !== undefined && !strings(data.upstream)) errors.push(`${CONFIG}: "upstream" must be a list of upstream source ids`)
   if (!strings(config.packs)) errors.push(`${CONFIG}: "packs" must be a list of pack names`)
   else {
     for (const pack of config.packs) {
       if (!/^[a-z0-9-]+$/.test(pack) || !isDir(join(AC, 'packs', pack))) errors.push(`${CONFIG}: unknown pack "${pack}"`)
     }
   }
-  return { config: { ...config, paths: readPaths(data.paths, CONFIG, errors, true) }, errors }
+  return { config: { ...config, upstream: strings(data.upstream) ? data.upstream : [], paths: readPaths(data.paths, CONFIG, errors, true) }, errors }
 }
 
 const names = (v) => (isObj(v) ? Object.keys(v) : Array.isArray(v) ? v.filter((s) => typeof s === 'string') : [])

@@ -1,71 +1,53 @@
 ---
 name: project-memory
-description: >
-  Use when a project has projectmem or durable agent memory. Reads memory before
-  work, checks pre-action warnings, and records durable findings, failed
-  attempts, decisions, fixes, validation, and risks.
-license: MIT
-compatibility: projectmem
-user-invocable: true
-disable-model-invocation: false
-allowed-tools: Bash, Read, Grep
-argument-hint: "[before|during|after]"
+description: Read and write durable project memory with projectmem. Use before non-trivial work, and after a decision, a failed attempt, a fix or a finding.
 risk_level: medium
 writes_files: false
-requires_tools: []
+requires_tools: [pjm]
 ---
 
-# Project Memory
+# project-memory
 
-Use projectmem for durable project memory when available.
-
-## Before Starting
-
-Run or request the projectmem equivalent:
+## Before work
 
 ```bash
-pjm regenerate   # after a pull/merge: fold teammates' shared events into the log
+pjm regenerate   # after a pull or merge: fold the shared events of teammates into the log
 pjm brief
 pjm precheck
 ```
 
-Also search memory for relevant files, modules, libraries, and errors when the
-task is non-trivial.
+For a non-trivial task, also search the memory for the files, modules, libraries and errors that the task touches.
 
-## Shared Vs Local (collaborative repos)
+## Shared and local
 
-`events.jsonl` is the committed, union-merged source of truth. The projections
-(`summary.md`, `PROJECT_MAP.md`, `AI_INSTRUCTIONS.md`, `issues/`) are gitignored
-and rebuilt by `pjm regenerate`. Never commit a projection — committing a
-regenerated summary silently overwrites teammates.
+`events.jsonl` is the committed source of truth. It merges as a union.
+The projections (`summary.md`, `PROJECT_MAP.md`, `AI_INSTRUCTIONS.md`, `issues/`) are git-ignored. `pjm regenerate` rebuilds them.
+Never commit a projection. A committed summary overwrites the work of teammates.
 
-## During Work
+## During work
 
-Log:
+Log each of these when it happens:
 
-- failed attempts immediately
-- important findings when discovered
-- fragile files or risky areas
-- reusable library or tooling gotchas
+- A failed attempt.
+- An important finding.
+- A fragile file or a risky area.
+- A library or tooling gotcha that other people can reuse.
 
-## After Work
+## After work
 
-Log:
+Log these items:
 
-- decisions
-- fixes
-- files changed
-- validation commands and results
-- remaining risks
+- Decisions and fixes.
+- Files changed.
+- Validation commands and their results.
+- Remaining risks.
 
-For durable architecture/design decisions, also write a committed ADR under
-`docs/decisions/NNN-*.md` (one file per decision merges cleanly) — don't leave
-them only in the regenerated summary.
+Write a committed ADR in `{{ADR_DIR}}` for each durable architecture decision. Use the skill `adr`. One file for each decision merges cleanly.
 
-## Never Log
+## Never log
 
-Do not log secrets, tokens, credentials, personal data, raw customer data, or
-temporary brainstorming.
+- Secrets, tokens or credentials.
+- Personal data or raw customer data.
+- Temporary brainstorming.
 
-If projectmem is unavailable, continue the task and report memory logging as
-`not run` with the reason.
+If projectmem is not available, continue the task. Report memory logging as `not run`, with the reason.

@@ -43,7 +43,7 @@ const makeCompass = (extra = {}) => {
     'skills/alpha/ref/notes.md': 'Notes.\n',
     'skills/nest-only/SKILL.md': '---\nname: nest-only\nmetadata:\n  stacks: [nestjs-api]\n---\nNest.\n',
     'agents/worker.md': '---\nname: worker\ndescription: Does the work.\nmodel: sonnet\ncodex-model: gpt-5\n---\nDo the task.\n',
-    'rules/stack-nest.md': '---\nstacks: nestjs-api\n---\nNest rule.\n',
+    'rules/stack-nest.md': '---\ndescription: Nest rules.\npaths:\n  - "src/**/*.ts"\nstacks: [nestjs-api]\n---\nNest rule.\n',
     'core/blocks/AGENTS.md': 'Contract v1.\n',
     'core/blocks/CLAUDE.md': '@AGENTS.md\n',
     'core/files/.claude/output-styles/compass.md': 'Style v1.\n',
@@ -98,7 +98,48 @@ test('a stack-bound asset installs when its stack is detected', async () => {
   const host = makeHost({ 'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '1' } }) })
   assert.equal((await ac(compass, host, 'init')).code, 0)
   assert.ok(existsSync(join(host, '.agents/skills/nest-only/SKILL.md')))
-  assert.ok(existsSync(join(host, '.claude/rules/stack-nest.md')))
+  assert.match(read(host, '.claude/rules/stack-nest.md'), /^paths:\n {2}- "src\/\*\*\/\*\.ts"$/m)
+  assert.equal(read(host, '.agents/skills/stack-nest/SKILL.md'), '---\nname: stack-nest\ndescription: "Nest rules."\n---\nNest rule.\n')
+  assert.ok(!existsSync(join(host, '.claude/skills/stack-nest')), 'Claude reads the rule, so the Codex skill goes to .agents/skills only')
+  assert.deepEqual(JSON.parse(read(host, '.agents/compass.lock.json')).skills, ['alpha', 'nest-only', 'stack-nest'])
+})
+
+test('path placeholders take the Konvoy paths; an unknown placeholder is an error', async () => {
+  const compass = makeCompass({
+    'skills/paths/SKILL.md': '---\nname: paths\n---\nWrite to {{DELIVERY_DIR}}/raid and read {{PERSONAS_FILE}}.\n',
+    'rules/stack-nest.md': '---\ndescription: Nest rules.\nstacks: [nestjs-api]\n---\nSee {{OPENAPI_DIR}}.\n',
+  })
+  const host = makeHost({
+    '.agents/konvoy.json': JSON.stringify({ paths: { delivery: 'product/delivery' } }),
+    'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '1' } }),
+  })
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  assert.match(read(host, '.claude/skills/paths/SKILL.md'), /Write to product\/delivery\/raid and read docs\/personas\/personas\.json\./)
+  assert.match(read(host, '.agents/skills/stack-nest/SKILL.md'), /See docs\/api\./)
+  assert.match(read(host, '.claude/rules/stack-nest.md'), /See docs\/api\./)
+  put(host, { '.agents/konvoy.json': JSON.stringify({ paths: { delivery: 'delivery' } }) })
+  assert.deepEqual(actions(await ac(compass, host, 'sync')).sort(), ['update .agents/skills/paths/SKILL.md', 'update .claude/skills/paths/SKILL.md'])
+  put(compass, { 'skills/paths/SKILL.md': '---\nname: paths\n---\nWrite to {{DELIVRY_DIR}}.\n' })
+  const typo = await ac(compass, host, 'sync')
+  assert.equal(typo.code, 1)
+  assert.match(typo.json.errors.join('\n'), /skills\/paths\/SKILL\.md: unknown placeholder \{\{DELIVRY_DIR\}\}/)
+})
+
+test('excluding a stack rule by name or by path drops the rule and its Codex skill', async () => {
+  const compass = makeCompass()
+  for (const exclude of ['stack-nest', '.claude/rules/stack-nest.md']) {
+    const host = makeHost({ 'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '1' } }), '.agents/compass.json': JSON.stringify({ exclude: [exclude] }) })
+    assert.equal((await ac(compass, host, 'sync')).code, 0)
+    assert.ok(!existsSync(join(host, '.claude/rules/stack-nest.md')) && !existsSync(join(host, '.agents/skills/stack-nest')), exclude)
+  }
+})
+
+test('a stack rule without a description is an error', async () => {
+  const compass = makeCompass({ 'rules/stack-nest.md': '---\nstacks: [nestjs-api]\n---\nNest rule.\n' })
+  const host = makeHost({ 'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '1' } }) })
+  const r = await ac(compass, host, 'init')
+  assert.equal(r.code, 1)
+  assert.match(r.json.errors.join('\n'), /rules\/stack-nest\.md needs a description for its Codex skill/)
 })
 
 test('sync twice gives no diff', async () => {

@@ -72,7 +72,7 @@ exposed secrets, and sweep the codebase for the same class of bug. Use the
 
 For API changes touching authorization scope, sensitive tokens, uploads,
 encrypted secrets, external-provider cleanup, or background jobs, also check the
-[`api-security-edge-cases`](../../knowledge/instincts/api-security-edge-cases.md)
+`api-security-edge-cases`
 instinct. It covers common BOLA/IDOR scope gaps, token logging, encrypted lookup
 columns, and cleanup failure semantics.
 

@@ -91,3 +91,24 @@ test('detectStacks finds an OpenSpec directory, not a file, and honours a declar
     await rm(host, { recursive: true, force: true })
   }
 })
+
+test('detectStacks finds GTK, WinUI and macOS desktop apps', async () => {
+  const host = await mkdtemp(join(tmpdir(), 'ac-detect-desktop-'))
+  try {
+    await mkdir(join(host, 'apps/linux'), { recursive: true })
+    await writeFile(join(host, 'apps/linux/Cargo.toml'), '[dependencies]\ngtk = { package = "gtk4", version = "0.10" }\nadw = { package = "libadwaita", version = "0.8" }\n')
+    await mkdir(join(host, 'apps/windows'), { recursive: true })
+    await writeFile(join(host, 'apps/windows/App.csproj'), '<Project><PropertyGroup><UseWinUI>true</UseWinUI></PropertyGroup></Project>\n')
+    await mkdir(join(host, 'apps/mac/App.xcodeproj'), { recursive: true })
+    await writeFile(join(host, 'apps/mac/App.xcodeproj/project.pbxproj'), 'SDKROOT = macosx;\n')
+    assert.deepEqual(detectStacks(host), ['swift-ios', 'gtk-desktop', 'winui-desktop', 'macos-desktop'])
+
+    await writeFile(join(host, 'apps/windows/App.csproj'), '<Project Sdk="Microsoft.NET.Sdk" />\n')
+    await writeFile(join(host, 'apps/linux/Cargo.toml'), '[dependencies]\nserde = "1"\n')
+    await writeFile(join(host, 'apps/mac/App.xcodeproj/project.pbxproj'), 'SDKROOT = iphoneos;\n')
+    await writeFile(join(host, 'Package.swift'), 'platforms: [.macOS(.v13)], targets: [.executableTarget(name: "App")]\n')
+    assert.deepEqual(detectStacks(host), ['swift-ios'], 'a Swift package that lists macOS can be a CLI or a server')
+  } finally {
+    await rm(host, { recursive: true, force: true })
+  }
+})

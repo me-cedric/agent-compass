@@ -1,37 +1,38 @@
 # Third-Party Notices
 
-## Every External Source Is Tracked, Not Redistributed
+## Upstream Sources
 
-Agent Compass carries **no copy** of any external skill. All tracked sources in
-[`skills/upstream-sources.json`](skills/upstream-sources.json) use
-`"strategy": "reference"`: Agent Compass pins them, checks them for updates,
-curates which of their skills it endorses, and installs them on request with
-`agent-compass external-skills`. The copy is made into the host project or the
-user's config, and the licence notice is written beside it at that moment.
+Agent Compass ships no copy of an upstream skill. The file `upstream.json` pins each source by commit sha.
 
-This file therefore records what is tracked, not what is shipped. A host that
-installs from one of these sources takes on that source's terms directly.
+The command `ac sync` fetches a source into the user cache. It copies the skills of that source into a host only when the host lists the source id in `upstream` in `.agents/compass.json`.
 
-| Source | Licence | Holder | Curated |
-| ------ | ------- | ------ | ------: |
-| [`android/skills`](https://github.com/android/skills) | Apache-2.0 | Google LLC | 21 of 21 |
-| [`dpearson2699/swift-ios-skills`](https://github.com/dpearson2699/swift-ios-skills) | PolyForm Perimeter 1.0.0 | dpearson2699 | 86 of 86 |
-| [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | MIT | Leonxlnx | 10 of 13 |
-| [`DietrichGebert/ponytail`](https://github.com/DietrichGebert/ponytail) | MIT | DietrichGebert | 5 of 6 |
-| [`JuliusBrussee/caveman`](https://github.com/JuliusBrussee/caveman) | MIT | JuliusBrussee | 3 of 20 |
-| [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd) | MIT | ayghri | 1 of 1 |
-| [`danyuchn/asd-ste100-skill`](https://github.com/danyuchn/asd-ste100-skill) | MIT | Dustin Yuchen Teng | 1 of 1 |
-| [`firecrawl/anydoc`](https://github.com/firecrawl/anydoc) | MIT | Sideguide Technologies Inc. | 1 of 1 |
+The engine copies the licence file of the source into each installed skill directory.
 
-Two licences carry an obligation worth stating plainly:
+This file records what Agent Compass tracks, not what it ships. A host that installs a source takes on the terms of that source.
 
-- **PolyForm Perimeter 1.0.0** (`swift-ios-skills`) permits distribution only for
-  a non-competing purpose, and requires its `Required Notice` line to travel with
-  every copy. Agent Compass distributes nothing from it; the installer writes that
-  line verbatim beside anything a host installs:
-  `Required Notice: Copyright (c) 2025 dpearson2699 (https://github.com/dpearson2699)`.
-- **Apache-2.0** (`android/skills`) requires attribution with any copy. The
-  installer writes it.
+| Source id | Repository | Licence | Holder | Skills |
+| --------- | ---------- | ------- | ------ | ------ |
+| `ponytail` | [`DietrichGebert/ponytail`](https://github.com/DietrichGebert/ponytail) | MIT | DietrichGebert | `ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-help`, `ponytail-review` |
+| `caveman` | [`JuliusBrussee/caveman`](https://github.com/JuliusBrussee/caveman) | MIT | Julius Brussee | `caveman`, `caveman-commit`, `caveman-review` |
+| `i-have-adhd` | [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd) | MIT | Ayoub Ghriss | `i-have-adhd` |
+| `asd-ste100` | [`danyuchn/asd-ste100-skill`](https://github.com/danyuchn/asd-ste100-skill) | MIT | Dustin Yuchen Teng | `asd-ste100` |
+| `taste` | [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | MIT | Leonxlnx | `brandkit`, `taste-skill`, `soft-skill`, `image-to-code-skill`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `brutalist-skill`, `minimalist-skill`, `redesign-skill`, `stitch-skill` |
+| `android` | [`android/skills`](https://github.com/android/skills) | Apache-2.0 | Google LLC | 22 skills. `upstream.json` lists them. |
+| `swift-ios` | [`dpearson2699/swift-ios-skills`](https://github.com/dpearson2699/swift-ios-skills) | PolyForm-Perimeter-1.0.0 | dpearson2699 | 86 skills. `upstream.json` lists them. |
+| `dimillian` | [`Dimillian/Skills`](https://github.com/Dimillian/Skills) | MIT | Thomas Ricouard | `swift-concurrency-expert`, `swiftui-liquid-glass`, `swiftui-performance-audit`, `swiftui-ui-patterns`, `swiftui-view-refactor` |
+| `agent-device` | [`callstack/agent-device`](https://github.com/callstack/agent-device) | MIT | Callstack | `agent-device`, `android-emulator`, `dogfood`, `ios-simulator` |
+| `mattpocock` | [`mattpocock/skills`](https://github.com/mattpocock/skills) (tag `v1.3.1`) | MIT | Matt Pocock | `grill-me`, `grilling`, `grill-with-docs`, `to-questionnaire`, `wayfinder`, `handoff`, `tdd` |
+| `apple-macos` | [`rshankras/claude-code-apple-skills`](https://github.com/rshankras/claude-code-apple-skills) | MIT | Ravishankar | `ui-review-tahoe`, `macos-capabilities` |
+| `winui` | [`microsoft/winappCli`](https://github.com/microsoft/winappCli) | MIT | Microsoft Corporation and Contributors | `winui-design`, `winui-code-review`, `winui-dev-workflow` |
+| `gtk` | [`alex-oleshkevich/glimpse`](https://github.com/alex-oleshkevich/glimpse) | BSD-3-Clause | Alex Oleshkevich | `developing-gtk-apps` |
+
+Some licences carry an obligation:
+
+- **MIT** requires the copyright notice and the licence text in every copy. The licence file that the engine copies meets this.
+- **BSD-3-Clause** (`gtk`) requires the same notice, the conditions and the disclaimer in every copy. Do not use the holder name to endorse a product. The upstream skill file has no author line, and its text matches a skill in several repositories without a licence. The risk is low and recorded here on purpose.
+- **Apache-2.0** (`android`) requires attribution with any copy. The engine copies the licence file, which is named `LICENSE.txt` in that repository.
+- **PolyForm Perimeter 1.0.0** (`swift-ios`) permits distribution only for a purpose that does not compete with the licensor. It requires the Required Notice line in every copy. Agent Compass distributes nothing from it. The licence file that the engine copies carries this line: `Required Notice: Copyright (c) 2025 dpearson2699 (https://github.com/dpearson2699)`.
+- **MIT with a Business Source License carve-out** (`caveman`) covers the skill directories under MIT. Business Source License 1.1 covers the engine directories that its `LICENSING.md` lists. The engine copies no engine directory.
 
 ## Agent Compass Itself
 

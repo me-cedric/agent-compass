@@ -1,7 +1,7 @@
 # Style And Design Skills
 
 Agent Compass **tracks** six small external skill sources without copying them.
-Each is pinned in [`skills/upstream-sources.json`](../../skills/upstream-sources.json)
+Each is pinned in `skills/upstream-sources.json`
 and installed on request into a project or a user config.
 
 | Source | Holds | Compass curates | Licence |
