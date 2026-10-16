@@ -122,10 +122,10 @@ test('readUsage: a project is the repo root of the cwd', () => {
   git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'init')
   git('worktree', 'add', '-q', join(dir, 'linked'), '-b', 'other')
   const home = temp('ac-usage-home2-')
-  const cwds = [join(dir, 'repo/sub'), join(dir, 'linked'), join(dir, 'plain'), join(dir, 'gone'), '/a/b/.claude/worktrees/w2/deep']
+  const cwds = [join(dir, 'repo/sub'), join(dir, 'linked'), join(dir, 'plain'), join(dir, 'gone'), '/a/b/.claude/worktrees/w2/deep', 'C:\\a\\c\\.claude\\worktrees\\w3\\deep']
   put(home, 'p/s.jsonl', cwds.map((cwd, i) => row({ cwd, requestId: `r${i}` }, { id: `m${i}` }, { input_tokens: 1, output_tokens: 1 })))
   const projects = readUsage({ home, until: '2026-12-31' }).byProject.map((p) => p.project).sort()
-  assert.deepEqual(projects, [join(dir, 'gone'), join(dir, 'plain'), join(dir, 'repo'), '/a/b'].sort())
+  assert.deepEqual(projects, [join(dir, 'gone'), join(dir, 'plain'), join(dir, 'repo'), '/a/b', 'C:\\a\\c'].sort())
 })
 
 test('ac usage prints a summary and --json; a bad date is a usage error', async () => {
@@ -154,7 +154,7 @@ test('ac usage prints a summary and --json; a bad date is a usage error', async 
 })
 
 // A session is the sessionId of the lines. It is a "graph" session when any line of it calls a tool of the codebase-memory MCP server.
-const call = (...names) => ({ content: [{ type: 'text', text: 'mcp__codebase-memory is a graph' }, ...names.map((name) => ({ type: 'tool_use', id: 't', name, input: {} }))] })
+const call = (...names) => ({ content: [{ type: 'text', text: 'mcp__codebase-memory is a graph' }, ...names.map((name, i) => ({ type: 'tool_use', id: `t${names.length}-${i}`, name, input: {} }))] })
 const turn = (session, id, usage, { day = [3, 10], message = {}, ...over } = {}) => row({ sessionId: session, requestId: id, timestamp: at(...day), ...over }, { id, ...message }, usage)
 const sessionHome = () => {
   const home = temp('ac-usage-sessions-')
@@ -188,8 +188,13 @@ test('readUsage: bySession gives one row per sessionId with project, days, token
   close(by.g1.cacheHit, 800 / 950)
   assert.equal(by.n1.cacheHit, 0)
   close(by.g1.cost, (100 * 3 + 50 * 15 + 800 * 0.3 + 50 * 1.25 * 3) / 1e6)
-  assert.deepEqual(u.sessionSummary, { graph: { count: 2, median: 2050, p90: 2890 }, noGraph: { count: 4, median: 3000, p90: 5401 } })
+  assert.deepEqual(u.sessionSummary, {
+    graph: { count: 2, median: 2050, p90: 2890, edited: 0, searchesBeforeEdit: null, freshPerMessage: 617 },
+    noGraph: { count: 4, median: 3000, p90: 5401, edited: 0, searchesBeforeEdit: null, freshPerMessage: 2501 },
+  })
 })
+
+const EMPTY = { count: 0, median: 0, p90: 0, edited: 0, searchesBeforeEdit: null, freshPerMessage: 0 }
 
 test('readUsage: --since and --project narrow the sessions; an empty set gives zeros', () => {
   const home = sessionHome()
@@ -197,7 +202,7 @@ test('readUsage: --since and --project narrow the sessions; an empty set gives z
   const late = readUsage({ home, since: '2026-03-12', until: '2026-12-31' })
   assert.deepEqual(late.bySession.map((r) => [r.session, r.first, r.tokens]), [['g2', '2026-03-12', 1100], ['n3', '2026-03-20', 1]])
   const none = readUsage({ home, project: '/nowhere', until: '2026-12-31' })
-  assert.deepEqual([none.bySession, none.sessionSummary, none.totals.tokens], [[], { graph: { count: 0, median: 0, p90: 0 }, noGraph: { count: 0, median: 0, p90: 0 } }, 0])
+  assert.deepEqual([none.bySession, none.sessionSummary, none.totals.tokens], [[], { graph: EMPTY, noGraph: EMPTY }, 0])
 })
 
 test('ac usage --by session prints the summary and the rows; --project and --by are checked', async () => {
@@ -207,7 +212,7 @@ test('ac usage --by session prints the summary and the rows; --project and --by 
   const json = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31', '--json'], { env })
   assert.equal(json.code, 0, json.stderr)
   const data = JSON.parse(json.stdout)
-  assert.deepEqual(Object.keys(data).sort(), ['byDay', 'byModel', 'byProject', 'byProvider', 'bySession', 'cacheHit', 'files', 'lines', 'ok', 'sessionSummary', 'subagentShare', 'totals', 'unknownModels'])
+  assert.deepEqual(Object.keys(data).sort(), ['byBranch', 'byDay', 'byModel', 'byProject', 'byProvider', 'bySession', 'bySkill', 'cacheHit', 'files', 'lines', 'ok', 'hooks', 'sessionSummary', 'subagentShare', 'totals', 'unknownModels'].sort())
   assert.equal(data.bySession.length, 6)
   const text = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31'], { env })
   assert.equal(text.code, 0, text.stderr)
@@ -280,7 +285,7 @@ test('readUsage: a Codex session is one row from the final token_count, with its
   assert.deepEqual(u.byModel.map((m) => [m.model, m.tokens]), [['gpt-test-2', 5400], ['gpt-test-1', 350], ['(unknown)', 303]])
   assert.deepEqual(u.byProject.map((p) => [p.project, p.tokens]), [['/x/repo', 5703], ['/y/other', 350]])
   close(u.subagentShare, 350 / 6053)
-  assert.deepEqual(u.sessionSummary.graph, { count: 1, median: 5400, p90: 5400 })
+  assert.deepEqual(u.sessionSummary.graph, { count: 1, median: 5400, p90: 5400, edited: 0, searchesBeforeEdit: null, freshPerMessage: 700 })
   assert.deepEqual(u.byProvider.map((p) => [p.provider, p.tokens, p.messages]), [['codex', 6053, 4]])
 })
 
@@ -345,4 +350,84 @@ test('ac usage --provider filters the sources, CODEX_HOME moves the Codex folder
     assert.match(bad.stderr, /--provider needs|Usage: ac usage/)
   }
   assert.match((await run(['--help'], alt)).stdout, /--provider/)
+})
+
+// Synthetic lines in the shapes of real Claude Code transcripts: tool_use blocks, tool results, hook attachments,
+// stop summaries and the meta line of a Stop hook block. They hold no real content.
+const sec = (s) => new Date(2026, 2, 10, 12, 0, 0, s * 1000).toISOString()
+const use = (id, name, input = {}) => ({ type: 'tool_use', id, name, input })
+const ask = (session, s, usage, content, over = {}) => row({ sessionId: session, timestamp: sec(s), gitBranch: 'feat/x', requestId: `q${session}${s}`, ...over }, { id: `a${session}${s}`, content }, usage)
+const user = (session, s, content, over = {}) => JSON.stringify({ type: 'user', sessionId: session, timestamp: sec(s), uuid: `u${session}${s}`, isSidechain: false, cwd: '/x/repo', message: { role: 'user', content }, ...over })
+const result = (id, content, isError) => ({ type: 'tool_result', tool_use_id: id, content, is_error: isError })
+const attachment = (session, s, type, uuid) => JSON.stringify({ type: 'attachment', sessionId: session, timestamp: sec(s), uuid, attachment: { type, hookName: 'PreToolUse:Bash', toolUseID: 'x', hookEvent: 'PreToolUse', exitCode: 1 } })
+const summary = (session, s, prevented) => JSON.stringify({ type: 'system', subtype: 'stop_hook_summary', sessionId: session, timestamp: sec(s), uuid: `y${s}`, hookCount: 1, hookErrors: [], preventedContinuation: prevented, stopReason: '' })
+
+const counterHome = () => {
+  const home = temp('ac-usage-counters-')
+  const first = ask('k1', 1, { input_tokens: 100, output_tokens: 10, cache_creation_input_tokens: 50, cache_read_input_tokens: 1000 },
+    [use('g1', 'Grep'), use('b1', 'Bash', { command: 'rg foo src' }), use('b2', 'Bash', { command: 'npm test' })])
+  put(home, '-x-repo/k1.jsonl', [
+    user('k1', 0, 'go'),
+    ask('k1', 1, { input_tokens: 100, output_tokens: 1 }, [use('g1', 'Grep')]),
+    first,
+    ask('k1', 2, { input_tokens: 10, output_tokens: 10 }, [use('m1', 'mcp__codebase-memory-mcp__search_graph'), use('s1', 'Skill', { skill: 'tdd', args: 'x' })]),
+    user('k1', 2, [result('r1', 'PreToolUse:Read hook error: [node x]: compass: the read of .env is blocked because .env files hold secrets.', true),
+      result('r2', 'compass: the edit of x is blocked', false), result('r3', [{ type: 'text', text: 'compass: the command `rm -rf /` is blocked' }], true)]),
+    attachment('k1', 2, 'hook_non_blocking_error', 'h1'), attachment('k1', 2, 'hook_non_blocking_error', 'h1'), attachment('k1', 2, 'hook_cancelled', 'h2'),
+    attachment('k1', 2, 'hook_success', 'h3'),
+    ask('k1', 3, { input_tokens: 20, output_tokens: 20 }, [use('e1', 'Edit'), use('g2', 'Read')], { effort: 'high' }),
+    summary('k1', 4, false), summary('k1', 4, true),
+    user('k1', 4, 'Stop hook feedback:\n[node x]: compass completion gate: this turn changed files.', { isMeta: true }),
+    user('k1', 5, [{ type: 'text', text: 'next' }]),
+    ask('k1', 6, { input_tokens: 1000, output_tokens: 0 }, [{ type: 'text', text: 'ok' }]),
+  ])
+  put(home, '-x-repo/k1/subagents/agent-b.jsonl', [
+    user('k1', 2, 'agent task', { isSidechain: true }),
+    ask('k1', 2.5, { input_tokens: 5, output_tokens: 5 }, [use('g3', 'Glob')], { isSidechain: true, gitBranch: 'worktree-agent-b' }),
+  ])
+  put(home, '-x-repo/k2.jsonl', [
+    ask('k2', 1, { input_tokens: 100, output_tokens: 0 }, [use('f1', 'Bash', { command: 'git log | grep x' }), use('f2', 'Bash', { command: 'find . -name y' }), use('f3', 'Bash', { command: 'git status' })],
+      { attributionMcpServer: 'codebase-memory-mcp' }),
+  ])
+  put(home, '-x-repo/k3.jsonl', [
+    ask('k3', 1, { input_tokens: 17, output_tokens: 3 }, [use('w1', 'Write'), use('w2', 'Grep'), use('w3', 'apply_patch'), use('w4', 'NotebookEdit'), use('w5', 'MultiEdit')], { gitBranch: '' }),
+  ])
+  return home
+}
+const COUNTERS = ['graphCalls', 'searchCalls', 'editCalls', 'skillCalls', 'searchesBeforeEdit', 'freshPerMessage', 'hookErrors', 'guardFires', 'stopBlocks', 'effort']
+
+test('readUsage: a session row counts its tool calls, its searches before the first edit, its fresh tokens and its hook events', () => {
+  const u = readUsage({ home: counterHome(), ...window })
+  const by = Object.fromEntries(u.bySession.map((r) => [r.session, r]))
+  assert.deepEqual(COUNTERS.map((k) => by.k1[k]), [1, 4, 1, 1, 3, 246, 2, 2, 2, 'high'])
+  assert.deepEqual([by.k1.tokens, by.k1.messages, by.k1.graph], [2230, 5, true])
+  assert.deepEqual(COUNTERS.map((k) => by.k2[k]), [0, 2, 0, 0, null, 100, 0, 0, 0, null])
+  assert.equal(by.k2.graph, true, 'attributionMcpServer marks a graph session')
+  assert.deepEqual(COUNTERS.map((k) => by.k3[k]), [0, 1, 4, 0, 0, 20, 0, 0, 0, null])
+  assert.deepEqual(u.hooks, { errors: 2, guardFires: 2, stopBlocks: 2 })
+  assert.deepEqual(u.sessionSummary.graph, { count: 2, median: 1165, p90: 2017, edited: 1, searchesBeforeEdit: 3, freshPerMessage: 173 })
+  assert.deepEqual(u.sessionSummary.noGraph, { count: 1, median: 20, p90: 20, edited: 1, searchesBeforeEdit: 0, freshPerMessage: 20 })
+})
+
+test('readUsage: bySkill holds the tokens from a Skill call to the next user prompt; byBranch uses gitBranch in each project', () => {
+  const u = readUsage({ home: counterHome(), ...window })
+  assert.deepEqual(u.bySkill.map((r) => [r.skill, r.tokens, r.messages]), [['tdd', 50, 2]])
+  assert.deepEqual(u.byBranch.map((r) => [r.project, r.branch, r.tokens]), [['/x/repo', 'feat/x', 2320], ['/x/repo', '(none)', 20], ['/x/repo', 'worktree-agent-b', 10]])
+  const none = readUsage({ home: counterHome(), since: '2026-04-01', until: '2026-04-30' })
+  assert.deepEqual([none.bySkill, none.byBranch, none.hooks], [[], [], { errors: 0, guardFires: 0, stopBlocks: 0 }])
+})
+
+test('ac usage --by skill and --by branch print their tables; --by session prints the new columns', async () => {
+  const bin = join(REPO, 'bin/ac.mjs')
+  const env = { ...process.env, HOME: counterHome(), CODEX_HOME: '' }
+  const run = (...args) => runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', ...args], { env })
+  const skill = await run('--by', 'skill')
+  assert.equal(skill.code, 0, skill.stderr)
+  assert.match(skill.stdout, /tdd\s+50 tokens/)
+  const branch = await run('--by', 'branch')
+  assert.match(branch.stdout, /repo\s+feat\/x\s+2,320 tokens/)
+  const sessions = await run('--by', 'session')
+  assert.match(sessions.stdout, /graph\s+2 sessions\s+median 1,165 tokens\s+p90 2,017 tokens\s+searches before edit 3\s+fresh\/msg 173/)
+  assert.match(sessions.stdout, /hooks: 2 errors, 2 guard fires, 2 stop blocks/)
+  assert.match((await run('--help')).stdout, /--by session\|skill\|branch/)
 })

@@ -233,7 +233,8 @@ let fresh = false
 
 const PROVIDER_LABELS = { all: 'All', claude: 'Claude', codex: 'Codex' }
 const dayRange = (r) => (r.first === r.last ? r.first : `${r.first} to ${r.last}`)
-const spread = (label, g) => [label, num(g?.count), num(g?.median), num(g?.p90)]
+const spread = (label, g) => [label, num(g?.count), num(g?.median), num(g?.p90), g?.searchesBeforeEdit ?? '-', num(g?.freshPerMessage)]
+const hooks = (x) => `${num(x?.errors)} · ${num(x?.guardFires)} · ${num(x?.stopBlocks)}`
 
 async function usage(box) {
   const u = await api(`usage?days=${days}&provider=${provider}${fresh ? '&fresh=1' : ''}`)
@@ -244,17 +245,23 @@ async function usage(box) {
     h('div', { className: 'bar' }, h('span', { className: 'bar' }, [7, 30, 90].map((d) => h('button', { className: d === days ? 'on' : '', onclick: () => { days = d; reload() } }, `${d} days`))),
       h('span', { className: 'bar' }, Object.entries(PROVIDER_LABELS).map(([p, label]) => h('button', { className: p === provider ? 'on' : '', onclick: () => { provider = p; reload() } }, label))),
       act('Refresh', async () => { fresh = true; reload() })),
-    h('div', { className: 'tiles' }, tile('Tokens', num(u.totals?.tokens)), tile('Cost (USD)', (u.totals?.cost ?? 0).toFixed(2)), tile('Cache hit', pct(u.cacheHit)), tile('Sub-agent share', pct(u.subagentShare))),
+    h('div', { className: 'tiles' }, tile('Tokens', num(u.totals?.tokens)), tile('Cost (USD)', (u.totals?.cost ?? 0).toFixed(2)), tile('Cache hit', pct(u.cacheHit)), tile('Sub-agent share', pct(u.subagentShare)),
+      tile('Hooks: errors, guard fires, stop blocks', hooks(u.hooks), u.hooks?.errors ? 'warn' : '')),
     u.unknownModels?.length ? note(`No price for: ${u.unknownModels.join(', ')}. These models cost 0 here.`, 'warn') : null,
     h('h3', {}, 'Quota'),
     u.quota ? act('Load quota', async () => { const r = await api('usage/quota', {}); out.replaceChildren(pre(r.text)) }) : note('CodexBar is not on PATH. Quota is not available.'), out,
     h('h3', {}, 'By provider'), by(u.byProvider ?? [], 'Provider'),
     h('h3', {}, `Sessions (${num(u.sessionCount)})`),
-    note('A graph session called a codebase-memory MCP tool. A Codex session counts on the day it started.'),
-    table(['Group', 'Sessions', 'Median tokens', 'p90 tokens'], [spread('Graph', u.sessionSummary?.graph), spread('No graph', u.sessionSummary?.noGraph)]),
+    note('A graph session called a codebase-memory MCP tool. A Codex session counts on the day it started. ' +
+      'A search is a Grep, Glob or Read call, or a Bash call with rg, grep or find. A fresh token is an input, cache write or output token. The values for each group are medians.'),
+    table(['Group', 'Sessions', 'Median tokens', 'p90 tokens', 'Searches before edit', 'Fresh tokens per message'], [spread('Graph', u.sessionSummary?.graph), spread('No graph', u.sessionSummary?.noGraph)]),
     u.sessionCount > u.bySession.length ? note(`The table shows the ${u.bySession.length} largest sessions.`) : null,
-    table(['Provider', 'Project', 'Days', 'Messages', 'Tokens', 'Cost (USD)', 'Cache hit', 'Graph'],
-      u.bySession.map((r) => [r.provider, r.project, dayRange(r), num(r.messages), num(r.tokens), (r.cost ?? 0).toFixed(2), pct(r.cacheHit), r.graph ? 'graph' : ''])),
+    table(['Provider', 'Project', 'Days', 'Messages', 'Tokens', 'Cost (USD)', 'Cache hit', 'Graph', 'Fresh per message', 'Searches before edit', 'Searches', 'Edits', 'Skills', 'Hook errors', 'Guard fires', 'Stop blocks'],
+      u.bySession.map((r) => [r.provider, r.project, dayRange(r), num(r.messages), num(r.tokens), (r.cost ?? 0).toFixed(2), pct(r.cacheHit), r.graph ? `graph ${num(r.graphCalls)}` : '',
+        num(r.freshPerMessage), r.searchesBeforeEdit ?? '-', num(r.searchCalls), num(r.editCalls), num(r.skillCalls), num(r.hookErrors), num(r.guardFires), num(r.stopBlocks)])),
+    h('h3', {}, 'By skill'), note('The tokens from a Skill call to the next user prompt.'), by(u.bySkill ?? [], 'Skill'),
+    h('h3', {}, `By branch (${num(u.branchCount)})`), u.branchCount > (u.byBranch ?? []).length ? note(`The table shows the ${u.byBranch.length} largest branches.`) : null,
+    table(['Project', 'Branch', 'Tokens', 'Cost (USD)', 'Messages'], (u.byBranch ?? []).map((r) => [r.project, r.branch, num(r.tokens), (r.cost ?? 0).toFixed(2), num(r.messages)])),
     h('h3', {}, 'By day'), by(u.byDay ?? [], 'Day'), h('h3', {}, 'By project'), by(u.byProject ?? [], 'Project'), h('h3', {}, 'By model'), by(u.byModel ?? [], 'Model'))
 }
 

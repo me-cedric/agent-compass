@@ -16,7 +16,7 @@ It prints a URL that holds the token. Open the URL. Press Ctrl+C to stop. It has
 | Env | The findings of `ac env check`. The names in each git-ignored local env file, as `set` or `empty`. See [Env values](#env-values). | Save a value. Export and import an age bundle. |
 | Run | The processes of the local stack and their logs. | Up. Down. Follow a log. |
 | Tests | The commands in `agent-compass.commands.json` and the history of `.agents/runs/`. A project without the file gets a note, not an error. | Run a command. Open a log, JUnit or HTML report. |
-| Usage | Tokens, cost, cache hit rate and sub-agent share for 7, 30 or 90 days, for Claude Code and Codex. By provider, day, project and model. The 20 largest sessions. See [Usage tab](#usage-tab). | Choose the range and the provider. Refresh. Load the CodexBar quota when `codexbar` is on `PATH`. |
+| Usage | Tokens, cost, cache hit rate, sub-agent share and hook events for 7, 30 or 90 days, for Claude Code and Codex. By provider, day, project, model, skill and branch. The 20 largest sessions. See [Usage tab](#usage-tab). | Choose the range and the provider. Refresh. Load the CodexBar quota when `codexbar` is on `PATH`. |
 | Delivery | RAID files, tickets, audit rows and ADRs from the docs layout. See [delivery.md](delivery.md#docs-layout). The open issues of GitHub, GitLab or Jira. | Pull GitHub issues. Pull GitLab issues. Pull Jira issues. See [Tracker pull](#tracker-pull). |
 | Promote | The project skills that compass does not own. | Preview. Promote. |
 
@@ -69,10 +69,14 @@ The buttons choose the range (7, 30 or 90 days) and the provider (All, Claude or
 A provider that is not in the list gives All. The server runs `ac usage --json --provider <name>` once for each range and provider, and keeps the answer for 5 minutes.
 Refresh reads the files again.
 
-- The tiles show tokens, cost, cache hit rate and sub-agent share. The tables show tokens, cost and messages by provider, day, project and model.
-- The Sessions part shows the count, the median and the p90 of tokens for graph and no-graph sessions. A graph session called a `codebase-memory` MCP tool.
-- Below it, a table shows the 20 largest sessions: provider, project, days, messages, tokens, cost, cache hit rate and the graph flag.
+- The tiles show tokens, cost, cache hit rate and sub-agent share. The Hooks tile shows the hook errors, the guard fires and the stop blocks of the range.
+  The tables show tokens, cost and messages by provider, day, project, model and skill.
+- The Sessions part shows these values for graph and no-graph sessions: the count, the median and the p90 of tokens,
+  the median of the searches before the first edit and the median of the fresh tokens per message. A graph session called a `codebase-memory` MCP tool.
+- Below it, a table shows the 20 largest sessions: provider, project, days, messages, tokens, cost, cache hit rate, the graph calls,
+  the fresh tokens per message, the searches before the first edit, the searches, the edits, the skill calls and the hook counts.
   The answer holds the number of all sessions in `sessionCount`.
+- The By branch table shows the 20 largest branches of each project. The answer holds the number of all branches in `branchCount`.
 - A Codex model has no price yet, so its cost is 0. The page names these models.
 
 ### Tracker pull
@@ -105,7 +109,7 @@ For Jira, the page maps the REST issues that `jira` prints (a list, or an object
 ## ac usage
 
 ```bash
-ac usage [--by session] [--provider claude|codex|all] [--project <root>] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--json]
+ac usage [--by session|skill|branch] [--provider claude|codex|all] [--project <root>] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--json]
 ```
 
 `ac usage` reads the Claude Code transcripts in `~/.claude/projects` and the Codex sessions in `~/.codex/sessions`.
@@ -118,8 +122,32 @@ It shows tokens, cost, cache hit rate and sub-agent share by provider, day, proj
 - `--provider` counts only `claude` or only `codex`. The default is `all`. Each row and each session has a `provider`. The result has the totals by provider in `byProvider`.
 - `--project <root>` counts only the rows of one repository root.
 - `--by session` prints one row for each session (the `sessionId` of the transcript lines, with its sub-agents): project, first and last day, messages, tokens, cost, cache hit rate and provider.
-  A session is a graph session when it calls a tool of a `codebase-memory` MCP server. The summary gives the count, the median and the p90 of tokens for graph and no-graph sessions apart.
-- `--json` always has `bySession`, `sessionSummary` and `byProvider`, with or without `--by session`.
+  A session is a graph session when it calls a tool of a `codebase-memory` MCP server, or when Claude Code gives a line the `attributionMcpServer` of that server.
+  The summary gives these values for graph and no-graph sessions apart: the count, the median and the p90 of tokens, the number of sessions with an edit,
+  the median of the searches before the first edit and the median of the fresh tokens per message.
+- `--by skill` prints the tokens of each skill. The tokens of a skill are the rows from its `Skill` call to the next user prompt.
+- `--by branch` prints the tokens of each project and git branch (`gitBranch` of the line). A line without a branch counts as `(none)`.
+- `--json` always has `bySession`, `sessionSummary`, `bySkill`, `byBranch`, `hooks` and `byProvider`, with or without `--by`.
+
+### Session counts
+
+`ac usage` reads these values from the Claude Code lines of a session. A tool call counts once for each `tool_use` id.
+A Codex session has 0 for each count and no value for the searches before the first edit.
+
+| Value | Source |
+|---|---|
+| Graph calls | A `tool_use` whose name starts with `mcp__codebase-memory`. |
+| Searches | A `Grep`, `Glob` or `Read` call, or a `Bash` call whose command runs `rg`, `grep` or `find`. |
+| Edits | An `Edit`, `Write`, `MultiEdit`, `NotebookEdit` or `apply_patch` call. |
+| Searches before the first edit | The searches in time order before the first edit, with the searches of the sub-agents. A session without an edit has no value. |
+| Fresh tokens per message | Input, cache write and output tokens, divided by the messages. Cache reads are not fresh. |
+| Skill calls | A `Skill` call. Its name is `input.skill`. |
+| Hook errors | An attachment of type `hook_non_blocking_error` or `hook_cancelled`. |
+| Guard fires | A tool result with `is_error` that holds a compass guard message (`compass: the read of`, `the edit of`, `the command` or `the tool`). |
+| Stop blocks | A meta user line that starts with `Stop hook feedback`, or a `stop_hook_summary` line with `preventedContinuation`. |
+| Effort | The last `effort` value of the session. |
+
+The `hooks` object of the result has the sums of the hook errors, the guard fires and the stop blocks of all sessions.
 
 ### Codex sessions
 

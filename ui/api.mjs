@@ -279,8 +279,11 @@ const usage = async (c) => {
   const days = [7, 30, 90].includes(Number(c.query.get('days'))) ? Number(c.query.get('days')) : 30
   const provider = PROVIDERS.includes(c.query.get('provider')) ? c.query.get('provider') : 'all'
   const data = await usageData(c, days, provider, c.query.get('fresh') === '1')
-  const sessions = data.bySession ?? []
-  return { ...data, bySession: sessions.slice(0, SESSIONS_SHOWN), sessionCount: sessions.length, days, provider, quota: onPath('codexbar') }
+  const [sessions, branches] = [data.bySession ?? [], data.byBranch ?? []]
+  return {
+    ...data, bySession: sessions.slice(0, SESSIONS_SHOWN), sessionCount: sessions.length, byBranch: branches.slice(0, SESSIONS_SHOWN), branchCount: branches.length,
+    days, provider, quota: onPath('codexbar'),
+  }
 }
 
 const quota = async () => {

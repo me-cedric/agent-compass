@@ -236,6 +236,10 @@ test('the page has the doctor, sessions and provider parts', () => {
   assert.match(app, /usage\?days=\$\{days\}&provider=\$\{provider\}/)
   assert.match(app, /PROVIDER_LABELS = \{ all: 'All', claude: 'Claude', codex: 'Codex' \}/)
   assert.match(app, /u\.bySession\.map/)
+  assert.match(app, /tile\('Hooks: errors, guard fires, stop blocks'/)
+  assert.match(app, /'Searches before edit', 'Fresh tokens per message'/)
+  assert.match(app, /u\.bySkill \?\? \[\]/)
+  assert.match(app, /u\.byBranch \?\? \[\]/)
 })
 
 // ---- report files ----
@@ -700,7 +704,7 @@ const rollout = (id, cwd, tokens) => {
     event('event_msg', { type: 'token_count', info: { total_token_usage: { input_tokens: tokens, cached_input_tokens: 0, output_tokens: 0, reasoning_output_tokens: 0, total_tokens: tokens } } }),
   ].join('\n')
 }
-const session = (id, cwd, tokens) => JSON.stringify({ timestamp: new Date().toISOString(), cwd, sessionId: id, requestId: `r-${id}`, isSidechain: false, message: { id: `m-${id}`, model: 'claude-sonnet-5-5', usage: { input_tokens: tokens, output_tokens: 0 } } })
+const session = (id, cwd, tokens) => JSON.stringify({ timestamp: new Date().toISOString(), cwd, sessionId: id, gitBranch: `b-${id}`, requestId: `r-${id}`, isSidechain: false, message: { id: `m-${id}`, model: 'claude-sonnet-5-5', usage: { input_tokens: tokens, output_tokens: 0 } } })
 
 test('the usage route shows the 20 largest sessions and the graph summary, with the provider of each', { skip: !present('usage') }, async () => {
   const a = await host()
@@ -712,7 +716,11 @@ test('the usage route shows the 20 largest sessions and the graph summary, with 
     assert.equal(u.sessionCount, 25)
     assert.equal(u.bySession.length, 20)
     assert.deepEqual(u.bySession.map((r) => r.tokens), Array.from({ length: 20 }, (_, i) => 1024 - i))
-    assert.deepEqual(Object.keys(u.bySession[0]).sort(), ['cacheHit', 'cacheRead', 'cacheWrite', 'cost', 'first', 'graph', 'input', 'last', 'messages', 'output', 'project', 'provider', 'session', 'tokens'])
+    assert.deepEqual(Object.keys(u.bySession[0]).sort(), ['cacheHit', 'cacheRead', 'cacheWrite', 'cost', 'editCalls', 'effort', 'first', 'freshPerMessage', 'graph', 'graphCalls',
+      'guardFires', 'hookErrors', 'input', 'last', 'messages', 'output', 'project', 'provider', 'searchCalls', 'searchesBeforeEdit', 'session', 'skillCalls', 'stopBlocks', 'tokens'])
+    assert.deepEqual(u.hooks, { errors: 0, guardFires: 0, stopBlocks: 0 })
+    assert.deepEqual([u.bySkill, u.byBranch.length, u.branchCount], [[], 20, 25])
+    assert.equal(u.sessionSummary.noGraph.freshPerMessage, 1012)
     assert.deepEqual([u.bySession[0].project, u.bySession[0].provider, u.bySession[0].graph, u.bySession[0].messages], [a, 'claude', false, 1])
     assert.deepEqual(u.sessionSummary.noGraph.count, 25)
     assert.equal(u.sessionSummary.graph.count, 0)
