@@ -15,6 +15,7 @@ import { CONFIG, DEFAULT_CONFIG, KONVOY, konvoyOwns, loadConfig, loadKonvoy, LOC
 import { MIGRATED } from './migrate.mjs'
 import { buildPlan } from './plan.mjs'
 import { outside, prune, readLock, syncHost } from './sync.mjs'
+import { loadUpstream } from './upstream.mjs'
 import { dirs, isDir, isObj, readJson, run, safeRel, sha } from './util.mjs'
 
 export const OLD_LOCK = '.agent/agent-compass.lock'
@@ -49,9 +50,7 @@ const files = (root, dir) => readdirSync(join(root, dir), { withFileTypes: true 
 const knownBlobs = (AC, warnings) => {
   const known = new Map()
   const tags = run('git', ['-C', AC, 'for-each-ref', '--format=%(refname:short)', 'refs/tags/v0.*'], { timeout: 10_000 })
-  const names = tags.ok ? tags.out.split('\n').filter(Boolean) : []
-  if (!names.length) warnings.push('the compass checkout has no v0.* tags; compass can prove only the files of the 0.x lock and the pointer files')
-  for (const tag of names) {
+  for (const tag of tags.ok ? tags.out.split('\n').filter(Boolean) : []) {
     const tree = run('git', ['-C', AC, 'ls-tree', '-rz', tag], { timeout: 20_000 })
     if (!tree.ok) { warnings.push(`tag ${tag}: the tree is not readable (${tree.err.split('\n')[0]})`); continue }
     for (const rec of tree.out.split('\0')) {
@@ -108,14 +107,30 @@ const group = (ctx, dir, match, whole) => {
   return items.map((i) => (mixed && i.class === 'unedited' && !ctx.claimed.has(i.path) ? { ...i, action: 'keep' } : i))
 }
 
-const skillItems = (ctx, known, names) => SKILL_ROOTS.flatMap((base) => names.flatMap((name) => {
-  const dir = `${base}/${name}`
-  const st = lstatSync(join(ctx.root, dir), { throwIfNoEntry: false })
-  if (!st) return []
-  if (ctx.konvoy?.skills.has(name)) return [{ path: dir, class: 'konvoy', action: 'keep' }]
-  if (!st.isDirectory()) return [{ path: dir, class: st.isSymbolicLink() ? 'symlink' : 'edited', action: 'keep' }]
-  return group(ctx, dir, (rel, buf) => known.get(`skills/${name}/${rel}`)?.has(blobId(buf)), true)
-}))
+// A skill dir with a licence file in a 0.x tag is a third-party copy: compass never deletes or moves it.
+// The note names the upstream source that lists the skill, if there is one.
+const thirdParty = (AC, known) => {
+  const { sources } = loadUpstream(AC)
+  const source = (name) => Object.entries(sources).find(([id, s]) => s.skills.some((e) => (e === '.' ? id : basename(e)) === name))?.[0]
+  return new Map([...known.keys()].flatMap((p) => /^skills\/([^/]+)\/(LICEN[CS]E|COPYING)([.-][\w.-]+)?$/i.exec(p)?.[1] ?? []).map((name) => [name,
+    source(name) ? `third-party skill; enable the upstream source ${source(name)} in .agents/compass.json to manage it with compass` : 'third-party skill; keep or remove it by hand']))
+}
+
+// A skill root that is a symlink is listed and not walked.
+const skillItems = (ctx, known, names) => SKILL_ROOTS.flatMap((base) => {
+  if (lstatSync(join(ctx.root, base), { throwIfNoEntry: false })?.isSymbolicLink()) {
+    return names.some((n) => lstatSync(join(ctx.root, base, n), { throwIfNoEntry: false })) ? [{ path: base, class: 'symlink', action: 'keep' }] : []
+  }
+  return names.flatMap((name) => {
+    const dir = `${base}/${name}`
+    const st = lstatSync(join(ctx.root, dir), { throwIfNoEntry: false })
+    if (!st) return []
+    if (ctx.konvoy?.skills.has(name)) return [{ path: dir, class: 'konvoy', action: 'keep' }]
+    if (!st.isDirectory()) return [{ path: dir, class: st.isSymbolicLink() ? 'symlink' : 'edited', action: 'keep' }]
+    if (ctx.third.has(name)) return [{ path: dir, class: 'third-party', action: 'keep', note: ctx.third.get(name) }]
+    return group(ctx, dir, (rel, buf) => known.get(`skills/${name}/${rel}`)?.has(blobId(buf)), true)
+  })
+})
 
 const lockItems = (ctx, old) => Object.entries(isObj(old?.managed) ? old.managed : {}).flatMap(([path, hash]) => {
   if (!safeRel(path) || typeof hash !== 'string') { ctx.warnings.push(`${OLD_LOCK}: the entry "${path}" is not valid; compass skips it`); return [] }
@@ -156,20 +171,23 @@ const scan = ({ AC, root }) => {
   const early = [...kv.errors, ...lk.errors, ...cfg.errors]
   if (early.length) return { errors: early, warnings, detected: { found: false }, plan: [], excluded: [] }
   const ans = answersConfig(root)
-  const config = cfg.created && ans ? { ...cfg.config, ...ans.config } : cfg.config
-  const plan = buildPlan({ AC, root, config, paths: resolvePaths(config, kv.konvoy).paths, konvoy: Boolean(kv.konvoy) })
-  errors.push(...plan.errors)
-  const excluded = kv.konvoy ? konvoyExcludes(plan, kv.konvoy).map((id) => ({ id, reason: 'konvoy' })) : []
-  if (cfg.created && outside(root, CONFIG)) errors.push(`${CONFIG} is a symlink or leaves the project root; compass does not write it`)
-  const claimed = new Set([...plan.files].filter(([, f]) => f.mode === 'managed').map(([p]) => p))
-  if (ans) claimed.add(ANSWERS)
-  const known = knownBlobs(AC, warnings)
-  const ctx = { root, konvoy: kv.konvoy, claimed, owned: lk.lock.files, warnings }
   const sub = submodule(root)
   const [vend, ...more] = vendored(root)
   const oldLock = existsSync(join(root, OLD_LOCK)) ? readJson(join(root, OLD_LOCK)) : undefined
   if (oldLock === null) warnings.push(`${OLD_LOCK} is not valid JSON; compass keeps it`)
   if (existsSync(join(root, ANSWERS)) && !ans) warnings.push(`${ANSWERS} is not a JSON object in a regular file; compass does not convert it`)
+  // Only a 0.x marker starts a migration: the 0.x lock, a compass submodule, a vendored copy or the answers file.
+  if (!(isObj(oldLock) || sub || vend || ans)) return { errors, warnings: [...warnings, 'no compass 0.x install found; nothing to migrate'], detected: { found: false }, plan: [], excluded: [] }
+  const config = cfg.created && ans ? { ...cfg.config, ...ans.config } : cfg.config
+  const plan = buildPlan({ AC, root, config, paths: resolvePaths(config, kv.konvoy).paths, konvoy: Boolean(kv.konvoy) })
+  errors.push(...plan.errors)
+  const excluded = kv.konvoy ? konvoyExcludes(plan, kv.konvoy).map((id) => ({ id, reason: 'konvoy' })) : []
+  if (outside(root, CONFIG)) errors.push(`${CONFIG} is a symlink or leaves the project root; compass does not write it`)
+  const claimed = new Set([...plan.files].filter(([, f]) => f.mode === 'managed').map(([p]) => p))
+  if (ans) claimed.add(ANSWERS)
+  const known = knownBlobs(AC, warnings)
+  if (!known.size) return { errors: [...errors, `the compass checkout has no v0.* tags; run "git -C ${AC} fetch --tags" and run ac migrate again`], warnings, detected: { found: true }, plan: [], excluded: [] }
+  const ctx = { root, konvoy: kv.konvoy, claimed, owned: lk.lock.files, warnings, third: thirdParty(AC, known) }
   for (const v of more) warnings.push(`another vendored copy is in ${v.path}; run "ac migrate" again after this run`)
   const names = [...new Set([...known.keys()].flatMap((p) => /^skills\/([^/]+)\/./.exec(p)?.[1] ?? []))].sort()
   const acRels = [...new Set([sub?.path, vend?.path, relative(root, AC) || '.'].filter(Boolean))]
@@ -185,6 +203,7 @@ const scan = ({ AC, root }) => {
   const kvRaw = readJson(join(root, KONVOY))
   const gemini = ['GEMINI.md', '.mcp/gemini.example.json', ...(lstatSync(join(root, '.gemini'), { throwIfNoEntry: false })?.isDirectory() ? files(root, '.gemini') : [])].filter((p) => lstatSync(join(root, p), { throwIfNoEntry: false }))
   const detected = {
+    found: true,
     lock: isObj(oldLock) ? { path: OLD_LOCK, version: oldLock.version ?? null } : null,
     submodule: sub,
     vendored: vend ?? null,
@@ -193,9 +212,10 @@ const scan = ({ AC, root }) => {
     gemini: gemini.sort(),
     konvoy: isObj(kvRaw) ? { version: kvRaw.version ?? null, compassSkills: Object.keys(kvRaw.compass_skills || {}).length } : null,
   }
-  const map = new Map(items.map((i) => [i.path, i]))
-  detected.found = Boolean(detected.lock || sub || vend || ans || map.size)
-  if (!detected.found) warnings.push('no compass 0.x install found; nothing to migrate')
+  // One item for each real file: two paths that reach one file through a directory link give one item.
+  const real = (path) => join(realpathSync(dirname(join(root, path))), basename(path))
+  const map = new Map()
+  for (const i of items) if (!map.has(real(i.path))) map.set(real(i.path), i)
   const out = [...map.values()].sort((a, b) => (a.path < b.path ? -1 : 1))
   for (const { path, action } of out) {
     const to = `${MIGRATED}/${path}`
@@ -242,7 +262,7 @@ export const migrateLegacy = ({ AC, root, apply = false }) => {
   const out = {
     ...p,
     ok: !p.errors.length,
-    kept: pick('keep').map(({ path, class: cls }) => ({ path, note: NOTES[cls] })),
+    kept: pick('keep').map(({ path, class: cls, note }) => ({ path, note: note ?? NOTES[cls] })),
     moved: pick('move').map(({ path }) => ({ path, to: `${MIGRATED}/${path}`, note: 'merge by hand' })),
     deleted: pick('delete').map((i) => i.path),
     sync: null,

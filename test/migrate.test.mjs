@@ -309,3 +309,26 @@ test('migrate --docs counts a 4-digit ADR for the number, keeps an ADR when the 
   assert.equal(readFileSync(join(root, 'docs/decisions/0002-c.md'), 'utf8'), 'taken\n')
   assert.match(readFileSync(join(root, 'docs/decisions/0003-d.md'), 'utf8'), /^---\r\nstatus: proposed\r\ndate: 2026-01-04\r\n---\r\n# 003\. D\r\n/)
 })
+
+test('migrate --docs edits a link outside code only: a fenced block and an inline code span stay', () => {
+  const guide = [
+    '# Guide', '', 'See [foo](../decisions/001-foo.md#ctx) and `code` [again](../decisions/001-foo.md).', '',
+    '```md', 'Example: [old](../decisions/001-foo.md) stays as an example.', '```', '',
+    '~~~', '[tilde](../decisions/001-foo.md)', '~~~', '',
+    'Inline `[x](../decisions/001-foo.md)` and ``[y](../decisions/001-foo.md)`` stay.', '',
+  ].join('\n')
+  const codeOnly = '# Notes\n\n```\n[x](../decisions/001-foo.md)\n```\n\nInline `[x](../decisions/001-foo.md)` only.\n'
+  const root = put(temp('ac-host-'), {
+    'docs/decisions/001-foo.md': adr('001', 'Foo', 'accepted', '2026-01-02', '\n```\n[self](001-foo.md)\n```\n'),
+    'docs/guide/a.md': guide,
+    'docs/guide/b.md': codeOnly,
+  })
+  const r = migrateDocs({ AC: REPO, root, apply: true })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  assert.deepEqual(r.items.filter((i) => i.type === 'adr-links').map((i) => i.source), ['docs/guide/a.md'], 'a file with links in code only is not edited')
+  assert.equal(readFileSync(join(root, 'docs/guide/a.md'), 'utf8'), guide
+    .replace('[foo](../decisions/001-foo.md#ctx)', '[foo](../decisions/0001-foo.md#ctx)')
+    .replace('[again](../decisions/001-foo.md)', '[again](../decisions/0001-foo.md)'))
+  assert.equal(readFileSync(join(root, 'docs/guide/b.md'), 'utf8'), codeOnly)
+  assert.ok(readFileSync(join(root, 'docs/decisions/0001-foo.md'), 'utf8').includes('```\n[self](001-foo.md)\n```'), 'a fence in a moved ADR stays')
+})

@@ -13,6 +13,7 @@ import { runNode } from './helpers.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
 const needTag = run('git', ['-C', AC, 'rev-parse', '--verify', '--quiet', 'refs/tags/v0.9.6^{commit}']).ok ? false : 'the tag v0.9.6 is not in this clone'
+const needTag81 = run('git', ['-C', AC, 'rev-parse', '--verify', '--quiet', 'refs/tags/v0.8.1^{commit}']).ok ? false : 'the tag v0.8.1 is not in this clone'
 const VENDOR = 'docs/agent-compass'
 const temps = []
 test.after(() => { for (const dir of temps) rmSync(dir, { recursive: true, force: true }) })
@@ -24,6 +25,8 @@ const temp = (prefix = 'ac-legacy-') => {
 }
 // The bytes of a file in the compass 0.9.6 tree.
 const old = (path) => execFileSync('git', ['-C', AC, 'show', `v0.9.6:${path}`], { maxBuffer: 1 << 24 })
+// The bytes of a third-party skill file in the compass 0.8.1 tree (the dir has a LICENSE file there).
+const old81 = (path) => execFileSync('git', ['-C', AC, 'show', `v0.8.1:${path}`], { maxBuffer: 1 << 24 })
 const plus = (buf, text) => Buffer.concat([buf, Buffer.from(text)])
 const snap = (root) => Object.fromEntries(walk(root).map((rel) => [rel, readFileSync(join(root, rel)).toString('base64')]))
 
@@ -340,7 +343,7 @@ test('a symlinked managed file is listed and never followed', { skip: needTag },
   assert.ok(readFileSync(join(outside, 'security.md')).equals(original))
 })
 
-test('without v0 tags only the lock proves a file', () => {
+test('without v0 tags a 0.x host stops with an error and nothing changes', () => {
   const fake = temp('ac-fake-')
   const root = temp()
   const original = Buffer.from('managed text\n')
@@ -349,9 +352,112 @@ test('without v0 tags only the lock proves a file', () => {
   writeFileSync(join(root, 'a.md'), original)
   writeFileSync(join(root, '.claude/skills/impact-analysis/SKILL.md'), 'text of a skill\n')
   writeFileSync(join(root, '.agent/agent-compass.lock'), JSON.stringify({ version: '0.9.6', managed: { 'a.md': sha(original) } }))
-  const r = legacyPlan({ AC: fake, root })
-  assert.ok(r.warnings.some((w) => w.includes('no v0.* tags')))
-  assert.deepEqual(r.plan, [{ path: 'a.md', class: 'unedited', action: 'delete' }])
+  const before = snap(root)
+  const r = migrateLegacy({ AC: fake, root, apply: true })
+  assert.equal(r.ok, false)
+  assert.deepEqual(r.errors, [`the compass checkout has no v0.* tags; run "git -C ${fake} fetch --tags" and run ac migrate again`])
+  assert.deepEqual(r.plan, [])
+  assert.deepEqual(snap(root), before)
+})
+
+test('a repo without a 0.x marker plans nothing, even when a file has the bytes of a skill file', { skip: needTag81 }, () => {
+  const root = temp()
+  mkdirSync(join(root, '.agents/skills/caveman'), { recursive: true })
+  writeFileSync(join(root, 'CLAUDE.md'), '# Mine\n')
+  writeFileSync(join(root, '.agents/skills/caveman/SKILL.md'), old81('skills/caveman/SKILL.md'))
+  writeFileSync(join(root, '.agents/skills/caveman/LICENSE'), old81('skills/caveman/LICENSE'))
+  const before = snap(root)
+  const r = migrateLegacy({ AC, root, apply: true })
+  assert.equal(r.ok, true)
+  assert.equal(r.detected.found, false)
+  assert.deepEqual(r.plan, [])
+  assert.match(r.warnings.join('\n'), /nothing to migrate/)
+  assert.deepEqual(snap(root), before)
+})
+
+test('a third-party skill dir stays, and the note names the upstream source when there is one', { skip: needTag81 }, () => {
+  const root = temp()
+  const put = (rel, data) => {
+    mkdirSync(dirname(join(root, rel)), { recursive: true })
+    writeFileSync(join(root, rel), data)
+  }
+  put('agent-compass.answers.json', '{"name":"demo"}')
+  for (const [base, name] of [['.agents/skills', 'caveman'], ['.claude/skills', 'access-review']]) {
+    for (const file of ['SKILL.md', 'LICENSE']) put(`${base}/${name}/${file}`, old81(`skills/${name}/${file}`))
+  }
+  const before = snap(root)
+  const dry = migrateLegacy({ AC, root })
+  const note = (path) => dry.kept.find((k) => k.path === path)?.note
+  assert.deepEqual(dry.plan.filter((i) => i.path.includes('skills')).map(({ path, class: cls, action }) => [path, cls, action]), [
+    ['.agents/skills/caveman', 'third-party', 'keep'],
+    ['.claude/skills/access-review', 'third-party', 'keep'],
+  ])
+  assert.equal(note('.agents/skills/caveman'), 'third-party skill; enable the upstream source caveman in .agents/compass.json to manage it with compass')
+  assert.equal(note('.claude/skills/access-review'), 'third-party skill; keep or remove it by hand')
+  assert.deepEqual(dry.deleted, [])
+
+  const r = migrateLegacy({ AC, root, apply: true })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  for (const [rel, text] of Object.entries(before)) {
+    if (rel.includes('skills/')) assert.equal(readFileSync(join(root, rel)).toString('base64'), text, rel)
+  }
+})
+
+test('a symlinked compass.json or .agents dir is never written', () => {
+  const answers = '{"name":"demo","codeIntelligence":"codebase-memory"}'
+  const config = '{"version":1,"packs":[],"exclude":[]}\n'
+  const link = (how) => {
+    const root = temp()
+    const outside = temp('ac-legacy-out-')
+    mkdirSync(join(root, '.agents'), { recursive: true })
+    writeFileSync(join(root, 'agent-compass.answers.json'), answers)
+    if (how === 'file') {
+      writeFileSync(join(outside, 'compass.json'), config)
+      symlinkSync(join(outside, 'compass.json'), join(root, '.agents/compass.json'))
+    } else {
+      writeFileSync(join(outside, 'compass.json'), config)
+      rmSync(join(root, '.agents'), { recursive: true })
+      symlinkSync(outside, join(root, '.agents'))
+    }
+    return { root, outside }
+  }
+  for (const how of ['file', 'dir']) {
+    const { root, outside } = link(how)
+    const before = snap(outside)
+    const r = migrateLegacy({ AC, root, apply: true })
+    assert.equal(r.ok, false, how)
+    assert.match(r.errors.join('\n'), /\.agents\/compass\.json is a symlink or leaves the project root; compass does not write it/, how)
+    assert.deepEqual(snap(outside), before, how)
+    assert.ok(existsSync(join(root, 'agent-compass.answers.json')), how)
+  }
+})
+
+test('a symlinked skill root is listed and not walked; a path that two links reach is one item', { skip: needTag }, () => {
+  const root = temp()
+  mkdirSync(join(root, '.claude/skills/impact-analysis'), { recursive: true })
+  writeFileSync(join(root, '.claude/skills/impact-analysis/SKILL.md'), old('skills/impact-analysis/SKILL.md'))
+  writeFileSync(join(root, 'agent-compass.answers.json'), '{"name":"demo"}')
+  mkdirSync(join(root, '.agents'), { recursive: true })
+  symlinkSync('../.claude/skills', join(root, '.agents/skills'))
+  const dry = migrateLegacy({ AC, root })
+  assert.deepEqual(dry.plan.filter((i) => i.path.includes('skills')), [
+    { path: '.agents/skills', class: 'symlink', action: 'keep' },
+    { path: '.claude/skills/impact-analysis/SKILL.md', class: 'unedited', action: 'delete' },
+  ])
+  const r = migrateLegacy({ AC, root, apply: true })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  assert.ok(lstatSync(join(root, '.agents/skills')).isSymbolicLink())
+  const again = migrateLegacy({ AC, root, apply: true })
+  assert.equal(again.ok, true, again.errors.join('\n'))
+
+  const twin = temp()
+  mkdirSync(join(twin, '.agents/skills/impact-analysis'), { recursive: true })
+  writeFileSync(join(twin, '.agents/skills/impact-analysis/SKILL.md'), old('skills/impact-analysis/SKILL.md'))
+  writeFileSync(join(twin, 'agent-compass.answers.json'), '{"name":"demo"}')
+  symlinkSync('.agents', join(twin, '.claude'))
+  const paths = legacyPlan({ AC, root: twin }).plan.filter((i) => i.path.endsWith('SKILL.md'))
+  assert.equal(paths.length, 1, JSON.stringify(paths))
+  assert.equal(migrateLegacy({ AC, root: twin, apply: true }).ok, true)
 })
 
 test('the answers file sets the packs and the MCP servers of compass.json', () => {

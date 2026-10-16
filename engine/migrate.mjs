@@ -204,11 +204,20 @@ const adrItems = (root, paths) => {
 }
 
 // Rewrite the Markdown link targets `](path)` that name a renamed ADR. `from` is the repo path of the file with the links.
-const relink = (text, from, renames) => text.replace(/(\]\(\s*<?)([^)\s<>#?]+)/g, (whole, open, target) => {
+// A fenced code block and an inline code span stay as they are.
+const retarget = (text, from, renames) => text.replace(/(\]\(\s*<?)([^)\s<>#?]+)/g, (whole, open, target) => {
   if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return whole
   const to = renames.get(posix.normalize(target.startsWith('/') ? target.slice(1) : posix.join(posix.dirname(from), target)))
   return to ? `${open}${target.slice(0, target.length - posix.basename(target).length)}${posix.basename(to)}` : whole
 })
+
+const relink = (text, from, renames) => {
+  let fenced = false
+  return text.split('\n').map((line) => {
+    if (isFence(line)) { fenced = !fenced; return line }
+    return fenced ? line : line.split(/(`+[^`]*`+)/).map((part, i) => (i % 2 ? part : retarget(part, from, renames))).join('')
+  }).join('\n')
+}
 
 const mdFiles = (root, dir = '') => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => {
   const rel = dir ? `${dir}/${e.name}` : e.name
