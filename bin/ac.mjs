@@ -11,8 +11,7 @@ import { checkDocs } from '../engine/docs.mjs'
 import { doctor } from '../engine/doctor.mjs'
 import { pinTag } from '../engine/git.mjs'
 import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
-import { migrateLegacy } from '../engine/legacy.mjs'
-import { migrateDocs, stageSpecs } from '../engine/migrate.mjs'
+import { stageSpecs } from '../engine/stage.mjs'
 import { syncHost } from '../engine/sync.mjs'
 import { hostRoot } from '../engine/util.mjs'
 
@@ -228,11 +227,16 @@ const main = async () => {
   let result
   if (command === 'doctor') result = doctor({ AC, root, tokens: Boolean(opts.tokens) })
   else if (command === 'migrate' && opts.docs) {
+    // The one-time migration code lives in migrate/ and loads only for this command.
+    const { migrateDocs } = await import('../migrate/docs.mjs')
     result = migrateDocs({ AC, root, apply })
     // A new OpenSpec dir changes the plan (the schema goes there), so a configured project syncs after the moves.
     if (apply && result.ok && existsSync(join(root, CONFIG))) result = { ...result, sync: syncHost({ AC, root, apply: true }) }
     if (result.sync && !result.sync.ok) result = { ...result, ok: false, errors: [...result.errors, ...result.sync.errors] }
-  } else if (command === 'migrate') result = { ...migrateLegacy({ AC, root, apply }), legacy: true }
+  } else if (command === 'migrate') {
+    const { migrateLegacy } = await import('../migrate/legacy.mjs')
+    result = { ...migrateLegacy({ AC, root, apply }), legacy: true }
+  }
   else if (command === 'check' && opts.docs) {
     const docs = checkDocs({ AC, root })
     result = { ok: docs.ok, docsOnly: true, docs }

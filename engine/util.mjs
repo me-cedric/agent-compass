@@ -2,8 +2,8 @@
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
-import { isAbsolute, join, resolve } from 'node:path'
+import { mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 export const sha = (data) => createHash('sha256').update(data).digest('hex').slice(0, 16)
 
@@ -74,4 +74,10 @@ export const hostRoot = (AC, dir) => {
   let same
   try { same = realpathSync(root) === realpathSync(AC) } catch { return { error: `the project root ${root} does not exist` } }
   return same ? { error: 'run ac from the project root, not from the compass checkout' } : { root }
+}
+
+// Write a new file below root. It never overwrites: an existing file is an error (flag wx).
+export const writeNew = (root, rel, content) => {
+  mkdirSync(dirname(join(root, rel)), { recursive: true })
+  writeFileSync(join(root, rel), content, { flag: 'wx' })
 }

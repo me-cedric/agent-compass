@@ -25,7 +25,7 @@ A path in braces, for example `{{DELIVERY_DIR}}`, is a path key. The section "Pa
 | 7 | In a Markdown file, compass owns only the text between `<!-- compass:begin -->` and `<!-- compass:end -->`. | Compass writes only that text (`blockSet` in `engine/merge.mjs`). Two begin markers or a missing end marker is an error. |
 | 8 | When Konvoy takes a file that the compass lock records, compass releases it. | The file stays on disk. The lock does not record it after the sync (`reconcile`, `engine/sync.mjs`, action `release`). |
 | 9 | Konvoy is the only writer of `{{DELIVERY_DIR}}/tickets.json`. | Rule 1. The skills tell the agent not to edit it. |
-| 10 | RAID files in `{{DELIVERY_DIR}}/questions/` use the Konvoy codec. `ac migrate --docs` writes new `Q-NNN.md` files only. It never edits or overwrites a RAID file. | `raidText` and `migrateDocs`, `engine/migrate.mjs`. The docs layout checks below. |
+| 10 | RAID files in `{{DELIVERY_DIR}}/questions/` use the Konvoy codec. `ac migrate --docs` writes new `Q-NNN.md` files only. It never edits or overwrites a RAID file. | `raidText` in `migrate/raid.mjs` and `migrateDocs` in `migrate/docs.mjs`. The docs layout checks below. |
 | 11 | Compass seeds an empty `{{DESIGNS_DIR}}/screens.json` once. Then the project owns it. Konvoy has no screen registry. | Seed mode in `buildPlan`: compass writes the file only when it does not exist. |
 
 Konvoy must also follow rules 1 to 11. The engine cannot enforce what Konvoy writes. See "Konvoy follow-ups".
