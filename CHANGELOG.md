@@ -9,6 +9,7 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 - The `ac` command has `init`, `sync`, `check`, `doctor` and `migrate`. These five take `--root`, `--dry` and `--json`. Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 - `ac sync` writes files, JSON and TOML keys, and text blocks into the project. It records each one in `.agents/compass.lock.json`. Two syncs give no diff.
 - A file that the project edited stays as it is. `ac doctor` lists it as `kept`.
+- An array key (`hooks.*`, `permissions.deny`, `permissions.ask`) is merged per entry: compass owns its own entries, and the entries of the project stay in place. A project with its own hooks keeps them and gets the compass `.env` guard too.
 - `ac check --frozen` fails when the project is different from the lock.
 - Pinned upstream skill sources are in `upstream.json`. The sync fetches them with a timeout and keeps a cache.
 - `.agents/konvoy.json` marks the items that Konvoy owns. Compass does not write them.
@@ -42,9 +43,11 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 ### UI
 
 - `ac ui` starts a local web UI on `127.0.0.1`. The tabs are Projects, Assets, Env, Run, Tests, Usage, Delivery and Promote.
-- The Assets tab switches each skill, rule, agent, pack, MCP server, Claude plugin, upstream source, managed file and block on or off. It shows the set that fits the stack and applies it with one button.
+- The Assets tab switches each skill (also each skill of an upstream source), rule, agent, pack, MCP server, Claude plugin, upstream source, managed file, block, owned setting key, seed file and the OpenSpec schema on or off. It shows the set that fits the stack, applies it with one button, and shows the always-on token cost of each asset, of the current set and of the recommended set.
+- `ac assets` does the same from the command line: list, `on|off <kind>:<id>`, `recommended`.
+- The Projects tab shows the `ac doctor` checks and token items. The Delivery tab pulls Jira issues through jira-cli too.
 - The Delivery tab pulls GitHub or GitLab issues, read only.
-- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code transcripts. `--by session` gives the tokens of each session, with and without the code graph.
+- `ac usage` shows tokens, cost, cache hit rate and sub-agent share from the Claude Code and Codex transcripts, by day, project, model, provider and session (`--provider`). `--by session` gives the tokens of each session, with and without the code graph.
 - `ac promote` copies a project skill into compass.
 
 ### Migration
