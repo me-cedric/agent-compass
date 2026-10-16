@@ -59,7 +59,7 @@ skills/ (~20)  agents/  rules/  mcp/catalog.json  packs/  upstream.json
 docs/ (≤12)  test/
 ```
 
-Budgets: ≤220 files. Engine + UI + CLI (`engine/*.mjs`, `ui/*.mjs`, `bin/ac.mjs`) ≤4,000 lines; the owner raised it from 3,500 on 2026-10-16, and the one-time code in `migrate/` is outside the count. AGENTS.md and README ≤150 lines each. Host always-on context ≤2,000 tokens. SessionStart injection ≤1,000 chars.
+Budgets: AGENTS.md and README ≤150 lines each. The file and code-line budgets are gone (owner decision, 2026-10-16: features first). Host always-on context ≤2,000 tokens. SessionStart injection ≤1,000 chars.
 
 ## Keep / cut summary
 

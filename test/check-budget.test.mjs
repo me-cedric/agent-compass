@@ -37,8 +37,6 @@ test('the repository is within its budgets', async () => {
 
 test('each budget fails when it is over, and names the count', async () => {
   for (const [opts, pattern] of [
-    [{ lines: 3999 }, /engine \+ UI \+ CLI: 4001 lines; the budget is 4000/],
-    [{ files: 215 }, /files: 221; the budget is 220/],
     [{ agents: 151 }, /AGENTS\.md: 151 lines; the budget is 150/],
     [{ block: 121 }, /core\/blocks\/AGENTS\.md: 121 lines; the budget is 120/],
   ]) {
@@ -46,5 +44,5 @@ test('each budget fails when it is over, and names the count', async () => {
     assert.equal(r.code, 1, JSON.stringify(opts))
     assert.match(r.stderr, pattern)
   }
-  assert.equal((await runNode([SCRIPT, '--root', repo({ lines: 3998 })])).code, 0, 'exactly at the budget passes')
+  assert.equal((await runNode([SCRIPT, '--root', repo({ agents: 150, block: 120, lines: 9000, files: 300 })])).code, 0, 'no file or code-line budget; exactly at a length budget passes')
 })

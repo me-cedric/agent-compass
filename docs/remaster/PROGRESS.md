@@ -111,3 +111,5 @@ Rule: one phase is one goal with a check. Update `passes` only after the check r
 - `npm run check` runs `lint:budget` (scripts/check-budget.mjs): 213 of 220 files, 3,848 of 4,000 lines, AGENTS.md 53, README 83, contract block 58 (44e47b4).
 - The Stop-hook gate reads the whole transcript: 303 ms on the largest real transcript (132 MB). No tail read is needed; a test guards the time (1e73d2c).
 - Open: the phase 11 KPI "after" table needs the transcripts of 2026-10-17 to 2026-10-30; fill it on 2026-10-31 (a proposed session holds the brief).
+- 2026-10-16: the owner removes the file and code-line budgets ("features first"). `lint:budget` now checks only AGENTS.md and README (150 lines) and the contract block (120 lines). docs/line-budget.md is removed. The host always-on context target (2,000 tokens) stays: it protects the agent context in each host, not the size of compass.
+- 2026-10-16: the KPI "after" table stays open: 0 sessions exist after 2026-10-16. Fill it on 2026-10-31.
