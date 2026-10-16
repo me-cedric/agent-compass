@@ -114,3 +114,27 @@ Atomic design: `eslint-plugin-boundaries` as a hard gate; Storybook MCP `docs-li
 - Loop rules: one task per loop; state on disk; define the check first (`/goal` with a turn cap);
   reviewer is not the writer; report only correctness and requirement gaps; max 2 fix rounds;
   cheap workers with a strong lead; prefer Monitor to polling.
+
+## 8. Phase 3 answers
+
+Date: 2026-10-16. Sources: code.claude.com/docs/en/{workflows,hooks,output-styles,sub-agents,permissions};
+learn.chatgpt.com/docs/{hooks,agent-configuration/subagents,config-file/config-reference,models};
+docs.github.com/en/copilot/reference/{custom-agents-configuration,cli-plugin-reference,hooks-configuration,ai-models/supported-models};
+code.visualstudio.com/docs/copilot/customization/{custom-agents,custom-instructions,hooks}.
+
+| Topic | Answer |
+|---|---|
+| Claude workflow | `.claude/workflows/<name>.js`. `meta` is the first statement, a pure literal with `name` and `description`. `agent()` takes `label`, `phase`, `schema`, `model`, `effort`, `agentType`, `isolation`. |
+| Claude hooks | Exit 2 with stderr denies a PreToolUse call and continues a Stop. `Read` gives an absolute `file_path`. `stop_hook_active` stops a loop. SessionStart plain stdout goes into the context. |
+| Claude permissions | Deny and ask rules take a glob in the tool-name position, for example `mcp__mcp-atlassian__*_delete_*`. |
+| Claude output style | `keep-coding-instructions: true`. Subagents ignore the output style. |
+| Codex hooks | `.codex/hooks.json` has the Claude shape. It loads only in a trusted project, after the user approves it in `/hooks`. PreToolUse sees `Bash`, `apply_patch` and MCP tools. Codex has no file-read tool. Stop gets `last_assistant_message` and `stop_hook_active`. |
+| Codex agents and config | `.codex/agents/*.toml` needs `name`, `description`, `developer_instructions`; `model` is optional. `model_reasoning_summary` takes `auto`, `concise`, `detailed` or `none`. Models: `gpt-6-luna` (cheap), `gpt-6.1-sol` (mid). |
+| Copilot agents | VS Code and Copilot CLI read `.claude/agents`, but they do not use its `model` key. So compass writes `.github/agents/<n>.agent.md` for each role agent that has `copilot-model`. `model` is one display name ("Claude Haiku 5.5"); an array makes the CLI drop the agent. Claude tool names are valid aliases. |
+| Copilot rules | VS Code reads `.claude/rules` and uses `paths`. Copilot CLI and the cloud agent: UNCONFIRMED. |
+| Copilot hooks | The cloud agent reads only `.github/hooks/*.json`. The CLI reads `.claude/settings.json`. VS Code reads it only with `chat.useClaudeHooks` (default off). |
+| Open risks | Same-name agents in `.github/agents` and `.claude/agents` can show twice in the VS Code picker (UNCONFIRMED). An unknown Copilot model name falls back to the picker model (UNCONFIRMED). Codex SessionStart stdout as context: UNCONFIRMED. |
+
+Token estimate: `ac doctor --tokens` uses characters divided by 4. A cl100k count of the 3,477-character AGENTS block gives 844 tokens; the estimate gives 870.
+Phase 3 measure on a fresh host: AGENTS block 870, CLAUDE block 86, agent listing 77, output style 81, SessionStart 69, total 1,183 tokens.
+So the phase 4 skill listing can use about 800 tokens (3,200 characters). The legacy root `skills/` give a 4,089-character listing, so the real tree fails the budget until phase 4.

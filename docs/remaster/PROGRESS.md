@@ -8,7 +8,7 @@ Rule: one phase is one goal with a check. Update `passes` only after the check r
 | 0 | Evidence | true | files exist; ADRs have MADR frontmatter | 2026-10-16 |
 | 1 | Cut | true | `npm test` green; `git grep -il gemini` only in CHANGELOG; ≤260 tracked files | 2026-10-16: 260 tracked + 14 new evidence files; `npm run check` green. The final budget (≤220) applies at phase 10. |
 | 2 | Engine | true | fixture tests: idempotent sync, edits kept, Konvoy bytes unchanged, `check --frozen` fails on drift | 2026-10-16: `npm run check` green (74 tests); engine + CLI 1,019 lines. |
-| 3 | Harness | false | `ac doctor --tokens` within budget; TOML/JSON parse; `cat .env` blocked | |
+| 3 | Harness | true | `ac doctor --tokens` within budget; TOML/JSON parse; `cat .env` blocked | 2026-10-16: `npm run check` green (88 tests). Fresh host: about 1,183 of 2,000 tokens; SessionStart 276 of 1,000 chars. |
 | 4 | Skills and rules | false | naming lint; listing ≤3,000 chars; no hard-coded `docs/delivery` | |
 | 5 | Konvoy and specs | false | `ac check` docs layout on StoryArc and Konvoy copies; NE `migrate --docs --dry` | |
 | 6 | Dev-loop packs | false | NE `env check` findings; PP `ac dev up --dry`; age round trip | |
@@ -33,3 +33,11 @@ Rule: one phase is one goal with a check. Update `passes` only after the check r
 - Deferred on purpose: `{{DELIVERY_DIR}}`-style placeholders (phase 4), MCP catalog fan-out to `.mcp.json`, `.codex/config.toml` and `.vscode/mcp.json` (phase 6). Legacy `skills/*` install until phase 4 replaces them.
 - Review round 1 (Sonnet, fresh context) found 6 defects; all fixed: JSON edits now splice text (no reformat, no number change); the TOML scan skips multi-line strings and arrays; `--to` refuses a tag without `bin/ac.mjs`; a path that moves between mechanisms is not deleted; no write through a symlink; a directory at a file path is an error.
 - Review round 2 found 2 low defects; both fixed: `--to --dry` also refuses a tag without `bin/ac.mjs`; a lock entry that moves to another mechanism is reported as `release`. Stop after round 2, as the plan says. Nothing is committed.
+- 2026-10-16: phase 3 done. `core/` holds the contract block (58 lines), the CLAUDE.md block, the `compass` output style, the role agents `scout`, `worker`, `reviewer`, the hook script `.agents/hooks/compass.mjs` (`guard`, `gate`, `start`) and the `deliver` workflow.
+- Owned keys: `.claude/settings.json` (`outputStyle`, `hooks.PreToolUse`, `hooks.Stop`, `hooks.SessionStart`, `permissions.deny`, `permissions.ask`), `.codex/config.toml` (`model_verbosity`, `model_reasoning_summary`), `.codex/hooks.json` (the same three hooks).
+- Engine: role agents with `copilot-model` also write `.github/agents/<n>.agent.md`. `ac doctor --tokens` measures blocks, skill and agent listings, the output style and the SessionStart and UserPromptSubmit hook output. `ac doctor` warns for each owned item that the project edited ("kept").
+- Copilot answer and provider facts: `research.md` section 8.
+- Open for phase 4: the legacy root `skills/` still install and give a 4,089-character listing, so `ac doctor --tokens` on the real tree is over budget (about 2,206 tokens). The phase 4 listing can use about 800 tokens.
+- Open for phase 9: an owned key is one whole value. A host that already has `hooks.PreToolUse` or `permissions.deny` keeps its value, and compass does not install its hooks or guards there (doctor warns). Array merge is a migration task.
+- Open: Codex has no tracker guard yet (phase 6 MCP catalog sets read-only servers). No `.github/hooks` for the Copilot cloud agent yet.
+

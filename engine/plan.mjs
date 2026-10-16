@@ -2,7 +2,8 @@
 //
 // Every source layer has the same layout. A layer can hold any of these entries:
 //   skills/<name>/   one skill dir    → .claude/skills/<name>/ and .agents/skills/<name>/ (same bytes)
-//   agents/<name>.md one role agent   → .claude/agents/<name>.md and .codex/agents/<name>.toml
+//   agents/<name>.md one role agent   → .claude/agents/<name>.md, .codex/agents/<name>.toml and,
+//                                       with `copilot-model`, .github/agents/<name>.agent.md
 //   rules/**/*.md    rule files       → .claude/rules/ (Copilot reads .claude/* too)
 //   files/**         managed files    → the same path in the host
 //   seed/**          seed files       → written once, then the project owns them
@@ -34,6 +35,18 @@ const codexAgent = (name, text) => {
     data['codex-effort'] && `model_reasoning_effort = ${tomlValue(data['codex-effort'])}`,
     `developer_instructions = ${tomlText(body.trim())}`,
   ].filter(Boolean).join('\n') + '\n'
+}
+
+// Copilot ignores `model` in .claude/agents. Frontmatter `copilot-model` is a Copilot model display name.
+const copilotAgent = (name, text) => {
+  const { data, body } = frontmatter(text)
+  const head = [
+    `name: ${data.name || name}`,
+    data.description && `description: ${JSON.stringify(data.description)}`,
+    data.tools && `tools: [${list(data.tools).join(', ')}]`,
+    `model: ${JSON.stringify(data['copilot-model'])}`,
+  ].filter(Boolean)
+  return `---\n${head.join('\n')}\n---\n${body}`
 }
 
 export const buildPlan = ({ AC, root, config, paths }) => {
@@ -82,6 +95,7 @@ export const buildPlan = ({ AC, root, config, paths }) => {
       if (!fits(text, stacks)) continue
       addFile(`.claude/agents/${rel}`, Buffer.from(text))
       addFile(`.codex/agents/${rel.slice(0, -3)}.toml`, Buffer.from(codexAgent(rel.slice(0, -3), text)))
+      if (frontmatter(text).data['copilot-model']) addFile(`.github/agents/${rel.slice(0, -3)}.agent.md`, Buffer.from(copilotAgent(rel.slice(0, -3), text)))
     }
     for (const rel of walk(join(layer, 'rules')).filter((f) => f.endsWith('.md'))) {
       const abs = join(layer, 'rules', rel)

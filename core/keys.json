@@ -1,8 +1,112 @@
 {
   ".claude/settings.json": {
-    "outputStyle": "compass"
+    "outputStyle": "compass",
+    "hooks.PreToolUse": [
+      {
+        "matcher": "Read|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs\" guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "hooks.Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs\" gate",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "hooks.SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs\" start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "permissions.deny": [
+      "mcp__mcp-atlassian__jira_add_worklog",
+      "mcp__mcp-atlassian__*_delete_*",
+      "mcp__github__*delete*",
+      "Bash(gh issue delete *)",
+      "Bash(glab issue delete *)"
+    ],
+    "permissions.ask": [
+      "mcp__mcp-atlassian__jira_transition_issue",
+      "mcp__mcp-atlassian__*_comment",
+      "mcp__mcp-atlassian__*create*",
+      "mcp__github__create_*",
+      "mcp__github__*comment*",
+      "mcp__github__issue_write",
+      "mcp__github__update_*",
+      "mcp__github__merge_*",
+      "mcp__github__push_*",
+      "Bash(gh issue create *)",
+      "Bash(gh issue comment *)",
+      "Bash(gh issue close *)",
+      "Bash(gh issue edit *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh pr merge *)",
+      "Bash(glab issue create *)",
+      "Bash(glab issue note *)",
+      "Bash(glab issue close *)",
+      "Bash(glab issue update *)",
+      "Bash(glab mr create *)",
+      "Bash(glab mr note *)",
+      "Bash(glab mr merge *)"
+    ]
   },
   ".codex/config.toml": {
-    "model_verbosity": "low"
+    "model_verbosity": "low",
+    "model_reasoning_summary": "none"
+  },
+  ".codex/hooks.json": {
+    "hooks.PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/compass.mjs\" guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "hooks.Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/compass.mjs\" gate",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "hooks.SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/compass.mjs\" start",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

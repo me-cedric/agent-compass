@@ -78,6 +78,7 @@ test('init installs files, skills in both dirs, agents for Claude and Codex, key
   assert.ok(existsSync(join(host, '.agents/skills/alpha/ref/notes.md')))
   assert.ok(!existsSync(join(host, '.claude/skills/nest-only')), 'a stack-bound skill installs only for its stack')
   assert.ok(!existsSync(join(host, '.claude/rules/stack-nest.md')))
+  assert.equal(existsSync(join(host, '.github/agents/worker.agent.md')), false)
   assert.match(read(host, '.codex/agents/worker.toml'), /^name = "worker"\ndescription = "Does the work."\nmodel = "gpt-5"\ndeveloper_instructions = '''\nDo the task.'''\n$/)
   assert.ok(read(host, 'AGENTS.md').startsWith('# Project\n\nOwn rules.\n\n<!-- compass:begin -->\nContract v1.\n<!-- compass:end -->'))
   assert.match(read(host, '.codex/config.toml'), /^model_verbosity = "low"\n\n\[mcp_servers\.docs\]\ncommand = "docs-mcp"\nargs = \["--read-only"\]\n$/)

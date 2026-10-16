@@ -26,6 +26,7 @@ Options:
   --json         Print the result as JSON.
   --frozen       With check: exit 1 if the project is different from the lock.
   --to <tag>     With sync: check out this compass tag, then sync with it.
+  --tokens       With doctor: measure the always-on context and check the budgets.
   --help, -h     Show this help.`
 
 const HINTS = {
@@ -68,6 +69,7 @@ const main = () => {
         json: { type: 'boolean' },
         frozen: { type: 'boolean' },
         to: { type: 'string' },
+        tokens: { type: 'boolean' },
         help: { type: 'boolean', short: 'h' },
       },
     })
@@ -84,6 +86,7 @@ const main = () => {
   if (extra.length) return usage(`Unexpected argument: ${extra[0]}`)
   if (opts.frozen && command !== 'check') return usage('--frozen applies to check only.')
   if (opts.to !== undefined && command !== 'sync') return usage('--to applies to sync only.')
+  if (opts.tokens && command !== 'doctor') return usage('--tokens applies to doctor only.')
 
   const fail = (message) => {
     if (opts.json) console.log(JSON.stringify({ command, ok: false, errors: [message] }, null, 2))
@@ -110,7 +113,7 @@ const main = () => {
   }
 
   const result = command === 'doctor'
-    ? doctor({ AC, root })
+    ? doctor({ AC, root, tokens: Boolean(opts.tokens) })
     : syncHost({ AC, root, init: command === 'init', apply: command !== 'check' && !opts.dry })
   const failed = !result.ok || (command === 'check' && Boolean(opts.frozen) && result.drift)
   print(command, opts, result, failed, root)
