@@ -114,7 +114,8 @@ test('a copy outside the project stays silent when the project has the compass l
   const own = join(locked, '.agents/hooks/compass.mjs')
   const user = join(dir, 'user/hooks/compass.mjs')
   for (const f of [own, user, join(plain, 'x')]) mkdirSync(dirname(f), { recursive: true })
-  writeFileSync(join(locked, '.agents/compass.lock.json'), '{}\n')
+  const owned = { 'hooks.PreToolUse': 'x', 'hooks.Stop': 'x', 'hooks.SessionStart': 'x' }
+  writeFileSync(join(locked, '.agents/compass.lock.json'), JSON.stringify({ keys: { '.claude/settings.json': owned, '.codex/hooks.json': owned } }))
   copyFileSync(HOOK, own)
   copyFileSync(HOOK, user)
   const input = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/repo/.env' } })
@@ -135,4 +136,22 @@ test('a copy outside the project stays silent when the project has the compass l
   assert.match((await runNode([user, 'start'], at(plain))).stdout, /^compass: /)
   assert.equal((await runNode([user, 'guard'], { input, env: bare, cwd: locked })).code, 0, 'the project is the current directory')
   assert.equal((await runNode([user, 'guard'], { input, env: bare, cwd: plain })).code, 2)
+})
+
+test('the user copy runs an event when the project lock does not own its hook (the host kept its own hooks)', async () => {
+  const kept = join(dir, 'kept')
+  const user = join(dir, 'user2/hooks/compass.mjs')
+  for (const f of [user, join(kept, '.agents/x')]) mkdirSync(dirname(f), { recursive: true })
+  copyFileSync(HOOK, user)
+  writeFileSync(join(kept, '.agents/compass.lock.json'), JSON.stringify({ keys: { '.claude/settings.json': { 'hooks.Stop': 'x' }, '.codex/hooks.json': {} } }))
+  const input = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/repo/.env' } })
+  const { CLAUDE_PROJECT_DIR: _, ...bare } = process.env
+  const claude = { env: { ...bare, CLAUDE_PROJECT_DIR: kept } }
+  assert.equal((await runNode([user, 'guard'], { input, ...claude })).code, 2, 'Claude: the lock does not own hooks.PreToolUse')
+  assert.match((await runNode([user, 'start'], claude)).stdout, /^compass: /)
+  const edited = JSON.stringify({ transcript_path: transcript(claudeTurn('Fixed it.')) })
+  assert.equal((await runNode([user, 'gate'], { input: edited, ...claude })).code, 0, 'Claude: the lock owns hooks.Stop')
+  assert.equal((await runNode([user, 'guard'], { input, env: bare, cwd: kept })).code, 2, 'Codex: .codex/hooks.json owns no hook')
+  writeFileSync(join(kept, '.agents/compass.lock.json'), 'not json')
+  assert.equal((await runNode([user, 'guard'], { input, ...claude })).code, 2, 'an unreadable lock does not switch the guard off')
 })

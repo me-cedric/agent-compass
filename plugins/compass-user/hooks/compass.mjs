@@ -78,14 +78,22 @@ const gate = (input) => {
 const read = () => { try { return JSON.parse(readFileSync(0, 'utf8') || '{}') } catch { return null } }
 
 // The compass lock marks a project with its own copy. That copy sits beside the lock: .agents/hooks/ and .agents/compass.lock.json.
-const deferred = () => existsSync(join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), '.agents', 'compass.lock.json')) &&
-  !existsSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'compass.lock.json'))
+// A copy outside the project (the user plugin) steps back for an event only when the project hook runs it: the project
+// lock owns the hook key of that event. A host that kept its own hooks still gets the .env guard from the user copy.
+const EVENTS = { start: 'SessionStart', guard: 'PreToolUse', gate: 'Stop' }
+const deferred = (mode) => {
+  if (existsSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'compass.lock.json'))) return false
+  let lock
+  try { lock = JSON.parse(readFileSync(join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), '.agents', 'compass.lock.json'), 'utf8')) } catch { return false }
+  const file = process.env.CLAUDE_PROJECT_DIR ? '.claude/settings.json' : '.codex/hooks.json'
+  return Boolean(lock?.keys?.[file]?.[`hooks.${EVENTS[mode]}`])
+}
 
 const mode = process.argv[2]
 if (!['start', 'guard', 'gate'].includes(mode)) {
   console.error('usage: compass.mjs guard|gate|start')
   process.exitCode = 1
-} else if (!deferred()) {
+} else if (!deferred(mode)) {
   if (mode === 'start') console.log(START)
   else {
     const input = read()
