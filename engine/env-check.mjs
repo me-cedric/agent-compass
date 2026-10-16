@@ -85,7 +85,9 @@ export const discover = (root) => {
 }
 
 const codeReads = (root, git) => {
-  const files = (git ? [...git, ...(gitFiles(root, '--others', '--exclude-standard') ?? [])] : scan(root, 10, () => true)).filter((f) => CODE.test(f) && !/(^|\/)(node_modules|dist)\//.test(f))
+  // .agents, .claude and .codex hold agent tooling, not app code: their env reads are not app config.
+  const files = (git ? [...git, ...(gitFiles(root, '--others', '--exclude-standard') ?? [])] : scan(root, 10, () => true))
+    .filter((f) => CODE.test(f) && !/(^|\/)(node_modules|dist)\//.test(f) && !/^\.(agents|claude|codex)\//.test(f))
   const reads = new Map()
   for (const rel of files) {
     let text

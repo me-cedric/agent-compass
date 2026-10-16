@@ -150,7 +150,7 @@ test('env check reads untracked code files and destructured names, and skips ign
     'src/a.ts': "const { DB_URL, API_KEY: key, PORT = '3000', lower, ...rest } = process.env\n",
     'ignored.js': 'process.env.IGNORED_READ',
   })
-  put(root, { 'src/new.ts': 'process.env.UNTRACKED_READ' })
+  put(root, { 'src/new.ts': 'process.env.UNTRACKED_READ', '.agents/hooks/compass.mjs': 'process.env.CLAUDE_PROJECT_DIR', '.claude/hooks/x.mjs': 'process.env.TOOL_READ', '.codex/y.mjs': 'process.env.TOOL_READ' })
   const got = summary((await check(root)).json).filter((s) => s.includes('undeclared')).sort()
   assert.deepEqual(got, ['warn undeclared API_KEY', 'warn undeclared DB_URL', 'warn undeclared PORT', 'warn undeclared UNTRACKED_READ'])
 })
