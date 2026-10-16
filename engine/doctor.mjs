@@ -37,7 +37,7 @@ const graphChecks = ({ selected }, root) => {
   try { data = JSON.parse(r.out.split('\n').at(-1)).structuredContent } catch { data = null }
   if (data?.status) return [{ name: 'graph', status: 'ok', detail: `the project has a code graph index: ${data.status}, ${data.nodes ?? 0} nodes` }]
   if (/not (found|indexed)/.test(data?.error ?? '')) {
-    return [{ name: 'graph', status: 'warn', detail: 'the project has no code graph index; ask the agent to run the codebase-memory tool index_repository once' }]
+    return [{ name: 'graph', status: 'warn', detail: 'the project has no code graph index; run "codebase-memory-mcp cli index_repository" once in the project (the analysis tool profile removes that tool from the agent)' }]
   }
   return [{ name: 'graph', status: 'warn', detail: `${GRAPH} cli failed: ${(data?.error || r.err || 'no output').split('\n')[0]}` }]
 }

@@ -441,7 +441,7 @@ echo '{"structuredContent":{"error":"project not found or not indexed"},"isError
   try {
     process.env.WANT = 'another-project'
     withPath(bin, () => assert.deepEqual(pick(['graph', 'version']), [
-      ['graph', 'warn', 'the project has no code graph index; ask the agent to run the codebase-memory tool index_repository once'],
+      ['graph', 'warn', 'the project has no code graph index; run "codebase-memory-mcp cli index_repository" once in the project (the analysis tool profile removes that tool from the agent)'],
       ['version', 'warn', 'process-compose 1.110.0 is older than 1.120.0, the minimum for the MCP server process-compose'],
     ]))
     process.env.WANT = project
