@@ -30,7 +30,9 @@ const makeHost = (files = {}) => {
 }
 
 const freeze = (v) => (v && typeof v === 'object' ? Object.values(v).forEach(freeze) || Object.freeze(v) : v)
-const BASE = { version: 1, packs: ['p1'], exclude: ['x'], mcp: ['m1'], upstream: ['u1'], paths: { delivery: 'd' } }
+const TS = 'typescript-lsp@claude-plugins-official'
+const SWIFT = 'swift-lsp@claude-plugins-official'
+const BASE = { version: 1, packs: ['p1'], exclude: ['x'], mcp: ['m1'], plugins: ['q1@m'], upstream: ['u1'], paths: { delivery: 'd' } }
 const REACT = JSON.stringify({ dependencies: { react: '19' } })
 const WEB_HOST = { 'package.json': REACT, '.github/workflows/ci.yml': 'on: push\n', '.env.example': 'A=1\n', 'sonar-project.properties': 'sonar.projectKey=x\n' }
 
@@ -105,7 +107,16 @@ test('listAssets lists every kind with the plan state, the stack fit and the rec
   assert.deepEqual([find(list, 'mcp', 'github').on, find(list, 'mcp', 'github').recommended, find(list, 'mcp', 'github').reason], [false, true, 'signal github'])
   assert.equal(find(list, 'mcp', 'sonarqube').recommended, true)
   assert.equal(find(list, 'mcp', 'context7').reason, 'baseline')
+  assert.equal(find(list, 'mcp', 'context7').on, false)
+  const graph = find(list, 'mcp', 'codebase-memory')
+  assert.deepEqual([graph.on, graph.auto, graph.recommended, graph.reason], [true, true, true, 'baseline'])
   assert.equal(find(list, 'mcp', 'grafana').recommended, false)
+  assert.equal(find(list, 'mcp', 'projectmem').recommended, false)
+  const lsp = find(list, 'plugin', TS)
+  assert.deepEqual([lsp.on, lsp.auto, lsp.available, lsp.recommended, lsp.reason, lsp.source], [true, true, true, true, 'stack react-web', 'catalog'])
+  assert.match(lsp.description, /TypeScript/)
+  const swift = find(list, 'plugin', SWIFT)
+  assert.deepEqual([swift.on, swift.auto, swift.available, swift.recommended, swift.reason], [false, false, true, false, 'opt-in'])
   assert.equal(find(list, 'upstream', 'ponytail').recommended, true)
   assert.equal(find(list, 'upstream', 'taste').recommended, true)
   assert.equal(find(list, 'upstream', 'android').recommended, false)
@@ -185,6 +196,13 @@ test('setAsset: packs, MCP servers and upstream sources', () => {
   assert.deepEqual([setAsset(config, { kind: 'mcp', id: 'm1', auto: false }, false).mcp, setAsset(config, { kind: 'mcp', id: 'm1', auto: false }, false).exclude], [[], ['x']])
   assert.deepEqual(setAsset({ version: 1, packs: [], exclude: [] }, { kind: 'mcp', id: 'github', auto: false }, true).mcp, ['github'])
 
+  const plugin = { kind: 'plugin', id: TS, auto: true }
+  assert.deepEqual([setAsset(config, plugin, false).exclude, setAsset(config, plugin, false).plugins], [['x', `plugin:${TS}`], ['q1@m']])
+  assert.deepEqual([setAsset(freeze({ ...BASE, exclude: [`plugin:${TS}`] }), plugin, true).exclude, setAsset(freeze({ ...BASE, exclude: [`plugin:${TS}`] }), plugin, true).plugins], [[], ['q1@m']])
+  assert.deepEqual(setAsset(config, { kind: 'plugin', id: SWIFT, auto: false }, true).plugins, ['q1@m', SWIFT])
+  assert.deepEqual([setAsset(config, { kind: 'plugin', id: 'q1@m', auto: false }, false).plugins, setAsset(config, { kind: 'plugin', id: 'q1@m', auto: false }, false).exclude], [[], ['x']])
+  assert.deepEqual(setAsset({ version: 1, packs: [], exclude: [] }, { kind: 'plugin', id: SWIFT, auto: false }, true).plugins, [SWIFT])
+
   assert.deepEqual(setAsset(config, { kind: 'upstream', id: 'taste' }, true).upstream, ['u1', 'taste'])
   assert.deepEqual([setAsset(config, { kind: 'upstream', id: 'u1' }, false).upstream, setAsset(config, { kind: 'upstream', id: 'u1' }, false).exclude], [[], ['x']])
 })
@@ -205,7 +223,7 @@ test('listAssets follows setAsset for every kind', () => {
     assert.equal(find(listAssets({ AC: REPO, root }), kind, id).on, on, `${kind}:${id} turns ${on}`)
   }
   const cases = [
-    ['skill', 'review'], ['rule', '.claude/rules/stack-react.md'], ['agent', 'worker'], ['pack', 'env'], ['mcp', 'playwright'],
+    ['skill', 'review'], ['rule', '.claude/rules/stack-react.md'], ['agent', 'worker'], ['pack', 'env'], ['mcp', 'playwright'], ['mcp', 'codebase-memory'], ['plugin', TS],
     ['file', '.claude/output-styles/compass.md'], ['block', 'AGENTS.md'],
   ]
   for (const [kind, id] of cases) { flip(kind, id, false); flip(kind, id, true) }
@@ -213,6 +231,8 @@ test('listAssets follows setAsset for every kind', () => {
   flip('pack', 'ci-github', false)
   flip('mcp', 'context7', true)
   flip('mcp', 'context7', false)
+  flip('plugin', SWIFT, true)
+  flip('plugin', SWIFT, false)
   flip('upstream', 'ponytail', true)
   flip('upstream', 'ponytail', false)
   flip('skill', 'e2e', true)
@@ -225,7 +245,7 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   const config = freeze({
     version: 1,
     packs: ['e2e'],
-    exclude: ['review', 'agent:worker', 'pack:env', 'mcp:playwright', 'mcp:github', '.claude/rules/stack-react.md', 'stack-react', 'keep-me', 'nest-only'],
+    exclude: ['review', 'agent:worker', 'pack:env', 'mcp:playwright', 'mcp:github', `plugin:${TS}`, 'mcp:codebase-memory', '.claude/rules/stack-react.md', 'stack-react', 'keep-me', 'nest-only'],
     upstream: ['mattpocock'],
     mcp: ['grafana'],
     paths: {},
@@ -235,7 +255,8 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   assert.deepEqual(next.packs, ['e2e', 'ci-github'])
   assert.ok(!next.packs.includes('env'), 'a detected pack stays automatic')
   assert.ok(next.mcp.includes('grafana') && next.mcp.includes('github') && next.mcp.includes('sonarqube') && next.mcp.includes('context7'))
-  assert.ok(!next.mcp.includes('playwright'), 'a stack server stays automatic')
+  assert.ok(!next.mcp.includes('playwright') && !next.mcp.includes('codebase-memory'), 'a stack server stays automatic')
+  assert.equal(next.plugins, undefined, 'a stack plugin stays automatic')
   assert.ok(['ponytail', 'taste', 'mattpocock'].every((id) => next.upstream.includes(id)) && !next.upstream.includes('android'))
   assert.deepEqual(next.paths, {})
 
@@ -249,13 +270,13 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
 test('writeConfig writes 2-space JSON and a round trip keeps a small file as it is', () => {
   const root = makeHost()
   const text = `${JSON.stringify({ version: 1, packs: [], exclude: [] }, null, 2)}\n`
-  writeConfig(root, { version: 1, packs: [], exclude: [], upstream: [], mcp: [], paths: {} })
+  writeConfig(root, { version: 1, packs: [], exclude: [], upstream: [], mcp: [], plugins: [], paths: {} })
   assert.equal(readFileSync(join(root, '.agents/compass.json'), 'utf8'), text)
   writeConfig(root, cfgOf(root))
   assert.equal(readFileSync(join(root, '.agents/compass.json'), 'utf8'), text)
-  writeConfig(root, { ...cfgOf(root), mcp: ['github'], paths: { delivery: 'd' } })
+  writeConfig(root, { ...cfgOf(root), mcp: ['github'], plugins: [SWIFT], paths: { delivery: 'd' } })
   const saved = JSON.parse(readFileSync(join(root, '.agents/compass.json'), 'utf8'))
-  assert.deepEqual([saved.mcp, saved.paths], [['github'], { delivery: 'd' }])
+  assert.deepEqual([saved.mcp, saved.plugins, saved.paths], [['github'], [SWIFT], { delivery: 'd' }])
 })
 
 test('the catalog suggest lists and the upstream stacks lists name known signals', () => {
@@ -264,8 +285,9 @@ test('the catalog suggest lists and the upstream stacks lists name known signals
   const suggest = Object.fromEntries(Object.entries(catalog).filter(([, e]) => e.suggest).map(([name, e]) => [name, e.suggest]))
   assert.deepEqual(suggest, {
     argocd: ['helm'], kubernetes: ['helm'], github: ['github'], sonarqube: ['sonar'], dbhub: ['postgres'], figma: ['figma'],
-    storybook: ['storybook'], 'process-compose': ['local-run'], 'codebase-memory': ['*'], context7: ['*'],
+    storybook: ['storybook'], 'process-compose': ['local-run'], context7: ['*'],
   })
+  assert.deepEqual(catalog['codebase-memory'].stacks, ['*'])
   for (const [name, list] of Object.entries(suggest)) assert.ok(list.every((s) => known.has(s)), name)
   const { sources, errors } = loadUpstream(REPO)
   assert.deepEqual(errors, [])

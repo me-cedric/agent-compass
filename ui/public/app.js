@@ -78,7 +78,7 @@ async function projects(box) {
     syncBox(s, reload), h('h2', {}, 'Other projects'), others)
 }
 
-const KINDS = { skill: 'Skills', rule: 'Rules', agent: 'Agents', pack: 'Packs', mcp: 'MCP servers', upstream: 'Upstream sources', file: 'Files', block: 'Blocks' }
+const KINDS = { skill: 'Skills', rule: 'Rules', agent: 'Agents', pack: 'Packs', mcp: 'MCP servers', plugin: 'Claude plugins', upstream: 'Upstream sources', file: 'Files', block: 'Blocks' }
 const FILTERS = { all: () => true, recommended: (a) => a.recommended, on: (a) => a.on, off: (a) => !a.on }
 
 async function assets(box) {
@@ -213,11 +213,24 @@ async function usage(box) {
     h('h3', {}, 'By day'), by(u.byDay ?? [], 'Day'), h('h3', {}, 'By project'), by(u.byProject ?? [], 'Project'), h('h3', {}, 'By model'), by(u.byModel ?? [], 'Model'))
 }
 
+// A read-only pull of the open issues from `gh` or `glab`, run in the project root. Jira has no button: the agent reads it.
+function tracker() {
+  const out = h('div')
+  const pull = (name, label) => act(`Pull ${label} issues`, async () => {
+    const r = await api('delivery/pull', { tracker: name })
+    fill(out, errors(r), r.ok ? [note(`${r.count} open issue(s) from ${label}.`),
+      table(['Number', 'Title', 'State', 'Labels', 'Assignee', 'Link'], r.rows.map((i) => [i.number, i.title, i.state, i.labels, i.assignee, i.url ? h('a', { href: i.url, target: '_blank', rel: 'noopener' }, 'open') : null]))] : null)
+  })
+  return h('div', {}, h('h2', {}, 'Tracker issues'),
+    note('Compass runs "gh issue list" or "glab issue list" in the project root. It needs the CLI on PATH and a login. Jira stays with the mcp-atlassian MCP server in the agent: this page holds no Jira token.'),
+    h('div', { className: 'bar' }, pull('github', 'GitHub'), pull('gitlab', 'GitLab')), out)
+}
+
 async function delivery(box) {
   const d = await api('delivery')
   if (d.ok === false) return add(box, errors(d))
   const cols = [...new Set(d.tickets.rows.flatMap(Object.keys))].slice(0, 8)
-  add(box, h('h2', {}, `RAID register (${d.raid.length})`),
+  add(box, tracker(), h('h2', {}, `RAID register (${d.raid.length})`),
     table(['File', 'Id', 'Kind', 'Status', 'Owner', 'Ticket', 'Title'], d.raid.map((r) => [r.file, r.id, r.kind, r.status, r.owner, r.ticket, r.title])),
     h('h2', {}, `Tickets (${d.tickets.count})`), d.tickets.count > 50 ? note('The table shows the first 50 rows.') : null, table(cols, d.tickets.rows.map((r) => cols.map((c) => r[c]))),
     h('h2', {}, `Audit rows (${d.audit.total})`), table(['Status', 'Count'], Object.entries(d.audit.counts)),

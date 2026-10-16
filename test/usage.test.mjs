@@ -152,3 +152,76 @@ test('ac usage prints a summary and --json; a bad date is a usage error', async 
   assert.equal(help.code, 0)
   assert.match(help.stdout, /--since/)
 })
+
+// A session is the sessionId of the lines. It is a "graph" session when any line of it calls a tool of the codebase-memory MCP server.
+const call = (...names) => ({ content: [{ type: 'text', text: 'mcp__codebase-memory is a graph' }, ...names.map((name) => ({ type: 'tool_use', id: 't', name, input: {} }))] })
+const turn = (session, id, usage, { day = [3, 10], message = {}, ...over } = {}) => row({ sessionId: session, requestId: id, timestamp: at(...day), ...over }, { id, ...message }, usage)
+const sessionHome = () => {
+  const home = temp('ac-usage-sessions-')
+  put(home, '-x-repo/g1.jsonl', [
+    turn('g1', 'a1', { input_tokens: 100, output_tokens: 50, cache_read_input_tokens: 800, cache_creation_input_tokens: 50 }, { message: call('mcp__codebase-memory-mcp__search_graph') }),
+  ])
+  put(home, '-x-repo/g2.jsonl', [
+    // Streaming: the full line has no tool call, a partial line of the same message has it. The session still counts as graph.
+    turn('g2', 'b1', { input_tokens: 1000, output_tokens: 1 }, { message: call('mcp__codebase-memory__trace_path') }),
+    turn('g2', 'b1', { input_tokens: 1000, output_tokens: 900 }, { message: { content: [{ type: 'text', text: 'done' }] } }),
+    turn('g2', 'b2', { input_tokens: 1000, output_tokens: 100 }, { day: [3, 12] }),
+  ])
+  put(home, '-x-repo/g2/subagents/agent-a.jsonl', [turn('g2', 'b3', { input_tokens: 99, output_tokens: 1 }, { isSidechain: true })])
+  put(home, '-x-repo/n1.jsonl', [
+    turn('n1', 'c1', { input_tokens: 2000, output_tokens: 0 }, { message: call('Read', 'mcp__context7__query-docs') }),
+    turn('n2', 'c2', { input_tokens: 4000, output_tokens: 0 }, { cwd: '/y/other' }),
+    turn('n3', 'c3', { input_tokens: 6000, output_tokens: 0 }),
+    turn('n3', 'c4', { input_tokens: 1, output_tokens: 0 }, { day: [3, 20] }),
+  ])
+  put(home, '-x-repo/none.jsonl', [row({ requestId: 'z1' }, { id: 'z1' }, { input_tokens: 7, output_tokens: 0 })])
+  return home
+}
+
+test('readUsage: bySession gives one row per sessionId with project, days, tokens and the graph flag', () => {
+  const u = readUsage({ home: sessionHome(), until: '2026-12-31' })
+  assert.deepEqual(u.bySession.map((r) => [r.session, r.tokens]), [['n3', 6001], ['n2', 4000], ['g2', 3100], ['n1', 2000], ['g1', 1000], ['(unknown)', 7]])
+  const by = Object.fromEntries(u.bySession.map((r) => [r.session, r]))
+  assert.deepEqual(u.bySession.map((r) => r.graph), [false, false, true, false, true, false])
+  assert.deepEqual([by.g2.project, by.n2.project, by.g2.first, by.g2.last, by.g2.messages], ['/x/repo', '/y/other', '2026-03-10', '2026-03-12', 3])
+  assert.deepEqual([by.n3.first, by.n3.last, by.n3.messages], ['2026-03-10', '2026-03-20', 2])
+  close(by.g1.cacheHit, 800 / 950)
+  assert.equal(by.n1.cacheHit, 0)
+  close(by.g1.cost, (100 * 3 + 50 * 15 + 800 * 0.3 + 50 * 1.25 * 3) / 1e6)
+  assert.deepEqual(u.sessionSummary, { graph: { count: 2, median: 2050, p90: 2890 }, noGraph: { count: 4, median: 3000, p90: 5401 } })
+})
+
+test('readUsage: --since and --project narrow the sessions; an empty set gives zeros', () => {
+  const home = sessionHome()
+  assert.deepEqual(readUsage({ home, project: '/y/other', until: '2026-12-31' }).bySession.map((r) => r.session), ['n2'])
+  const late = readUsage({ home, since: '2026-03-12', until: '2026-12-31' })
+  assert.deepEqual(late.bySession.map((r) => [r.session, r.first, r.tokens]), [['g2', '2026-03-12', 1100], ['n3', '2026-03-20', 1]])
+  const none = readUsage({ home, project: '/nowhere', until: '2026-12-31' })
+  assert.deepEqual([none.bySession, none.sessionSummary, none.totals.tokens], [[], { graph: { count: 0, median: 0, p90: 0 }, noGraph: { count: 0, median: 0, p90: 0 } }, 0])
+})
+
+test('ac usage --by session prints the summary and the rows; --project and --by are checked', async () => {
+  const home = sessionHome()
+  const bin = join(REPO, 'bin/ac.mjs')
+  const env = { ...process.env, HOME: home }
+  const json = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31', '--json'], { env })
+  assert.equal(json.code, 0, json.stderr)
+  const data = JSON.parse(json.stdout)
+  assert.deepEqual(Object.keys(data).sort(), ['bySession', 'ok', 'sessionSummary', 'totals'])
+  assert.equal(data.bySession.length, 6)
+  const text = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31'], { env })
+  assert.equal(text.code, 0, text.stderr)
+  assert.match(text.stdout, /6 sessions/)
+  assert.match(text.stdout, /graph\s+2 sessions\s+median 2,050 tokens\s+p90 2,890 tokens/)
+  assert.match(text.stdout, /no graph\s+4 sessions\s+median 3,000 tokens/)
+  assert.match(text.stdout, /repo\s+2026-03-10 to 2026-03-12\s+3 msgs\s+3,100 tokens/)
+  const one = JSON.parse((await runNode([bin, 'usage', '--by', 'session', '--project', '/y/other/', '--until', '2026-12-31', '--json'], { env })).stdout)
+  assert.deepEqual(one.bySession.map((r) => r.session), ['n2'])
+  const plain = JSON.parse((await runNode([bin, 'usage', '--until', '2026-12-31', '--json'], { env })).stdout)
+  assert.deepEqual([plain.bySession, plain.sessionSummary], [undefined, undefined])
+  for (const args of [['--by', 'day'], ['--by'], ['--project']]) {
+    const bad = await runNode([bin, 'usage', ...args], { env })
+    assert.equal(bad.code, 2, args.join(' '))
+    assert.match(bad.stderr, /Usage: ac usage/)
+  }
+})

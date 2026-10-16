@@ -184,9 +184,17 @@
       "status": "adopt",
       "readOnly": "Not applicable. The server indexes the project into a local database.",
       "secrets": [],
-      "stacks": [],
-      "suggest": ["*"],
+      "stacks": ["*"],
       "command": "codebase-memory-mcp"
+    },
+    "projectmem": {
+      "description": "Keep durable project memory in .projectmem/events.jsonl.",
+      "status": "trial",
+      "readOnly": "Not applicable. The server writes the project memory log in the project. Never log a secret.",
+      "secrets": [],
+      "stacks": [],
+      "command": "uvx",
+      "args": ["--from", "projectmem==0.3.4", "--with", "mcp<2", "pjm-mcp"]
     },
     "context7": {
       "description": "Fetch current library documentation.",
@@ -196,6 +204,28 @@
       "stacks": [],
       "suggest": ["*"],
       "url": "https://mcp.context7.com/mcp"
+    }
+  },
+  "plugins": {
+    "typescript-lsp@claude-plugins-official": {
+      "description": "Language server for TypeScript and JavaScript: types, definitions and diagnostics.",
+      "stacks": ["nestjs-api", "react-web", "next-web", "angular-web", "expo-mobile", "turbo-monorepo"]
+    },
+    "swift-lsp@claude-plugins-official": {
+      "description": "Language server for Swift: types, definitions and diagnostics.",
+      "stacks": ["swift-ios", "macos-desktop"]
+    },
+    "kotlin-lsp@claude-plugins-official": {
+      "description": "Language server for Kotlin: types, definitions and diagnostics.",
+      "stacks": ["android-compose"]
+    },
+    "csharp-lsp@claude-plugins-official": {
+      "description": "Language server for C#: types, definitions and diagnostics.",
+      "stacks": ["winui-desktop"]
+    },
+    "rust-analyzer-lsp@claude-plugins-official": {
+      "description": "Language server for Rust: types, definitions and diagnostics.",
+      "stacks": ["gtk-desktop"]
     }
   }
 }

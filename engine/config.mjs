@@ -71,14 +71,15 @@ export const loadConfig = (root, AC, { init = false } = {}) => {
   if (!strings(config.exclude)) errors.push(`${CONFIG}: "exclude" must be a list of names and paths`)
   if (data.upstream !== undefined && !strings(data.upstream)) errors.push(`${CONFIG}: "upstream" must be a list of upstream source ids`)
   if (data.mcp !== undefined && !strings(data.mcp)) errors.push(`${CONFIG}: "mcp" must be a list of MCP server names`)
+  if (data.plugins !== undefined && !strings(data.plugins)) errors.push(`${CONFIG}: "plugins" must be a list of Claude plugin ids`)
   if (!strings(config.packs)) errors.push(`${CONFIG}: "packs" must be a list of pack names`)
   else {
     for (const pack of config.packs) {
       if (!/^[a-z0-9-]+$/.test(pack) || !isDir(join(AC, 'packs', pack))) errors.push(`${CONFIG}: unknown pack "${pack}"`)
     }
   }
-  const mcp = strings(data.mcp) ? data.mcp : []
-  return { config: { ...config, upstream: strings(data.upstream) ? data.upstream : [], mcp, paths: readPaths(data.paths, CONFIG, errors, true) }, errors }
+  const [mcp, plugins] = [data.mcp, data.plugins].map((v) => (strings(v) ? v : []))
+  return { config: { ...config, upstream: strings(data.upstream) ? data.upstream : [], mcp, plugins, paths: readPaths(data.paths, CONFIG, errors, true) }, errors }
 }
 
 const names = (v) => (isObj(v) ? Object.keys(v) : Array.isArray(v) ? v.filter((s) => typeof s === 'string') : [])

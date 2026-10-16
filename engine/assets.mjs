@@ -1,25 +1,25 @@
 // assets.mjs — list what compass can install into a project, and change that choice in .agents/compass.json.
-// An asset is { kind, id, title, description, source, on, available, recommended, reason } and, for a pack or an MCP server, auto.
-//   id: skill name · rule '.claude/rules/<rel>' · agent name · pack name · MCP server name · upstream source id · host path (file, block).
+// An asset is { kind, id, title, description, source, on, available, recommended, reason } and, for a pack, an MCP server or a plugin, auto.
+//   id: skill name · rule '.claude/rules/<rel>' · agent name · pack name · MCP server name · Claude plugin id · upstream source id · host path (file, block).
 //   source: compass | core | pack:<name> | upstream:<id> | catalog.
 //   on: the plan installs it (a pack, MCP server or upstream source: it is active). The plan is one buildPlan pass.
 //   available: false when its frontmatter `stacks` do not fit the project. recommended: it fits (see recommendedPacks).
-//   auto: the project selects it by itself (a detected pack, an MCP server of a detected stack), so setAsset adds an "exclude" entry to switch it off.
+//   auto: the project selects it by itself (a detected pack, an MCP server or plugin of a detected stack), so setAsset adds an "exclude" entry to switch it off.
 // A pack-sourced asset is recommended only when its pack is. A change touches .agents/compass.json only: run "ac sync" to apply it.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { CONFIG, loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
 import { detectPacks, detectSignals } from './detect.mjs'
-import { CATALOG } from './mcp.mjs'
+import { CATALOG, stackHits } from './mcp.mjs'
 import { buildPlan } from './plan.mjs'
 import { outside } from './sync.mjs'
 import { loadUpstream } from './upstream.mjs'
 import { dirs, frontmatter, isDir, list, readJson, walk } from './util.mjs'
 
-export const KINDS = ['skill', 'rule', 'agent', 'pack', 'mcp', 'upstream', 'file', 'block']
-const LISTS = { pack: 'packs', mcp: 'mcp', upstream: 'upstream' }
-const PREFIXED = ['agent', 'pack', 'mcp']
+export const KINDS = ['skill', 'rule', 'agent', 'pack', 'mcp', 'plugin', 'upstream', 'file', 'block']
+const LISTS = { pack: 'packs', mcp: 'mcp', plugin: 'plugins', upstream: 'upstream' }
+const PREFIXED = ['agent', 'pack', 'mcp', 'plugin']
 const RENOVATE = ['renovate.json', 'renovate.json5', '.renovaterc', '.renovaterc.json', '.github/renovate.json', '.github/renovate.json5', '.gitlab/renovate.json']
 
 const add = (items = [], v) => (items.includes(v) ? items : [...items, v])
@@ -94,17 +94,23 @@ const packAssets = ({ AC, plan, detected, why }) => dirs(join(AC, 'packs')).map(
   description: contents(join(AC, 'packs', name)), on: plan.packs.includes(name), auto: detected.includes(name), recommended: why.has(name), reason: why.get(name) ?? 'opt-in',
 }))
 
-const mcpAssets = ({ AC, plan, stacks, signals }) => Object.entries(readJson(join(AC, CATALOG))?.servers ?? {}).map(([name, e]) => {
-  const hit = (e.stacks ?? []).filter((s) => stacks.includes(s))
+// A catalog entry is "auto" when a detected stack lists it ("*" lists every project).
+const catalogAssets = (kind, entries, { stacks, signals }, on) => Object.entries(entries ?? {}).map(([id, e]) => {
+  const hit = stackHits(e, stacks)
   const via = (e.suggest ?? []).find((s) => s === '*' || signals.has(s))
-  return asset('mcp', name, 'catalog', {
+  return asset(kind, id, 'catalog', {
     description: e.description ?? '',
-    on: plan.mcp.includes(name),
+    on: on(id),
     auto: hit.length > 0,
     recommended: hit.length > 0 || via !== undefined,
-    reason: hit.length ? `stack ${hit.join(', ')}` : via === '*' ? 'baseline' : via ? `signal ${via}` : 'opt-in',
+    reason: hit.includes('*') || via === '*' ? 'baseline' : hit.length ? `stack ${hit.join(', ')}` : via ? `signal ${via}` : 'opt-in',
   })
 })
+
+const mcpAssets = (ctx) => catalogAssets('mcp', readJson(join(ctx.AC, CATALOG))?.servers, ctx, (id) => ctx.plan.mcp.includes(id))
+
+const pluginAssets = (ctx) => catalogAssets('plugin', readJson(join(ctx.AC, CATALOG))?.plugins, ctx,
+  (id) => ctx.plan.keys.get('.claude/settings.json')?.has(`enabledPlugins.${id}`) ?? false)
 
 const upstreamAssets = ({ AC, config, stacks }) => Object.entries(loadUpstream(AC).sources).map(([id, src]) => {
   const want = src.stacks ?? []
@@ -118,13 +124,13 @@ const upstreamAssets = ({ AC, config, stacks }) => Object.entries(loadUpstream(A
 })
 
 const collect = ({ AC, root, config: given, konvoy }) => {
-  const config = { packs: [], exclude: [], upstream: [], mcp: [], paths: {}, ...given }
+  const config = { packs: [], exclude: [], upstream: [], mcp: [], plugins: [], paths: {}, ...given }
   const { paths } = resolvePaths(config, konvoy)
   const plan = buildPlan({ AC, root, config, paths, konvoy: Boolean(konvoy) })
   const signals = detectSignals(root, { openspecDir: paths.openspec, designs: paths.designs })
   const detected = detectPacks(root).filter((p) => isDir(join(AC, 'packs', p)))
   const ctx = { AC, root, plan, config, signals, detected, stacks: plan.stacks, why: recommendedPacks({ AC, root, signals, detected }) }
-  const all = [...layerAssets(ctx), ...packAssets(ctx), ...mcpAssets(ctx), ...upstreamAssets(ctx)]
+  const all = [...layerAssets(ctx), ...packAssets(ctx), ...mcpAssets(ctx), ...pluginAssets(ctx), ...upstreamAssets(ctx)]
   return { errors: plan.errors, stacks: plan.stacks, signals, detected, assets: KINDS.flatMap((k) => all.filter((a) => a.kind === k)) }
 }
 
@@ -137,7 +143,7 @@ export const listAssets = ({ AC, root }) => {
   return { errors, stacks, signals: [...signals].sort(), packs: { detected, configured: cfg.config.packs }, assets }
 }
 
-// The config with every recommended asset on. A detected pack and a stack MCP server stay automatic. Other excludes stay.
+// The config with every recommended asset on. A detected pack, a stack MCP server and a stack plugin stay automatic. Other excludes stay.
 export const recommendedConfig = ({ AC, root, config }) => {
   const want = collect({ AC, root, config, konvoy: loadKonvoy(root).konvoy }).assets.filter((a) => a.recommended && a.available)
   const union = (items = [], kind) => [...new Set([...items, ...want.filter((a) => a.kind === kind && !a.auto).map((a) => a.id)])]
@@ -151,10 +157,10 @@ export const recommendedConfig = ({ AC, root, config }) => {
   }
 }
 
-// Write the config. Empty "upstream", "mcp" and "paths" are dropped: loadConfig adds them.
+// Write the config. Empty "upstream", "mcp", "plugins" and "paths" are dropped: loadConfig adds them.
 export const writeConfig = (root, config) => {
   if (outside(root, CONFIG)) throw new Error(`${CONFIG} is a symlink or leaves the project root; compass does not write it`)
-  const out = Object.fromEntries(Object.entries(config).filter(([k, v]) => !(['upstream', 'mcp', 'paths'].includes(k) && !Object.keys(v ?? {}).length)))
+  const out = Object.fromEntries(Object.entries(config).filter(([k, v]) => !(['upstream', 'mcp', 'plugins', 'paths'].includes(k) && !Object.keys(v ?? {}).length)))
   mkdirSync(join(root, '.agents'), { recursive: true })
   writeFileSync(join(root, CONFIG), `${JSON.stringify(out, null, 2)}\n`)
 }

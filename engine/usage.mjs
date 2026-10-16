@@ -1,10 +1,12 @@
 // usage.mjs — ac usage: tokens, cost and cache use from the Claude Code transcripts in <home>/.claude/projects.
 // A row counts once per "<message.id>:<requestId>": streaming writes one line per content block, and the line with
 // the largest output count is the full one. A day is a local day. A cost is in USD at list price.
+// A session is the sessionId of the lines (a sub-agent has the sessionId of its parent). It is a "graph" session when
+// any of its lines calls a tool of a codebase-memory MCP server.
 
 import { readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { run, walk } from './util.mjs'
 
@@ -20,6 +22,7 @@ export const PRICES = {
 }
 const PREFIXES = Object.keys(PRICES).sort((a, b) => b.length - a.length)
 const WORKTREES = '/.claude/worktrees/'
+const GRAPH_TOOL = 'mcp__codebase-memory'
 
 const localDay = (d) => d.toLocaleDateString('sv-SE')
 const validDay = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && localDay(new Date(`${s}T00:00:00`)) === s
@@ -31,6 +34,7 @@ const bump = (map, key, s) => map.set(key, map.has(key) ? plus(map.get(key), s) 
 const ranked = (map, name) => [...map].map(([key, s]) => ({ [name]: key, ...s })).sort((a, b) => b.tokens - a.tokens)
 
 const n = (v) => Number(v) || 0
+const hit = (s) => { const reads = s.input + s.cacheWrite + s.cacheRead; return reads ? s.cacheRead / reads : 0 }
 // Cache writes cost 1.25 × input for 5 minutes and 2 × for 1 hour. Without the breakdown, all writes cost 1.25 ×. Fast speed doubles the row.
 const rowSums = (u, price) => {
   const [pin, pout, pread] = price ?? [0, 0, 0]
@@ -52,24 +56,37 @@ const repoOf = (cwd, cache) => {
   return cache.get(cwd)
 }
 
+// Linear interpolation between the two nearest values of an ascending list, rounded to a whole token.
+const quantile = (asc, p) => {
+  const at = (asc.length - 1) * p
+  const [lo, hi] = [Math.floor(at), Math.ceil(at)]
+  return asc.length ? Math.round(asc[lo] + (asc[hi] - asc[lo]) * (at - lo)) : 0
+}
+const spread = (rows) => {
+  const asc = rows.map((r) => r.tokens).sort((a, b) => a - b)
+  return { count: asc.length, median: quantile(asc, 0.5), p90: quantile(asc, 0.9) }
+}
+
 const parseRow = (line) => {
   let d
   try { d = JSON.parse(line) } catch { return null }
   const m = d?.message
   const at = new Date(d?.timestamp)
   if (!m?.usage || typeof m.model !== 'string' || m.model === '<synthetic>' || Number.isNaN(at.getTime())) return null
-  return { key: m.id && d.requestId ? `${m.id}:${d.requestId}` : null, day: localDay(at), cwd: d.cwd || '(unknown)', model: m.model, side: d.isSidechain === true, usage: m.usage }
+  const graph = Array.isArray(m.content) && m.content.some((c) => c?.type === 'tool_use' && String(c.name).startsWith(GRAPH_TOOL))
+  return { key: m.id && d.requestId ? `${m.id}:${d.requestId}` : null, day: localDay(at), cwd: d.cwd || '(unknown)', model: m.model, side: d.isSidechain === true, usage: m.usage, session: d.sessionId || '(unknown)', graph }
 }
 
-// since and until are inclusive local days (YYYY-MM-DD). until is today when it is not set.
+// since and until are inclusive local days (YYYY-MM-DD). until is today when it is not set. project is a repo root: other rows are skipped.
 // A file that was last written before the first day holds no row of the window, so it is not read.
-export const readUsage = ({ home = homedir(), since, until, now = new Date() } = {}) => {
+export const readUsage = ({ home = homedir(), since, until, project: only, now = new Date() } = {}) => {
   const base = join(home, '.claude/projects')
   const first = since ? new Date(`${since}T00:00:00`).getTime() : 0
   const files = walk(base).filter((f) => f.endsWith('.jsonl') && statSync(join(base, f)).mtimeMs >= first)
   const last = until ?? localDay(now)
   const [best, loose, unknown] = [new Map(), [], new Set()]
-  const [repos, days, projects, models] = [new Map(), new Map(), new Map(), new Map()]
+  const [repos, days, projects, models, sessions] = [new Map(), new Map(), new Map(), new Map(), new Map()]
+  const graphSessions = new Set()
   let totals = blank()
   let [side, lines] = [0, 0]
   for (const file of files) {
@@ -78,28 +95,36 @@ export const readUsage = ({ home = homedir(), since, until, now = new Date() } =
       lines++
       const row = line.includes('"usage"') ? parseRow(line) : null
       if (!row) continue
+      if (row.graph) graphSessions.add(row.session)
       if (!row.key) loose.push(row)
       else if ((best.get(row.key)?.usage.output_tokens ?? -1) < (row.usage.output_tokens ?? 0)) best.set(row.key, row)
     }
   }
   for (const row of [...best.values(), ...loose]) {
-    if ((since && row.day < since) || row.day > last) continue
+    const project = repoOf(row.cwd, repos)
+    if ((since && row.day < since) || row.day > last || (only && project !== only)) continue
     const price = PREFIXES.find((p) => row.model.startsWith(p))
     if (!price) unknown.add(row.model)
     const s = rowSums(row.usage, PRICES[price])
     totals = plus(totals, s)
     if (row.side) side += s.tokens
     bump(days, row.day, s)
-    bump(projects, repoOf(row.cwd, repos), s)
+    bump(projects, project, s)
     bump(models, row.model, s)
+    const prev = sessions.get(row.session)
+    sessions.set(row.session, prev
+      ? { ...prev, ...plus(prev, s), first: row.day < prev.first ? row.day : prev.first, last: row.day > prev.last ? row.day : prev.last }
+      : { session: row.session, project, first: row.day, last: row.day, graph: graphSessions.has(row.session), ...s })
   }
-  const reads = totals.input + totals.cacheWrite + totals.cacheRead
+  const bySession = [...sessions.values()].map((r) => ({ ...r, cacheHit: hit(r) })).sort((a, b) => b.tokens - a.tokens)
   return {
     totals,
     byDay: ranked(days, 'day').sort((a, b) => (a.day < b.day ? -1 : 1)),
     byProject: ranked(projects, 'project'),
     byModel: ranked(models, 'model'),
-    cacheHit: reads ? totals.cacheRead / reads : 0,
+    bySession,
+    sessionSummary: { graph: spread(bySession.filter((r) => r.graph)), noGraph: spread(bySession.filter((r) => !r.graph)) },
+    cacheHit: hit(totals),
     subagentShare: totals.tokens ? side / totals.tokens : 0,
     unknownModels: [...unknown].sort(),
     files: files.length,
@@ -107,13 +132,16 @@ export const readUsage = ({ home = homedir(), since, until, now = new Date() } =
   }
 }
 
-const HELP = `Usage: ac usage [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--json]
+const HELP = `Usage: ac usage [--by session] [--project <root>] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--json]
 
 Read the Claude Code transcripts in ~/.claude/projects. Show tokens, cost and cache use by
 day, project and model. A cost is the list price. A day is a local day.
-  --since  First day to count. The default is the first day in the transcripts.
-  --until  Last day to count. The default is today.
-  --json   Print the result as JSON.`
+  --by session  One row for each session. A graph session called a codebase-memory MCP tool.
+                The summary has the count, the median and the p90 of tokens for graph and no-graph sessions.
+  --project     Count only the sessions of this repository root (a worktree counts for its root).
+  --since       First day to count. The default is the first day in the transcripts.
+  --until       Last day to count. The default is today.
+  --json        Print the result as JSON.`
 
 const fmt = (v) => Math.round(v).toLocaleString('en-US')
 const share = (v) => `${(v * 100).toFixed(1)}%`
@@ -133,20 +161,35 @@ const print = (u) => {
   ].join('\n'))
 }
 
+const printSessions = (u) => {
+  const rows = u.bySession.slice(0, 10)
+  const group = (label, g) => `  ${label.padEnd(9)} ${String(g.count).padStart(4)} sessions  median ${fmt(g.median)} tokens  p90 ${fmt(g.p90)} tokens`
+  console.log([
+    `ac usage --by session: ${u.bySession.length} sessions`,
+    group('graph', u.sessionSummary.graph),
+    group('no graph', u.sessionSummary.noGraph),
+    `Largest sessions (${rows.length} of ${u.bySession.length})`,
+    ...rows.map((r) => `  ${basename(r.project).slice(0, 24).padEnd(24)} ${r.first} to ${r.last}  ${r.messages} msgs  ${fmt(r.tokens)} tokens  $${r.cost.toFixed(2)}  cache ${share(r.cacheHit)}${r.graph ? '  graph' : ''}`),
+  ].join('\n'))
+}
+
 const usage = (message) => { console.error(`${message}\n\n${HELP}`); return 2 }
 
 export const cli = (argv) => {
   let parsed
   try {
-    parsed = parseArgs({ args: argv, strict: true, allowPositionals: true, options: { since: { type: 'string' }, until: { type: 'string' }, json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } } })
+    parsed = parseArgs({ args: argv, strict: true, allowPositionals: true, options: { by: { type: 'string' }, project: { type: 'string' }, since: { type: 'string' }, until: { type: 'string' }, json: { type: 'boolean' }, help: { type: 'boolean', short: 'h' } } })
   } catch (err) { return usage(err.message) }
   const { values: v, positionals } = parsed
   if (v.help) { console.log(HELP); return 0 }
   if (positionals.length) return usage(`Unexpected argument: ${positionals[0]}`)
   const bad = [['--since', v.since], ['--until', v.until]].find(([, day]) => day !== undefined && !validDay(day))
   if (bad) return usage(`${bad[0]} needs a date as YYYY-MM-DD.`)
-  const result = readUsage({ since: v.since, until: v.until })
-  if (v.json) console.log(JSON.stringify({ ok: true, ...result }, null, 2))
+  if (v.by !== undefined && v.by !== 'session') return usage('--by needs the value session.')
+  const result = readUsage({ since: v.since, until: v.until, project: v.project === undefined ? undefined : resolve(v.project) })
+  const { bySession, sessionSummary, ...general } = result
+  if (v.json) console.log(JSON.stringify({ ok: true, ...(v.by ? { totals: result.totals, bySession, sessionSummary } : general) }, null, 2))
+  else if (v.by) printSessions(result)
   else print(result)
   return 0
 }

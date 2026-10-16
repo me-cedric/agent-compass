@@ -1,12 +1,13 @@
 // api.mjs — the JSON routes of `ac ui`. A route gets { AC, state, body, query } and returns data,
 // or a function (res) that writes the response itself. No shell: a command is process.execPath
-// with bin/ac.mjs and fixed arguments, or codexbar with fixed arguments.
+// with bin/ac.mjs and fixed arguments, or codexbar, gh or glab with fixed arguments.
 
 import { execFile } from 'node:child_process'
-import { accessSync, constants, createReadStream, existsSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
-import { basename, delimiter, dirname, extname, isAbsolute, join, relative, sep } from 'node:path'
+import { createReadStream, existsSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { basename, dirname, extname, isAbsolute, join, relative, sep } from 'node:path'
 import { parseEnv } from 'node:util'
 import { CONFIG, DEFAULT_CONFIG, LOCK, loadConfig, projectPaths } from '../engine/config.mjs'
+import { onPath } from '../engine/doctor.mjs'
 import { isTemplate, questionsDir } from '../engine/docs.mjs'
 import { discover } from '../engine/env-check.mjs'
 import { encodeValue } from '../engine/env.mjs'
@@ -50,9 +51,6 @@ const cap = (v, n = 200) => String(v ?? '').slice(0, n)
 const scalar = (v) => ['string', 'number', 'boolean'].includes(typeof v)
 const heading = (text) => /^#\s+(.+?)\s*$/m.exec(text)?.[1] ?? ''
 const ymd = (d) => [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((n, i) => (i ? String(n).padStart(2, '0') : n)).join('-')
-const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((d) => {
-  try { accessSync(join(d, name), constants.X_OK); return statSync(join(d, name)).isFile() } catch { return false }
-})
 // A text file in the project, or null. A symlink, a path that leaves the root and a file above 5 MB give null.
 const readIn = (root, rel) => {
   try { return outside(root, rel) || statSync(join(root, rel)).size > 5e6 ? null : readFileSync(join(root, rel), 'utf8') } catch { return null }
@@ -302,6 +300,31 @@ const delivery = (c) => {
   return { ok: true, raid, tickets: tickets(root, p.paths), audit: audit(root, p.paths), adrs }
 }
 
+// A read-only issue list. The command, its arguments and its limits are fixed. The page gets plain text and http(s) links only.
+const TRACKERS = {
+  github: ['gh', ['issue', 'list', '--json', 'number,title,state,labels,assignees,url', '--limit', '100']],
+  gitlab: ['glab', ['issue', 'list', '--output', 'json', '--per-page', '100']],
+}
+const names = (list, ...keys) => (Array.isArray(list) ? list : []).map((x) => (isObj(x) ? keys.map((k) => x[k]).find(scalar) : x)).filter(scalar).map((x) => cap(x, 60)).join(', ')
+const issue = (i) => {
+  const t = isObj(i) ? i : {}
+  const url = t.url ?? t.web_url
+  return { number: cap(t.number ?? t.iid, 20), title: cap(t.title), state: cap(t.state, 20), labels: names(t.labels, 'name'), assignee: names(t.assignees, 'login', 'username'), url: /^https?:\/\//.test(url) ? cap(url, 300) : '' }
+}
+
+const pull = async (c) => {
+  const { tracker } = c.body
+  if (typeof tracker !== 'string' || !Object.hasOwn(TRACKERS, tracker)) bad('"tracker" must be github or gitlab.')
+  const [cli, args] = TRACKERS[tracker]
+  const fail = (message) => ({ ok: false, errors: [message] })
+  if (!onPath(cli)) return fail(`${cli} is not on PATH. Install it and run "${cli} auth login".`)
+  const r = await exec(cli, args, { cwd: c.state.root, timeout: 20_000 })
+  if (!r.ok) return fail(r.killed ? 'The command ran too long or printed too much.' : cap(r.stderr.replace(/\s+/g, ' ').trim()) || `${cli} failed.`)
+  let list
+  try { list = JSON.parse(r.stdout) } catch { /* the check below reports it */ }
+  return Array.isArray(list) ? { ok: true, tracker, count: list.length, rows: list.slice(0, 100).map(issue) } : fail(`${cli} printed no JSON list.`)
+}
+
 const candidates = async (c) => (await engine('promote', 'candidates'))({ AC: c.AC, root: c.state.root })
 
 const promote = async (c) => {
@@ -334,6 +357,7 @@ export const routes = {
   'GET /api/usage': usage,
   'POST /api/usage/quota': quota,
   'GET /api/delivery': delivery,
+  'POST /api/delivery/pull': pull,
   'GET /api/promote': async (c) => ({ candidates: await candidates(c) }),
   'POST /api/promote': promote,
 }

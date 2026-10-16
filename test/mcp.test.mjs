@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { delimiter, dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { PATH_DEFAULTS } from '../engine/config.mjs'
 import { STACK_IDS } from '../engine/detect.mjs'
+import { doctor } from '../engine/doctor.mjs'
 import { mcpPlan } from '../engine/mcp.mjs'
 import { tomlRender } from '../engine/merge.mjs'
 import { buildPlan } from '../engine/plan.mjs'
@@ -44,7 +45,7 @@ test('the catalog: every entry has a valid shape', () => {
     assert.deepEqual(Object.keys(e).filter((k) => !ENTRY_KEYS.includes(k)), [], `${name}: unknown key`)
     for (const key of ['description', 'readOnly']) assert.ok(typeof e[key] === 'string' && e[key].length > 10, `${name}: ${key}`)
     assert.ok(['adopt', 'trial'].includes(e.status), `${name}: status`)
-    assert.ok(Array.isArray(e.stacks) && e.stacks.every((s) => STACK_IDS.includes(s)), `${name}: stacks`)
+    assert.ok(Array.isArray(e.stacks) && e.stacks.every((s) => s === '*' || STACK_IDS.includes(s)), `${name}: stacks`)
     assert.ok(e.suggest === undefined || (Array.isArray(e.suggest) && e.suggest.length > 0 && e.suggest.every((s) => typeof s === 'string')), `${name}: suggest`)
     assert.ok(Array.isArray(e.secrets) && e.secrets.every((s) => /^[A-Z][A-Z0-9_]*$/.test(s)), `${name}: secrets`)
     assert.ok((e.providers || ['claude']).every((p) => ['claude', 'codex', 'copilot'].includes(p)), `${name}: providers`)
@@ -78,7 +79,7 @@ test('the catalog: a secret is "${VAR}" and every listed secret is used', () => 
 
 test('the catalog: versions are pinned, files exist and the read-only controls are set', () => {
   for (const [name, e] of Object.entries(catalog.servers)) {
-    if (['npx', 'uvx'].includes(e.command)) assert.ok(e.args.some((a) => /^(@?[\w./-]+)@\d+\.\d+/.test(a)), `${name}: unpinned package`)
+    if (['npx', 'uvx'].includes(e.command)) assert.ok(e.args.some((a) => /^(@?[\w./-]+)(@|==)\d+\.\d+/.test(a)), `${name}: unpinned package`)
     if (e.command === 'docker') assert.ok(/:\d+\.\d+/.test(e.args.at(-1)), `${name}: unpinned image`)
     for (const [dest, src] of Object.entries(e.files || {})) {
       assert.ok(safeRel(dest) && safeRel(src) && existsSync(join(REPO, src)), `${name}: ${src}`)
@@ -153,9 +154,22 @@ test('selection: the list, the recommendation by stack and the mcp:<name> exclus
   assert.deepEqual(plan(AC, { mcp: ['http-one'] }, ['react-web']).selected, ['http-one', 'sse-one'])
   assert.deepEqual(plan(AC, { mcp: ['http-one'], exclude: ['mcp:sse-one'] }, ['react-web']).selected, ['http-one'])
   const real = plan(REPO, {}, ['react-web', 'swift-ios'])
-  assert.deepEqual(real.selected, ['chrome-devtools', 'playwright', 'xcodebuildmcp', 'agent-device'].sort())
-  assert.deepEqual(plan(REPO, {}, ['expo-mobile']).selected, ['agent-device', 'maestro'])
-  assert.deepEqual(plan(REPO, {}, ['nestjs-api']).selected, [])
+  assert.deepEqual(real.selected, ['chrome-devtools', 'codebase-memory', 'playwright', 'xcodebuildmcp', 'agent-device'].sort())
+  assert.deepEqual(plan(REPO, {}, ['expo-mobile']).selected, ['agent-device', 'codebase-memory', 'maestro'])
+  assert.deepEqual(plan(REPO, {}, ['nestjs-api']).selected, ['codebase-memory'])
+  assert.deepEqual(plan(REPO, {}).selected, ['codebase-memory'], 'the code graph is on in every project')
+  assert.deepEqual(plan(REPO, { exclude: ['mcp:codebase-memory'] }).selected, [])
+  assert.ok(!plan(REPO, {}).selected.includes('context7'), 'context7 stays opt-in')
+})
+
+test('the catalog: projectmem is a trial server that no stack picks', () => {
+  const e = catalog.servers.projectmem
+  assert.deepEqual([e.status, e.stacks, e.suggest, e.secrets, e.command], ['trial', [], undefined, [], 'uvx'])
+  assert.ok(e.args.includes('pjm-mcp') && e.args.some((a) => /^projectmem==\d+\.\d+/.test(a)))
+  assert.deepEqual(plan(REPO, {}, ['react-web', 'nestjs-api']).selected.filter((n) => n === 'projectmem'), [])
+  const p = plan(REPO, { mcp: ['projectmem'] })
+  assert.deepEqual(p.warnings, ['MCP server "projectmem" is a trial server'])
+  assert.deepEqual(keyOf(p, '.mcp.json', 'mcpServers.projectmem'), { command: 'uvx', args: e.args })
 })
 
 test('selection: an unknown name is an error, a bad entry is an error, and a missing catalog is no servers', () => {
@@ -179,6 +193,47 @@ test('selection: an unknown name is an error, a bad entry is an error, and a mis
   assert.match(plan(broken).errors[0], /^mcp\/catalog\.json: /)
 })
 
+const TS = 'typescript-lsp@claude-plugins-official'
+const LSP = {
+  [TS]: ['nestjs-api', 'react-web', 'next-web', 'angular-web', 'expo-mobile', 'turbo-monorepo'],
+  'swift-lsp@claude-plugins-official': ['swift-ios', 'macos-desktop'],
+  'kotlin-lsp@claude-plugins-official': ['android-compose'],
+  'csharp-lsp@claude-plugins-official': ['winui-desktop'],
+  'rust-analyzer-lsp@claude-plugins-official': ['gtk-desktop'],
+}
+
+test('the catalog: plugins hold one LSP plugin per language, with real stack ids', () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(catalog.plugins).map(([id, e]) => [id, e.stacks])), LSP)
+  for (const [id, e] of Object.entries(catalog.plugins)) {
+    assert.match(id, /^[a-z][a-z0-9-]*@[a-z][a-z0-9-]*$/)
+    assert.deepEqual(Object.keys(e).sort(), ['description', 'stacks'], id)
+    assert.ok(e.description.length > 10 && e.stacks.every((s) => STACK_IDS.includes(s)), id)
+  }
+})
+
+test('plugins: a stack enables its plugin; the list adds one; plugin:<id> removes one', () => {
+  const key = `enabledPlugins.${TS}`
+  const p = plan(REPO, {}, ['react-web'])
+  assert.deepEqual([p.errors, p.plugins, keyOf(p, '.claude/settings.json', key)], [[], [TS], true])
+  assert.deepEqual(plan(REPO, {}, ['react-web', 'nestjs-api']).plugins, [TS])
+  assert.deepEqual(plan(REPO, {}, ['gtk-desktop']).plugins, ['rust-analyzer-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['swift-ios', 'macos-desktop']).plugins, ['swift-lsp@claude-plugins-official'])
+  assert.deepEqual(plan(REPO, {}, ['openspec']).plugins, [])
+  assert.equal(plan(REPO, {}, []).keys.has('.claude/settings.json'), false)
+  assert.deepEqual(plan(REPO, { plugins: [TS] }).plugins, [TS])
+  assert.deepEqual(plan(REPO, { plugins: [TS], exclude: [`plugin:${TS}`] }, ['react-web']).plugins, [])
+  assert.deepEqual(plan(REPO, { exclude: [`plugin:${TS}`] }, ['react-web']).keys.has('.claude/settings.json'), false)
+  assert.deepEqual(plan(REPO, { plugins: ['nope@x'] }).errors, ['.agents/compass.json: unknown plugin "nope@x"'])
+})
+
+test('plugins: a catalog id with a dot or a bad shape is an error, and "plugins" must be an object', () => {
+  const bad = { version: 1, servers: {}, plugins: { 'a.b@c': { description: 'Dot.', stacks: ['react-web'] }, nope: { description: 'No market.', stacks: ['react-web'] } } }
+  const p = plan(fakeCompass(bad), {}, ['react-web'])
+  assert.deepEqual(p.plugins, [])
+  assert.deepEqual(p.errors, ['mcp/catalog.json: "a.b@c" is not a valid plugin id', 'mcp/catalog.json: "nope" is not a valid plugin id'])
+  assert.deepEqual(plan(fakeCompass({ version: 1, servers: {}, plugins: [] })).errors, ['mcp/catalog.json: "plugins" must be an object'])
+})
+
 const planFor = (AC, config, root = temp('ac-mcp-host-')) => buildPlan({ AC, root, config: { packs: [], exclude: [], upstream: [], mcp: [], ...config }, paths: PATH_DEFAULTS })
 
 test('plan: deny patterns join permissions.deny, once, and an exclude removes them', () => {
@@ -194,6 +249,19 @@ test('plan: deny patterns join permissions.deny, once, and an exclude removes th
   assert.equal(keyOf(noKey, '.mcp.json', 'mcpServers.github'), undefined)
   assert.equal(keyOf(noKey, '.mcp.json', 'mcpServers.figma'), undefined)
   assert.ok(!keyOf(noKey, '.claude/settings.json', 'permissions.deny').includes('mcp__figma__use_figma'))
+})
+
+test('plan: the plugin key joins .claude/settings.json with the deny list, and a key exclude drops it', () => {
+  const root = temp('ac-mcp-react-')
+  put(root, { 'package.json': JSON.stringify({ dependencies: { react: '19' } }) })
+  const key = `enabledPlugins.${TS}`
+  const p = planFor(REPO, { mcp: ['figma'] }, root)
+  assert.equal(keyOf(p, '.claude/settings.json', key), true)
+  assert.ok(keyOf(p, '.claude/settings.json', 'permissions.deny').includes('mcp__figma__use_figma'))
+  const off = planFor(REPO, { exclude: [`.claude/settings.json#${key}`] }, root)
+  assert.equal(keyOf(off, '.claude/settings.json', key), undefined)
+  assert.equal(planFor(REPO, {}, temp('ac-mcp-bare-')).keys.has('.claude/settings.json'), true, 'core keys still install')
+  assert.equal(keyOf(planFor(REPO, {}, temp('ac-mcp-bare-')), '.claude/settings.json', key), undefined)
 })
 
 test('plan: a file of a server is a managed file, and two sources for one key are an error', () => {
@@ -233,15 +301,15 @@ test('sync: Konvoy MCP keys keep their bytes while two servers are written and r
   assert.equal(first.code, 0, first.stdout + first.stderr)
   const mcp = readFileSync(join(host, '.mcp.json'), 'utf8')
   assert.ok(mcp.includes(konvoyJson), 'the Konvoy JSON bytes changed')
-  assert.deepEqual(Object.keys(JSON.parse(mcp).mcpServers).sort(), ['context7', 'konvoy', 'playwright'])
+  assert.deepEqual(Object.keys(JSON.parse(mcp).mcpServers).sort(), ['codebase-memory', 'context7', 'konvoy', 'playwright'])
   assert.equal(JSON.parse(mcp).mcpServers.context7.url, 'https://mcp.context7.com/mcp')
   const toml = readFileSync(join(host, '.codex/config.toml'), 'utf8')
   assert.ok(toml.includes(konvoyToml), 'the Konvoy TOML bytes changed')
   assert.ok(!toml.includes('${'))
   const parsed = parseToml(toml)
-  assert.deepEqual(Object.keys(parsed.mcp_servers).sort(), ['context7', 'konvoy', 'playwright'])
+  assert.deepEqual(Object.keys(parsed.mcp_servers).sort(), ['codebase-memory', 'context7', 'konvoy', 'playwright'])
   assert.deepEqual(parsed.mcp_servers.context7, { url: 'https://mcp.context7.com/mcp' })
-  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(host, '.vscode/mcp.json'), 'utf8')).servers).sort(), ['context7', 'konvoy', 'playwright'])
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(host, '.vscode/mcp.json'), 'utf8')).servers).sort(), ['codebase-memory', 'context7', 'konvoy', 'playwright'])
 
   assert.equal((await run(ac, host, 'sync')).json.changes.length, 0, 'a second sync changes nothing')
   put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], mcp: ['context7'] }) })
@@ -249,7 +317,7 @@ test('sync: Konvoy MCP keys keep their bytes while two servers are written and r
   assert.equal(after.code, 0, after.stdout)
   assert.ok(readFileSync(join(host, '.mcp.json'), 'utf8').includes(konvoyJson))
   assert.ok(readFileSync(join(host, '.codex/config.toml'), 'utf8').includes(konvoyToml))
-  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(host, '.mcp.json'), 'utf8')).mcpServers).sort(), ['context7', 'konvoy'])
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(host, '.mcp.json'), 'utf8')).mcpServers).sort(), ['codebase-memory', 'context7', 'konvoy'])
 })
 
 test('sync: a server with a file and a deny pattern is written, and an unknown name fails the run', async () => {
@@ -269,4 +337,55 @@ test('sync: a server with a file and a deny pattern is written, and an unknown n
   const type = await run(ac, host, 'check')
   assert.equal(type.code, 1)
   assert.match(type.json.errors[0], /"mcp" must be a list of MCP server names/)
+})
+
+test('sync: an LSP plugin key is written, a user value stays, and a removed plugin leaves', async () => {
+  const ac = syncAc()
+  const host = temp('ac-mcp-host-')
+  const mine = '{\n  "enabledPlugins": {\n    "typescript-lsp@claude-plugins-official": false,\n    "mine@market": true\n  }\n}\n'
+  put(host, {
+    'package.json': JSON.stringify({ dependencies: { react: '19' } }),
+    '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], plugins: ['swift-lsp@claude-plugins-official'] }),
+    '.claude/settings.json': mine,
+  })
+  const first = await run(ac, host, 'sync')
+  assert.equal(first.code, 0, first.stdout + first.stderr)
+  assert.deepEqual(first.json.changes.filter((c) => c.action === 'kept').map((c) => c.key), [`enabledPlugins.${TS}`])
+  const settings = JSON.parse(readFileSync(join(host, '.claude/settings.json'), 'utf8'))
+  assert.deepEqual(settings.enabledPlugins, { [TS]: false, 'mine@market': true, 'swift-lsp@claude-plugins-official': true })
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [`plugin:${TS}`] }) })
+  const after = await run(ac, host, 'sync')
+  assert.equal(after.code, 0, after.stdout)
+  assert.deepEqual(JSON.parse(readFileSync(join(host, '.claude/settings.json'), 'utf8')).enabledPlugins, { [TS]: false, 'mine@market': true })
+})
+
+test('config: "plugins" must be a list of plugin ids', async () => {
+  const ac = syncAc()
+  const host = temp('ac-mcp-host-')
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], plugins: TS }) })
+  const r = await run(ac, host, 'check')
+  assert.equal(r.code, 1)
+  assert.match(r.json.errors[0], /"plugins" must be a list of Claude plugin ids/)
+})
+
+test('doctor: one warning for each command of a selected MCP server that is not on PATH', () => {
+  const bin = temp('ac-mcp-bin-')
+  put(bin, { 'have-cmd': '#!/bin/sh\n', 'not-exec': 'x' })
+  chmodSync(join(bin, 'have-cmd'), 0o755)
+  const entry = (command) => ({ description: 'A server.', status: 'adopt', readOnly: 'Not applicable.', secrets: [], stacks: [], command })
+  const AC = fakeCompass({ version: 1, servers: { a: entry('have-cmd'), b: entry('gone-cmd'), c: entry('gone-cmd'), d: entry('not-exec'), e: { ...FAKE.servers['sse-one'], stacks: [] }, f: entry('off-cmd') } })
+  const host = temp('ac-mcp-host-')
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: ['mcp:f'], mcp: ['a', 'b', 'c', 'd', 'e', 'f'] }) })
+  const warns = () => doctor({ AC, root: host }).checks.filter((c) => c.name === 'mcp')
+  const warn = (cmd, names) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names} cannot start` })
+  const old = process.env.PATH
+  try {
+    process.env.PATH = `${bin}${delimiter}${old}`
+    assert.deepEqual(warns(), [warn('gone-cmd', 'b, c'), warn('not-exec', 'd')])
+    assert.equal(doctor({ AC, root: host }).ok, true, 'a warning does not fail doctor')
+    process.env.PATH = temp('ac-mcp-empty-bin-')
+    assert.deepEqual(warns(), [warn('have-cmd', 'a'), warn('gone-cmd', 'b, c'), warn('not-exec', 'd')])
+  } finally { process.env.PATH = old }
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], mcp: ['nope'] }) })
+  assert.deepEqual(warns(), [], 'a broken config reports its error and no PATH warning')
 })

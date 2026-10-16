@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { delimiter, dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { KINDS } from '../engine/assets.mjs'
 import { newLines } from '../ui/api.mjs'
 import { createServer } from '../ui/server.mjs'
 import { runNode } from './helpers.mjs'
@@ -187,6 +188,15 @@ test('the page puts no server data into HTML', () => {
   assert.doesNotMatch(readFileSync(join(REPO, 'ui/api.mjs'), 'utf8'), /shell\s*:\s*true|\bexec\(`|execSync|spawnSync\(/)
 })
 
+test('the page has a label for every asset kind and the buttons of the tracker pull', () => {
+  const app = readFileSync(join(REPO, 'ui/public/app.js'), 'utf8')
+  const labels = /const KINDS = \{([^}]+)\}/.exec(app)[1]
+  assert.deepEqual([...labels.matchAll(/(\w+): '/g)].map((m) => m[1]), KINDS)
+  assert.match(labels, /plugin: 'Claude plugins'/)
+  assert.match(app, /pull\('github', 'GitHub'\), pull\('gitlab', 'GitLab'\)/)
+  assert.match(app, /mcp-atlassian/)
+})
+
 // ---- report files ----
 
 test('the report route serves only run reports inside the project', async () => {
@@ -297,6 +307,79 @@ test('the delivery tab shows nothing for a host without delivery files', async (
   const { port } = await start(await host())
   const d = (await call(port, { path: '/api/delivery' })).json()
   assert.deepEqual([d.raid, d.tickets, d.audit.total, d.adrs], [[], { count: 0, rows: [] }, 0, []])
+})
+
+// ---- tracker pull ----
+
+// A fake tracker CLI: it records its arguments, its directory and its prompt setting, prints a fixed text and exits.
+const fakeCli = (dir, name, { stdout = '', stderr = '', code = 0 } = {}) => {
+  const log = JSON.stringify(join(dir, `${name}.log`))
+  writeFileSync(join(dir, name), `#!${process.execPath}\nrequire('node:fs').appendFileSync(${log}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), prompt: process.env.GIT_TERMINAL_PROMPT }) + '\\n')\nprocess.stdout.write(${JSON.stringify(stdout)})\nprocess.stderr.write(${JSON.stringify(stderr)})\nprocess.exitCode = ${code}\n`)
+  chmodSync(join(dir, name), 0o755)
+}
+const calls = (dir, name) => (existsSync(join(dir, `${name}.log`)) ? readFileSync(join(dir, `${name}.log`), 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : [])
+const withPath = async (path, fn) => {
+  const old = process.env.PATH
+  process.env.PATH = path
+  try { return await fn() } finally { process.env.PATH = old }
+}
+const GH = [{ number: 12, title: 'Fix the login', state: 'OPEN', labels: [{ name: 'bug' }, { name: 'ui' }], assignees: [{ login: 'ana' }, { login: 'bob' }], url: 'https://github.com/o/r/issues/12' }, { number: 13, title: 'No links', state: 'OPEN', labels: [], assignees: [], url: 'javascript:alert(1)' }]
+const GL = [{ iid: 7, title: 'Slow page', state: 'opened', labels: ['perf'], assignees: [{ username: 'cy' }], web_url: 'https://gitlab.example/g/p/-/issues/7' }]
+
+test('the tracker pull runs a fixed read-only list command in the project root and shows plain rows', async () => {
+  const root = await host()
+  const bin = temp('ac-ui-bin-')
+  fakeCli(bin, 'gh', { stdout: JSON.stringify(GH) })
+  fakeCli(bin, 'glab', { stdout: JSON.stringify(GL) })
+  const { port } = await start(root)
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    const gh = (await post(port, '/api/delivery/pull', { tracker: 'github' })).json()
+    assert.equal(gh.ok, true)
+    assert.equal(gh.count, 2)
+    assert.deepEqual(gh.rows, [
+      { number: '12', title: 'Fix the login', state: 'OPEN', labels: 'bug, ui', assignee: 'ana, bob', url: 'https://github.com/o/r/issues/12' },
+      { number: '13', title: 'No links', state: 'OPEN', labels: '', assignee: '', url: '' },
+    ])
+    const gl = (await post(port, '/api/delivery/pull', { tracker: 'gitlab' })).json()
+    assert.deepEqual(gl.rows, [{ number: '7', title: 'Slow page', state: 'opened', labels: 'perf', assignee: 'cy', url: 'https://gitlab.example/g/p/-/issues/7' }])
+  })
+  assert.deepEqual(calls(bin, 'gh'), [{ args: ['issue', 'list', '--json', 'number,title,state,labels,assignees,url', '--limit', '100'], cwd: realpathSync(root), prompt: '0' }])
+  assert.deepEqual(calls(bin, 'glab').map((c) => c.args), [['issue', 'list', '--output', 'json', '--per-page', '100']])
+})
+
+test('the tracker pull accepts only github and gitlab, and caps what it shows', async () => {
+  const bin = temp('ac-ui-bin-')
+  const many = Array.from({ length: 130 }, (_, i) => ({ number: i, title: 'T'.repeat(500), state: 'OPEN', labels: [], assignees: [], url: '' }))
+  fakeCli(bin, 'gh', { stdout: JSON.stringify(many) })
+  const { port } = await start(await host())
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    for (const tracker of ['jira', '', '-h', 'github;id', ['github'], 5, undefined]) assert.equal((await post(port, '/api/delivery/pull', { tracker })).status, 400, JSON.stringify(tracker))
+    assert.equal((await post(port, '/api/delivery/pull', {})).status, 400)
+    assert.deepEqual(calls(bin, 'gh'), [], 'a bad tracker starts no command')
+    const r = (await post(port, '/api/delivery/pull', { tracker: 'github' })).json()
+    assert.equal(r.rows.length, 100)
+    assert.equal(r.count, 130)
+    assert.equal(r.rows[0].title.length, 200)
+  })
+  assert.equal((await call(port, { method: 'POST', path: '/api/delivery/pull', token: null, headers: { 'content-type': 'application/json' }, body: '{"tracker":"github"}' })).status, 401)
+})
+
+test('the tracker pull gives a short message for a missing CLI, a failed login and a bad answer', async () => {
+  const bin = temp('ac-ui-bin-')
+  const { port } = await start(await host())
+  await withPath(temp('ac-ui-nopath-'), async () => {
+    const r = (await post(port, '/api/delivery/pull', { tracker: 'gitlab' })).json()
+    assert.equal(r.ok, false)
+    assert.match(r.errors[0], /^glab is not on PATH/)
+  })
+  fakeCli(bin, 'gh', { stderr: 'To get started with GitHub CLI, please run:  gh auth login\nOr set GH_TOKEN.\n', code: 4 })
+  fakeCli(bin, 'glab', { stdout: 'not json' })
+  await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => {
+    const login = (await post(port, '/api/delivery/pull', { tracker: 'github' })).json()
+    assert.deepEqual([login.ok, login.errors], [false, ['To get started with GitHub CLI, please run: gh auth login Or set GH_TOKEN.']])
+    const bad = (await post(port, '/api/delivery/pull', { tracker: 'gitlab' })).json()
+    assert.deepEqual([bad.ok, bad.errors], [false, ['glab printed no JSON list.']])
+  })
 })
 
 // ---- commands ----

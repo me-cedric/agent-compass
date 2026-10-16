@@ -11,6 +11,7 @@ import { isObj, safeRel } from './util.mjs'
 
 export const CATALOG = 'mcp/catalog.json'
 const REF = /^\$\{([A-Z][A-Z0-9_]*)\}$/
+const PLUGIN = /^[a-z][a-z0-9-]*@[a-z][a-z0-9-]*$/
 const BEARER = /^Bearer \$\{([A-Z][A-Z0-9_]*)\}$/
 const PROVIDERS = ['claude', 'codex', 'copilot']
 
@@ -58,14 +59,18 @@ const TARGETS = [
   ['copilot', '.vscode/mcp.json', 'servers', copilot],
 ]
 
+// The stacks of a server or plugin that fit the project. "*" fits every project.
+export const stackHits = (e, stacks) => (e.stacks ?? []).filter((s) => s === '*' || stacks.includes(s))
+
 const loadCatalog = (AC) => {
   const path = join(AC, CATALOG)
-  if (!existsSync(path)) return { servers: {} }
+  if (!existsSync(path)) return { servers: {}, plugins: {} }
   try {
     const data = JSON.parse(readFileSync(path, 'utf8'))
-    return isObj(data?.servers) ? { servers: data.servers } : { servers: {}, error: `${CATALOG}: "servers" must be an object` }
+    const bad = !isObj(data?.servers) ? 'servers' : data.plugins !== undefined && !isObj(data.plugins) ? 'plugins' : null
+    return bad ? { servers: {}, plugins: {}, error: `${CATALOG}: "${bad}" must be an object` } : { servers: data.servers, plugins: data.plugins ?? {} }
   } catch (err) {
-    return { servers: {}, error: `${CATALOG}: ${err.message}` }
+    return { servers: {}, plugins: {}, error: `${CATALOG}: ${err.message}` }
   }
 }
 
@@ -79,29 +84,44 @@ const shape = (name, e) => {
   return bad === undefined ? null : `${CATALOG}: ${name} has a value that compass cannot write: use "\${VAR}"`
 }
 
-// Picks: .agents/compass.json "mcp", plus the servers that list a detected stack. "mcp:<name>" in "exclude" removes one.
+// Picks: .agents/compass.json "mcp" and "plugins", plus the servers and plugins that list a detected stack (or "*").
+// "mcp:<name>" and "plugin:<id>" in "exclude" remove one. A plugin becomes the key enabledPlugins.<id> in .claude/settings.json:
+// Claude Code asks the user to install it. "commands" maps each stdio command to its servers (ac doctor checks PATH).
 export const mcpPlan = ({ AC, config, stacks }) => {
-  const { servers, error } = loadCatalog(AC)
+  const { servers, plugins, error } = loadCatalog(AC)
   const errors = error ? [error] : []
   const warnings = []
+  const out = (id) => (config.exclude ?? []).includes(id)
   const want = new Set(config.mcp ?? [])
-  for (const [name, e] of Object.entries(servers)) if ((e.stacks || []).some((s) => stacks.includes(s))) want.add(name)
+  for (const [name, e] of Object.entries(servers)) if (stackHits(e, stacks).length) want.add(name)
 
   const selected = []
   for (const name of [...want].sort()) {
     if (!Object.hasOwn(servers, name)) { errors.push(`.agents/compass.json: unknown MCP server "${name}"`); continue }
-    if ((config.exclude ?? []).includes(`mcp:${name}`)) continue
+    if (out(`mcp:${name}`)) continue
     const bad = shape(name, servers[name])
     if (bad) errors.push(bad)
     else selected.push(name)
   }
 
-  const keys = new Map()
+  const wantPlugins = new Set(config.plugins ?? [])
+  for (const [id, e] of Object.entries(plugins)) if (stackHits(e, stacks).length) wantPlugins.add(id)
+  const enabled = []
+  for (const id of [...wantPlugins].sort()) {
+    if (!Object.hasOwn(plugins, id)) { errors.push(`.agents/compass.json: unknown plugin "${id}"`); continue }
+    if (out(`plugin:${id}`)) continue
+    if (PLUGIN.test(id)) enabled.push(id)
+    else errors.push(`${CATALOG}: "${id}" is not a valid plugin id`)
+  }
+
+  const keys = new Map(enabled.length ? [['.claude/settings.json', new Map(enabled.map((id) => [`enabledPlugins.${id}`, true]))]] : [])
   const files = new Map()
   const deny = new Set()
+  const commands = {}
   for (const name of selected) {
     const e = servers[name]
     const providers = e.providers || PROVIDERS
+    if (e.command) (commands[e.command] ??= []).push(name)
     if (e.status === 'trial') warnings.push(`MCP server "${name}" is a trial server`)
     for (const [provider, file, root, render] of TARGETS) {
       const value = providers.includes(provider) && render(e)
@@ -113,5 +133,5 @@ export const mcpPlan = ({ AC, config, stacks }) => {
       else errors.push(`${CATALOG}: ${name} lists the file ${src}, which compass cannot use`)
     }
   }
-  return { keys, files: [...files], deny: [...deny], selected, errors, warnings }
+  return { keys, files: [...files], deny: [...deny], selected, plugins: enabled, commands, errors, warnings }
 }

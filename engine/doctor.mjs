@@ -1,9 +1,26 @@
 // doctor.mjs — check the tools, the compass checkout, the configuration and the ownership rules.
 // A "fail" check makes `ac doctor` exit 1. A "warn" check does not. `tokens` adds the context budget checks.
 
+import { accessSync, constants, statSync } from 'node:fs'
+import { delimiter, join } from 'node:path'
+import { loadConfig } from './config.mjs'
+import { mcpPlan } from './mcp.mjs'
 import { syncHost } from './sync.mjs'
 import { BUDGET, measureTokens } from './tokens.mjs'
 import { run } from './util.mjs'
+
+// True when an executable file with this name is in a directory of PATH.
+export const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((dir) => {
+  try { accessSync(join(dir, name), constants.X_OK); return statSync(join(dir, name)).isFile() } catch { return false }
+})
+
+// One warning for each command of a selected MCP server that is not on PATH. No network.
+const commandChecks = ({ AC, root, sync }) => {
+  if (!sync.ok) return []
+  const { commands } = mcpPlan({ AC, config: loadConfig(root, AC, { init: true }).config, stacks: sync.stacks })
+  return Object.entries(commands).filter(([cmd]) => !onPath(cmd))
+    .map(([cmd, names]) => ({ name: 'mcp', status: 'warn', detail: `"${cmd}" is not on PATH, so the MCP server ${names.join(', ')} cannot start` }))
+}
 
 const tokenChecks = (t) => [
   ...t.items.map((i) => ({ name: 'tokens', status: 'ok', detail: `${i.name}: ${i.chars} chars, about ${i.tokens} tokens` })),
@@ -28,6 +45,7 @@ export const doctor = ({ AC, root, tokens = false }) => {
     })),
     ...sync.errors.map((detail) => ({ name: 'error', status: 'fail', detail })),
   ]
+  checks.push(...commandChecks({ AC, root, sync }))
   if (sync.ok) {
     checks.push({ name: 'sync', status: sync.drift ? 'warn' : 'ok', detail: sync.drift ? `${sync.changes.length} pending change(s); run "ac sync"` : 'up to date' })
   }

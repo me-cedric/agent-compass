@@ -153,12 +153,17 @@ Before the first edit in a worktree or on a new branch, compare the branch with 
 ## Memory
 
 - Source code is the truth about what the program does. README, DESIGN and ADRs hold intent. A code graph shows structure. Project memory holds history that code cannot say.
-- `codebase-memory` is an MCP server in the catalog. It builds a local graph of symbols, callers and routes.
+- `codebase-memory` is an MCP server in the catalog. Compass installs it in every project. It builds a local graph of symbols, callers and routes.
   Use `get_architecture` for orientation, `search_graph` for a symbol and `trace_path` for callers and callees.
   Use `detect_changes` for blast radius and `get_code_snippet` for source. Run `check_index_coverage` before you trust a cited path.
   Use grep for literal text, comments and config. The graph misses dynamic dispatch, reflection, generated code and config-driven wiring.
   Treat its impact output as a list of candidates to verify, never as a finding.
-- `projectmem` keeps durable project memory. It is optional. Install it with `uv tool install projectmem` (Python 3.10 or later), then run `pjm init`.
+- Compass installs one language server plugin for each detected language. See [assets.md](assets.md#claude-plugins). Use it for types, definitions and diagnostics.
+- `projectmem` keeps durable project memory. It is a trial server and no stack selects it: add it to `mcp` in `.agents/compass.json`. Install it with `uv tool install projectmem` (Python 3.10 or later), then run `pjm init`.
   The `project-memory` skill tells the steps: `pjm regenerate`, `pjm brief` and `pjm precheck` before work. Log failed attempts, findings and fragile areas during work. Log decisions, fixes and validation after.
   Commit `.projectmem/events.jsonl` and give it `merge=union`. Git-ignore the generated projections. Never log a secret or personal data.
   When `pjm` is missing, continue and report the logging as `not run`.
+- Decisions stay in repo files: the OpenSpec archive, ADRs and the RAID register. A graph or a memory tool never holds the only copy of a decision.
+- Compass no longer installs or recommends Dual Graph.
+- `claude-mem` stays personal. Install it at user level only. Compass never writes it into a project.
+- Measure the graph with `ac usage --by session`. A session that calls a `codebase-memory` tool counts as a graph session. See [ui.md](ui.md#ac-usage).
