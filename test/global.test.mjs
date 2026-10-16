@@ -134,8 +134,10 @@ test('an odd config does not stop the report; CLAUDE_CONFIG_DIR and CODEX_HOME m
   rmSync(join(home, '.codex/config.toml'))
   mkdirSync(join(home, '.codex/config.toml'))
   const r = doctorGlobal({ AC, root: home, home, env: {} })
-  assert.equal(r.ok, true, r.errors.join('\n'))
-  assert.ok(r.warnings.some((w) => w.includes('config.toml')))
+  assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'], 'the report goes on after the odd entries')
+  assert.equal(r.ok, false, 'an unreadable config file is an error')
+  assert.equal(r.errors.length, 1)
+  assert.match(r.errors[0], /config\.toml: EISDIR/)
 
   const moved = temp()
   put(moved, { 'settings.json': { enabledPlugins: { 'solo@m': true } }, '.claude.json': { mcpServers: { only: { command: 'x' } } } })
@@ -147,6 +149,22 @@ test('an odd config does not stop the report; CLAUDE_CONFIG_DIR and CODEX_HOME m
   assert.deepEqual(m.codex.mcp, ['one'])
   const fix = m.recommended.find((c) => c.name === 'statusLine').fix
   assert.ok(fix.includes(JSON.stringify(JSON.stringify(join(AC, 'plugins/compass-user/scripts/statusline.mjs'))).slice(1, -1)), fix)
+})
+
+test('the status line command uses the unversioned compass path in quotes, and runs from a path with a space', async () => {
+  const { cpSync } = await import('node:fs')
+  const { spawnSync } = await import('node:child_process')
+  const spaced = join(temp(), 'my compass')
+  cpSync(join(AC, 'plugins/compass-user/scripts'), join(spaced, 'plugins/compass-user/scripts'), { recursive: true })
+  const home = makeHome()
+  const fix = doctorGlobal({ AC: spaced, root: home, home, env: {} }).recommended.find((c) => c.name === 'statusLine').fix
+  const { statusLine } = JSON.parse(fix.slice(fix.indexOf('{')))
+  const script = join(spaced, 'plugins/compass-user/scripts/statusline.mjs')
+  assert.equal(statusLine.command, `node ${JSON.stringify(script)}`)
+  assert.doesNotMatch(statusLine.command, /\/\d+\.\d+\.\d+\//, 'no plugin version in the path')
+  const run = spawnSync('sh', ['-c', statusLine.command], { input: JSON.stringify({ model: { display_name: 'Opus' } }), encoding: 'utf8', timeout: 10_000 })
+  assert.equal(run.status, 0, run.stderr)
+  assert.match(run.stdout, /Opus/)
 })
 
 test('the options of doctor --global are checked', async () => {

@@ -25,7 +25,6 @@ const LOCAL_PATH_RE = /(?:\/Users\/(?!runner\b)|\/home\/(?!runner\b)|[A-Za-z]:\\
 const hits = []
 
 const walk = (dir, onFile) => {
-  if (!existsSync(dir)) return
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (IGNORE.has(entry.name)) continue
     const full = join(dir, entry.name)
@@ -79,7 +78,10 @@ for (const file of markdownFiles) {
   }
 }
 
-const packDirs = existsSync(join(ROOT, 'packs')) ? readdirSync(join(ROOT, 'packs')).flatMap((p) => ['extras', 'seed'].map((d) => join(ROOT, 'packs', p, d))) : []
+// Template content lives in packs/<pack>/extras and packs/<pack>/seed. A pack may have neither dir; walk() itself never skips a dir.
+const packDirs = (existsSync(join(ROOT, 'packs')) ? readdirSync(join(ROOT, 'packs')) : [])
+  .flatMap((p) => ['extras', 'seed'].map((d) => join(ROOT, 'packs', p, d)))
+  .filter((d) => existsSync(d))
 for (const dir of packDirs) walk(dir, (file) => {
   if (!TEXT_EXT.has(extname(file))) return
   let text

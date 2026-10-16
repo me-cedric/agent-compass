@@ -89,7 +89,7 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
 
   const toml = join(env.CODEX_HOME || join(home, '.codex'), 'config.toml')
   let codex = { mcp: [], plugins: [] }
-  try { if (existsSync(toml)) codex = codexOf(readFileSync(toml, 'utf8')) } catch (err) { warnings.push(`${toml}: ${err.message}`) }
+  try { if (existsSync(toml)) codex = codexOf(readFileSync(toml, 'utf8')) } catch (err) { errors.push(`${toml}: ${err.message}`) }
 
   const names = enabled.map((id) => id.split('@')[0])
   const status = (name, source, market) => {
