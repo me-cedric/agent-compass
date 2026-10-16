@@ -1,6 +1,6 @@
 # Line budget — proposal
 
-Status: proposal. Nothing in this file is applied. The owner approves each option before any code changes.
+Status: A and B are applied (2026-10-16). C is checked and not applied: the copies are not the same (see "Result"). The owner approves each other option before any code changes.
 
 ## Budget and count
 
@@ -74,3 +74,18 @@ After A, B and C: about 3,790 lines with `bin/ac.mjs`, about 3,530 without it. T
    - D and E: about 67 more lines, and the count with `bin/ac.mjs` is about 3,720.
    - A new budget of 4,000 lines for engine, UI and CLI. The scope grew after the plan: the Assets switches, usage and cost, the 0.x migration, `ac doctor --global` and the tracker pull.
 3. Do F after 2026-10-31.
+
+## Result (2026-10-16)
+
+| Option | Commit | Lines out of the count |
+|---|---|---|
+| A — migration code to `migrate/` (legacy, docs, raid, adr, common) | 5cf2f5e | 552 |
+| B — `parseCommand`, `usageError`, `failCommand` in `engine/util.mjs` | a588eac | 37 |
+| C — shared small helpers | none | 0 |
+
+C is not applied. The helpers with the same name do different things, so one shared copy changes behavior:
+`strings` (3 rules: non-empty strings, non-blank strings, a non-empty array), `cap` (4 KB with a marker, or n characters),
+`within` (real paths, or plain prefixes), `load` (records read errors; `readJson` gives null), and the `fail` that stay after B.
+
+Count now: engine 3,088 + ui 475 + bin 262 = 3,825 (325 above the budget). migrate/ has 587 lines, outside the count.
+The three largest files: `ui/api.mjs` (363), `bin/ac.mjs` (262), `engine/env.mjs` (244).
