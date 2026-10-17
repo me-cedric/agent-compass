@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
+import { doctorGlobal, formatGlobal, hookError } from '../engine/global.mjs'
 import { runNode } from './helpers.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -43,7 +43,7 @@ const makeHome = ({ settings = {}, extra = {} } = {}) => {
   return home
 }
 
-const cli = (home, args) => runNode([BIN, 'doctor', '--global', ...args], { env: { ...process.env, HOME: home }, cwd: temp() })
+const cli = (home, args) => runNode([BIN, 'doctor', '--global', ...args], { env: { ...process.env, HOME: home, USERPROFILE: home }, cwd: temp() })
 
 test('doctor --global reports plugins, MCP servers, hooks and Codex', () => {
   const r = doctorGlobal({ AC, root: temp(), home: makeHome() })
@@ -59,10 +59,11 @@ test('the recommended set prints the exact command for each missing item', () =>
   const home = makeHome()
   const items = Object.fromEntries(doctorGlobal({ AC, root: temp(), home }).recommended.map((c) => [c.name, c]))
   assert.equal(items.ponytail.ok, true)
-  assert.match(items['compass-user'].fix, new RegExp(`^claude plugin marketplace add ${AC} && claude plugin install compass-user@agent-compass$`))
+  assert.equal(items['compass-user'].fix, `claude plugin marketplace add ${AC} && claude plugin install compass-user@agent-compass`)
   assert.equal(items.caveman.fix, 'claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman')
   assert.match(items['i-have-adhd'].fix, /install i-have-adhd@i-have-adhd$/)
-  assert.ok(items.statusLine.fix.includes(`"command":"node \\"${AC}/plugins/compass-user/scripts/statusline.mjs\\""`), items.statusLine.fix)
+  const script = JSON.stringify(`node "${join(AC, 'plugins/compass-user/scripts/statusline.mjs')}"`)
+  assert.ok(items.statusLine.fix.includes(`"command":${script}`), items.statusLine.fix)
 })
 
 test('an installed plugin that is off gets an enable command; a set status line is ok', () => {
@@ -118,6 +119,14 @@ test('without --measure no hook runs; with it each SessionStart hook runs once',
   assert.equal(readFileSync(join(root, 'marker'), 'utf8'), `${join(home, 'cache/alpha')}|`)
 })
 
+test('hookError: the exit code wins over a stdin write error; a timeout or a signal keeps its name', () => {
+  assert.equal(hookError({ status: 0, error: new Error('write EPIPE'), stderr: '' }), null)
+  assert.equal(hookError({ status: 3, error: new Error('write EPIPE'), stderr: '' }), 'exit code 3')
+  assert.equal(hookError({ status: 1, stderr: 'boom\nmore' }), 'boom')
+  assert.equal(hookError({ status: null, error: new Error('spawnSync /bin/sh ETIMEDOUT'), stderr: '' }), 'spawnSync /bin/sh ETIMEDOUT')
+  assert.equal(hookError({ status: null, signal: 'SIGKILL', stderr: '' }), 'signal SIGKILL')
+})
+
 test('--measure flags a hook above 1,000 characters, a total above 2,000 and a failing hook', () => {
   const hooks = { SessionStart: [cmd(say(1001)), cmd(say(900)), cmd(say(900)), cmd('exit 3')] }
   const r = doctorGlobal({ AC, root: temp(), home: makeHome({ settings: { hooks } }), measure: true })
@@ -146,7 +155,7 @@ test('a directory named config.toml is an error line, and the rest of the report
   assert.equal(r.errors.length, 1)
   assert.match(r.errors[0], /config\.toml: /)
   assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'])
-  const cli = await runNode([BIN, 'doctor', '--global'], { env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: '', CODEX_HOME: '' } })
+  const cli = await runNode([BIN, 'doctor', '--global'], { env: { ...process.env, HOME: home, USERPROFILE: home, CLAUDE_CONFIG_DIR: '', CODEX_HOME: '' } })
   assert.equal(cli.code, 1)
   assert.match(cli.stderr + cli.stdout, /^error: .*config\.toml: /m)
   assert.match(cli.stdout, /enabled plugin/)
@@ -180,7 +189,7 @@ test('the status line command uses the unversioned compass path in quotes, and r
   const fix = doctorGlobal({ AC: spaced, root: home, home, env: {} }).recommended.find((c) => c.name === 'statusLine').fix
   const { statusLine } = JSON.parse(fix.slice(fix.indexOf('{')))
   const script = join(spaced, 'plugins/compass-user/scripts/statusline.mjs')
-  assert.equal(statusLine.command, `node ${JSON.stringify(script)}`)
+  assert.equal(statusLine.command, `node "${script}"`)
   assert.doesNotMatch(statusLine.command, /\/\d+\.\d+\.\d+\//, 'no plugin version in the path')
   const run = spawnSync('sh', ['-c', statusLine.command], { input: JSON.stringify({ model: { display_name: 'Opus' } }), encoding: 'utf8', timeout: 10_000 })
   assert.equal(run.status, 0, run.stderr)
@@ -215,7 +224,7 @@ test('the hook list covers the four events that inject text; --measure still run
 test('the options of doctor --global are checked', async () => {
   const home = temp()
   for (const args of [['doctor', '--measure'], ['sync', '--global'], ['doctor', '--global', '--tokens']]) {
-    const r = await runNode([BIN, ...args], { env: { ...process.env, HOME: home }, cwd: temp() })
+    const r = await runNode([BIN, ...args], { env: { ...process.env, HOME: home, USERPROFILE: home }, cwd: temp() })
     assert.equal(r.code, 2, args.join(' '))
   }
 })

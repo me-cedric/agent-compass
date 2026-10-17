@@ -24,7 +24,8 @@ The `compass` skill has the steps to add a skill, a rule or a pack (section "ext
 ## Rules that keep projects safe
 
 1. Keep one source for each fact. Link to it. Do not copy it. `AGENTS.md` is the contract for work on this repository.
-   `core/blocks/AGENTS.md` is the contract that sync installs in a project.
+   `core/blocks/AGENTS.md` is the contract that sync installs in a project. This repository runs that contract too:
+   `AGENTS.md` ends with the block, and `.claude/` holds the output style and the settings keys. `test/self.test.mjs` keeps them equal to `core/`.
 2. Prefer an addition. An addition must not change the meaning of an existing asset. A change that a project can notice goes in `CHANGELOG.md`.
    Projects update on purpose, with `ac sync --to <tag>`.
 3. Write each skill so that it works in any project. Use path placeholders such as `{{DELIVERY_DIR}}`, never one project's paths.

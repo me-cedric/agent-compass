@@ -3,11 +3,12 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { runNode } from './helpers.mjs'
 
-const root = new URL('..', import.meta.url)
-const script = new URL('../scripts/run-command.mjs', import.meta.url).pathname
+const root = fileURLToPath(new URL('..', import.meta.url))
+const script = fileURLToPath(new URL('../scripts/run-command.mjs', import.meta.url))
 
 const withRegistry = async (fn) => {
   const host = await mkdtemp(join(tmpdir(), 'ac-cmd-'))
@@ -23,32 +24,32 @@ const withRegistry = async (fn) => {
 
 test('run-command runs a known command and resolves dotted names', async () => {
   await withRegistry(async (host) => {
-    const hello = await runNode([script, 'hello', host], { cwd: root.pathname })
+    const hello = await runNode([script, 'hello', host], { cwd: root })
     assert.equal(hello.code, 0, hello.stderr)
     assert.match(hello.stdout, /hi/)
-    const deep = await runNode([script, 'group.sub', host], { cwd: root.pathname })
+    const deep = await runNode([script, 'group.sub', host], { cwd: root })
     assert.match(deep.stdout, /deep/)
   })
 })
 
 test('run-command refuses unknown and gates destructive commands', async () => {
   await withRegistry(async (host) => {
-    const unknown = await runNode([script, 'nope', host], { cwd: root.pathname })
+    const unknown = await runNode([script, 'nope', host], { cwd: root })
     assert.equal(unknown.code, 1)
     assert.match(unknown.stderr, /not a configured command/)
 
-    const blocked = await runNode([script, 'deploy', host], { cwd: root.pathname })
+    const blocked = await runNode([script, 'deploy', host], { cwd: root })
     assert.equal(blocked.code, 1)
     assert.match(blocked.stderr, /destructive/)
 
-    const confirmed = await runNode([script, 'deploy', host, '--confirm'], { cwd: root.pathname })
+    const confirmed = await runNode([script, 'deploy', host, '--confirm'], { cwd: root })
     assert.equal(confirmed.code, 0, confirmed.stderr)
   })
 })
 
 test('run-command --list shows runnable names', async () => {
   await withRegistry(async (host) => {
-    const list = await runNode([script, '--list', host], { cwd: root.pathname })
+    const list = await runNode([script, '--list', host], { cwd: root })
     assert.equal(list.code, 0, list.stderr)
     assert.match(list.stdout, /hello/)
     assert.match(list.stdout, /group\.sub/)

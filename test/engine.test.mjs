@@ -40,6 +40,7 @@ const makeCompass = (extra = {}) => {
   cpSync(join(REPO, 'engine'), join(ac, 'engine'), { recursive: true })
   put(ac, {
     'package.json': '{ "version": "1.0.0-test" }\n',
+    '.gitattributes': '* text=auto eol=lf\n',
     'skills/alpha/SKILL.md': '---\nname: alpha\ndescription: Alpha.\n---\nAlpha v1.\n',
     'skills/alpha/ref/notes.md': 'Notes.\n',
     'skills/nest-only/SKILL.md': '---\nname: nest-only\nmetadata:\n  stacks: [nestjs-api]\n---\nNest.\n',
@@ -472,6 +473,14 @@ test('kept says if compass has a newer version; check --diff shows the planned c
   assert.match(text.stdout, /^-My contract\.\n\+Contract v1\.$/m)
   assert.equal(read(host, '.claude/output-styles/compass.md'), 'My style.\n', '--diff writes nothing')
   assert.equal((await ac(compass, host, 'sync', '--diff')).code, 2)
+})
+
+test('command() runs a .mjs tool path with node and keeps a binary path as it is', async () => {
+  const { command } = await import('../engine/util.mjs')
+  assert.deepEqual(command('age'), ['age'])
+  assert.deepEqual(command('/opt/bin/process-compose'), ['/opt/bin/process-compose'])
+  assert.deepEqual(command('/tmp/fake-age.mjs'), [process.execPath, '/tmp/fake-age.mjs'])
+  assert.deepEqual(command('C:\\t\\fake.JS'), [process.execPath, 'C:\\t\\fake.JS'])
 })
 
 test('a path below the root is inside on POSIX and on Windows', async () => {

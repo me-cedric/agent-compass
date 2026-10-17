@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { isObj } from './util.mjs'
+import { isObj, SHELL } from './util.mjs'
 
 export const LIMITS = { plugins: 15, mcp: 10, hookChars: 1000, totalChars: 2000 }
 // The hook events whose output goes into the context.
@@ -48,17 +48,24 @@ const codexOf = (text) => {
   return { mcp: [...mcp], plugins }
 }
 
-// The hook commands are shell strings, so this is the one place that runs a shell (sh -c). Only --measure gets here.
+// A hook that exits before it reads stdin gives spawnSync a write error (EPIPE) beside the exit code. The exit code wins.
+export const hookError = (r) => {
+  if (r.status === 0) return null
+  const text = (r.stderr || '').trim() || (r.status === null ? r.error?.message || `signal ${r.signal}` : `exit code ${r.status}`)
+  return text.trim().split('\n')[0]
+}
+
+// The hook commands are shell strings, so this is the one place that runs a shell (SHELL: sh, or Git Bash on Windows). Only --measure gets here.
 const measureHooks = (hooks, root) => hooks.filter((h) => h.event === 'SessionStart').map((h) => {
   const r = spawnSync(h.command, {
-    shell: true,
+    shell: SHELL,
     cwd: root,
     input: '{}',
     encoding: 'utf8',
-    timeout: 5_000,
+    timeout: 10_000,
     env: { ...process.env, GIT_TERMINAL_PROMPT: '0', CLAUDE_PROJECT_DIR: root, ...(h.root && { CLAUDE_PLUGIN_ROOT: h.root }) },
   })
-  const error = r.status === 0 ? null : (r.error?.message || r.stderr || `exit code ${r.status}`).trim().split('\n')[0]
+  const error = hookError(r)
   return { from: h.from, command: h.command, chars: (r.stdout || '').length, ...(error && { error }) }
 })
 
@@ -105,7 +112,7 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
     ...SET.map((s) => status(s.name, s.source, s.market)),
     settings.statusLine?.command
       ? { name: 'statusLine', ok: true }
-      : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node ${JSON.stringify(script)}` } })}` },
+      : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node "${script}"` } })}` },
   ]
 
   const seen = new Map()

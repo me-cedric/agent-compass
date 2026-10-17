@@ -10,7 +10,7 @@ const TAG = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/
 // A vendored copy inside the project repo must not report the project's tag.
 const ownCheckout = (AC) => {
   const top = run('git', ['-C', AC, 'rev-parse', '--show-toplevel'], { timeout: 10_000 })
-  return top.ok && realpathSync(top.out) === realpathSync(AC)
+  return top.ok && realpathSync.native(top.out) === realpathSync.native(AC)
 }
 
 export const tagOf = (AC) => {
@@ -29,7 +29,7 @@ export const newerTag = (AC, version) => {
 
 // The path of the compass submodule when the project records another commit for it than the one checked out, else null.
 export const submoduleMoved = (root, AC) => {
-  const [top, ac] = [root, AC].map((p) => realpathSync(p))
+  const [top, ac] = [root, AC].map((p) => realpathSync.native(p))
   if (!below(top, ac)) return null
   const rel = relative(top, ac).split(sep).join('/')
   const r = run('git', ['-C', root, 'submodule', 'status', '--', rel], { timeout: 10_000 })

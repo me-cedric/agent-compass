@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { resolve } from 'node:path'
 
 import { renderHelp, resolveRoot, tryParse } from '../scripts/lib/args.mjs'
 
@@ -63,7 +64,7 @@ test('renderHelp starts with Usage and lists every option', () => {
 })
 
 test('resolveRoot prefers the flag, then the positional, then cwd', () => {
-  assert.equal(resolveRoot(['/tmp/a'], '/tmp/b'), '/tmp/b')
-  assert.equal(resolveRoot(['/tmp/a'], undefined), '/tmp/a')
+  assert.equal(resolveRoot(['/tmp/a'], '/tmp/b'), resolve('/tmp/b'))
+  assert.equal(resolveRoot(['/tmp/a'], undefined), resolve('/tmp/a'))
   assert.equal(resolveRoot([], undefined), process.cwd())
 })

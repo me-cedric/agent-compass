@@ -6,7 +6,7 @@ import { basename, join, resolve } from 'node:path'
 import { projectPaths, SCHEMA } from './config.mjs'
 import { questionsDir, SCREENS_SEED, screensFile } from './docs.mjs'
 import { outside } from './sync.mjs'
-import { isDir, walk, writeNew } from './util.mjs'
+import { below, isDir, walk, writeNew } from './util.mjs'
 
 export const inboxDir = (paths) => `${paths.openspec}/inbox`
 
@@ -21,9 +21,9 @@ export const stageSpecs = ({ AC, root, input, apply }) => {
   if (!st || !(st.isDirectory() || st.isFile())) return fail([`${input} is not a file or a folder`])
   const real = realpathSync(src)
   const top = realpathSync(root)
-  if (top === real || top.startsWith(`${real}/`)) return fail([`${input} holds the project; give the folder of the input documents`])
-  const inbox = `${join(top, inboxDir(paths))}/`
-  if (`${real}/`.startsWith(inbox) || inbox.startsWith(`${real}/`)) return fail([`${input} holds ${inboxDir(paths)} or is in it; give another folder`])
+  if (top === real || below(real, top)) return fail([`${input} holds the project; give the folder of the input documents`])
+  const inbox = join(top, inboxDir(paths))
+  if (real === inbox || below(inbox, real) || below(real, inbox)) return fail([`${input} holds ${inboxDir(paths)} or is in it; give another folder`])
 
   const staged = `${inboxDir(paths)}/${basename(src)}`
   const dirsToMake = [`${paths.openspec}/changes`, `${paths.openspec}/specs`, questionsDir(paths), paths.adr, paths.designs].filter((d) => !isDir(join(root, d)))

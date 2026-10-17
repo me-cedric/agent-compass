@@ -3,11 +3,12 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { runNode } from './helpers.mjs'
 
-const root = new URL('..', import.meta.url)
-const script = new URL('../scripts/check-naming.mjs', import.meta.url)
+const root = fileURLToPath(new URL('..', import.meta.url))
+const script = fileURLToPath(new URL('../scripts/check-naming.mjs', import.meta.url))
 
 test('check-naming accepts generic files and valid skill frontmatter', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-naming-'))
@@ -26,7 +27,7 @@ test('check-naming accepts generic files and valid skill frontmatter', async () 
       '',
     ].join('\n'))
 
-    const result = await runNode([script.pathname, '--root', dir], { cwd: root.pathname })
+    const result = await runNode([script, '--root', dir], { cwd: root })
     assert.equal(result.code, 0, result.stderr)
     assert.match(result.stdout, /skill frontmatter valid/)
   } finally {
@@ -41,7 +42,7 @@ test('check-naming rejects project names and malformed skills', async () => {
     await writeFile(join(dir, 'notes.md'), `real project: ${['par', 'cus'].join('')}\n`)
     await writeFile(join(dir, 'skills', 'bad', 'SKILL.md'), '# Missing metadata\n')
 
-    const result = await runNode([script.pathname, '--root', dir], { cwd: root.pathname })
+    const result = await runNode([script, '--root', dir], { cwd: root })
     assert.equal(result.code, 1)
     assert.match(result.stderr, /project\/domain-specific/)
     assert.match(result.stderr, /skill frontmatter/)

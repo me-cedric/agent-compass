@@ -2,10 +2,11 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { delimiter, join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('..', import.meta.url).pathname
+const root = fileURLToPath(new URL('..', import.meta.url))
 
 const run = (command, args, options) => new Promise((resolve) => {
   const child = spawn(command, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'] })
@@ -15,7 +16,8 @@ const run = (command, args, options) => new Promise((resolve) => {
   child.on('close', (code) => resolve({ code, output }))
 })
 
-test('setup-mode doctor permits CSV drift that the upcoming scan will refresh', async () => {
+// The Sonar scripts are bash scripts for a POSIX host. Git Bash on Windows does not use the fake curl on PATH.
+test('setup-mode doctor permits CSV drift that the upcoming scan will refresh', { skip: process.platform === 'win32' && 'the Sonar scripts run on a POSIX host' }, async () => {
   const host = await mkdtemp(join(tmpdir(), 'ac-sonar-doctor-'))
   const bin = join(host, 'bin')
   const scripts = join(host, 'scripts')
@@ -35,7 +37,8 @@ esac
 `)
     await chmod(join(bin, 'curl'), 0o755)
 
-    const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` }
+    const pathKey = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH') ?? 'PATH'
+    const env = { ...process.env, [pathKey]: `${bin}${delimiter}${process.env[pathKey]}` }
     const strict = await run('bash', [join(scripts, 'sonar-doctor.sh'), 'api'], { cwd: host, env })
     assert.equal(strict.code, 1)
     assert.match(strict.output, /CSV=1\s+server OPEN=2/)

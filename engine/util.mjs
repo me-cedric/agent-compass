@@ -82,6 +82,12 @@ export const frontmatter = (text) => {
 export const list = (v) => (v ? v.replace(/^\[|\]$/g, '').split(',').map(unquote).filter(Boolean) : [])
 
 // Run a command with no prompt and a timeout. Git reads GIT_TERMINAL_PROMPT; ssh reads BatchMode.
+// Claude Code and Codex run a hook command in a POSIX shell. On Windows that shell is Git Bash, not cmd.exe.
+export const SHELL = process.platform === 'win32' ? 'bash' : true
+
+// A tool path that names a Node script (AC_AGE or AC_PROCESS_COMPOSE in a test) runs with this node binary.
+export const command = (bin) => (/\.[cm]?js$/i.test(bin) ? [process.execPath, bin] : [bin])
+
 export const run = (cmd, args, { cwd, timeout = 30_000, env } = {}) => {
   const r = spawnSync(cmd, args, {
     cwd,

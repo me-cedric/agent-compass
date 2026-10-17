@@ -114,7 +114,7 @@ test('readUsage: the longest model prefix prices a row', () => {
 })
 
 test('readUsage: a project is the repo root of the cwd', () => {
-  const dir = realpathSync(temp('ac-usage-git-'))
+  const dir = realpathSync.native(temp('ac-usage-git-'))
   const git = (...args) => spawnSync('git', args, { cwd: join(dir, 'repo'), encoding: 'utf8', timeout: 10_000 })
   mkdirSync(join(dir, 'repo/sub'), { recursive: true })
   mkdirSync(join(dir, 'plain'))
@@ -131,7 +131,7 @@ test('readUsage: a project is the repo root of the cwd', () => {
 test('ac usage prints a summary and --json; a bad date is a usage error', async () => {
   const home = makeHome()
   const bin = join(REPO, 'bin/ac.mjs')
-  const env = { ...process.env, HOME: home, CODEX_HOME: '' }
+  const env = { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: '' }
   const json = await runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', '--json'], { env })
   assert.equal(json.code, 0, json.stderr)
   const data = JSON.parse(json.stdout)
@@ -208,7 +208,7 @@ test('readUsage: --since and --project narrow the sessions; an empty set gives z
 test('ac usage --by session prints the summary and the rows; --project and --by are checked', async () => {
   const home = sessionHome()
   const bin = join(REPO, 'bin/ac.mjs')
-  const env = { ...process.env, HOME: home, CODEX_HOME: '' }
+  const env = { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: '' }
   const json = await runNode([bin, 'usage', '--by', 'session', '--until', '2026-12-31', '--json'], { env })
   assert.equal(json.code, 0, json.stderr)
   const data = JSON.parse(json.stdout)
@@ -330,7 +330,7 @@ test('ac usage --provider filters the sources, CODEX_HOME moves the Codex folder
   const alt = temp('ac-usage-alt-')
   codexFiles(alt)
   const bin = join(REPO, 'bin/ac.mjs')
-  const run = (args, codex) => runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', ...args], { env: { ...process.env, HOME: home, CODEX_HOME: codex } })
+  const run = (args, codex) => runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', ...args], { env: { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: codex } })
   const json = async (args, codex) => JSON.parse((await run([...args, '--json'], codex)).stdout)
   assert.deepEqual((await json([], '')).byProvider.map((p) => p.provider), ['claude'])
   const all = await json([], alt)
@@ -420,7 +420,8 @@ test('readUsage: bySkill holds the tokens from a Skill call to the next user pro
 
 test('ac usage --by skill and --by branch print their tables; --by session prints the new columns', async () => {
   const bin = join(REPO, 'bin/ac.mjs')
-  const env = { ...process.env, HOME: counterHome(), CODEX_HOME: '' }
+  const counter = counterHome()
+  const env = { ...process.env, HOME: counter, USERPROFILE: counter, CODEX_HOME: '' }
   const run = (...args) => runNode([bin, 'usage', '--since', '2026-03-01', '--until', '2026-03-31', ...args], { env })
   const skill = await run('--by', 'skill')
   assert.equal(skill.code, 0, skill.stderr)

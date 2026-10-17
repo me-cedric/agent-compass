@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { checkDocs } from '../engine/docs.mjs'
@@ -40,7 +40,7 @@ test('init --from-specs creates the layout, stages the documents and prints the 
 
   const r = await ac('init', '--from-specs', input, '--root', root)
   assert.equal(r.code, 0, r.stderr)
-  const inbox = `docs/openspec/inbox/${input.split('/').pop()}`
+  const inbox = `docs/openspec/inbox/${basename(input)}`
   for (const dir of ['docs/openspec/changes', 'docs/openspec/specs', 'docs/delivery/questions', 'docs/decisions']) assert.ok(existsSync(join(root, dir)), dir)
   assert.equal(readFileSync(join(root, inbox, 'brief.md'), 'utf8'), '# Brief\n')
   assert.ok(existsSync(join(root, inbox, 'annex/table.csv')))

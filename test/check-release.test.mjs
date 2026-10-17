@@ -3,11 +3,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { VERSION_FILES, setAt } from '../scripts/lib/versions.mjs'
 import { runNode } from './helpers.mjs'
 
-const root = new URL('..', import.meta.url)
-const script = new URL('../scripts/check-release.mjs', import.meta.url)
+const root = fileURLToPath(new URL('..', import.meta.url))
+const script = fileURLToPath(new URL('../scripts/check-release.mjs', import.meta.url))
 const temps = []
 test.after(() => { for (const d of temps) rmSync(d, { recursive: true, force: true }) })
 
@@ -31,14 +32,14 @@ const makeRepo = ({ version = '1.2.3', changes = {}, changelog } = {}) => {
   writeFileSync(join(dir, 'CHANGELOG.md'), changelog ?? `# Changelog\n\n## ${version} — 2026-01-01\n\n- change\n`)
   return dir
 }
-const check = (dir, ...args) => runNode([script.pathname, ...args, dir], { cwd: root.pathname })
+const check = (dir, ...args) => runNode([script, ...args, dir], { cwd: root })
 
 test('check-release passes on a consistent fixture (positional root and --root)', async () => {
   const dir = makeRepo()
   const r = await check(dir)
   assert.equal(r.code, 0, r.stderr)
   assert.match(r.stdout, /release check passed/)
-  assert.equal((await runNode([script.pathname, '--root', dir], { cwd: root.pathname })).code, 0)
+  assert.equal((await runNode([script, '--root', dir], { cwd: root })).code, 0)
 })
 
 test('check-release names each file whose version differs', async () => {

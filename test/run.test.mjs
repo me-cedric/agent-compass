@@ -247,7 +247,9 @@ test('ac run stops the whole process group on a timeout', async () => {
     const r = await ac(root, [...args, '--json'])
     const json = JSON.parse(r.stdout)
     assert.equal(r.code, 1, args.join(' '))
-    assert.deepEqual([json.ok, json.timedOut, json.signal], [false, true, 'SIGTERM'], args.join(' '))
+    assert.deepEqual([json.ok, json.timedOut], [false, true], args.join(' '))
+    // taskkill ends the child without a signal name.
+    if (process.platform !== 'win32') assert.equal(json.signal, 'SIGTERM', args.join(' '))
     assert.ok(json.durationMs >= 900 && json.durationMs < 10_000, `${json.durationMs} ms`)
     const pid = Number(readFileSync(join(root, 'grandchild.pid'), 'utf8'))
     let alive = true

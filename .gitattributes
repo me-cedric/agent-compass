@@ -1,0 +1,2 @@
+# Every text file has LF line ends in every checkout. The tests compare bytes and hashes with the files that compass writes.
+* text=auto eol=lf

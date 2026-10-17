@@ -4,11 +4,11 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { constants, homedir, tmpdir } from 'node:os'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { parseEnv } from 'node:util'
 import { checkCmd, discover, ENV_FILE, TEMPLATE } from './env-check.mjs'
 import { outside } from './sync.mjs'
-import { failCommand, hostRoot, isObj, parseCommand, run, safeRel, usageError } from './util.mjs'
+import { command, failCommand, hostRoot, isObj, parseCommand, run, safeRel, usageError } from './util.mjs'
 
 const USAGE = `Usage: ac env <command> [options]
 
@@ -51,7 +51,8 @@ export const encodeValue = (x) => QUOTES.filter(([, bad]) => !bad.test(x))
 // ---- age ----
 
 const age = (args, input, timeout) => {
-  const r = spawnSync(process.env.AC_AGE || 'age', args, {
+  const [cmd, ...pre] = command(process.env.AC_AGE || 'age')
+  const r = spawnSync(cmd, [...pre, ...args], {
     input, timeout, encoding: 'utf8', maxBuffer: 8 << 20, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
   })
   if (r.error?.code === 'ENOENT') return { error: 'age is not installed; install age 1.3 or later' }
@@ -107,7 +108,7 @@ const decrypt = (root, file, identity) => {
 
 const exportCmd = async ({ root, v }) => {
   const { local } = discover(root)
-  const want = v.file?.length ? v.file.map((f) => relative(root, resolve(root, f))) : local
+  const want = v.file?.length ? v.file.map((f) => relative(root, resolve(root, f)).split(sep).join('/')) : local
   const stray = want.find((f) => !local.includes(f))
   if (stray) return failCommand(v.json, `${stray} is not a local env file`)
   const only = new Set(splitList(v.only))
@@ -122,7 +123,7 @@ const exportCmd = async ({ root, v }) => {
   if (!count) return failCommand(v.json, 'there are no values to export')
   const out = resolve(root, v.out ?? 'env-bundle.age')
   if (!out.endsWith('.age')) return failCommand(v.json, '--out must end with .age')
-  const outRel = relative(root, out)
+  const outRel = relative(root, out).split(sep).join('/')
   if (!safeRel(outRel) || outside(root, outRel)) return failCommand(v.json, '--out must be a path inside the project, without a symlink')
   const recipients = []
   try {

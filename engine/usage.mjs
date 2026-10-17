@@ -10,7 +10,7 @@
 // (a tool result with is_error that holds a compass guard message) and its stop blocks (a "Stop hook feedback" meta line, or a
 // stop_hook_summary with preventedContinuation). A Codex session has 0 for these counts.
 
-import { readFileSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { parseCommand, run, usageError, walk } from './util.mjs'
@@ -66,7 +66,7 @@ const repoOf = (cwd, cache) => {
   if (!cache.has(cwd)) {
     const cut = cwd.search(WORKTREES)
     const git = cut < 0 ? run('git', ['-C', cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir'], { timeout: 5000 }) : null
-    cache.set(cwd, cut >= 0 ? cwd.slice(0, cut) : git.ok && git.out.endsWith('/.git') ? dirname(git.out) : cwd)
+    cache.set(cwd, cut >= 0 ? cwd.slice(0, cut) : git.ok && git.out.endsWith('/.git') ? resolve(dirname(git.out)) : cwd)
   }
   return cache.get(cwd)
 }
@@ -349,7 +349,7 @@ export const cli = (argv) => {
   if (bad) return usageError(HELP, `${bad[0]} needs a date as YYYY-MM-DD.`)
   if (v.by !== undefined && !BYS.includes(v.by)) return usageError(HELP, '--by needs session, skill or branch.')
   if (v.provider !== undefined && !PROVIDERS.includes(v.provider)) return usageError(HELP, '--provider needs claude, codex or all.')
-  const result = readUsage({ since: v.since, until: v.until, provider: v.provider, project: v.project === undefined ? undefined : resolve(v.project) })
+  const result = readUsage({ since: v.since, until: v.until, provider: v.provider, project: v.project === undefined ? undefined : existsSync(v.project) ? resolve(v.project) : v.project.replace(/[\\/]+$/, '') })
   if (v.json) console.log(JSON.stringify({ ok: true, ...result }, null, 2))
   else if (v.by === 'session') printSessions(result)
   else if (v.by === 'skill') printRows('skill', result.bySkill, (r) => r.skill)

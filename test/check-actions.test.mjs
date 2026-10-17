@@ -4,20 +4,21 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { runNode } from './helpers.mjs'
 
-const root = new URL('..', import.meta.url)
-const script = new URL('../scripts/check-actions.mjs', import.meta.url)
+const root = fileURLToPath(new URL('..', import.meta.url))
+const script = fileURLToPath(new URL('../scripts/check-actions.mjs', import.meta.url))
 
 test('check-actions validates live workflow action versions', async () => {
-  const result = await runNode([script.pathname], { cwd: root.pathname })
+  const result = await runNode([script], { cwd: root })
   assert.equal(result.code, 0, result.stderr)
   assert.match(result.stdout, /GitHub Action versions/)
 })
 
 test('ci checkout fetches tags for release guard', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8')
+  const workflow = await readFile(fileURLToPath(new URL('../.github/workflows/ci.yml', import.meta.url)), 'utf8')
   assert.match(workflow, /uses: actions\/checkout@v7[\s\S]*fetch-depth: 0/)
 })
 
@@ -29,7 +30,7 @@ test('check-actions rejects stale action majors', async () => {
     await mkdir(seed, { recursive: true })
     await writeFile(join(dir, '.github', 'workflows', 'ci.yml'), 'steps:\n  - uses: actions/checkout@v4\n')
     await writeFile(join(seed, 'e2e.yml'), 'steps:\n  - uses: actions/download-artifact@v4\n')
-    const result = await runNode([script.pathname, '--root', dir], { cwd: root.pathname })
+    const result = await runNode([script, '--root', dir], { cwd: root })
     assert.equal(result.code, 1)
     assert.match(result.stderr, /actions\/checkout@v4/)
     assert.match(result.stderr, /packs\/ci-github\/seed\/\.github\/workflows\/e2e\.yml: actions\/download-artifact@v4/)

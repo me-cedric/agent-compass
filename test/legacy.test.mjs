@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { legacyPlan, migrateLegacy } from '../migrate/legacy.mjs'
@@ -188,11 +188,11 @@ test('apply deletes the matching files, keeps every edited byte, and leaves no d
   assert.deepEqual(snap(root), again, 'a second run changes nothing')
 })
 
-test('a real 0.9.6 install migrates with no drift', { skip: needTag }, () => {
+test('a real 0.9.6 install migrates with no drift', { skip: needTag || (process.platform === 'win32' && 'the 0.9.6 installer writes POSIX pointer paths') }, () => {
   const root = temp()
   const vendor = join(root, VENDOR)
   mkdirSync(vendor, { recursive: true })
-  execFileSync('sh', ['-c', 'git -C "$1" archive v0.9.6 | tar -x -C "$2"', 'sh', AC, vendor])
+  execFileSync('tar', ['-x', '-C', vendor], { input: execFileSync('git', ['-C', AC, 'archive', 'v0.9.6'], { maxBuffer: 64 << 20 }) })
   writeFileSync(join(vendor, '.vendor.json'), JSON.stringify({ schema: 1, name: 'agent-compass', version: '0.9.6', ref: 'v0.9.6', commit: 'cee9bb28b65edc17131f2b874a668eab1beac31d' }))
   writeFileSync(join(root, 'agent-compass.answers.json'), JSON.stringify({ name: 'demo', ci: 'gitlab-ci' }))
   execFileSync(process.execPath, [join(vendor, 'scripts/install.mjs'), root], { stdio: 'ignore' })
@@ -347,7 +347,7 @@ test('a host array key is merged, so it gets no exclude; a host value that is no
 test('a submodule is reported, its credentials are not, and its path matches the pointers', { skip: needTag }, () => {
   const root = temp()
   writeFileSync(join(root, '.gitmodules'), '[submodule "ac"]\n\tpath = tools/agent-compass\n\turl = https://user:token@example.com/org/agent-compass.git\n[submodule "other"]\n\tpath = x\n\turl = https://example.com/x.git\n')
-  writeFileSync(join(root, 'GEMINI.md'), pointer('GEMINI.md', root.split('/').pop(), 'tools/agent-compass'))
+  writeFileSync(join(root, 'GEMINI.md'), pointer('GEMINI.md', basename(root), 'tools/agent-compass'))
   const r = legacyPlan({ AC, root })
   assert.deepEqual(r.detected.submodule, { path: 'tools/agent-compass', url: 'https://example.com/org/agent-compass.git' })
   assert.deepEqual(r.plan, [{ path: 'GEMINI.md', class: 'unedited', action: 'delete' }])

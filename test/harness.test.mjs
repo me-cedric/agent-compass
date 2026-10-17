@@ -4,6 +4,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { SHELL } from '../engine/util.mjs'
 import { fileURLToPath } from 'node:url'
 import { parseToml, runNode } from './helpers.mjs'
 
@@ -23,7 +24,7 @@ const makeCompass = () => {
 const ac = (compass, args) => runNode([join(compass, 'bin/ac.mjs'), ...args])
 const read = (root, rel) => readFileSync(join(root, rel), 'utf8')
 const shell = (command, root, input) => spawnSync(command, {
-  shell: true, cwd: root, input: JSON.stringify(input), encoding: 'utf8', timeout: 10_000,
+  shell: SHELL, cwd: root, input: JSON.stringify(input), encoding: 'utf8', timeout: 10_000,
   env: { ...process.env, CLAUDE_PROJECT_DIR: root, GIT_TERMINAL_PROMPT: '0' },
 })
 
