@@ -56,7 +56,7 @@ const fetchOne = (id, src) => {
   const steps = [
     ['init', '--quiet'],
     ['fetch', '--quiet', '--depth', '1', '--no-tags', src.repo, src.sha],
-    ['-c', 'advice.detachedHead=false', 'checkout', '--quiet', src.sha],
+    ['-c', 'core.autocrlf=false', '-c', 'advice.detachedHead=false', 'checkout', '--quiet', src.sha],
   ]
   for (const args of steps) {
     const r = run('git', ['-C', tmp, ...args], { timeout: 120_000 })

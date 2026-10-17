@@ -2,7 +2,7 @@
 // check-actions.mjs — enforce supported GitHub Action major versions.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, extname, join, relative, resolve } from 'node:path'
+import { dirname, extname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseCliArgs } from './lib/args.mjs'
 
@@ -44,7 +44,7 @@ for (const dir of SCAN_DIRS) {
       const [, action, version] = match
       const required = REQUIRED.get(action)
       if (required && version !== required) {
-        hits.push(`${relative(ROOT, file)}: ${action}@${version} should be ${action}@${required}`)
+        hits.push(`${relative(ROOT, file).split(sep).join('/')}: ${action}@${version} should be ${action}@${required}`)
       }
     }
   })

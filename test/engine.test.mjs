@@ -40,6 +40,7 @@ const makeCompass = (extra = {}) => {
   cpSync(join(REPO, 'engine'), join(ac, 'engine'), { recursive: true })
   put(ac, {
     'package.json': '{ "version": "1.0.0-test" }\n',
+    '.gitattributes': '* text=auto eol=lf\n',
     'skills/alpha/SKILL.md': '---\nname: alpha\ndescription: Alpha.\n---\nAlpha v1.\n',
     'skills/alpha/ref/notes.md': 'Notes.\n',
     'skills/nest-only/SKILL.md': '---\nname: nest-only\nmetadata:\n  stacks: [nestjs-api]\n---\nNest.\n',

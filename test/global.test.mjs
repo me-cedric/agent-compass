@@ -62,7 +62,8 @@ test('the recommended set prints the exact command for each missing item', () =>
   assert.equal(items['compass-user'].fix, `claude plugin marketplace add ${AC} && claude plugin install compass-user@agent-compass`)
   assert.equal(items.caveman.fix, 'claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman')
   assert.match(items['i-have-adhd'].fix, /install i-have-adhd@i-have-adhd$/)
-  assert.ok(items.statusLine.fix.includes(`"command":"node \\"${AC}/plugins/compass-user/scripts/statusline.mjs\\""`), items.statusLine.fix)
+  const script = JSON.stringify(`node "${join(AC, 'plugins/compass-user/scripts/statusline.mjs')}"`)
+  assert.ok(items.statusLine.fix.includes(`"command":${script}`), items.statusLine.fix)
 })
 
 test('an installed plugin that is off gets an enable command; a set status line is ok', () => {

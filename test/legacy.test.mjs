@@ -188,7 +188,7 @@ test('apply deletes the matching files, keeps every edited byte, and leaves no d
   assert.deepEqual(snap(root), again, 'a second run changes nothing')
 })
 
-test('a real 0.9.6 install migrates with no drift', { skip: needTag }, () => {
+test('a real 0.9.6 install migrates with no drift', { skip: needTag || (process.platform === 'win32' && 'the 0.9.6 installer writes POSIX pointer paths') }, () => {
   const root = temp()
   const vendor = join(root, VENDOR)
   mkdirSync(vendor, { recursive: true })

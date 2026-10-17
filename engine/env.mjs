@@ -123,7 +123,7 @@ const exportCmd = async ({ root, v }) => {
   if (!count) return failCommand(v.json, 'there are no values to export')
   const out = resolve(root, v.out ?? 'env-bundle.age')
   if (!out.endsWith('.age')) return failCommand(v.json, '--out must end with .age')
-  const outRel = relative(root, out)
+  const outRel = relative(root, out).split(sep).join('/')
   if (!safeRel(outRel) || outside(root, outRel)) return failCommand(v.json, '--out must be a path inside the project, without a symlink')
   const recipients = []
   try {

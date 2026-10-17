@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { delimiter, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
@@ -36,7 +36,7 @@ esac
 `)
     await chmod(join(bin, 'curl'), 0o755)
 
-    const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` }
+    const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` }
     const strict = await run('bash', [join(scripts, 'sonar-doctor.sh'), 'api'], { cwd: host, env })
     assert.equal(strict.code, 1)
     assert.match(strict.output, /CSV=1\s+server OPEN=2/)
