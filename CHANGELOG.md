@@ -39,7 +39,8 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 ### Skills
 
 - Own skills for specs, tickets, review, debug, API contracts, CI triage, UI conformance and long work. Each skill uses placeholders for the repository paths.
-- Pinned upstream skills from 13 sources, among them `ponytail`, `caveman`, `i-have-adhd` and `asd-ste100`.
+- Pinned upstream skills from 16 sources, among them `ponytail`, `caveman`, `i-have-adhd` and `asd-ste100`. The official Expo skills (`expo`, by hand), the Playwright CLI skill (`playwright-cli`, recommended for web stacks) and the official Angular skills (`angular`, by hand) are new. caveman moves to v4.0.1 under Apache-2.0; taste moves to v2.0.0 and keeps the old skill as `taste-skill-v1`.
+- The engine copies a root `NOTICE` file beside each upstream skill (Apache-2.0 section 4(d)). A source whose repository has no licence file can carry the text in `licenceText`; the engine writes it as `LICENSE`.
 - Stack rules for Android, Angular, Drizzle, Expo, GTK, macOS, NestJS, React, Swift and WinUI.
 - The listing of model-invoked skills is 3,000 characters or fewer.
 

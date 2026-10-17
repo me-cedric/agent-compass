@@ -13,8 +13,8 @@
     },
     "caveman": {
       "repo": "https://github.com/JuliusBrussee/caveman",
-      "sha": "7bb71309e8749a4f112aacd3a54b3941d8689905",
-      "licence": "MIT",
+      "sha": "d262ab3882952a59312ff3537cd86d894523c5ab",
+      "licence": "Apache-2.0",
       "holder": "Julius Brussee",
       "recommend": "user",
       "skills": [
@@ -43,7 +43,7 @@
     },
     "taste": {
       "repo": "https://github.com/Leonxlnx/taste-skill",
-      "sha": "72e299530e2eb31ed8da06181bc19f6c18a00821",
+      "sha": "2b44c81bbe36ac8a8a6bdd1c9ff593f28b8728f4",
       "licence": "MIT",
       "holder": "Leonxlnx",
       "recommend": "manual",
@@ -51,7 +51,7 @@
       "skills": [
         "brandkit", "taste-skill", "soft-skill", "image-to-code-skill", "imagegen-frontend-mobile",
         "imagegen-frontend-web", "brutalist-skill", "minimalist-skill", "redesign-skill",
-        "stitch-skill"
+        "stitch-skill", "taste-skill-v1"
       ]
     },
     "android": {
@@ -188,6 +188,62 @@
       "stacks": ["gtk-desktop"],
       "skills": [
         ".agents/skills/developing-gtk-apps"
+      ]
+    },
+    "expo": {
+      "repo": "https://github.com/expo/skills",
+      "sha": "927dd7cc2088ec2f0c73589fe2e94c3c973afc45",
+      "licence": "MIT",
+      "holder": "650 Industries, Inc. (Expo)",
+      "stacks": ["expo-mobile"],
+      "recommend": "manual",
+      "skills": [
+        "plugins/expo/skills/expo-overview",
+        "plugins/expo/skills/expo-project-structure",
+        "plugins/expo/skills/expo-router",
+        "plugins/expo/skills/expo-data-fetching",
+        "plugins/expo/skills/expo-design-system",
+        "plugins/expo/skills/expo-ui",
+        "plugins/expo/skills/expo-native-ui",
+        "plugins/expo/skills/expo-animation",
+        "plugins/expo/skills/expo-dom",
+        "plugins/expo/skills/expo-dev-client",
+        "plugins/expo/skills/expo-module",
+        "plugins/expo/skills/expo-brownfield",
+        "plugins/expo/skills/expo-upgrade",
+        "plugins/expo/skills/expo-web-to-native",
+        "plugins/expo/skills/expo-app-clip",
+        "plugins/expo/skills/expo-examples",
+        "plugins/expo/skills/eas-update",
+        "plugins/expo/skills/eas-update-insights",
+        "plugins/expo/skills/eas-workflows",
+        "plugins/expo/skills/eas-app-stores",
+        "plugins/expo/skills/eas-hosting",
+        "plugins/expo/skills/eas-observe",
+        "plugins/expo/skills/eas-simulator"
+      ]
+    },
+    "playwright-cli": {
+      "repo": "https://github.com/microsoft/playwright-cli",
+      "sha": "b85c7a736bb473bf55b584e54a09ffa698d6d871",
+      "licence": "Apache-2.0",
+      "holder": "Microsoft Corporation",
+      "stacks": ["react-web", "next-web", "angular-web"],
+      "skills": [
+        "skills/playwright-cli"
+      ]
+    },
+    "angular": {
+      "repo": "https://github.com/angular/skills",
+      "sha": "413fefe0c1eab1d9af726d4c0f12935111ca27ea",
+      "licence": "MIT",
+      "holder": "Google LLC",
+      "stacks": ["angular-web"],
+      "recommend": "manual",
+      "licenceText": "MIT License\n\nCopyright 2026 Google LLC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+      "skills": [
+        "angular-developer",
+        "angular-new-app"
       ]
     }
   }

@@ -153,7 +153,10 @@ Each skill of a source is a `skill` asset with the source `upstream:<id>`. It is
 | `ponytail`, `caveman`, `i-have-adhd`, `asd-ste100` | The style contract. See [agents.md](agents.md#style-contract). | All |
 | `mattpocock` | `grill-me`, `grilling` (the `grill` skill uses them) | All |
 | `mattpocock-more` | `grill-with-docs`, `to-questionnaire`, `wayfinder`, `handoff`, `tdd` (by hand) | All |
-| `taste` | Frontend design direction | `react-web`, `next-web`, `angular-web` |
+| `taste` | Frontend design direction (v2 inspector in `taste-skill`; `taste-skill-v1` is the old one) | `react-web`, `next-web`, `angular-web` |
+| `expo` | The official Expo and EAS skills (23, by hand) | `expo-mobile` |
+| `playwright-cli` | Browser automation through the Playwright CLI: fewer tokens than the MCP server for short runs | `react-web`, `next-web`, `angular-web` |
+| `angular` | The official Angular skills (by hand; the repository has no licence file, so `upstream.json` carries the MIT text) | `angular-web` |
 | `android`, `swift-ios`, `dimillian`, `agent-device` | Native and device skills. See [native.md](native.md). | Native and Expo stacks |
 | `dimillian-more`, `agent-device-tools` | The other SwiftUI skills; `android-emulator`, `dogfood`, `ios-simulator` (by hand) | Native and Expo stacks |
 | `apple-macos`, `winui`, `gtk` | Desktop review and development | `macos-desktop`, `winui-desktop`, `gtk-desktop` |

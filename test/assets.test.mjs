@@ -313,7 +313,7 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   assert.ok(next.mcp.includes('grafana') && next.mcp.includes('github') && next.mcp.includes('sonarqube') && next.mcp.includes('context7'))
   assert.ok(!next.mcp.includes('playwright') && !next.mcp.includes('codebase-memory'), 'a stack server stays automatic')
   assert.equal(next.plugins, undefined, 'a stack plugin stays automatic')
-  assert.deepEqual(next.upstream, ['mattpocock'], 'style sources are user level; taste is switched on by hand')
+  assert.deepEqual(next.upstream, ['mattpocock', 'playwright-cli'], 'style sources are user level; taste is switched on by hand; the Playwright CLI skill fits web stacks')
   assert.deepEqual(next.paths, {})
 
   writeConfig(root, next)
@@ -348,7 +348,7 @@ test('the catalog suggest lists and the upstream stacks lists name known signals
   const { sources, errors } = loadUpstream(REPO)
   assert.deepEqual(errors, [])
   const stacks = Object.fromEntries(Object.entries(sources).filter(([, s]) => s.stacks).map(([id, s]) => [id, s.stacks]))
-  assert.deepEqual(Object.keys(stacks).sort(), ['agent-device', 'agent-device-tools', 'android', 'apple-macos', 'dimillian', 'dimillian-more', 'gtk', 'swift-ios', 'taste', 'winui'])
+  assert.deepEqual(Object.keys(stacks).sort(), ['agent-device', 'agent-device-tools', 'android', 'angular', 'apple-macos', 'dimillian', 'dimillian-more', 'expo', 'gtk', 'playwright-cli', 'swift-ios', 'taste', 'winui'])
   for (const [id, list] of Object.entries(stacks)) assert.ok(list.every((s) => STACK_IDS.includes(s)), id)
   assert.ok(['ponytail', 'caveman', 'i-have-adhd', 'asd-ste100', 'mattpocock'].every((id) => !sources[id].stacks))
 })
@@ -544,7 +544,7 @@ test('upstream skills are child skill assets: available when the source is on, w
   assert.deepEqual(setAsset(cfgOf(root), grill(after), true).exclude, [])
 
   const next = recommendedConfig({ AC: REPO, root, config: { ...cfgOf(root), upstream: [], exclude: ['grill-me', 'keep-me'] } })
-  assert.deepEqual([next.upstream, next.exclude], [['mattpocock'], ['keep-me']])
+  assert.deepEqual([next.upstream, next.exclude], [['mattpocock', 'playwright-cli'], ['keep-me']])
 }))
 
 test('the text of an upstream skill is found by name, by path and as the root entry', () => withCache((cache) => {
