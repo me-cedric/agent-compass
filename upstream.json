@@ -2,7 +2,7 @@
   "sources": {
     "ponytail": {
       "repo": "https://github.com/DietrichGebert/ponytail",
-      "sha": "2ed6c52c9d7e5e56942508591085fd45dea277d3",
+      "sha": "6f1c2bfff0c837d268929a7c4e490918eb4fab29",
       "licence": "MIT",
       "holder": "DietrichGebert",
       "recommend": "user",
@@ -23,7 +23,7 @@
     },
     "i-have-adhd": {
       "repo": "https://github.com/ayghri/i-have-adhd",
-      "sha": "b42a45a068e080294924bfba19a7a2e8944c48ff",
+      "sha": "1ecea1993b7fce257ffbd686c070948b5e07eda6",
       "licence": "MIT",
       "holder": "Ayoub Ghriss",
       "recommend": "user",
@@ -33,7 +33,7 @@
     },
     "asd-ste100": {
       "repo": "https://github.com/danyuchn/asd-ste100-skill",
-      "sha": "d5ce157870cf9c41efd1d6e836706a2be3c7b9da",
+      "sha": "3944283c183eea13fe5bd902b572da3b4de8bf44",
       "licence": "MIT",
       "holder": "Dustin Yuchen Teng",
       "recommend": "user",
@@ -56,7 +56,7 @@
     },
     "android": {
       "repo": "https://github.com/android/skills",
-      "sha": "ea05a53683d1fb1fc701c3ad91f494d25d4fc7c6",
+      "sha": "5bda39f154fb859a08d45e2392f3568e049f83fb",
       "licence": "Apache-2.0",
       "holder": "Google LLC",
       "stacks": ["android-compose"],
@@ -66,7 +66,8 @@
         "engage-sdk-integration", "leanback-to-compose-tv-migration", "media3-cast-integration",
         "migrate-xml-views-to-jetpack-compose", "navigation-3",
         "play-billing-library-version-upgrade", "play-policy-insights", "r8-analyzer",
-        "restore-credentials", "styles", "testing-setup", "verified-email", "wear-compose-m3"
+        "restore-credentials", "styles", "testing-setup", "verified-email", "wear-compose-m3",
+        "jetpack-compose-performance", "android-permissions-security"
       ]
     },
     "swift-ios": {

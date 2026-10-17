@@ -17,7 +17,7 @@ This file records what Agent Compass tracks, not what it ships. A host that inst
 | `i-have-adhd` | [`ayghri/i-have-adhd`](https://github.com/ayghri/i-have-adhd) | MIT | Ayoub Ghriss | `i-have-adhd` |
 | `asd-ste100` | [`danyuchn/asd-ste100-skill`](https://github.com/danyuchn/asd-ste100-skill) | MIT | Dustin Yuchen Teng | `asd-ste100` |
 | `taste` | [`Leonxlnx/taste-skill`](https://github.com/Leonxlnx/taste-skill) | MIT | Leonxlnx | `brandkit`, `taste-skill`, `soft-skill`, `image-to-code-skill`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `brutalist-skill`, `minimalist-skill`, `redesign-skill`, `stitch-skill` |
-| `android` | [`android/skills`](https://github.com/android/skills) | Apache-2.0 | Google LLC | 22 skills. `upstream.json` lists them. |
+| `android` | [`android/skills`](https://github.com/android/skills) | Apache-2.0 | Google LLC | 24 skills. `upstream.json` lists them. |
 | `swift-ios` | [`dpearson2699/swift-ios-skills`](https://github.com/dpearson2699/swift-ios-skills) | PolyForm-Perimeter-1.0.0 | dpearson2699 | 86 skills. `upstream.json` lists them. |
 | `dimillian` | [`Dimillian/Skills`](https://github.com/Dimillian/Skills) | MIT | Thomas Ricouard | `swift-concurrency-expert`, `swiftui-liquid-glass`, `swiftui-performance-audit`, `swiftui-ui-patterns`, `swiftui-view-refactor` |
 | `agent-device` | [`callstack/agent-device`](https://github.com/callstack/agent-device) | MIT | Callstack | `agent-device`, `android-emulator`, `dogfood`, `ios-simulator` |
