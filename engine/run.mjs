@@ -1,7 +1,7 @@
 // run.mjs — ac run <name>: run a command from agent-compass.commands.json without a shell.
 // The log, the result and the report paths go to .agents/runs/<timestamp>-<name>/.
 
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, statSync, writeFileSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -42,9 +42,13 @@ const reports = (root, since) => {
 }
 
 // Start the child in its own process group. Stop the group on a timeout (SIGTERM, then SIGKILL after 5 s) and on SIGINT or SIGTERM.
+// Windows has no process group signal: taskkill /T stops the child and its tree.
 const execute = ({ root, argv, env, limit }, emit) => new Promise((done) => {
-  const child = spawn(argv[0], argv.slice(1), { cwd: root, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
-  const kill = (sig) => { try { process.kill(-child.pid, sig) } catch { /* the group is gone */ } }
+  const child = spawn(argv[0], argv.slice(1), { cwd: root, detached: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
+  const kill = (sig) => {
+    if (process.platform === 'win32') { spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', timeout: 10_000 }); return }
+    try { process.kill(-child.pid, sig) } catch { /* the group is gone */ }
+  }
   const relay = ['SIGINT', 'SIGTERM'].map((sig) => [sig, () => kill(sig)])
   for (const [sig, fn] of relay) process.on(sig, fn)
   let timedOut = false

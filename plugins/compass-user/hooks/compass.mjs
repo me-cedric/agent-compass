@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -142,15 +142,22 @@ const gate = (input) => {
 const read = () => { try { return JSON.parse(readFileSync(0, 'utf8') || '{}') } catch { return null } }
 
 // The compass lock marks a project with its own copy. That copy sits beside the lock: .agents/hooks/ and .agents/compass.lock.json.
-// A copy outside the project (the user plugin) steps back for an event only when the project hook runs it: the project
-// lock owns the hook key of that event. A host that kept its own hooks still gets the .env guard from the user copy.
+// A copy inside the project never steps back. A copy outside the project (the user plugin) steps back for an event only when
+// the project hook runs it: the project lock owns the hook key of that event, or the project settings file lists a compass hook
+// for it (the compass repository runs its own copy without a lock). A host that kept its own hooks still gets the .env guard.
 const EVENTS = { start: 'SessionStart', guard: 'PreToolUse', gate: 'Stop' }
 const deferred = (mode) => {
-  if (existsSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'compass.lock.json'))) return false
-  let lock
-  try { lock = JSON.parse(readFileSync(join(process.env.CLAUDE_PROJECT_DIR || process.cwd(), '.agents', 'compass.lock.json'), 'utf8')) } catch { return false }
+  const real = (p) => { try { return realpathSync(p) } catch { return p } }
+  const me = real(fileURLToPath(import.meta.url))
+  const root = process.env.CLAUDE_PROJECT_DIR || process.cwd()
+  const rel = relative(real(root), me)
+  if (existsSync(join(dirname(me), '..', 'compass.lock.json')) || !(rel.startsWith('..') || isAbsolute(rel))) return false
+  const json = (p) => { try { return JSON.parse(readFileSync(join(root, p), 'utf8')) } catch { return null } }
   const file = process.env.CLAUDE_PROJECT_DIR ? '.claude/settings.json' : '.codex/hooks.json'
-  return Boolean(lock?.keys?.[file]?.[`hooks.${EVENTS[mode]}`])
+  if (json('.agents/compass.lock.json')?.keys?.[file]?.[`hooks.${EVENTS[mode]}`]) return true
+  const groups = json(file)?.hooks?.[EVENTS[mode]]
+  const runs = new RegExp(`compass\\.mjs"? ${mode}( |$)`)
+  return Array.isArray(groups) && groups.some((g) => g?.hooks?.some?.((h) => typeof h?.command === 'string' && runs.test(h.command)))
 }
 
 // Claude Code and Codex read plain stdout (start) and exit 2 with stderr (guard, gate). The Copilot cloud agent reads

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { loadUpstream } from '../engine/upstream.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -90,6 +91,13 @@ test('offline with an empty cache warns, exits 0 and keeps the installed upstrea
   assert.deepEqual(r.json.changes, [])
   assert.equal(read('.claude/skills/foo/SKILL.md').includes('Foo'), true)
   assert.equal(read('.agents/compass.lock.json'), lock)
+})
+
+test('a Windows drive path is a local source; a relative path is not', () => {
+  const source = (repo) => ({ repo, sha: 'a'.repeat(40), licence: 'MIT', skills: ['skills/x'] })
+  const check = (sources) => { const ac = mkdtempSync(join(tmpdir(), 'ac-up-val-')); temps.push(ac); writeFileSync(join(ac, 'upstream.json'), JSON.stringify({ sources })); return loadUpstream(ac).errors }
+  assert.deepEqual(check({ win: source('C:\\src\\skills'), posix: source('/src/skills') }), [])
+  assert.equal(check({ rel: source('src/skills') }).length, 1)
 })
 
 test('an unknown source id, a bad pin or a missing skill is an error', async () => {

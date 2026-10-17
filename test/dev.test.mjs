@@ -164,7 +164,7 @@ const setup = (files = { 'process-compose.yaml': 'version: "0.5"\n' }) => {
   put(root, files)
   const bin = temp('ac-dev-bin-')
   const log = join(bin, 'calls.jsonl')
-  const fake = join(bin, 'process-compose')
+  const fake = join(bin, 'process-compose.mjs')
   writeFileSync(fake, FAKE(log))
   chmodSync(fake, 0o755)
   const calls = () => (existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : [])

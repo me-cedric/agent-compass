@@ -8,6 +8,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -22,8 +23,17 @@ jobs:
       - name: Run checks
         run: npm run check
 
-  windows:
-    runs-on: windows-latest
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      # Windows only in effect (macOS reads TMPDIR): the runner's TEMP has a short 8.3 name, git prints the long name. One name for both.
+      TEMP: ${{ runner.temp }}
+      TMP: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -31,5 +41,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+      - name: Trust the temp repositories that the tests create
+        run: git config --global --add safe.directory "*"
       - name: Run tests
         run: npm test

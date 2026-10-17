@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { outside } from './sync.mjs'
-import { dirs, hostRoot, isDir, isObj, parseCommand, readJson, run, usageError } from './util.mjs'
+import { command, dirs, hostRoot, isDir, isObj, parseCommand, readJson, run, usageError } from './util.mjs'
 
 const FILE = 'process-compose.yaml'
 const DIR = '.agents/dev'
@@ -31,7 +31,7 @@ Options:
 
 const cap = (s) => (s.length > 4096 ? `${s.slice(0, 4096)}\n[output cut at 4 KB]` : s)
 const binary = () => process.env.AC_PROCESS_COMPOSE || 'process-compose'
-const pc = (root, args, timeout) => run(binary(), args, { cwd: root, timeout })
+const pc = (root, args, timeout) => { const [cmd, ...pre] = command(binary()); return run(cmd, [...pre, ...args], { cwd: root, timeout }) }
 const readText = (path) => { try { return readFileSync(path, 'utf8') } catch { return '' } }
 
 // --- draft of process-compose.yaml ---

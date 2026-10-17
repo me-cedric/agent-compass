@@ -5,12 +5,13 @@ import http from 'node:http'
 import { tmpdir } from 'node:os'
 import { delimiter, dirname, join } from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { KINDS } from '../engine/assets.mjs'
 import { newLines } from '../ui/api.mjs'
 import { createServer } from '../ui/server.mjs'
 import { runNode } from './helpers.mjs'
 
+const WIN = process.platform === 'win32'
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
 const TOKEN = 'test-token-0123456789abcdefghijkl'
 const CSP = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
@@ -77,7 +78,7 @@ test('the server listens on 127.0.0.1 only', async () => {
 
 test('ac ui cli prints a URL with a 24-byte token, serves it, and checks its options', async () => {
   const root = await host()
-  const script = `import { cli } from ${JSON.stringify(join(REPO, 'ui/server.mjs'))}\nprocess.exitCode = await cli(${JSON.stringify(['--root', root])}, { AC: ${JSON.stringify(REPO)} })`
+  const script = `import { cli } from ${JSON.stringify(pathToFileURL(join(REPO, 'ui/server.mjs')).href)}\nprocess.exitCode = await cli(${JSON.stringify(['--root', root])}, { AC: ${JSON.stringify(REPO)} })`
   const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'pipe', 'pipe'] })
   try {
     const line = await new Promise((ok, no) => {
@@ -92,7 +93,7 @@ test('ac ui cli prints a URL with a 24-byte token, serves it, and checks its opt
     const res = await call(Number(m[1]), { path: '/api/sync', token: m[2] })
     assert.equal(res.status, 200)
   } finally { child.kill() }
-  const bad = await runNode(['--input-type=module', '-e', `import { cli } from ${JSON.stringify(join(REPO, 'ui/server.mjs'))}\nprocess.exitCode = await cli(['--port', 'abc'], { AC: ${JSON.stringify(REPO)} })`])
+  const bad = await runNode(['--input-type=module', '-e', `import { cli } from ${JSON.stringify(pathToFileURL(join(REPO, 'ui/server.mjs')).href)}\nprocess.exitCode = await cli(['--port', 'abc'], { AC: ${JSON.stringify(REPO)} })`])
   assert.equal(bad.code, 2)
   assert.match(bad.stderr, /--port needs a whole number/)
 })
@@ -391,6 +392,8 @@ test('GET /api/doctor lists the checks and the token items of a host, and the er
 // ---- tracker pull ----
 
 // A fake tracker CLI: it records its arguments, its directory and its prompt setting, prints a fixed text and exits.
+// The fake CLIs are scripts on PATH. Windows starts only .exe and .cmd files from PATH, so these tests skip there.
+const FAKE_CLI = WIN && 'the fake CLIs are scripts; Windows starts only .exe and .cmd files from PATH'
 const fakeCli = (dir, name, { stdout = '', stderr = '', code = 0 } = {}) => {
   const log = JSON.stringify(join(dir, `${name}.log`))
   writeFileSync(join(dir, name), `#!${process.execPath}\nrequire('node:fs').appendFileSync(${log}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), prompt: process.env.GIT_TERMINAL_PROMPT }) + '\\n')\nprocess.stdout.write(${JSON.stringify(stdout)})\nprocess.stderr.write(${JSON.stringify(stderr)})\nprocess.exitCode = ${code}\n`)
@@ -418,7 +421,7 @@ const JIRA_ROWS = [
   { number: 'ABC-5', title: 'Context path', state: '', labels: '', assignee: '', url: 'https://jira.example/jira/browse/ABC-5' },
 ]
 
-test('the tracker pull runs a fixed read-only list command in the project root and shows plain rows', async () => {
+test('the tracker pull runs a fixed read-only list command in the project root and shows plain rows', { skip: FAKE_CLI }, async () => {
   const root = await host()
   const bin = temp('ac-ui-bin-')
   fakeCli(bin, 'gh', { stdout: JSON.stringify(GH) })
@@ -439,7 +442,7 @@ test('the tracker pull runs a fixed read-only list command in the project root a
   assert.deepEqual(calls(bin, 'glab').map((c) => c.args), [['issue', 'list', '--output', 'json', '--per-page', '100']])
 })
 
-test('the Jira pull runs jira issue list --raw in the project root and maps the REST issues to plain rows', async () => {
+test('the Jira pull runs jira issue list --raw in the project root and maps the REST issues to plain rows', { skip: FAKE_CLI }, async () => {
   const root = await host()
   const bin = temp('ac-ui-bin-')
   fakeCli(bin, 'jira', { stdout: JSON.stringify(JIRA) })
@@ -457,7 +460,7 @@ test('the Jira pull runs jira issue list --raw in the project root and maps the 
   assert.deepEqual(calls(bin, 'jira').map((c) => [c.args, c.cwd, c.prompt]), Array(2).fill([['issue', 'list', '--raw', '--paginate', '0:100'], realpathSync(root), '0']))
 })
 
-test('the Jira pull gives a short message for a missing CLI, no login, a bad answer and a huge answer', async () => {
+test('the Jira pull gives a short message for a missing CLI, no login, a bad answer and a huge answer', { skip: FAKE_CLI }, async () => {
   const bin = temp('ac-ui-bin-')
   const { port } = await start(await host())
   const pull = async () => (await post(port, '/api/delivery/pull', { tracker: 'jira' })).json()
@@ -479,7 +482,7 @@ test('the Jira pull gives a short message for a missing CLI, no login, a bad ans
   await withPath(`${bin}${delimiter}${process.env.PATH}`, async () => assert.deepEqual((await pull()).errors, ['The command ran too long or printed too much.']))
 })
 
-test('the tracker pull accepts only github, gitlab and jira, and caps what it shows', async () => {
+test('the tracker pull accepts only github, gitlab and jira, and caps what it shows', { skip: FAKE_CLI }, async () => {
   const bin = temp('ac-ui-bin-')
   const many = Array.from({ length: 130 }, (_, i) => ({ number: i, title: 'T'.repeat(500), state: 'OPEN', labels: [], assignees: [], url: '' }))
   fakeCli(bin, 'gh', { stdout: JSON.stringify(many) })
@@ -496,7 +499,7 @@ test('the tracker pull accepts only github, gitlab and jira, and caps what it sh
   assert.equal((await call(port, { method: 'POST', path: '/api/delivery/pull', token: null, headers: { 'content-type': 'application/json' }, body: '{"tracker":"github"}' })).status, 401)
 })
 
-test('the tracker pull gives a short message for a missing CLI, a failed login and a bad answer', async () => {
+test('the tracker pull gives a short message for a missing CLI, a failed login and a bad answer', { skip: FAKE_CLI }, async () => {
   const bin = temp('ac-ui-bin-')
   const { port } = await start(await host())
   await withPath(temp('ac-ui-nopath-'), async () => {
@@ -646,7 +649,7 @@ test('an env edit keeps CRLF line ends and the file mode, and leaves no temp fil
   assert.equal((await post(port, '/api/env/value', { file: '.env.local', name: 'PORT', value: '4000' })).status, 200)
   assert.equal((await post(port, '/api/env/value', { file: '.env.local', name: 'NEW_NAME', value: 'x' })).status, 200)
   assert.equal(readFileSync(file, 'utf8'), 'API_KEY=s3cr3t-value-123\r\nEMPTY=\r\nPORT=4000\r\nNEW_NAME=x\r\n')
-  assert.equal(statSync(file).mode & 0o777, 0o600)
+  if (!WIN) assert.equal(statSync(file).mode & 0o777, 0o600)
   assert.deepEqual(readdirSync(root).filter((f) => f.endsWith('.tmp')), [])
 })
 
@@ -668,8 +671,8 @@ test('env export and import check their inputs before they start a command', asy
 const present = (name) => existsSync(join(REPO, 'engine', `${name}.mjs`))
 
 const withHome = async (home, fn) => {
-  const old = { HOME: process.env.HOME, CODEX_HOME: process.env.CODEX_HOME }
-  Object.assign(process.env, { HOME: home, CODEX_HOME: '' })
+  const old = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE, CODEX_HOME: process.env.CODEX_HOME }
+  Object.assign(process.env, { HOME: home, USERPROFILE: home, CODEX_HOME: '' })
   try { return await fn() } finally { for (const [k, v] of Object.entries(old)) { if (v === undefined) delete process.env[k]; else process.env[k] = v } }
 }
 const row = (cwd, id) => JSON.stringify({ timestamp: new Date().toISOString(), cwd, requestId: `r-${id}`, isSidechain: false, message: { id, model: 'claude-sonnet-5-5', usage: { input_tokens: 100, output_tokens: 50, cache_read_input_tokens: 1000, cache_creation_input_tokens: 0 } } })

@@ -271,3 +271,23 @@ test('the user copy runs an event when the project lock does not own its hook (t
   writeFileSync(join(kept, '.agents/compass.lock.json'), 'not json')
   assert.equal((await runNode([user, 'guard'], { input, ...claude })).code, 2, 'an unreadable lock does not switch the guard off')
 })
+
+test('the user copy steps back when the project settings list a compass hook for the event, with no lock', async () => {
+  const self = join(dir, 'self')
+  const own = join(self, 'core/files/.agents/hooks/compass.mjs')
+  const user = join(dir, 'user3/hooks/compass.mjs')
+  for (const f of [own, user, join(self, '.claude/x')]) mkdirSync(dirname(f), { recursive: true })
+  copyFileSync(HOOK, own)
+  copyFileSync(HOOK, user)
+  const group = (mode, quote = '"') => ({ hooks: [{ type: 'command', command: `node ${quote}\${CLAUDE_PROJECT_DIR:-.}/core/files/.agents/hooks/compass.mjs${quote} ${mode}` }] })
+  // The SessionStart command has no quotes: the match accepts both forms.
+  writeFileSync(join(self, '.claude/settings.json'), JSON.stringify({ hooks: { PreToolUse: [group('guard')], SessionStart: [group('start', '')] } }))
+  const input = JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/repo/.env' } })
+  const { CLAUDE_PROJECT_DIR: _, ...bare } = process.env
+  const claude = { env: { ...bare, CLAUDE_PROJECT_DIR: self } }
+  assert.equal((await runNode([own, 'guard'], { input, ...claude })).code, 2, 'the copy inside the project runs')
+  assert.equal((await runNode([user, 'guard'], { input, ...claude })).code, 0, 'the user copy steps back for PreToolUse')
+  assert.equal((await runNode([user, 'start'], claude)).stdout, '', 'and for SessionStart')
+  const edited = JSON.stringify({ transcript_path: transcript(claudeTurn('Fixed it.')) })
+  assert.equal((await runNode([user, 'gate'], { input: edited, ...claude })).code, 2, 'Stop is not listed, so the user copy runs it')
+})

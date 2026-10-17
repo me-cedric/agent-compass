@@ -14,7 +14,7 @@ import { isDir, isObj, readJson, run, safeRel, walk } from './util.mjs'
 
 export const UPSTREAM = 'upstream.json'
 const SHA = /^[0-9a-f]{40}$/
-const REPO = /^(https:\/\/|file:\/\/|\/)/
+const REPO = /^(https:\/\/|file:\/\/|\/|[A-Za-z]:[\\/])/
 // Bidi controls can reverse what the model reads; tag characters can hide an instruction. The zero-width characters
 // (U+200B to U+200D, U+2060) stay allowed: they come from copied web text, scripts and emoji sequences, and they hide nothing.
 const HIDDEN = /[\u202A-\u202E\u2066-\u2069\u200E\u200F\u{E0000}-\u{E007F}]|(?<!^)\uFEFF/u

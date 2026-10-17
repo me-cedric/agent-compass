@@ -474,6 +474,14 @@ test('kept says if compass has a newer version; check --diff shows the planned c
   assert.equal((await ac(compass, host, 'sync', '--diff')).code, 2)
 })
 
+test('command() runs a .mjs tool path with node and keeps a binary path as it is', async () => {
+  const { command } = await import('../engine/util.mjs')
+  assert.deepEqual(command('age'), ['age'])
+  assert.deepEqual(command('/opt/bin/process-compose'), ['/opt/bin/process-compose'])
+  assert.deepEqual(command('/tmp/fake-age.mjs'), [process.execPath, '/tmp/fake-age.mjs'])
+  assert.deepEqual(command('C:\\t\\fake.JS'), [process.execPath, 'C:\\t\\fake.JS'])
+})
+
 test('a path below the root is inside on POSIX and on Windows', async () => {
   const { posix, win32 } = await import('node:path')
   const { below } = await import('../engine/util.mjs')

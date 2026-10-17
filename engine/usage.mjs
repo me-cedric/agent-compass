@@ -66,7 +66,7 @@ const repoOf = (cwd, cache) => {
   if (!cache.has(cwd)) {
     const cut = cwd.search(WORKTREES)
     const git = cut < 0 ? run('git', ['-C', cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir'], { timeout: 5000 }) : null
-    cache.set(cwd, cut >= 0 ? cwd.slice(0, cut) : git.ok && git.out.endsWith('/.git') ? dirname(git.out) : cwd)
+    cache.set(cwd, cut >= 0 ? cwd.slice(0, cut) : git.ok && git.out.endsWith('/.git') ? resolve(dirname(git.out)) : cwd)
   }
   return cache.get(cwd)
 }

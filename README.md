@@ -34,7 +34,7 @@ See [docs/guide/install.md](docs/guide/install.md).
 | `ac env` | `check`, `export`, `import` and `run`: keep env vars in step and share them encrypted with age. |
 | `ac dev` | `up`, `down`, `status` and `logs`: run the local stack with process-compose. |
 | `ac run` | Run a command from `agent-compass.commands.json`. Store the result in `.agents/runs/`. |
-| `ac usage` | Show tokens, cost, cache hit rate and sub-agent share from the Claude Code transcripts. |
+| `ac usage` | Show tokens, cost, cache hit rate and sub-agent share from the Claude Code and Codex transcripts. |
 | `ac promote` | Copy a project skill into compass. |
 | `ac assets` | List the assets with their tokens. `on`, `off` and `recommended` switch assets in `.agents/compass.json`. |
 | `ac ui` | Start the local web UI on `127.0.0.1`. |

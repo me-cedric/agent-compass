@@ -43,7 +43,7 @@ const makeHome = ({ settings = {}, extra = {} } = {}) => {
   return home
 }
 
-const cli = (home, args) => runNode([BIN, 'doctor', '--global', ...args], { env: { ...process.env, HOME: home }, cwd: temp() })
+const cli = (home, args) => runNode([BIN, 'doctor', '--global', ...args], { env: { ...process.env, HOME: home, USERPROFILE: home }, cwd: temp() })
 
 test('doctor --global reports plugins, MCP servers, hooks and Codex', () => {
   const r = doctorGlobal({ AC, root: temp(), home: makeHome() })
@@ -59,7 +59,7 @@ test('the recommended set prints the exact command for each missing item', () =>
   const home = makeHome()
   const items = Object.fromEntries(doctorGlobal({ AC, root: temp(), home }).recommended.map((c) => [c.name, c]))
   assert.equal(items.ponytail.ok, true)
-  assert.match(items['compass-user'].fix, new RegExp(`^claude plugin marketplace add ${AC} && claude plugin install compass-user@agent-compass$`))
+  assert.equal(items['compass-user'].fix, `claude plugin marketplace add ${AC} && claude plugin install compass-user@agent-compass`)
   assert.equal(items.caveman.fix, 'claude plugin marketplace add JuliusBrussee/caveman && claude plugin install caveman@caveman')
   assert.match(items['i-have-adhd'].fix, /install i-have-adhd@i-have-adhd$/)
   assert.ok(items.statusLine.fix.includes(`"command":"node \\"${AC}/plugins/compass-user/scripts/statusline.mjs\\""`), items.statusLine.fix)
@@ -146,7 +146,7 @@ test('a directory named config.toml is an error line, and the rest of the report
   assert.equal(r.errors.length, 1)
   assert.match(r.errors[0], /config\.toml: /)
   assert.deepEqual(r.claude.plugins, ['alpha@m', 'beta@m', 'ponytail@ponytail'])
-  const cli = await runNode([BIN, 'doctor', '--global'], { env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: '', CODEX_HOME: '' } })
+  const cli = await runNode([BIN, 'doctor', '--global'], { env: { ...process.env, HOME: home, USERPROFILE: home, CLAUDE_CONFIG_DIR: '', CODEX_HOME: '' } })
   assert.equal(cli.code, 1)
   assert.match(cli.stderr + cli.stdout, /^error: .*config\.toml: /m)
   assert.match(cli.stdout, /enabled plugin/)
@@ -215,7 +215,7 @@ test('the hook list covers the four events that inject text; --measure still run
 test('the options of doctor --global are checked', async () => {
   const home = temp()
   for (const args of [['doctor', '--measure'], ['sync', '--global'], ['doctor', '--global', '--tokens']]) {
-    const r = await runNode([BIN, ...args], { env: { ...process.env, HOME: home }, cwd: temp() })
+    const r = await runNode([BIN, ...args], { env: { ...process.env, HOME: home, USERPROFILE: home }, cwd: temp() })
     assert.equal(r.code, 2, args.join(' '))
   }
 })

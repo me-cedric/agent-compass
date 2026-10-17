@@ -4,11 +4,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { VERSION_FILES, getAt } from '../scripts/lib/versions.mjs'
 import { runNode } from './helpers.mjs'
 
-const script = new URL('../scripts/release.mjs', import.meta.url).pathname
-const checker = new URL('../scripts/check-release.mjs', import.meta.url).pathname
+const script = fileURLToPath(new URL('../scripts/release.mjs', import.meta.url))
+const checker = fileURLToPath(new URL('../scripts/check-release.mjs', import.meta.url))
 const temps = []
 test.after(() => { for (const d of temps) rmSync(d, { recursive: true, force: true }) })
 

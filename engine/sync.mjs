@@ -270,7 +270,8 @@ const unifiedDiff = (root, rel, content) => {
     mkdirSync(dirname(join(tmp, rel)), { recursive: true })
     writeFileSync(join(tmp, rel), content)
     const r = run('git', ['diff', '--no-index', '--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/', '--', rel, join(tmp, rel)], { cwd: root, timeout: 10_000 })
-    return r.out ? r.out.split(`${tmp.replace(/^\//, '')}/`).join('') : `git diff failed: ${r.err || 'no output'}`
+    // git names the copy by its temp path, quoted on Windows. The header gets the project path back.
+    return r.out ? r.out.replace(/^diff --git .*$/m, `diff --git a/${rel} b/${rel}`).replace(/^\+\+\+ .*$/m, `+++ b/${rel}`) : `git diff failed: ${r.err || 'no output'}`
   } finally { rmSync(tmp, { recursive: true, force: true }) }
 }
 

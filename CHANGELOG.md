@@ -8,7 +8,8 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 - `ac sync` refuses a lock from a newer compass than the checkout (run `git submodule update`). Conflict markers in the lock or a managed file give one error. `ac check --diff` shows the diff of each kept file; a kept item says whether compass has a newer version. The commands find the project root from a subdirectory.
 - `ac doctor` warns about a missing LSP binary, a project without a code graph index, an MCP server older than its minimum version, a submodule off its commit or behind a newer tag, a project without git; it names the Codex `/hooks` trust step and the user-level todo count.
-- An upstream source with bidi or tag characters in a skill file stays out of the cache, with a warning. `npm run release` lists the assets changed since the last tag. The compass-check CI files are managed. The tests run on Windows in CI.
+- An upstream source with bidi or tag characters in a skill file stays out of the cache, with a warning. `npm run release` lists the assets changed since the last tag. The compass-check CI files are managed. CI runs the tests on Linux, macOS and Windows.
+- Windows: `ac run` stops the child and its process tree with `taskkill`; `ac doctor --tokens` and `--measure` run a hook command in Git Bash; `AC_AGE` and `AC_PROCESS_COMPOSE` may name a Node script, which runs with the current node binary. Every text file has LF line ends in every checkout (`.gitattributes`).
 
 - The `ac` command has `init`, `sync`, `check`, `doctor` and `migrate`. These five take `--root`, `--dry` and `--json`. Exit 0 is success. Exit 1 is an error or drift. Exit 2 is a usage error.
 - `ac sync` writes files, JSON and TOML keys, and text blocks into the project. It records each one in `.agents/compass.lock.json`. Two syncs give no diff.
@@ -73,7 +74,7 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 - The plugin `compass-user` works in every repository. Install it from this repository: `claude plugin marketplace add <path>`, then `claude plugin install compass-user@agent-compass`. Codex and Copilot CLI use the same marketplace.
 - It has the hooks, the `compass` output style, the `compass-style` skill and the script `scripts/statusline.mjs`. The status line shows the model, the directory, the cache share and the context size.
-- In a project with `.agents/compass.lock.json`, the plugin hook steps back for each event that the project hook runs. A project that keeps its own hooks still gets the `.env` guard.
+- The plugin hook steps back for each event that the project hook runs: the project lock owns the hook key, or the project settings file lists a compass hook for the event. A project that keeps its own hooks still gets the `.env` guard.
 - `npm run release -- <version>` sets the version in every file that carries it and adds a CHANGELOG heading. `npm run lint:release` checks that the versions agree.
 
 ### Removed

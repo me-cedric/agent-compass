@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import { runNode } from './helpers.mjs'
 import {
@@ -10,8 +11,8 @@ import {
   isSlug, isTestFile, parseJunit, sumJunit,
 } from '../scripts/lib/evidence.mjs'
 
-const root = new URL('..', import.meta.url)
-const script = new URL('../scripts/evidence.mjs', import.meta.url).pathname
+const root = fileURLToPath(new URL('..', import.meta.url))
+const script = fileURLToPath(new URL('../scripts/evidence.mjs', import.meta.url))
 
 const junit = (counts) => `<?xml version="1.0"?>\n<testsuites tests="${counts.tests}" failures="${counts.failures ?? 0}" errors="${counts.errors ?? 0}" skipped="${counts.skipped ?? 0}">\n</testsuites>\n`
 
@@ -86,7 +87,7 @@ test('the CLI builds a bundle and reports an incomplete proof', async () => {
     await mkdir(join(dir, 'reports'), { recursive: true })
     await writeFile(join(dir, 'reports', 'junit.xml'), junit({ tests: 4, failures: 1 }))
 
-    const run = await runNode([script, dir, '--strict'], { cwd: root.pathname })
+    const run = await runNode([script, dir, '--strict'], { cwd: root })
     assert.equal(run.code, 1, run.stderr)
     assert.match(run.stdout, /PROOF INCOMPLETE/)
 
@@ -109,17 +110,17 @@ test('the CLI records a before-proof and reports the change afterwards', async (
     await writeFile(join(dir, 'specs', 'changes', 'add-banner.md'),
       '# Add banner\n\n## Acceptance criteria\n\n- AB-01 — a banner shows\n\n## Expected proof scenarios\n\n- banner on desktop\n')
 
-    const start = await runNode([script, dir, '--change', 'add-banner', '--phase', 'start'], { cwd: root.pathname })
+    const start = await runNode([script, dir, '--change', 'add-banner', '--phase', 'start'], { cwd: root })
     assert.equal(start.code, 0, start.stderr)
 
     // Nothing changed yet: the gate must refuse.
-    const empty = await runNode([script, dir, '--change', 'add-banner', '--phase', 'finish'], { cwd: root.pathname })
+    const empty = await runNode([script, dir, '--change', 'add-banner', '--phase', 'finish'], { cwd: root })
     assert.equal(empty.code, 1, 'an empty diff cannot be conform')
 
     await writeFile(join(dir, 'src', 'app.ts'), 'export const a = 2\n')
     await writeFile(join(dir, 'src', 'app.test.ts'), 'test\n')
 
-    const finish = await runNode([script, dir, '--change', 'add-banner', '--phase', 'finish'], { cwd: root.pathname })
+    const finish = await runNode([script, dir, '--change', 'add-banner', '--phase', 'finish'], { cwd: root })
     assert.equal(finish.code, 0, finish.stderr)
     assert.match(finish.stdout, /CHANGE CONFORM/)
 
@@ -136,15 +137,15 @@ test('the CLI records a before-proof and reports the change afterwards', async (
 test('the CLI refuses a bad slug, a missing spec and a finish with no start', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'ac-evidence-'))
   try {
-    const badSlug = await runNode([script, dir, '--change', 'Not A Slug', '--phase', 'start'], { cwd: root.pathname })
+    const badSlug = await runNode([script, dir, '--change', 'Not A Slug', '--phase', 'start'], { cwd: root })
     assert.equal(badSlug.code, 1)
     assert.match(badSlug.stderr, /kebab-case/)
 
-    const noSpec = await runNode([script, dir, '--change', 'ghost', '--phase', 'start'], { cwd: root.pathname })
+    const noSpec = await runNode([script, dir, '--change', 'ghost', '--phase', 'start'], { cwd: root })
     assert.equal(noSpec.code, 1)
     assert.match(noSpec.stderr, /specs\/changes\/ghost\.md/)
 
-    const noStart = await runNode([script, dir, '--change', 'ghost', '--phase', 'finish'], { cwd: root.pathname })
+    const noStart = await runNode([script, dir, '--change', 'ghost', '--phase', 'finish'], { cwd: root })
     assert.equal(noStart.code, 1)
     assert.match(noStart.stderr, /No recorded start/)
   } finally {

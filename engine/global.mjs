@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { isObj } from './util.mjs'
+import { isObj, SHELL } from './util.mjs'
 
 export const LIMITS = { plugins: 15, mcp: 10, hookChars: 1000, totalChars: 2000 }
 // The hook events whose output goes into the context.
@@ -48,10 +48,10 @@ const codexOf = (text) => {
   return { mcp: [...mcp], plugins }
 }
 
-// The hook commands are shell strings, so this is the one place that runs a shell (sh -c). Only --measure gets here.
+// The hook commands are shell strings, so this is the one place that runs a shell (SHELL: sh, or Git Bash on Windows). Only --measure gets here.
 const measureHooks = (hooks, root) => hooks.filter((h) => h.event === 'SessionStart').map((h) => {
   const r = spawnSync(h.command, {
-    shell: true,
+    shell: SHELL,
     cwd: root,
     input: '{}',
     encoding: 'utf8',

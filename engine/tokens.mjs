@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process'
 import { loadConfig, loadKonvoy, resolvePaths } from './config.mjs'
 import { blockInner } from './merge.mjs'
 import { buildPlan } from './plan.mjs'
-import { frontmatter } from './util.mjs'
+import { frontmatter, SHELL } from './util.mjs'
 
 export const BUDGET = { tokens: 2000, sessionStartChars: 1000 }
 // ponytail: about 4 characters per token for English Markdown. Use a real tokenizer when a total is within 10% of a budget.
@@ -57,7 +57,7 @@ export const estimatePlan = (plan) => {
 
 const runHook = (root, command, event) => {
   const r = spawnSync(command, {
-    shell: true,
+    shell: SHELL,
     cwd: root,
     input: JSON.stringify({ hook_event_name: event, source: 'startup', prompt: '', cwd: root }),
     encoding: 'utf8',

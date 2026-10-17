@@ -4,8 +4,9 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('..', import.meta.url).pathname
+const root = fileURLToPath(new URL('..', import.meta.url))
 
 const run = (command, args, options) => new Promise((resolve) => {
   const child = spawn(command, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'] })
