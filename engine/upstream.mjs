@@ -2,6 +2,7 @@
 // A source installs into a host only when .agents/compass.json lists its id in "upstream".
 // An optional "stacks" list on a source names the stacks that it fits. assets.mjs recommends it for those stacks only.
 // An optional "recommend": "user" (the compass-user plugin covers it) or "manual" (a large set) keeps it out of the recommended set.
+// An optional "licenceText" holds the licence for a repository that has no licence file; the engine writes it as LICENSE beside each skill.
 // The cache key is the commit sha, so a cached source never changes and a second fetch does nothing.
 // A fetched text file with hidden Unicode (bidi controls, zero-width or tag characters) stops the sync: the text can hide
 // instructions from a reviewer. A byte order mark at the start of a file is allowed.
@@ -39,7 +40,8 @@ export const loadUpstream = (AC) => {
     const ok = /^[a-z0-9-]+$/.test(id) && isObj(s) && REPO.test(s.repo) && SHA.test(s.sha) && typeof s.licence === 'string' &&
       Array.isArray(s.skills) && s.skills.length > 0 && s.skills.every((e) => e === '.' || safeRel(e)) &&
       (s.stacks === undefined || (Array.isArray(s.stacks) && s.stacks.every((x) => typeof x === 'string'))) &&
-      (s.recommend === undefined || ['user', 'manual'].includes(s.recommend))
+      (s.recommend === undefined || ['user', 'manual'].includes(s.recommend)) &&
+      (s.licenceText === undefined || (typeof s.licenceText === 'string' && s.licenceText.trim() !== ''))
     if (!ok) errors.push(`${UPSTREAM}: source "${id}" needs a repo (an https URL or a local path), a 40-character sha, a licence and a list of skills (and a list of stack ids, if any)`)
   }
   return { sources: errors.length ? {} : data.sources, errors }

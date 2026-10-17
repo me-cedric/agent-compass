@@ -29,7 +29,7 @@ const upstreamRepo = ({ licence = true } = {}) => {
     'skills/foo/.hidden': 'x\n',
     '.claude/skills/foo/SKILL.md': 'Mirror.\n',
     'more/bar/SKILL.md': '---\nname: bar\ndescription: Bar.\n---\nBar.\n',
-    ...(licence && { 'LICENSE-MIT': 'MIT text.\n', 'LICENSE-APACHE': 'Apache text.\n' }),
+    ...(licence && { 'LICENSE-MIT': 'MIT text.\n', 'LICENSE-APACHE': 'Apache text.\n', 'NOTICE': 'Notice text.\n' }),
   })
   git(repo, 'add', '-A')
   git(repo, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init')
@@ -72,6 +72,7 @@ test('check does not fetch; sync fetches the pinned sha into the cache and insta
     assert.equal(read(`${base}/foo/LICENSE-MIT`), 'MIT text.\n')
     assert.equal(read(`${base}/bar/LICENSE-MIT`), 'MIT text.\n')
     assert.equal(read(`${base}/bar/LICENSE-APACHE`), 'Apache text.\n')
+    assert.equal(read(`${base}/foo/NOTICE`), 'Notice text.\n', 'Apache-2.0 section 4(d): the NOTICE goes with each copy')
     assert.ok(!existsSync(join(host, base, 'foo/.hidden')))
   }
   assert.deepEqual(JSON.parse(read('.agents/compass.lock.json')).skills, ['bar', 'foo'])
@@ -105,6 +106,26 @@ test('an unknown source id, a bad pin or a missing skill is an error', async () 
   const bare = upstreamRepo({ licence: false })
   const unlicensed = makeCompass({ fake: { repo: bare.repo, sha: bare.sha, licence: 'MIT', skills: ['foo'] } })
   assert.match((await run(unlicensed, host, cache, 'sync')).json.errors.join('\n'), /upstream fake has no licence file at its root/)
+})
+
+test('a source whose repository has no licence file installs when upstream.json carries licenceText, as LICENSE beside the skill', async () => {
+  const bare = temp('ac-up-repo-')
+  git(bare, 'init', '-q')
+  put(bare, { 'foo/SKILL.md': '---\nname: foo\ndescription: Foo.\n---\nFoo.\n' })
+  git(bare, 'add', '-A')
+  git(bare, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init')
+  const sha = git(bare, 'rev-parse', 'HEAD')
+  const host = temp('ac-up-host-')
+  put(host, { '.agents/compass.json': JSON.stringify({ version: 1, upstream: ['bare'] }) })
+  const cache = temp('ac-up-cache-')
+  const refused = await run(makeCompass({ bare: { repo: bare, sha, licence: 'MIT', skills: ['foo'] } }), host, cache, 'sync')
+  assert.equal(refused.code, 1)
+  assert.match(refused.json.errors.join('\n'), /upstream bare has no licence file/)
+  const text = 'MIT License\n\nCopyright (c) 2026 Holder\n'
+  const ok = await run(makeCompass({ bare: { repo: bare, sha, licence: 'MIT', licenceText: text, skills: ['foo'] } }), host, temp('ac-up-cache-'), 'sync')
+  assert.equal(ok.code, 0, ok.stderr)
+  assert.equal(readFileSync(join(host, '.claude/skills/foo/LICENSE'), 'utf8'), text)
+  assert.equal(readFileSync(join(host, '.agents/skills/foo/LICENSE'), 'utf8'), text)
 })
 
 test('a fetched source with hidden Unicode is a warning with the file path and stays out of the cache; a leading BOM and zero-width spaces are fine', async () => {

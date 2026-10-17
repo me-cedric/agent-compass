@@ -38,6 +38,8 @@ const SKILL_ROOTS = ['.claude/skills', '.agents/skills']
 
 const TEXT = /\.(md|txt|json|ya?ml|toml)$/
 const LICENCE = /^(LICEN[CS]E|COPYING)([.-][\w.-]+)?$/i
+// Apache-2.0 section 4(d): a NOTICE file goes with each copy. It does not count as a licence file.
+const NOTICE = /^NOTICE([.-][\w.-]+)?$/i
 
 // {{DELIVERY_DIR}} for a directory key, {{PERSONAS_FILE}} for a file key. {{COMPASS_DIR}} is the compass checkout
 // relative to the host root, with '/' separators (a managed CI file runs bin/ac.mjs from it).
@@ -230,7 +232,8 @@ export const buildPlan =({ AC, root, config, paths, konvoy = false }) => {
     // walk() skips symlinks, so no upstream link can copy a file from outside the cache.
     const tree = cached ? walk(dir) : []
     const licences = tree.filter((f) => LICENCE.test(f))
-    if (cached && !licences.length) { errors.push(`upstream ${id} has no licence file at its root; compass does not install it`); continue }
+    // A source without a licence file in its repository carries the text in upstream.json; it is written as LICENSE beside each skill.
+    if (cached && !licences.length && !src.licenceText) { errors.push(`upstream ${id} has no licence file at its root; compass does not install it`); continue }
     for (const entry of src.skills) {
       const name = entry === '.' ? id : basename(entry)
       if (excluded(name) || !addSkill(name)) continue
@@ -244,8 +247,9 @@ export const buildPlan =({ AC, root, config, paths, konvoy = false }) => {
       }
       const own = tree.filter((f) => f.startsWith(found[0]) && !/(^|\/)\./.test(f.slice(found[0].length)))
         .map((f) => [join(dir, f), f.slice(found[0].length)])
-      for (const f of licences) if (!own.some(([, rel]) => rel === f)) own.push([join(dir, f), f])
+      for (const f of [...licences, ...tree.filter((t) => NOTICE.test(t))]) if (!own.some(([, rel]) => rel === f)) own.push([join(dir, f), f])
       for (const [abs, rel] of own) for (const base of SKILL_ROOTS) copy(abs, `${base}/${name}/${rel}`)
+      if (!licences.length) for (const base of SKILL_ROOTS) addFile(`${base}/${name}/LICENSE`, Buffer.from(src.licenceText))
     }
   }
 
