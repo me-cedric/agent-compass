@@ -116,6 +116,7 @@ The project is done when `check` is green, the app runs and the README works for
    Never add a judgement label (severity, bug, confirmed, design, discussion, suggestion, support) by yourself.
 7. Update the title and the description on every push that changes what the branch delivers. They are documentation.
 8. Report the URL, base, reviewers, labels, validation and risks.
+9. When the request delivers less than the ticket asks, add `### Delivered scope: <label>` with the delivered slice and each respected rule by its id, and the `### Deliberately absent` table with the blocking decision of each missing piece.
 
 Review a change with the `review` skill. It checks two axes, spec and standards, in a fresh context with the `reviewer` agent, and does at most 2 fix rounds.
 

@@ -5,22 +5,44 @@
       "description": "Query Grafana dashboards, logs and metrics.",
       "status": "adopt",
       "readOnly": "The flag --disable-write removes the write tools.",
-      "secrets": ["GRAFANA_URL", "GRAFANA_SERVICE_ACCOUNT_TOKEN"],
+      "secrets": [
+        "GRAFANA_URL",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN"
+      ],
       "stacks": [],
       "command": "uvx",
-      "args": ["mcp-grafana@2.0.2", "--disable-write"],
-      "env": { "GRAFANA_URL": "${GRAFANA_URL}", "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${GRAFANA_SERVICE_ACCOUNT_TOKEN}" }
+      "args": [
+        "mcp-grafana@2.0.2",
+        "--disable-write"
+      ],
+      "env": {
+        "GRAFANA_URL": "${GRAFANA_URL}",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${GRAFANA_SERVICE_ACCOUNT_TOKEN}"
+      }
     },
     "argocd": {
       "description": "Read the state of Argo CD applications.",
       "status": "adopt",
       "readOnly": "The variable MCP_READ_ONLY=true blocks changes to applications and resources.",
-      "secrets": ["ARGOCD_BASE_URL", "ARGOCD_API_TOKEN"],
+      "secrets": [
+        "ARGOCD_BASE_URL",
+        "ARGOCD_API_TOKEN"
+      ],
       "stacks": [],
-      "suggest": ["helm"],
+      "suggest": [
+        "helm"
+      ],
       "command": "npx",
-      "args": ["-y", "argocd-mcp@0.9.0", "stdio"],
-      "env": { "ARGOCD_BASE_URL": "${ARGOCD_BASE_URL}", "ARGOCD_API_TOKEN": "${ARGOCD_API_TOKEN}", "MCP_READ_ONLY": "true" }
+      "args": [
+        "-y",
+        "argocd-mcp@0.9.0",
+        "stdio"
+      ],
+      "env": {
+        "ARGOCD_BASE_URL": "${ARGOCD_BASE_URL}",
+        "ARGOCD_API_TOKEN": "${ARGOCD_API_TOKEN}",
+        "MCP_READ_ONLY": "true"
+      }
     },
     "kubernetes": {
       "description": "Inspect Kubernetes resources with the current kubeconfig context.",
@@ -28,10 +50,20 @@
       "readOnly": "The flag --read-only blocks writes. The config file denies the Secret resource.",
       "secrets": [],
       "stacks": [],
-      "suggest": ["helm"],
+      "suggest": [
+        "helm"
+      ],
       "command": "npx",
-      "args": ["-y", "kubernetes-mcp-server@0.0.67", "--read-only", "--config", ".agents/mcp/kubernetes.toml"],
-      "files": { ".agents/mcp/kubernetes.toml": "mcp/kubernetes.toml" }
+      "args": [
+        "-y",
+        "kubernetes-mcp-server@0.0.67",
+        "--read-only",
+        "--config",
+        ".agents/mcp/kubernetes.toml"
+      ],
+      "files": {
+        ".agents/mcp/kubernetes.toml": "mcp/kubernetes.toml"
+      }
     },
     "scaleway": {
       "description": "Inspect Scaleway resources with the scw CLI profile.",
@@ -40,68 +72,141 @@
       "secrets": [],
       "stacks": [],
       "command": "scw",
-      "args": ["mcp", "server", "serve", "--read-only"]
+      "args": [
+        "mcp",
+        "server",
+        "serve",
+        "--read-only"
+      ]
     },
     "mcp-atlassian": {
       "description": "Read Jira issues with a personal access token.",
       "status": "adopt",
       "readOnly": "The variable READ_ONLY_MODE=true removes the write tools. The Claude deny rules in core stay active.",
-      "secrets": ["JIRA_URL", "JIRA_PERSONAL_TOKEN"],
+      "secrets": [
+        "JIRA_URL",
+        "JIRA_PERSONAL_TOKEN"
+      ],
       "stacks": [],
       "command": "uvx",
-      "args": ["mcp-atlassian@0.23.1"],
-      "env": { "JIRA_URL": "${JIRA_URL}", "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}", "READ_ONLY_MODE": "true" }
+      "args": [
+        "mcp-atlassian@0.23.1"
+      ],
+      "env": {
+        "JIRA_URL": "${JIRA_URL}",
+        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}",
+        "READ_ONLY_MODE": "true"
+      }
     },
     "github": {
       "description": "Read GitHub repositories, issues and pull requests through the hosted server.",
       "status": "adopt",
       "readOnly": "The header X-MCP-Readonly: true enables only the read tools.",
-      "secrets": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "secrets": [
+        "GITHUB_PERSONAL_ACCESS_TOKEN"
+      ],
       "stacks": [],
-      "suggest": ["github"],
+      "suggest": [
+        "github"
+      ],
       "url": "https://api.githubcopilot.com/mcp/",
-      "headers": { "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}", "X-MCP-Readonly": "true" }
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}",
+        "X-MCP-Readonly": "true"
+      }
     },
     "sonarqube": {
       "description": "Read SonarQube Server issues, quality gates and metrics.",
       "status": "adopt",
       "readOnly": "The variable SONARQUBE_READ_ONLY=true disables the write operations.",
-      "secrets": ["SONARQUBE_TOKEN", "SONARQUBE_URL"],
+      "secrets": [
+        "SONARQUBE_TOKEN",
+        "SONARQUBE_URL"
+      ],
       "stacks": [],
-      "suggest": ["sonar"],
+      "suggest": [
+        "sonar"
+      ],
       "command": "docker",
-      "args": ["run", "--init", "--rm", "-i", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_URL", "-e", "SONARQUBE_READ_ONLY", "sonarsource/sonarqube-mcp:1.29.0.4488"],
-      "env": { "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}", "SONARQUBE_URL": "${SONARQUBE_URL}", "SONARQUBE_READ_ONLY": "true" }
+      "args": [
+        "run",
+        "--init",
+        "--rm",
+        "-i",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "-e",
+        "SONARQUBE_READ_ONLY",
+        "sonarsource/sonarqube-mcp:1.29.0.4488"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "${SONARQUBE_TOKEN}",
+        "SONARQUBE_URL": "${SONARQUBE_URL}",
+        "SONARQUBE_READ_ONLY": "true"
+      }
     },
     "dbhub": {
       "description": "Explore a database schema and run read-only SQL.",
       "status": "adopt",
       "readOnly": "The config file sets readonly = true on the execute_sql tool. Use a read-only database role too.",
-      "secrets": ["DSN"],
+      "secrets": [
+        "DSN"
+      ],
       "stacks": [],
-      "suggest": ["postgres"],
+      "suggest": [
+        "postgres"
+      ],
       "command": "npx",
-      "args": ["-y", "@bytebase/dbhub@1.5.0", "--transport", "stdio", "--config", ".agents/mcp/dbhub.toml"],
-      "env": { "DSN": "${DSN}" },
-      "files": { ".agents/mcp/dbhub.toml": "mcp/dbhub.toml" }
+      "args": [
+        "-y",
+        "@bytebase/dbhub@1.5.0",
+        "--transport",
+        "stdio",
+        "--config",
+        ".agents/mcp/dbhub.toml"
+      ],
+      "env": {
+        "DSN": "${DSN}"
+      },
+      "files": {
+        ".agents/mcp/dbhub.toml": "mcp/dbhub.toml"
+      }
     },
     "playwright": {
       "description": "Drive a browser from accessibility snapshots.",
       "status": "adopt",
       "readOnly": "Not applicable. The server controls a local browser and does not write to a remote system.",
       "secrets": [],
-      "stacks": ["react-web", "angular-web", "next-web"],
+      "stacks": [
+        "react-web",
+        "angular-web",
+        "next-web"
+      ],
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@0.0.83"]
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.83"
+      ]
     },
     "chrome-devtools": {
       "description": "Inspect, profile and debug a Chrome page.",
       "status": "adopt",
       "readOnly": "Not applicable. The server controls a local browser. The flags turn off usage statistics and CrUX lookups.",
       "secrets": [],
-      "stacks": ["react-web", "angular-web", "next-web"],
+      "stacks": [
+        "react-web",
+        "angular-web",
+        "next-web"
+      ],
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@1.11.0", "--no-usage-statistics", "--no-performance-crux"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@1.11.0",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ]
     },
     "figma": {
       "description": "Read Figma designs and variables through the hosted server.",
@@ -109,8 +214,12 @@
       "readOnly": "The deny rules block the tools that write to Figma files.",
       "secrets": [],
       "stacks": [],
-      "suggest": ["figma"],
-      "providers": ["claude"],
+      "suggest": [
+        "figma"
+      ],
+      "providers": [
+        "claude"
+      ],
       "url": "https://mcp.figma.com/mcp",
       "deny": [
         "mcp__figma__add_code_connect_map",
@@ -138,7 +247,9 @@
       "readOnly": "Not applicable. The server reads the local Storybook. Start Storybook with the MCP addon first.",
       "secrets": [],
       "stacks": [],
-      "suggest": ["storybook"],
+      "suggest": [
+        "storybook"
+      ],
       "url": "http://localhost:6006/mcp"
     },
     "maestro": {
@@ -146,27 +257,46 @@
       "status": "adopt",
       "readOnly": "Not applicable. The server drives a local device or simulator.",
       "secrets": [],
-      "stacks": ["expo-mobile"],
+      "stacks": [
+        "expo-mobile"
+      ],
       "command": "maestro",
-      "args": ["mcp"]
+      "args": [
+        "mcp"
+      ]
     },
     "agent-device": {
       "description": "Inspect and control mobile apps on iOS and Android devices.",
       "status": "adopt",
       "readOnly": "Not applicable. The server drives a local device or simulator.",
       "secrets": [],
-      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
+      "stacks": [
+        "expo-mobile",
+        "android-compose",
+        "swift-ios"
+      ],
       "command": "npx",
-      "args": ["-y", "agent-device@0.21.28", "mcp"]
+      "args": [
+        "-y",
+        "agent-device@0.21.28",
+        "mcp"
+      ]
     },
     "xcodebuildmcp": {
       "description": "Build, run and test iOS and macOS apps with Xcode.",
       "status": "adopt",
       "readOnly": "Not applicable. The server runs local Xcode builds.",
       "secrets": [],
-      "stacks": ["swift-ios", "macos-desktop"],
+      "stacks": [
+        "swift-ios",
+        "macos-desktop"
+      ],
       "command": "npx",
-      "args": ["-y", "xcodebuildmcp@2.7.0", "mcp"]
+      "args": [
+        "-y",
+        "xcodebuildmcp@2.7.0",
+        "mcp"
+      ]
     },
     "process-compose": {
       "description": "Read the logs and state of the local stack when the host enables mcp_server in process-compose.yaml and keeps expose_control_tools off.",
@@ -174,8 +304,13 @@
       "readOnly": "The control tools stay off while expose_control_tools is not set. The server reads logs and state only.",
       "secrets": [],
       "stacks": [],
-      "suggest": ["local-run"],
-      "providers": ["claude", "copilot"],
+      "suggest": [
+        "local-run"
+      ],
+      "providers": [
+        "claude",
+        "copilot"
+      ],
       "transport": "sse",
       "url": "http://localhost:3000/sse",
       "minVersion": "1.120.0"
@@ -185,9 +320,13 @@
       "status": "adopt",
       "readOnly": "Not applicable. The server indexes the project into a local database.",
       "secrets": [],
-      "stacks": ["*"],
+      "stacks": [
+        "*"
+      ],
       "command": "codebase-memory-mcp",
-      "args": ["--tool-profile=analysis"]
+      "args": [
+        "--tool-profile=analysis"
+      ]
     },
     "projectmem": {
       "description": "Keep durable project memory in .projectmem/events.jsonl.",
@@ -196,7 +335,13 @@
       "secrets": [],
       "stacks": [],
       "command": "uvx",
-      "args": ["--from", "projectmem==0.3.4", "--with", "mcp<2", "pjm-mcp"]
+      "args": [
+        "--from",
+        "projectmem==0.3.4",
+        "--with",
+        "mcp<2",
+        "pjm-mcp"
+      ]
     },
     "context7": {
       "description": "Fetch current library documentation.",
@@ -204,50 +349,91 @@
       "readOnly": "Not applicable. The server only reads public documentation.",
       "secrets": [],
       "stacks": [],
-      "suggest": ["*"],
+      "suggest": [
+        "*"
+      ],
       "url": "https://mcp.context7.com/mcp"
+    },
+    "angular-cli": {
+      "description": "Angular CLI: documentation search, best practices and the workspace structure.",
+      "status": "trial",
+      "readOnly": "The flag --read-only keeps the server to the read tools; no schematic runs.",
+      "secrets": [],
+      "stacks": [],
+      "suggest": [
+        "angular-web"
+      ],
+      "command": "npx",
+      "args": [
+        "-y",
+        "@angular/cli@22.2.3",
+        "mcp",
+        "--read-only"
+      ]
     }
   },
   "plugins": {
     "typescript-lsp@claude-plugins-official": {
       "description": "Language server for TypeScript and JavaScript: types, definitions and diagnostics.",
-      "stacks": ["nestjs-api", "react-web", "next-web", "angular-web", "expo-mobile", "turbo-monorepo", "drizzle-postgres", "bullmq"],
+      "stacks": [
+        "nestjs-api",
+        "react-web",
+        "next-web",
+        "angular-web",
+        "expo-mobile",
+        "turbo-monorepo",
+        "drizzle-postgres",
+        "bullmq"
+      ],
       "command": "typescript-language-server",
       "install": "npm install -g typescript-language-server typescript"
     },
     "swift-lsp@claude-plugins-official": {
       "description": "Language server for Swift: types, definitions and diagnostics.",
-      "stacks": ["swift-ios", "macos-desktop"],
+      "stacks": [
+        "swift-ios",
+        "macos-desktop"
+      ],
       "command": "sourcekit-lsp",
       "install": "install Xcode or the Swift toolchain (xcode-select --install)"
     },
     "kotlin-lsp@claude-plugins-official": {
       "description": "Language server for Kotlin: types, definitions and diagnostics.",
-      "stacks": ["android-compose"],
+      "stacks": [
+        "android-compose"
+      ],
       "command": "kotlin-lsp",
       "install": "brew install JetBrains/utils/kotlin-lsp"
     },
     "csharp-lsp@claude-plugins-official": {
       "description": "Language server for C#: types, definitions and diagnostics.",
-      "stacks": ["winui-desktop"],
+      "stacks": [
+        "winui-desktop"
+      ],
       "command": "csharp-ls",
       "install": "dotnet tool install --global csharp-ls"
     },
     "rust-analyzer-lsp@claude-plugins-official": {
       "description": "Language server for Rust: types, definitions and diagnostics.",
-      "stacks": ["gtk-rust"],
+      "stacks": [
+        "gtk-rust"
+      ],
       "command": "rust-analyzer",
       "install": "rustup component add rust-analyzer"
     },
     "clangd-lsp@claude-plugins-official": {
       "description": "Language server for C and C++: types, definitions and diagnostics.",
-      "stacks": ["gtk-meson"],
+      "stacks": [
+        "gtk-meson"
+      ],
       "command": "clangd",
       "install": "install clangd from LLVM (brew install llvm, or apt install clangd)"
     },
     "jdtls-lsp@claude-plugins-official": {
       "description": "Language server for Java: types, definitions and diagnostics.",
-      "stacks": ["android-java"],
+      "stacks": [
+        "android-java"
+      ],
       "command": "jdtls",
       "install": "brew install jdtls"
     }

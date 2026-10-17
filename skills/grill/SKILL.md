@@ -69,6 +69,10 @@ ticket:
 
 Write each decision that the user makes as an ADR in `{{ADR_DIR}}`. Use the skill `adr`.
 
+## A document for a decider
+
+Read `references/decider-view.md` when the user asks for a document to send to a decider.
+
 ## Report
 
 Report three lists:

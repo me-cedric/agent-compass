@@ -33,7 +33,8 @@ stacks: [react-web, next-web]
 - Create the `apiClient` with `baseURL` from the environment and a timeout. Add auth in interceptors.
 - Use one React Query hook per operation in `queries/`: `useGetX`, `useCreateX`, `useUpdateX`, `useDeleteX`.
 - Use array query keys: `['entity']` or `['entity', id]`.
-- Invalidate the related queries in `onSuccess` of each mutation.
+- Invalidate the related queries in `onSettled` of each mutation, not only in `onSuccess`: a bulk write can fail in part, and the server has changed.
+  Run bulk writes with `Promise.allSettled` and report each failed item.
 - Type a mutation as `useMutation<TData, TError, TVariables>`.
 - When a ViewModel reads several queries, combine their loading flags with `useMemo`.
 
@@ -45,9 +46,16 @@ stacks: [react-web, next-web]
 - Keep auth state in a Zustand store. Use an `AUTH_STATUS` constant: `idle`, `authenticated`, `anonymous`, `refreshing`.
 - Write permissions as `resource:action` strings. Type them in `shared-types`.
 
+## Dev server
+- Warm the lazy routes at start: `server.warmup.clientFiles` with the route glob. A route that the optimiser meets first on navigation fails once, then works after a reload.
+- Add the CommonJS specifiers of an excluded package to the pre-bundle include list. Without it the browser rejects `default` from that module.
+
 ## UI
 - Extend the MUI theme with `customColors` and a module augmentation. Read colours from the theme. Do not hard-code hex values in components.
 - Wrap every label, column and button text in `t('page.<feature>.<section>.<key>')`. Do not hard-code UI text.
+- Label a picker option by a stable human name from a name-bearing source. Never fall back to an id or a nullable attribute. Use the same label as the rest of the UI.
+- Allow only `http` and `https` in a user-supplied `href`: parse the URL and check the protocol. `rel="noopener"` does not stop `javascript:`.
+- Keep layout in the CSS module with tokens. An inline `style` for width, margin or color bypasses the design system.
 
 ## Tests
 - Test with Vitest and Testing Library. Set `environment: 'jsdom'` and a setup file.

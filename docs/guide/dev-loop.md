@@ -54,7 +54,7 @@ Infrastructure (database, cache, identity server) runs in docker compose profile
 | `.dockerignore` | A tight build context: dependencies, build output, `.git`, `.env` and OS metadata. |
 | `docker-compose.local.example.yml` | Local infrastructure. Keep the dev stack and the test stack separate. |
 
-- Pin base image tags. Build the same artifact that CI ships.
+- Pin base image tags, and pin a digest for production. Build the same artifact that CI ships. Never run as root.
 - A compose file reads env from `.env`. Commit only the `.example` variant.
 - Strip OS metadata (`.DS_Store`, `._*`, `Thumbs.db`, `desktop.ini`) in every step that copies files into an artifact: archive, image context and bundler.
   `.gitignore` hides them from git, but it does not remove them from the disk.

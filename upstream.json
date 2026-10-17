@@ -7,7 +7,10 @@
       "holder": "DietrichGebert",
       "recommend": "user",
       "skills": [
-        "skills/ponytail", "skills/ponytail-audit", "skills/ponytail-debt", "skills/ponytail-help",
+        "skills/ponytail",
+        "skills/ponytail-audit",
+        "skills/ponytail-debt",
+        "skills/ponytail-help",
         "skills/ponytail-review"
       ]
     },
@@ -18,7 +21,9 @@
       "holder": "Julius Brussee",
       "recommend": "user",
       "skills": [
-        "skills/caveman", "caveman-commit", "caveman-review"
+        "skills/caveman",
+        "caveman-commit",
+        "caveman-review"
       ]
     },
     "i-have-adhd": {
@@ -47,11 +52,23 @@
       "licence": "MIT",
       "holder": "Leonxlnx",
       "recommend": "manual",
-      "stacks": ["react-web", "next-web", "angular-web"],
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web"
+      ],
       "skills": [
-        "brandkit", "taste-skill", "soft-skill", "image-to-code-skill", "imagegen-frontend-mobile",
-        "imagegen-frontend-web", "brutalist-skill", "minimalist-skill", "redesign-skill",
-        "stitch-skill", "taste-skill-v1"
+        "brandkit",
+        "taste-skill",
+        "soft-skill",
+        "image-to-code-skill",
+        "imagegen-frontend-mobile",
+        "imagegen-frontend-web",
+        "brutalist-skill",
+        "minimalist-skill",
+        "redesign-skill",
+        "stitch-skill",
+        "taste-skill-v1"
       ]
     },
     "android": {
@@ -59,15 +76,34 @@
       "sha": "5bda39f154fb859a08d45e2392f3568e049f83fb",
       "licence": "Apache-2.0",
       "holder": "Google LLC",
-      "stacks": ["android-compose"],
+      "stacks": [
+        "android-compose"
+      ],
       "skills": [
-        "adaptive", "agp-9-upgrade", "android-cli", "android-intent-security", "android-profiler",
-        "appfunctions", "camerax", "display-glasses-with-jetpack-compose-glimmer", "edge-to-edge",
-        "engage-sdk-integration", "leanback-to-compose-tv-migration", "media3-cast-integration",
-        "migrate-xml-views-to-jetpack-compose", "navigation-3",
-        "play-billing-library-version-upgrade", "play-policy-insights", "r8-analyzer",
-        "restore-credentials", "styles", "testing-setup", "verified-email", "wear-compose-m3",
-        "jetpack-compose-performance", "android-permissions-security"
+        "adaptive",
+        "agp-9-upgrade",
+        "android-cli",
+        "android-intent-security",
+        "android-profiler",
+        "appfunctions",
+        "camerax",
+        "display-glasses-with-jetpack-compose-glimmer",
+        "edge-to-edge",
+        "engage-sdk-integration",
+        "leanback-to-compose-tv-migration",
+        "media3-cast-integration",
+        "migrate-xml-views-to-jetpack-compose",
+        "navigation-3",
+        "play-billing-library-version-upgrade",
+        "play-policy-insights",
+        "r8-analyzer",
+        "restore-credentials",
+        "styles",
+        "testing-setup",
+        "verified-email",
+        "wear-compose-m3",
+        "jetpack-compose-performance",
+        "android-permissions-security"
       ]
     },
     "swift-ios": {
@@ -76,25 +112,95 @@
       "licence": "PolyForm-Perimeter-1.0.0",
       "holder": "dpearson2699",
       "recommend": "manual",
-      "stacks": ["swift-ios", "macos-desktop"],
+      "stacks": [
+        "swift-ios",
+        "macos-desktop"
+      ],
       "skills": [
-        "accessorysetupkit", "activitykit", "adattributionkit", "alarmkit", "app-clips",
-        "app-intents", "app-store-optimization", "app-store-review", "apple-on-device-ai",
-        "appmigrationkit", "audioaccessorykit", "authentication", "avkit", "background-processing",
-        "browserenginekit", "callkit", "carplay", "cloudkit", "contacts-framework", "core-bluetooth",
-        "core-data", "core-motion", "core-nfc", "coreml", "cryptokit", "cryptotokenkit",
-        "debugging-instruments", "device-integrity", "dockkit", "energykit", "eventkit", "financekit",
-        "focus-engine", "gamekit", "healthkit", "homekit", "ios-accessibility",
-        "ios-ettrace-performance", "ios-localization", "ios-memgraph-analysis", "ios-networking",
-        "mapkit", "metrickit", "musickit", "natural-language", "paperkit", "passkit",
-        "pdfkit", "pencilkit", "permissionkit", "photokit", "push-notifications", "realitykit",
-        "relevancekit", "scenekit", "sensorkit", "shareplay-activities", "speech-recognition",
-        "spritekit", "storekit", "swift-api-design-guidelines", "swift-architecture", "swift-charts",
-        "swift-codable", "swift-concurrency", "swift-formatstyle", "swift-language", "swift-security",
-        "swift-testing", "swiftdata", "swiftlint", "swiftui-animation", "swiftui-gestures",
-        "swiftui-layout-components", "swiftui-navigation", "swiftui-patterns",
-        "swiftui-performance", "swiftui-uikit-interop", "swiftui-webkit", "tabletopkit", "tipkit",
-        "vision-framework", "weatherkit", "widgetkit"
+        "accessorysetupkit",
+        "activitykit",
+        "adattributionkit",
+        "alarmkit",
+        "app-clips",
+        "app-intents",
+        "app-store-optimization",
+        "app-store-review",
+        "apple-on-device-ai",
+        "appmigrationkit",
+        "audioaccessorykit",
+        "authentication",
+        "avkit",
+        "background-processing",
+        "browserenginekit",
+        "callkit",
+        "carplay",
+        "cloudkit",
+        "contacts-framework",
+        "core-bluetooth",
+        "core-data",
+        "core-motion",
+        "core-nfc",
+        "coreml",
+        "cryptokit",
+        "cryptotokenkit",
+        "debugging-instruments",
+        "device-integrity",
+        "dockkit",
+        "energykit",
+        "eventkit",
+        "financekit",
+        "focus-engine",
+        "gamekit",
+        "healthkit",
+        "homekit",
+        "ios-accessibility",
+        "ios-ettrace-performance",
+        "ios-localization",
+        "ios-memgraph-analysis",
+        "ios-networking",
+        "mapkit",
+        "metrickit",
+        "musickit",
+        "natural-language",
+        "paperkit",
+        "passkit",
+        "pdfkit",
+        "pencilkit",
+        "permissionkit",
+        "photokit",
+        "push-notifications",
+        "realitykit",
+        "relevancekit",
+        "scenekit",
+        "sensorkit",
+        "shareplay-activities",
+        "speech-recognition",
+        "spritekit",
+        "storekit",
+        "swift-api-design-guidelines",
+        "swift-architecture",
+        "swift-charts",
+        "swift-codable",
+        "swift-concurrency",
+        "swift-formatstyle",
+        "swift-language",
+        "swift-security",
+        "swift-testing",
+        "swiftdata",
+        "swiftlint",
+        "swiftui-animation",
+        "swiftui-gestures",
+        "swiftui-layout-components",
+        "swiftui-navigation",
+        "swiftui-patterns",
+        "swiftui-performance",
+        "swiftui-uikit-interop",
+        "swiftui-webkit",
+        "tabletopkit",
+        "tipkit",
+        "vision-framework",
+        "weatherkit",
+        "widgetkit"
       ]
     },
     "dimillian": {
@@ -102,9 +208,13 @@
       "sha": "05ba982bfeb0d77d3c97d4542b0ee15034d05f84",
       "licence": "MIT",
       "holder": "Thomas Ricouard",
-      "stacks": ["swift-ios", "macos-desktop"],
+      "stacks": [
+        "swift-ios",
+        "macos-desktop"
+      ],
       "skills": [
-        "swift-concurrency-expert", "swiftui-ui-patterns"
+        "swift-concurrency-expert",
+        "swiftui-ui-patterns"
       ]
     },
     "dimillian-more": {
@@ -112,9 +222,14 @@
       "sha": "05ba982bfeb0d77d3c97d4542b0ee15034d05f84",
       "licence": "MIT",
       "holder": "Thomas Ricouard",
-      "stacks": ["swift-ios", "macos-desktop"],
+      "stacks": [
+        "swift-ios",
+        "macos-desktop"
+      ],
       "skills": [
-        "swiftui-liquid-glass", "swiftui-performance-audit", "swiftui-view-refactor"
+        "swiftui-liquid-glass",
+        "swiftui-performance-audit",
+        "swiftui-view-refactor"
       ],
       "recommend": "manual"
     },
@@ -123,7 +238,11 @@
       "sha": "202585240f0c1289642885b5df645cbc25114272",
       "licence": "MIT",
       "holder": "Callstack",
-      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
+      "stacks": [
+        "expo-mobile",
+        "android-compose",
+        "swift-ios"
+      ],
       "skills": [
         "agent-device"
       ]
@@ -133,9 +252,15 @@
       "sha": "202585240f0c1289642885b5df645cbc25114272",
       "licence": "MIT",
       "holder": "Callstack",
-      "stacks": ["expo-mobile", "android-compose", "swift-ios"],
+      "stacks": [
+        "expo-mobile",
+        "android-compose",
+        "swift-ios"
+      ],
       "skills": [
-        "android-emulator", "dogfood", "ios-simulator"
+        "android-emulator",
+        "dogfood",
+        "ios-simulator"
       ],
       "recommend": "manual"
     },
@@ -146,7 +271,8 @@
       "licence": "MIT",
       "holder": "Matt Pocock",
       "skills": [
-        "grill-me", "grilling"
+        "grill-me",
+        "grilling"
       ]
     },
     "mattpocock-more": {
@@ -156,7 +282,11 @@
       "licence": "MIT",
       "holder": "Matt Pocock",
       "skills": [
-        "grill-with-docs", "to-questionnaire", "wayfinder", "handoff", "tdd"
+        "grill-with-docs",
+        "to-questionnaire",
+        "wayfinder",
+        "handoff",
+        "tdd"
       ],
       "recommend": "manual"
     },
@@ -165,9 +295,12 @@
       "sha": "9ffb83138209057875698dd11c1720c657c47a92",
       "licence": "MIT",
       "holder": "Ravishankar",
-      "stacks": ["macos-desktop"],
+      "stacks": [
+        "macos-desktop"
+      ],
       "skills": [
-        "ui-review-tahoe", "macos-capabilities"
+        "ui-review-tahoe",
+        "macos-capabilities"
       ]
     },
     "winui": {
@@ -175,9 +308,13 @@
       "sha": "7ebc355c0e50ab4db91d8d46a7813062fefad981",
       "licence": "MIT",
       "holder": "Microsoft Corporation and Contributors",
-      "stacks": ["winui-desktop"],
+      "stacks": [
+        "winui-desktop"
+      ],
       "skills": [
-        "winui-design", "winui-code-review", "winui-dev-workflow"
+        "winui-design",
+        "winui-code-review",
+        "winui-dev-workflow"
       ]
     },
     "gtk": {
@@ -185,7 +322,9 @@
       "sha": "201fe0e96e55c42fde6bbb18bd83920f0213880a",
       "licence": "BSD-3-Clause",
       "holder": "Alex Oleshkevich",
-      "stacks": ["gtk-desktop"],
+      "stacks": [
+        "gtk-desktop"
+      ],
       "skills": [
         ".agents/skills/developing-gtk-apps"
       ]
@@ -195,7 +334,9 @@
       "sha": "927dd7cc2088ec2f0c73589fe2e94c3c973afc45",
       "licence": "MIT",
       "holder": "650 Industries, Inc. (Expo)",
-      "stacks": ["expo-mobile"],
+      "stacks": [
+        "expo-mobile"
+      ],
       "recommend": "manual",
       "skills": [
         "plugins/expo/skills/expo-overview",
@@ -228,7 +369,11 @@
       "sha": "b85c7a736bb473bf55b584e54a09ffa698d6d871",
       "licence": "Apache-2.0",
       "holder": "Microsoft Corporation",
-      "stacks": ["react-web", "next-web", "angular-web"],
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web"
+      ],
       "skills": [
         "skills/playwright-cli"
       ]
@@ -238,12 +383,41 @@
       "sha": "413fefe0c1eab1d9af726d4c0f12935111ca27ea",
       "licence": "MIT",
       "holder": "Google LLC",
-      "stacks": ["angular-web"],
+      "stacks": [
+        "angular-web"
+      ],
       "recommend": "manual",
       "licenceText": "MIT License\n\nCopyright 2026 Google LLC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
       "skills": [
         "angular-developer",
         "angular-new-app"
+      ]
+    },
+    "devops-security": {
+      "repo": "https://github.com/BagelHole/DevOps-Security-Agent-Skills",
+      "sha": "0365f57a079b1332f95cf26e31dd2d5332a8399f",
+      "licence": "MIT",
+      "holder": "Toby Miller",
+      "recommend": "manual",
+      "skills": [
+        "devops/orchestration/kubernetes-ops",
+        "security/hardening/kubernetes-hardening",
+        "devops/orchestration/helm-charts",
+        "devops/orchestration/argocd-gitops",
+        "devops/observability/prometheus-grafana",
+        "devops/observability/loki-logging",
+        "devops/observability/opentelemetry",
+        "devops/ci-cd/gitlab-ci",
+        "devops/ci-cd/github-actions",
+        "devops/containers/docker-management",
+        "security/hardening/container-hardening",
+        "security/scanning/container-scanning",
+        "devops/containers/container-registries",
+        "infrastructure/databases/postgresql",
+        "security/secrets/sops-encryption",
+        "security/scanning/sbom-supply-chain",
+        "security/scanning/supply-chain-attack-response",
+        "security/ai/mcp-server-security"
       ]
     }
   }

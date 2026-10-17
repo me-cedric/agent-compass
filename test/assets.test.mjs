@@ -341,7 +341,7 @@ test('the catalog suggest lists and the upstream stacks lists name known signals
   const suggest = Object.fromEntries(Object.entries(catalog).filter(([, e]) => e.suggest).map(([name, e]) => [name, e.suggest]))
   assert.deepEqual(suggest, {
     argocd: ['helm'], kubernetes: ['helm'], github: ['github'], sonarqube: ['sonar'], dbhub: ['postgres'], figma: ['figma'],
-    storybook: ['storybook'], 'process-compose': ['local-run'], context7: ['*'],
+    storybook: ['storybook'], 'process-compose': ['local-run'], context7: ['*'], 'angular-cli': ['angular-web'],
   })
   assert.deepEqual(catalog['codebase-memory'].stacks, ['*'])
   for (const [name, list] of Object.entries(suggest)) assert.ok(list.every((s) => known.has(s)), name)

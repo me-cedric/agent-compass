@@ -13,6 +13,7 @@ stacks: [swift-ios, macos-desktop]
 - Keep view state in `@Observable` types. Use UIKit or AppKit interop only where SwiftUI has no equivalent.
 - Mark UI types `@MainActor`. Do not silence a concurrency diagnostic with `@unchecked Sendable`. Fix the isolation instead.
 - Build with Swift Package Manager: one package target per feature, each with its own `README.md`.
+- A target declares each module that it imports. Autolink is not a dependency: a new target that links the same module can break the incremental build of the first one.
 - Keep the app target for the entry point, dependency wiring and routing only.
 - Share tokens and views through a `DesignSystem` package. Put infrastructure in `Networking` and `Persistence` packages.
 - Use SwiftData for local persistence. Use `URLSession` with `async` and `await` for the network. Use `Codable` for wire types.

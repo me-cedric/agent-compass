@@ -40,6 +40,8 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 ### Skills
 
 - Own skills for specs, tickets, review, debug, API contracts, CI triage, UI conformance and long work. Each skill uses placeholders for the repository paths.
+- The source `devops-security` (by hand) brings 18 ops and security skills for Kubernetes, Helm, ArgoCD, Grafana, GitLab and GitHub hosts. The MCP catalog has `angular-cli` (trial, read-only).
+- Rules and guides fold the 0.9 knowledge that had no 1.0 home: bulk React Query writes settle in `onSettled`, picker labels, safe `href`, dev-server route warmup, Swift module declarations, Android shell refusals, an adapter for an untyped dependency, parallel locale artifacts, external pipelines, the OpenSpec root and `config.yaml` rules, a document for a decider, the code graph settings, a docs lint section, the tool contract, a tool table, delivered scope, the `GIT_INDEX_FILE` fix and image digests.
 - Pinned upstream skills from 16 sources, among them `ponytail`, `caveman`, `i-have-adhd` and `asd-ste100`. The official Expo skills (`expo`, by hand), the Playwright CLI skill (`playwright-cli`, recommended for web stacks) and the official Angular skills (`angular`, by hand) are new. caveman moves to v4.0.1 under Apache-2.0; taste moves to v2.0.0 and keeps the old skill as `taste-skill-v1`.
 - The engine copies a root `NOTICE` file beside each upstream skill (Apache-2.0 section 4(d)). A source whose repository has no licence file can carry the text in `licenceText`; the engine writes it as `LICENSE`.
 - Stack rules for Android, Angular, Drizzle, Expo, GTK, macOS, NestJS, React, Swift and WinUI.

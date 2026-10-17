@@ -24,6 +24,7 @@ The stack rules in `rules/` hold the framework detail (see [assets.md](assets.md
   Add a project to the script in the change that adds its `tsconfig`.
 - Use a path alias such as `@/` for imports across modules. Use a relative import only inside one folder or for a direct child.
 - Keep React hooks small and pure. Clean up each effect.
+- Keep a dependency that returns `any` behind one adapter module. The adapter exports named types. Add a shape test, because a version bump that moves the runtime shape still compiles.
 
 ### Limits and generated files
 
@@ -78,6 +79,7 @@ The stack rules in `rules/` hold the framework detail (see [assets.md](assets.md
 - Name a branch `<type>/<area>/<short-kebab-desc>`. The type is `feature` or `fix`. The area is an app or package, for example `api` or `ci`.
 - Use three hooks. `pre-commit` runs `lint-staged` on the staged files. `pre-push` builds the shared packages, then runs `typecheck` and `lint`.
   `commit-msg` runs `commitlint`. Keep `pre-commit` fast. CI still runs the full check.
+  `pre-commit` unsets `GIT_INDEX_FILE` first: it breaks `lint-staged` during `git commit --amend`, and git falls back to `.git/index`.
 - Agents do not commit, push, deploy, publish or open a PR unless the user asks. Check `git status` before you edit. On the default branch, branch first.
 - "Release a patch" authorizes the whole chain:
   1. Bump the version and validate.
@@ -249,6 +251,8 @@ Ask before each commit: what did this change make wrong, and what did it make sp
   Keep the section list in one place.
 - The root README lets a newcomer set up and run the project. Update it in the change that alters setup or scripts.
 - Record one language for each audience: human-facing docs, and agent- or tool-facing files. A new document follows the language of its audience.
+- An artifact that exists in two or more languages (locale tables, a bilingual changelog, a handbook) changes in one task, in every language.
+  A test checks three things: the same identifiers in the same order, no item byte-identical across two languages, and every heading parses. Translate; never paste.
 - Enforce imposed vocabulary (terms from counsel, a contract or an ADR) with a linter such as Vale, not with memory.
 - A documentation change is never one file. Walk the chain:
   - The specification feeds personas, costing and open questions.

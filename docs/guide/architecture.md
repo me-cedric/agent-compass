@@ -52,7 +52,11 @@ Agents often get these rules wrong:
 - Write the values and their source in the module README.
 - Pair each policy with a span and a log.
 
-For queue-backed provider work (media, imports, exports, AI calls), bound the work and make it recoverable.
+For queue-backed provider work (media, imports, exports, AI calls), bound the work and make it recoverable:
+
+- Keep business code behind a provider abstraction. Local and dev default to a mock or offline provider. A live provider fails closed when a secret or a host tool is missing.
+- Keep long work out of the HTTP request path. Let a deployment split the roles: `api` serves HTTP, `worker` consumes queues, `all` is for local dev. Scale with a concurrency env var, then with replicas.
+- Use explicit states (`queued`, `processing`, `available`, `failed`) with an auditable transition. Stream a large payload; do not buffer the whole file. Keep raw sensitive data only as long as the job needs it.
 
 ## Observability
 

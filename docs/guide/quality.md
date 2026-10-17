@@ -106,6 +106,17 @@ Pin the toolchain, so that laptops, CI and agents run the same versions.
 - The Rust channel is the compiler that builds. `rust-version` in `Cargo.toml` is the oldest compiler that you support. Never copy the channel into it.
   Keep the channel at or above `rust-version`. Raising it is a decision and, for a library, a breaking change.
 
+## Docs lint
+
+Use Vale when the project has imposed vocabulary (terms from counsel, a contract or an ADR), a required structure for normative documents, or identifier formats to police.
+Skip it when only English style is at stake.
+
+- Measure the corpus before you enforce a structure: `grep -h '^## ' docs/specs/*.md | sort | uniq -c | sort -rn`. Set the bar at what the documents already do, then raise it one section at a time.
+- One rule per required section, with the section name in the message. A rule that fails on every document is a red light that the team steps around.
+- `BasedOnStyles` must name a style that exists in `StylesPath`, or Vale stops with exit 2. A downloaded style runs only when `BasedOnStyles` names it. Check with `vale ls-config`.
+- `occurrence` counts inside each instance of its scope, so `scope: heading.h1, max: 1` is inert. Count over `scope: raw` with an explicit token.
+- Install it as a repo dependency (`@vvago/vale`) so CI and every workstation run the same version. Its install script downloads a binary: allow the build on purpose.
+
 ## Quality skills
 
 Use `review` before you report done, `ci-triage` for a red pipeline, `ui-conformance` for a UI change and `api-contract-sync` for an API change.

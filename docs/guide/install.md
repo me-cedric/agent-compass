@@ -21,6 +21,18 @@ Without `--root`, `sync`, `check` and `doctor` find the project root above the c
 
 A project that has input documents runs `ac init --from-specs <dir>`. See [Start from documents](delivery.md#start-from-documents).
 
+Tools that the packs and skills use. Install what the project uses and check each one with its version command.
+
+| Tool | Used by | Check |
+|---|---|---|
+| Node 20.12 or later, git | the engine | `node -v`, `git --version` |
+| `gh` or `glab` | `task-flow`, `review`, the Delivery tab | `gh auth status`, `glab auth status` |
+| `osv-scanner` | the `security` pack | `osv-scanner --version` |
+| `process-compose`, Docker | `ac dev` | `process-compose version`, `docker compose version` |
+| `age` | `ac env export` and `import` | `age --version` |
+| `uv`, Python 3.10 or later | `projectmem` | `uv --version` |
+| `bru`, Mockoon | `api-contract-sync` | `bru --version` |
+
 ## What sync does
 
 `ac sync` fetches the sources in `upstream`, plans the files, keys and blocks, and compares each item with the project and the lock.

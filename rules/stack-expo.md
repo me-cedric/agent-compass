@@ -29,7 +29,8 @@ stacks: [expo-mobile]
 - Write each service as a pure async function over one Axios instance. Use no hooks.
 - Read the API URL from `EXPO_PUBLIC_API_URL`. Throw at startup when it is missing. Add auth in interceptors.
 - Use one React Query hook per operation in `queries/`, with array query keys.
-- Invalidate the related queries in `onSuccess` of each mutation.
+- Invalidate the related queries in `onSettled` of each mutation, not only in `onSuccess`: a bulk write can fail in part, and the server has changed.
+  Run bulk writes with `Promise.allSettled` and report each failed item.
 - Persist a query only when it sets `meta: { persist: true }`. Persist through `PersistQueryClientProvider`.
 - Keep auth state in a Zustand store with an `AUTH_STATUS` constant. Export selector functions to limit re-renders.
 - Give each context provider a `useX` hook that throws when called outside the provider.

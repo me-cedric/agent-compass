@@ -99,6 +99,10 @@ Use this for a codebase that has no specs.
 6. Never overwrite a spec. Write the draft beside it and name the conflict.
 7. Hand the open questions to `grill`.
 
+## OpenSpec CLI
+
+Read `references/openspec.md` for the root rule, the `config.yaml` rules and a checklist gate.
+
 ## Drift triage
 
 Read `references/drift-triage.md` when a spec changes after tickets exist.

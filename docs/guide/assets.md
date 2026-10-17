@@ -111,12 +111,15 @@ The stack `*` means every project. A `suggest` signal (for example `github` or `
 | `codebase-memory` | Code graph of symbols, callers and architecture. On in every project (stack `*`). | `--tool-profile=analysis` keeps the 11 read tools. The server indexes into a local database. |
 | `context7` | Library docs. Recommended, never installed by itself. | Not applicable |
 | `projectmem` (trial) | Durable project memory in `.projectmem/events.jsonl`. No stack selects it. Add it to `mcp`. | Not applicable. Never log a secret. |
+| `angular-cli` (trial) | Angular docs search and best practices. Suggested for `angular-web`; add it to `mcp`. | `--read-only` |
 
 A secret is the text `${VAR}` and nothing else. Compass never writes a value.
 Claude expands `${VAR}` itself and Copilot reads `${env:VAR}`. Codex cannot expand it, so the Codex entry names the variable.
 Sync writes each server to `.mcp.json` (`mcpServers`), `.codex/config.toml` (`mcp_servers`) and `.vscode/mcp.json` (`servers`).
 A server can also add a file in `.agents/mcp/` and deny rules in `.claude/settings.json`.
 A server with `minVersion` gets a check in `ac doctor`: it warns when `<command> --version` prints an older version.
+A connected server is not an approved tool set. Keep a per-tool contract in the project (access, data sensitivity, approval mode, expected failure): a tool absent from the contract is not approved.
+Codex enforces it with `enabled_tools` and `default_tools_approval_mode`; Copilot allowlists tools in the repository settings; Claude uses the deny rules that compass writes.
 
 ## Claude plugins
 
@@ -160,6 +163,7 @@ Each skill of a source is a `skill` asset with the source `upstream:<id>`. It is
 | `android`, `swift-ios`, `dimillian`, `agent-device` | Native and device skills. See [native.md](native.md). | Native and Expo stacks |
 | `dimillian-more`, `agent-device-tools` | The other SwiftUI skills; `android-emulator`, `dogfood`, `ios-simulator` (by hand) | Native and Expo stacks |
 | `apple-macos`, `winui`, `gtk` | Desktop review and development | `macos-desktop`, `winui-desktop`, `gtk-desktop` |
+| `devops-security` | 18 ops and security skills for a Kubernetes, Helm, ArgoCD, Grafana, GitLab or GitHub host: `kubernetes-ops`, `helm-charts`, `argocd-gitops`, `prometheus-grafana`, `opentelemetry`, `gitlab-ci`, `github-actions`, `postgresql`, `sops-encryption`, `sbom-supply-chain` and more (by hand). The source has 163 skills; the other ones are out of scope or put a secret in a command argument. The 18 together add about 1,000 always-on tokens: keep the ones the host uses and put the rest in `exclude`. | All |
 
 A third-party skill is text that you did not write. It cannot relax a compass rule.
 The `swift-ios` source has a PolyForm Perimeter licence. Read each `licence` in `upstream.json` before you install a source.

@@ -34,4 +34,5 @@ stacks: [android-compose]
 - Run `./gradlew :<module>:lint :<module>:testDebugUnitTest`. Widen to `./gradlew lint test` only when the change crosses modules.
 - Attach a screenshot from a booted emulator for a screen change: `adb exec-out screencap -p > screen.png`. A Compose `@Preview` is not proof.
 - Drive the running app with the `agent-device` skill. Pin one version.
+- An instrumented test that runs a shell command reads the error stream too (`executeShellCommandRwe`). A refusal goes to stderr; skip the test with `assumeTrue` and the refusal text.
 - When the host installs the `android` upstream skills, read the matching skill before you write platform API code from memory.
