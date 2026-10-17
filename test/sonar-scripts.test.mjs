@@ -16,7 +16,8 @@ const run = (command, args, options) => new Promise((resolve) => {
   child.on('close', (code) => resolve({ code, output }))
 })
 
-test('setup-mode doctor permits CSV drift that the upcoming scan will refresh', async () => {
+// The Sonar scripts are bash scripts for a POSIX host. Git Bash on Windows does not use the fake curl on PATH.
+test('setup-mode doctor permits CSV drift that the upcoming scan will refresh', { skip: process.platform === 'win32' && 'the Sonar scripts run on a POSIX host' }, async () => {
   const host = await mkdtemp(join(tmpdir(), 'ac-sonar-doctor-'))
   const bin = join(host, 'bin')
   const scripts = join(host, 'scripts')

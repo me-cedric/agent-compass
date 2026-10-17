@@ -181,7 +181,7 @@ test('the status line command uses the unversioned compass path in quotes, and r
   const fix = doctorGlobal({ AC: spaced, root: home, home, env: {} }).recommended.find((c) => c.name === 'statusLine').fix
   const { statusLine } = JSON.parse(fix.slice(fix.indexOf('{')))
   const script = join(spaced, 'plugins/compass-user/scripts/statusline.mjs')
-  assert.equal(statusLine.command, `node ${JSON.stringify(script)}`)
+  assert.equal(statusLine.command, `node "${script}"`)
   assert.doesNotMatch(statusLine.command, /\/\d+\.\d+\.\d+\//, 'no plugin version in the path')
   const run = spawnSync('sh', ['-c', statusLine.command], { input: JSON.stringify({ model: { display_name: 'Opus' } }), encoding: 'utf8', timeout: 10_000 })
   assert.equal(run.status, 0, run.stderr)
