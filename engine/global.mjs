@@ -55,7 +55,7 @@ const measureHooks = (hooks, root) => hooks.filter((h) => h.event === 'SessionSt
     cwd: root,
     input: '{}',
     encoding: 'utf8',
-    timeout: 5_000,
+    timeout: 10_000,
     env: { ...process.env, GIT_TERMINAL_PROMPT: '0', CLAUDE_PROJECT_DIR: root, ...(h.root && { CLAUDE_PLUGIN_ROOT: h.root }) },
   })
   const error = r.status === 0 ? null : (r.error?.message || r.stderr || `exit code ${r.status}`).trim().split('\n')[0]
@@ -105,7 +105,7 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
     ...SET.map((s) => status(s.name, s.source, s.market)),
     settings.statusLine?.command
       ? { name: 'statusLine', ok: true }
-      : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node ${JSON.stringify(script)}` } })}` },
+      : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node "${script}"` } })}` },
   ]
 
   const seen = new Map()

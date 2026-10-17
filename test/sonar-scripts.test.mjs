@@ -36,7 +36,8 @@ esac
 `)
     await chmod(join(bin, 'curl'), 0o755)
 
-    const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH}` }
+    const pathKey = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH') ?? 'PATH'
+    const env = { ...process.env, [pathKey]: `${bin}${delimiter}${process.env[pathKey]}` }
     const strict = await run('bash', [join(scripts, 'sonar-doctor.sh'), 'api'], { cwd: host, env })
     assert.equal(strict.code, 1)
     assert.match(strict.output, /CSV=1\s+server OPEN=2/)
