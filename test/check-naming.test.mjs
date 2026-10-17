@@ -27,6 +27,10 @@ test('check-naming accepts generic files and valid skill frontmatter', async () 
       '',
     ].join('\n'))
 
+    // An upstream copy keeps the author's frontmatter: the LICENSE beside SKILL.md marks it.
+    await mkdir(join(dir, 'plugins', 'p', 'skills', 'copied'), { recursive: true })
+    await writeFile(join(dir, 'plugins', 'p', 'skills', 'copied', 'SKILL.md'), '---\nname: copied\ndescription: Copied.\n---\n')
+    await writeFile(join(dir, 'plugins', 'p', 'skills', 'copied', 'LICENSE'), 'MIT\n')
     const result = await runNode([script, '--root', dir], { cwd: root })
     assert.equal(result.code, 0, result.stderr)
     assert.match(result.stdout, /skill frontmatter valid/)

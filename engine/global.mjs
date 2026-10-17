@@ -30,9 +30,9 @@ const load = (path, errors) => {
 }
 
 const hooksOf = (hooks, from, root) => EVENTS.flatMap((event) => (Array.isArray(hooks?.[event]) ? hooks[event] : [])
-  .flatMap((m) => (Array.isArray(m?.hooks) ? m.hooks : []))
-  .filter((h) => h?.type === 'command' && typeof h.command === 'string')
-  .map((h) => ({ event, from, command: h.command, root })))
+  .flatMap((m) => (Array.isArray(m?.hooks) ? m.hooks : []).map((h) => [m.matcher ?? '', h]))
+  .filter(([, h]) => h?.type === 'command' && typeof h.command === 'string')
+  .map(([matcher, h]) => ({ event, matcher, from, command: h.command, root })))
 
 // `[mcp_servers.<name>]` and `[plugins."<name>"]` tables. A sub-table such as `[mcp_servers.<name>.env]` is the same server.
 const codexOf = (text) => {
@@ -56,7 +56,8 @@ export const hookError = (r) => {
 }
 
 // The hook commands are shell strings, so this is the one place that runs a shell (SHELL: sh, or Git Bash on Windows). Only --measure gets here.
-const measureHooks = (hooks, root) => hooks.filter((h) => h.event === 'SessionStart').map((h) => {
+// One SessionStart matcher fires per session, so the same command under several matchers runs once.
+const measureHooks = (hooks, root) => hooks.filter((h, i, all) => h.event === 'SessionStart' && all.findIndex((x) => x.event === 'SessionStart' && x.command === h.command) === i).map((h) => {
   const r = spawnSync(h.command, {
     shell: SHELL,
     cwd: root,
@@ -110,14 +111,21 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
   const recommended = [
     status('compass-user', AC, 'agent-compass'),
     ...SET.map((s) => status(s.name, s.source, s.market)),
+    ['compass-user:compass', 'compass'].includes(settings.outputStyle)
+      ? { name: 'outputStyle', ok: true }
+      : { name: 'outputStyle', ok: false, fix: 'add to ~/.claude/settings.json: {"outputStyle":"compass-user:compass"}' },
+    isObj(settings.attribution) && settings.attribution.commit === '' && settings.attribution.pr === ''
+      ? { name: 'attribution', ok: true }
+      : { name: 'attribution', ok: false, fix: 'add to ~/.claude/settings.json: {"attribution":{"commit":"","pr":"","sessionUrl":false}}' },
     settings.statusLine?.command
       ? { name: 'statusLine', ok: true }
       : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node "${script}"` } })}` },
   ]
 
   const seen = new Map()
-  for (const h of hooks) seen.set(`${h.event}\0${h.command}`, (seen.get(`${h.event}\0${h.command}`) ?? 0) + 1)
-  for (const [key, n] of seen) if (n > 1) { const [event, command] = key.split('\0'); warnings.push(`the ${event} hook "${command}" is listed ${n} times; it runs ${n} times`) }
+  // The same command under another matcher is another hook (SessionStart: startup, resume, clear, compact).
+  for (const h of hooks) seen.set(`${h.event}\0${h.matcher}\0${h.command}`, (seen.get(`${h.event}\0${h.matcher}\0${h.command}`) ?? 0) + 1)
+  for (const [key, n] of seen) if (n > 1) { const [event, , command] = key.split('\0'); warnings.push(`the ${event} hook "${command}" is listed ${n} times; it runs ${n} times`) }
   if (enabled.length > LIMITS.plugins) warnings.push(`${enabled.length} enabled Claude plugins; the budget is ${LIMITS.plugins}`)
   if (mcp.length > LIMITS.mcp) warnings.push(`${mcp.length} Claude MCP servers at user level; the budget is ${LIMITS.mcp}`)
   if (codex.mcp.length > LIMITS.mcp) warnings.push(`${codex.mcp.length} Codex MCP servers; the budget is ${LIMITS.mcp}`)

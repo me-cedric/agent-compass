@@ -2,7 +2,7 @@
 
 ## Upstream Sources
 
-Agent Compass ships no copy of an upstream skill. The file `upstream.json` pins each source by commit sha.
+Agent Compass ships no copy of an upstream skill, with one exception: the user plugin `compass-user` carries `asd-ste100` at the sha that `upstream.json` pins, with its LICENSE, because that source has no plugin marketplace of its own. The file `upstream.json` pins each source by commit sha.
 
 The command `ac sync` fetches a source into the user cache. It copies the skills of that source into a host only when the host lists the source id in `upstream` in `.agents/compass.json`.
 

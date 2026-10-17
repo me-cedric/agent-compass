@@ -72,6 +72,7 @@ Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install w
 
 ### User plugin
 
+- The plugin `compass-user` carries the `asd-ste100` skill at the pinned sha (no plugin marketplace of its own). `ac doctor --global` recommends `outputStyle` and `attribution` too, counts a hook once per matcher, and measures a command once. The naming lint skips a skill folder that has its own LICENSE.
 - The plugin `compass-user` works in every repository. Install it from this repository: `claude plugin marketplace add <path>`, then `claude plugin install compass-user@agent-compass`. Codex and Copilot CLI use the same marketplace.
 - It has the hooks, the `compass` output style, the `compass-style` skill and the script `scripts/statusline.mjs`. The status line shows the model, the directory, the cache share and the context size.
 - The plugin hook steps back for each event that the project hook runs: the project lock owns the hook key, or the project settings file lists a compass hook for the event. A project that keeps its own hooks still gets the `.env` guard.

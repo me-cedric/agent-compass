@@ -157,7 +157,9 @@ The token count is an estimate of 4 characters for each token.
 ## User level
 
 The plugin `compass-user` applies the style contract in every repository, not only in a compass project. It has the compass hooks, the answer-shape output style,
-the `compass-style` skill and a cache-aware status line. Install it once for each provider. The path is the compass checkout.
+the `compass-style` and `asd-ste100` skills and a cache-aware status line. Install it once for each provider. The path is the compass checkout.
+`ponytail`, `caveman` and `i-have-adhd` are plugins of their own; `ac doctor --global` prints the install command of each one that is missing,
+and the two settings that a plugin cannot set: `outputStyle` and `attribution`.
 
 ```bash
 claude plugin marketplace add <path> && claude plugin install compass-user@agent-compass

@@ -19,7 +19,7 @@ const put = (root, files) => {
     writeFileSync(join(root, rel), typeof data === 'string' ? data : `${JSON.stringify(data, null, 2)}\n`)
   }
 }
-const cmd = (command) => ({ hooks: [{ type: 'command', command }] })
+const cmd = (command, matcher) => ({ ...(matcher && { matcher }), hooks: [{ type: 'command', command }] })
 const say = (n) => `node -e "process.stdout.write('x'.repeat(${n}))"`
 
 // A home with two enabled plugins (one disabled), user MCP servers, user hooks and a Codex config.
@@ -64,11 +64,13 @@ test('the recommended set prints the exact command for each missing item', () =>
   assert.match(items['i-have-adhd'].fix, /install i-have-adhd@i-have-adhd$/)
   const script = JSON.stringify(`node "${join(AC, 'plugins/compass-user/scripts/statusline.mjs')}"`)
   assert.ok(items.statusLine.fix.includes(`"command":${script}`), items.statusLine.fix)
+  assert.equal(items.outputStyle.fix, 'add to ~/.claude/settings.json: {"outputStyle":"compass-user:compass"}')
+  assert.equal(items.attribution.fix, 'add to ~/.claude/settings.json: {"attribution":{"commit":"","pr":"","sessionUrl":false}}')
 })
 
 test('an installed plugin that is off gets an enable command; a set status line is ok', () => {
   const home = makeHome({
-    settings: { statusLine: { type: 'command', command: 'echo hi' }, enabledPlugins: { 'compass-user@agent-compass': true } },
+    settings: { statusLine: { type: 'command', command: 'echo hi' }, outputStyle: 'compass-user:compass', attribution: { commit: '', pr: '', sessionUrl: false }, enabledPlugins: { 'compass-user@agent-compass': true } },
     extra: {
       '.claude/plugins/installed_plugins.json': { plugins: {
         'compass-user@agent-compass': [{ scope: 'user', installPath: '/x/compass-user/1.0.0' }],
@@ -78,6 +80,7 @@ test('an installed plugin that is off gets an enable command; a set status line 
   })
   const items = Object.fromEntries(doctorGlobal({ AC, root: temp(), home }).recommended.map((c) => [c.name, c]))
   assert.equal(items['compass-user'].ok, true)
+  assert.deepEqual([items.outputStyle.ok, items.attribution.ok], [true, true])
   assert.equal(items.statusLine.ok, true)
   assert.equal(items.caveman.fix, 'claude plugin enable caveman@caveman')
 })
@@ -128,12 +131,13 @@ test('hookError: the exit code wins over a stdin write error; a timeout or a sig
 })
 
 test('--measure flags a hook above 1,000 characters, a total above 2,000 and a failing hook', () => {
-  const hooks = { SessionStart: [cmd(say(1001)), cmd(say(900)), cmd(say(900)), cmd('exit 3')] }
+  // say(900) sits under two matchers: one session start runs it once, so the measure counts it once.
+  const hooks = { SessionStart: [cmd(say(1001)), cmd(say(900), 'startup'), cmd(say(900), 'resume'), cmd(say(901)), cmd('exit 3')] }
   const r = doctorGlobal({ AC, root: temp(), home: makeHome({ settings: { hooks } }), measure: true })
-  assert.deepEqual(r.measure.items.map((i) => i.chars), [1001, 900, 900, 0, 20])
+  assert.deepEqual(r.measure.items.map((i) => i.chars), [1001, 900, 901, 0, 20])
   assert.equal(r.warnings.filter((w) => /prints 1001 characters/.test(w)).length, 1)
   assert.equal(r.warnings.filter((w) => /exit code 3/.test(w)).length, 1)
-  assert.ok(r.warnings.some((w) => /print 2821 characters; the budget is 2000/.test(w)))
+  assert.ok(r.warnings.some((w) => /print 2822 characters; the budget is 2000/.test(w)))
   assert.equal(r.ok, true)
 })
 
@@ -197,9 +201,9 @@ test('the status line command uses the unversioned compass path in quotes, and r
 })
 
 test('a hook command that is listed more than once for one event is a warning', () => {
-  const home = makeHome({ settings: { hooks: { SessionStart: [cmd('remind'), cmd('remind'), cmd('remind'), cmd(say(10))], UserPromptSubmit: [cmd('remind')] } } })
+  const home = makeHome({ settings: { hooks: { SessionStart: [cmd('remind'), cmd('remind'), cmd('remind'), cmd(say(10)), cmd('once', 'startup'), cmd('once', 'resume')], UserPromptSubmit: [cmd('remind')] } } })
   const r = doctorGlobal({ AC, root: home, home, env: {} })
-  assert.deepEqual(r.warnings.filter((w) => /is listed \d+ times/.test(w)), ['the SessionStart hook "remind" is listed 3 times; it runs 3 times'])
+  assert.deepEqual(r.warnings.filter((w) => /is listed \d+ times/.test(w)), ['the SessionStart hook "remind" is listed 3 times; it runs 3 times'], 'one command under two matchers is not a duplicate')
 })
 
 test('the hook list covers the four events that inject text; --measure still runs SessionStart only', () => {

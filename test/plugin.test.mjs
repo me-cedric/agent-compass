@@ -47,6 +47,12 @@ test('the manifests, the marketplaces and the package have one version and one p
   assert.equal(codexMarket.plugins[0].source.path, './plugins/compass-user')
 })
 
+test('the plugin carries the asd-ste100 skill at the pinned upstream sha, with its LICENSE', () => {
+  assert.match(read('plugins/compass-user/skills/asd-ste100/SKILL.md'), /^---\nname: asd-ste100\n/)
+  assert.match(read('plugins/compass-user/skills/asd-ste100/LICENSE'), /MIT License/)
+  assert.equal(json('upstream.json').sources['asd-ste100'].skills[0], '.')
+})
+
 test('the compass-style skill is 40 lines or fewer and names the four skills', () => {
   const text = read('plugins/compass-user/skills/compass-style/SKILL.md')
   assert.ok(text.trimEnd().split('\n').length <= 40)

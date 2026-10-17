@@ -7,7 +7,7 @@
 // Real technology names (keycloak, postgres, docker, turbo, …) are ALLOWED.
 // To forbid a new name, add it to DENY below. Exit code feeds CI (see ci.yml).
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, extname, basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseCliArgs } from './lib/args.mjs'
@@ -43,6 +43,8 @@ const hits = []
 const skillHits = []
 const checkSkillFrontmatter = (full, txt) => {
   if (basename(full) !== 'SKILL.md') return
+  // A skill folder with its own LICENSE is an upstream copy (the user plugin carries one). Its frontmatter is the author's.
+  if (existsSync(join(dirname(full), 'LICENSE'))) return
   const fm = txt.match(/^---\n([\s\S]*?)\n---\n/)
   if (!fm) {
     skillHits.push(`${full.replace(ROOT + '/', '')}: missing frontmatter`)

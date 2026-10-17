@@ -8,7 +8,7 @@
     {
       "name": "compass-user",
       "source": "./plugins/compass-user",
-      "description": "Style contract for every repository: the compass hooks, the answer-shape output style, the compass-style skill and a cache-aware status line.",
+      "description": "Style contract for every repository: the compass hooks, the answer-shape output style, the compass-style and asd-ste100 skills and a cache-aware status line.",
       "version": "1.0.0"
     }
   ]
