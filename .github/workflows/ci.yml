@@ -30,10 +30,6 @@ jobs:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
-    env:
-      # Windows only in effect (macOS reads TMPDIR): the runner's TEMP has a short 8.3 name, git prints the long name. One name for both.
-      TEMP: ${{ runner.temp }}
-      TMP: ${{ runner.temp }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -44,4 +40,8 @@ jobs:
       - name: Trust the temp repositories that the tests create
         run: git config --global --add safe.directory "*"
       - name: Run tests
+        # Windows only in effect (macOS reads TMPDIR): the runner's TEMP has a short 8.3 name, git prints the long name. One name for both.
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
         run: npm test
