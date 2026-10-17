@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { doctorGlobal, formatGlobal } from '../engine/global.mjs'
+import { doctorGlobal, formatGlobal, hookError } from '../engine/global.mjs'
 import { runNode } from './helpers.mjs'
 
 const AC = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -117,6 +117,14 @@ test('without --measure no hook runs; with it each SessionStart hook runs once',
   assert.equal(r.measure.items.length, 2)
   assert.equal(r.measure.total, 10)
   assert.equal(readFileSync(join(root, 'marker'), 'utf8'), `${join(home, 'cache/alpha')}|`)
+})
+
+test('hookError: the exit code wins over a stdin write error; a timeout or a signal keeps its name', () => {
+  assert.equal(hookError({ status: 0, error: new Error('write EPIPE'), stderr: '' }), null)
+  assert.equal(hookError({ status: 3, error: new Error('write EPIPE'), stderr: '' }), 'exit code 3')
+  assert.equal(hookError({ status: 1, stderr: 'boom\nmore' }), 'boom')
+  assert.equal(hookError({ status: null, error: new Error('spawnSync /bin/sh ETIMEDOUT'), stderr: '' }), 'spawnSync /bin/sh ETIMEDOUT')
+  assert.equal(hookError({ status: null, signal: 'SIGKILL', stderr: '' }), 'signal SIGKILL')
 })
 
 test('--measure flags a hook above 1,000 characters, a total above 2,000 and a failing hook', () => {
