@@ -23,7 +23,7 @@ const WALK_UP = ['sync', 'check', 'doctor']
 const DOWNGRADE = 'AC_SYNC_TO'
 // These commands parse their own options. Each module exports cli(argv, { AC }) that returns the exit code.
 const OWN_CLI = {
-  env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', promote: 'engine/promote.mjs', assets: 'engine/assets.mjs', ui: 'ui/server.mjs',
+  env: 'engine/env.mjs', dev: 'engine/dev.mjs', run: 'engine/run.mjs', usage: 'engine/usage.mjs', reflect: 'engine/reflect.mjs', promote: 'engine/promote.mjs', assets: 'engine/assets.mjs', ui: 'ui/server.mjs',
 }
 const USAGE = `Usage: ac <command> [options]
 
@@ -45,6 +45,9 @@ Commands:
            .agents/runs/<timestamp>/.
   usage    Read the Claude Code and Codex transcripts. Show tokens, cost, cache hit rate and
            sub-agent share by day, project, model, provider and session.
+  reflect  Rank the Claude sessions of this project by trouble signals. Write redacted
+           trajectories, the setup pieces with their owner, and the signals around each lesson
+           to .agents/reflect/<timestamp>/. No model call, no network.
   promote  List the project skills that compass does not own. With a name: check a skill
            and copy it into skills/ of this compass checkout.
   assets   List the assets (skills, rules, agents, packs, MCP servers, keys, seeds, and more)
@@ -52,7 +55,7 @@ Commands:
            .agents/compass.json; "recommended" switches on the recommended set.
   ui       Start the local web UI on 127.0.0.1.
 
-Use "ac <env|dev|run|usage|promote|assets|ui> --help" for the options of these commands.
+Use "ac <env|dev|run|usage|reflect|promote|assets|ui> --help" for the options of these commands.
 
 Options:
   --root <dir>   Use this project root. The default is the current directory. sync, check

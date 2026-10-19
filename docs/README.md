@@ -18,5 +18,5 @@ Guides for agent-compass 1.0. Each fact lives in one guide.
 Other folders:
 
 - [contract/ownership.md](contract/ownership.md): what compass and Konvoy write in a project.
-- [decisions/](decisions/): the accepted decisions (ADR 0001 to 0006).
+- [decisions/](decisions/): the accepted decisions (ADR 0001 to 0007).
 - [remaster/](remaster/PROGRESS.md): the plan, the progress and the evidence for 1.0.

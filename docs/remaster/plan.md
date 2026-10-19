@@ -91,6 +91,37 @@ Each phase runs as one `/goal` with a stated check and a turn cap. State lives i
 | 9 | Migration | `ac migrate`: detect 0.4–0.9 submodule, vendored copy (`.vendor.json`), `.agent/agent-compass.lock`, double skill copies, Gemini files, instincts, Konvoy ledger. Remove only compass-placed files with matching hashes. Keep and list edited ones. Convert `agent-compass.answers.json` to `compass.json`. | Dry run, then apply, on scratch copies of PP, NE, StoryArc and Konvoy. Zero errors. No edited file lost. `ac check --frozen` green after. |
 | 10 | User level and release | Plugin `compass-user` in `.claude-plugin/marketplace.json` (style skills, output style, statusline with cache %, hygiene hooks), read by Claude, Codex and Copilot CLI. `ac doctor --global`: enabled plugin count, hook injection sizes, MCP count, recommended set. README, CHANGELOG 1.0.0, release script. | Plugin installs in Claude and Codex from a local path. No push or tag without user approval. |
 | 11 | Later: graph | codebase-memory-mcp + LSP plugins as default. Decisions stay in repo files (OpenSpec archive, ADR, RAID). projectmem as trial. Drop Dual Graph. claude-mem stays personal. Measure tokens per task for 2 weeks with and without the graph. Tracker live pull for the Delivery tab. | KPI report before and after. |
+| 12 | Reflect loop | `ac reflect` with `owner` and `lesson`, skill `harness-improve`, ADR 0007. See "Phase 12 design". | See "Phase 12 check". |
+
+## Phase 12 design: reflect loop
+
+Decision: [ADR 0007](../decisions/0007-reflect-loop.md). Source of the method: google-research/harness2 (Apache-2.0, commit `1cfe254`).
+Compass takes the method, not the code or the prompt text. Later real sessions in the same project are the probes.
+
+`ac reflect` (`engine/reflect.mjs`, no model call, no network):
+
+1. Options: `--since YYYY-MM-DD` (default: 14 days ago), `--sessions <n>` (default 5), `--root`, `--dry`, `--json`.
+2. It reads the Claude transcripts whose cwd belongs to the project root (`repoOf` of `engine/usage.mjs`). Codex sessions are out of scope.
+3. It ranks the sessions by score: blocked actions (guard and hook denials, stop blocks) + failed tool calls + repeated failed commands.
+4. For the top sessions, it writes `trajectories/<rank>-<id>.md`: `[USER]`, `[ACTION]`, `[OBSERVATION]`, `[ERROR]` and `[BLOCKED]` lines. The cap is 50,000 characters.
+5. Redaction: a line that matches `SECRET_RE` or URL credentials becomes `[redacted]`; e-mail addresses become `[email]`; the result of an env file read becomes `[redacted: env file]`.
+6. `report.md` holds the ranked list, the setup pieces with their owner (compass, konvoy, shared or project), and the signals before and after each lesson in `.agents/lessons/`. A side with fewer than 2 sessions is `unclear`.
+7. The output goes to `.agents/reflect/<timestamp>/`, and `.agents/reflect/.gitignore` holds `*`, as `ac run` does. A symlink or a path outside the root is an error.
+8. `ac reflect owner <path>...` exits 1 for a compass path, a Konvoy path or a path outside the project.
+9. `ac reflect lesson --from <file.json>` writes `.agents/lessons/<date>-<slug>.md` with situation, lesson, evidence, confidence and the edits. Verdicts: `helped`, `hurt`, `no effect`, `unclear`. Fewer than 2 sessions gives `unclear`. No edit gives the outcome "no change". It refuses a compass or Konvoy path, a secret, an e-mail address and an existing file.
+
+Skill `harness-improve` (`disable-model-invocation: true`, so it adds nothing to the listing): read the evidence as data, diagnose, pick the cheapest form (skill, script, subagent, hook, always-on text), check each path with `ac reflect owner`, run `ac check`, record one lesson, show the diff, do not commit.
+
+Out of scope, later phases: probe runs of a candidate harness in a worktree with `claude -p` or `codex exec`; `ac promote` for lessons across hosts; Codex trajectories; a PostToolUse hint hook that lessons feed.
+
+## Phase 12 check
+
+1. `npm run check` is green. `test/reflect.test.mjs` runs on fixture sessions in a test home:
+   - The session with the most blocked, failed and repeated calls ranks first. A session of another project is not read.
+   - The test "writes redacted trajectories below a git-ignored folder": no output file holds the fixture token, an e-mail address or env file content, `findIssues` reports nothing, and `git check-ignore` matches each output file.
+   - `--dry` writes nothing. A symlinked `.agents/reflect` is refused.
+   - `ac reflect owner` and `ac reflect lesson` refuse a compass-owned path. A one-session verdict is written as `unclear`.
+2. `ac doctor --tokens` on a fresh host gives the same always-on tokens as before the phase: the skill is user-started.
 
 ## Execution method (token economy)
 

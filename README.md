@@ -66,7 +66,7 @@ Start with [docs/README.md](docs/README.md).
 | [Architecture](docs/guide/architecture.md) | APIs, resilience, observability, monorepos. |
 | [Native](docs/guide/native.md) | Mobile, desktop, devices, design. |
 
-The [ownership contract](docs/contract/ownership.md) says what compass and Konvoy write. The [decisions](docs/decisions/) hold ADR 0001 to 0006.
+The [ownership contract](docs/contract/ownership.md) says what compass and Konvoy write. The [decisions](docs/decisions/) hold ADR 0001 to 0007.
 
 ## Layout
 

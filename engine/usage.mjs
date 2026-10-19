@@ -62,7 +62,7 @@ const rowSums = (u, price) => {
 }
 
 // The repo root of a cwd: cut at a Claude worktree dir, else the parent of the git common dir, else the cwd itself.
-const repoOf = (cwd, cache) => {
+export const repoOf = (cwd, cache) => {
   if (!cache.has(cwd)) {
     const cut = cwd.search(WORKTREES)
     const git = cut < 0 ? run('git', ['-C', cwd, 'rev-parse', '--path-format=absolute', '--git-common-dir'], { timeout: 5000 }) : null
@@ -103,7 +103,7 @@ const json = (line) => { try { return JSON.parse(line) } catch { return null } }
 
 const toolKind = (c) => (c.name.startsWith(GRAPH_TOOL) ? 'graph' : EDIT_TOOLS.has(c.name) ? 'edit' : c.name === 'Skill' ? 'skill'
   : SEARCH_TOOLS.has(c.name) || (c.name === 'Bash' && SEARCH_COMMAND.test(String(c.input?.command ?? ''))) ? 'search' : null)
-const textOf = (content) => (typeof content === 'string' ? content
+export const textOf = (content) => (typeof content === 'string' ? content
   : Array.isArray(content) ? content.map((c) => (typeof c?.text === 'string' ? c.text : '')).join('\n') : '')
 
 // The counted events of one parsed line. An id makes each event count once, also when a line is written twice.

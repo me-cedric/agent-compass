@@ -10,7 +10,7 @@ Compass is in the 1.0 remaster. Read these files before you start work:
 
 1. `docs/remaster/PROGRESS.md` — phase table and log. Update it when a phase check passes.
 2. `docs/remaster/plan.md` — the approved plan.
-3. `docs/decisions/0001`–`0006` — accepted decisions. Do not reopen them without the owner.
+3. `docs/decisions/0001`–`0007` — accepted decisions. Do not reopen them without the owner.
 4. `docs/remaster/{inventory,keep-cut,research}.md` — evidence. Do not explore the sibling repos again.
 
 Content removed in phase 1 stays in git history at commit `cee9bb2` (tag `v0.9.6`).
