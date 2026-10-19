@@ -71,11 +71,15 @@ Three hooks enforce the basics. Their code is `.agents/hooks/compass.mjs`.
   - a read of a key or credential file: a file under `.ssh`, `*.pem`, `*.key`, `*.p12`, `*.keystore`, `id_rsa`, `.netrc`, `google-services.json`, `GoogleService-Info.plist`, or an `.npmrc` with a literal token. In a shell command, the guard checks only the words that name a file that exists;
   - an edit of a lock file (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Podfile.lock`, `Package.resolved` and others). Run the package manager. For `.agents/compass.lock.json`, run `ac sync`;
   - an MCP tool with `worklog` or `delete` in its name. Codex has no permission rules, so this rule copies the Claude deny rules;
-  - `git push --force`, `git push -f`, a `+` refspec, `git reset --hard`, `git clean -f`, and a recursive `rm` on `/`, `~`, `.`, `..`, `*` or a path outside the project. Ask the user to run the command.
+  - `git push --force`, `git push -f`, a `+` refspec, `git reset --hard`, `git clean -f`, and a recursive `rm` on `/`, `~`, `.`, `..`, `*` or a path outside the project. Ask the user to run the command;
+  - `git commit --no-verify`, `git commit -n` and `git push --no-verify`: they skip the git hooks. Fix the hook failure, or ask the user to skip it.
   The Claude guard entry has `"onFailure": "block"`: from Claude Code 2.1.295, the tool call stops when the script cannot start or times out. An older CLI drops the key and lets the call go on.
   `gh api` with `-f` or `-F` asks, so a read-only GraphQL query (`gh api graphql -f query=...`) asks too: run it yourself, or use `gh` subcommands for reads.
 - `gate` (at Stop) asks once for the summary after a turn that edited files and ended with no result word.
 - `start` (at SessionStart) prints a short reminder of the style contract.
+- `hint` (at PostToolUseFailure in Claude Code, PostToolUse in Codex, `PostToolUseFailure` for Copilot) adds the fix of the first entry of `.agents/hints.json` whose `match` text is in the error of a failed call.
+  The project owns and commits the file. `ac reflect lesson` writes an entry from a lesson with a `hint`. The hook prints the hint, never the error text. Without the file it prints nothing. It fails open: it only adds context.
+  Caps: 50 hints, `match` 200 characters, `hint` 300 characters. `ac reflect` lists the hints whose lesson now has a `hurt` verdict.
 
 ## Delegation
 

@@ -28,7 +28,7 @@ Use `git show cee9bb2:<path>` to read it when you fold it into a new file.
 ## Target layout (1.0)
 
 ```
-bin/ac.mjs   engine/   ui/   migrate/   core/   skills/   agents/   rules/   mcp/catalog.json   packs/   upstream.json
+bin/ac.mjs   engine/   ui/   migrate/   core/   skills/   agents/   rules/   mcp/catalog.json   packs/   lessons/   upstream.json
 .claude-plugin/   docs/   test/
 ```
 

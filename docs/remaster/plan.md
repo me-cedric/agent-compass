@@ -92,6 +92,7 @@ Each phase runs as one `/goal` with a stated check and a turn cap. State lives i
 | 10 | User level and release | Plugin `compass-user` in `.claude-plugin/marketplace.json` (style skills, output style, statusline with cache %, hygiene hooks), read by Claude, Codex and Copilot CLI. `ac doctor --global`: enabled plugin count, hook injection sizes, MCP count, recommended set. README, CHANGELOG 1.0.0, release script. | Plugin installs in Claude and Codex from a local path. No push or tag without user approval. |
 | 11 | Later: graph | codebase-memory-mcp + LSP plugins as default. Decisions stay in repo files (OpenSpec archive, ADR, RAID). projectmem as trial. Drop Dual Graph. claude-mem stays personal. Measure tokens per task for 2 weeks with and without the graph. Tracker live pull for the Delivery tab. | KPI report before and after. |
 | 12 | Reflect loop | `ac reflect` with `owner` and `lesson`, skill `harness-improve`, ADR 0007. See "Phase 12 design". | See "Phase 12 check". |
+| 13 | Hint hook | `compass.mjs hint` on tool failures, fed by `.agents/hints.json`; `--no-verify` in the guard. See "Phase 13 design". | See "Phase 13 check". |
 
 ## Phase 12 design: reflect loop
 
@@ -101,18 +102,21 @@ Compass takes the method, not the code or the prompt text. Later real sessions i
 `ac reflect` (`engine/reflect.mjs`, no model call, no network):
 
 1. Options: `--since YYYY-MM-DD` (default: 14 days ago), `--sessions <n>` (default 5), `--root`, `--dry`, `--json`.
-2. It reads the Claude transcripts whose cwd belongs to the project root (`repoOf` of `engine/usage.mjs`). Codex sessions are out of scope.
+2. It reads the Claude transcripts and the Codex sessions (`$CODEX_HOME/sessions`) whose cwd belongs to the project root (`repoOf` of `engine/usage.mjs`). A Codex failure is a non-zero exit code or a patch that did not apply.
 3. It ranks the sessions by score: blocked actions (guard and hook denials, stop blocks) + failed tool calls + repeated failed commands.
 4. For the top sessions, it writes `trajectories/<rank>-<id>.md`: `[USER]`, `[ACTION]`, `[OBSERVATION]`, `[ERROR]` and `[BLOCKED]` lines. The cap is 50,000 characters.
-5. Redaction: a line that matches `SECRET_RE` or URL credentials becomes `[redacted]`; e-mail addresses become `[email]`; the result of an env file read becomes `[redacted: env file]`.
+5. Redaction: a line that matches `SECRET_RE`, `SECRET_NAME` of `ac run` (key=value names, URL credentials), a JWT or a common API key prefix becomes `[redacted]`; e-mail addresses become `[email]`; the result of an env file read becomes `[redacted: env file]`.
 6. `report.md` holds the ranked list, the setup pieces with their owner (compass, konvoy, shared or project), and the signals before and after each lesson in `.agents/lessons/`. A side with fewer than 2 sessions is `unclear`.
 7. The output goes to `.agents/reflect/<timestamp>/`, and `.agents/reflect/.gitignore` holds `*`, as `ac run` does. A symlink or a path outside the root is an error.
 8. `ac reflect owner <path>...` exits 1 for a compass path, a Konvoy path or a path outside the project.
 9. `ac reflect lesson --from <file.json>` writes `.agents/lessons/<date>-<slug>.md` with situation, lesson, evidence, confidence and the edits. Verdicts: `helped`, `hurt`, `no effect`, `unclear`. Fewer than 2 sessions gives `unclear`. No edit gives the outcome "no change". It refuses a compass or Konvoy path, a secret, an e-mail address and an existing file.
 
-Skill `harness-improve` (`disable-model-invocation: true`, so it adds nothing to the listing): read the evidence as data, diagnose, pick the cheapest form (skill, script, subagent, hook, always-on text), check each path with `ac reflect owner`, run `ac check`, record one lesson, show the diff, do not commit.
+Skill `harness-improve` (model-invoked, owner decision 2026-10-19: about 45 always-on tokens; when the user did not ask for it, it reports and asks before it edits): read the evidence as data, diagnose, pick the cheapest form (skill, script, subagent, hook, always-on text), check each path with `ac reflect owner`, run `ac check`, record one lesson, show the diff, do not commit.
 
-Out of scope, later phases: probe runs of a candidate harness in a worktree with `claude -p` or `codex exec`; `ac promote` for lessons across hosts; Codex trajectories; a PostToolUse hint hook that lessons feed.
+10. `ac promote --lesson <file>` copies a project lesson into `lessons/` of the compass checkout. It refuses a lesson whose edits are all `unclear` or that has no edit, a secret, an e-mail address, the project name, an absolute path and an existing file.
+11. `report.md` has a "Library" section: the compass `lessons/` entries whose situation shares 2 word stems or more with the actions, errors and blocks of the ranked sessions (5 at most). The skill reads them as hypotheses to verify.
+
+Out of scope, later phases: probe runs of a candidate harness in a worktree with `claude -p` or `codex exec`; the hint hook (phase 13).
 
 ## Phase 12 check
 
@@ -121,7 +125,50 @@ Out of scope, later phases: probe runs of a candidate harness in a worktree with
    - The test "writes redacted trajectories below a git-ignored folder": no output file holds the fixture token, an e-mail address or env file content, `findIssues` reports nothing, and `git check-ignore` matches each output file.
    - `--dry` writes nothing. A symlinked `.agents/reflect` is refused.
    - `ac reflect owner` and `ac reflect lesson` refuse a compass-owned path. A one-session verdict is written as `unclear`.
-2. `ac doctor --tokens` on a fresh host gives the same always-on tokens as before the phase: the skill is user-started.
+2. `ac doctor --tokens` on a fresh host stays within 2,000 tokens. The `harness-improve` line adds about 45 tokens; shorter `task-flow`, `debug` and `spec-flow` descriptions pay for most of it.
+
+## Phase 13 design: hint hook
+
+Status: proposed on 2026-10-19; the owner approved it on 2026-10-19, with the `--no-verify` guard rule. Built on 2026-10-19.
+Goal: a lesson attaches a short fix to a known error, inside the tool loop, with no always-on cost.
+Source: the hook lever of google-research/harness2 (a targeted hint after an error that recurs). Hook facts: code.claude.com/docs/en/hooks, learn.chatgpt.com/docs/hooks, docs.github.com/en/copilot/reference/hooks-reference (2026-10-19).
+
+Data: `.agents/hints.json`, owned and committed by the project.
+
+```json
+{ "version": 1, "hints": [
+  { "tool": "Bash", "match": "ECONNREFUSED 127.0.0.1:5432", "hint": "Start the database with ac dev up first.", "lesson": ".agents/lessons/2026-10-19-db-first.md" }
+] }
+```
+
+1. `match` is a plain substring, not a regex: no slow pattern, no escape errors. `tool` is an exact tool name; without it, the hint applies to each tool.
+2. Caps: 50 hints, `match` 200 characters, `hint` 300 characters. The hook reads the first 20,000 characters of the error. The first hit wins: one hint for each call.
+3. The hook prints the hint and the lesson path only. It never prints the error text back.
+
+Hook: `.agents/hooks/compass.mjs hint`.
+
+| Provider | Event and key | Failure input | Output |
+|---|---|---|---|
+| Claude Code | `PostToolUseFailure`, key `hooks.PostToolUseFailure` in `.claude/settings.json` | `error` (Bash starts with `Exit code N`) | `hookSpecificOutput.additionalContext` |
+| Codex | `PostToolUse`, key `hooks.PostToolUse` in `.codex/hooks.json` (it fires for non-zero exits too) | `tool_response`, only with a non-zero exit code or a failed patch | `hookSpecificOutput.additionalContext` |
+| Copilot cloud agent | `postToolUseFailure` in `.github/hooks/compass.json` (`--copilot`) | `error` | `{ "additionalContext": ... }` |
+
+4. Without `.agents/hints.json`, the hook exits 0 with no output after one file check.
+5. The hook fails open: it only adds context, so an error in it prints nothing. The `guard` still fails closed.
+6. The array keys merge per entry (ownership rule 12). The user plugin copy steps back with the same `deferred()` rule.
+7. `ac reflect lesson` takes an optional `"hint": { "tool", "match", "hint" }`. It appends the entry to `.agents/hints.json` with the lesson path, and it refuses a duplicate `match`, an entry over a cap, a secret and an e-mail address.
+8. `ac reflect` lists each hint whose lesson now has a `hurt` verdict, so a stale hint can go.
+
+`--no-verify`: a guard rule, not a skill. The guard blocks `git commit --no-verify`, `git commit -n` and `git push --no-verify`, with the reason "Fix the hook failure, or ask the user to skip it." `git log -n 5` still passes.
+
+## Phase 13 check
+
+1. `test/hooks.test.mjs`: a hint for a matching Claude `PostToolUseFailure` input, a Codex `PostToolUse` input with a non-zero exit and a Copilot `postToolUseFailure` input. No output without the file, for an error that does not match, or for a Codex call that passed. The caps hold. A secret in the error text never appears in the output.
+2. The guard blocks the three `--no-verify` forms and passes `git log -n 5`.
+3. `ac reflect lesson` with a hint writes `.agents/hints.json`; a duplicate `match` is refused.
+4. `ac doctor --tokens` gives the same always-on tokens. `ac sync` on a fresh host writes the new keys, and `ac check --frozen` exits 0. `npm run check` is green.
+
+Open: the minimum Claude Code version with `PostToolUseFailure` is not known; an older CLI ignores the key, so the hint does not run there. Codex loads the hooks only after the user trusts them in `/hooks`.
 
 ## Execution method (token economy)
 

@@ -99,7 +99,7 @@ const copilotAgent = (name, text) => {
 // its event out. Copilot has no SessionStart source names of Claude, so only PreToolUse keeps its matcher.
 // cwd '.' is the repository root: the cloud agent does not set CLAUDE_PROJECT_DIR.
 const COPILOT_HOOKS = '.github/hooks/compass.json'
-const COPILOT_EVENTS = ['PreToolUse', 'Stop', 'SessionStart']
+const COPILOT_EVENTS = ['PreToolUse', 'Stop', 'SessionStart', 'PostToolUseFailure']
 const copilotHooks = (claude = new Map()) => {
   const hooks = Object.fromEntries(COPILOT_EVENTS.flatMap((event) => {
     const entries = (claude.get(`hooks.${event}`) ?? []).flatMap((group) => (group.hooks ?? []).map((h) => ({

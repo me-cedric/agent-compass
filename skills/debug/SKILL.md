@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Build a failing loop before you diagnose a hard bug, flaky test, regression or slowdown. Use read-only Grafana, ArgoCD or Kubernetes evidence when those MCP servers exist. Use when a report says only "broken".
+description: Build a failing loop before you diagnose a hard bug, flaky test, regression or slowdown, with read-only Grafana, ArgoCD or Kubernetes evidence. Use when a report says only "broken".
 risk_level: medium
 writes_files: false
 requires_tools: []

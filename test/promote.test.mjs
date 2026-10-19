@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { candidates, promote } from '../engine/promote.mjs'
+import { candidates, promote, promoteLesson } from '../engine/promote.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -148,4 +148,54 @@ test('a symlink in a skill dir is an error, not a crash', async () => {
   const r = promote({ AC: ac, root, skill: 'partial', dry: true })
   assert.equal(r.ok, false)
   assert.match(r.errors.join('\n'), /partial\/notes\.md: .*symlink/)
+})
+
+const lesson = (rows, extra = '') => `# Lesson: retry-tests\n\n- date: 2026-10-19\n- outcome: changed\n- situation: A test command fails the same way twice.${extra}\n` +
+  '- lesson: Add a test-run skill that reads the first failure.\n- evidence: Three sessions.\n- confidence: medium\n\n## Edits\n\n' +
+  `| path | change | observed | sessions | verdict |\n|---|---|---|---|---|\n${rows.map((v) => `| \`.claude/skills/test-run/SKILL.md\` | add | seen | 3 | ${v} |`).join('\n')}\n`
+
+test('promote --lesson copies a lesson with evidence into lessons/ of the compass checkout', () => {
+  const { ac, root } = setup()
+  const text = lesson(['unclear', 'helped'])
+  put(root, { '.agents/lessons/2026-10-19-retry-tests.md': text })
+  const dry = promoteLesson({ AC: ac, root, file: '.agents/lessons/2026-10-19-retry-tests.md', dry: true })
+  assert.equal(dry.ok, true, dry.errors.join('; '))
+  assert.ok(!existsSync(join(ac, 'lessons')))
+  const r = promoteLesson({ AC: ac, root, file: './.agents/lessons/2026-10-19-retry-tests.md' })
+  assert.equal(r.ok, true, r.errors.join('; '))
+  assert.equal(readFileSync(join(ac, 'lessons/2026-10-19-retry-tests.md'), 'utf8'), text)
+  assert.ok(existsSync(join(root, '.agents/lessons/2026-10-19-retry-tests.md')), 'the project copy stays')
+  assert.match(promoteLesson({ AC: ac, root, file: '.agents/lessons/2026-10-19-retry-tests.md' }).errors.join(), /already exists in the compass checkout/)
+})
+
+test('promote --lesson refuses a lesson without evidence, with private text, or outside .agents/lessons', () => {
+  const { ac, root } = setup()
+  const cases = {
+    '2026-10-19-all-unclear.md': [lesson(['unclear', 'unclear']), /no edit has a verdict other than "unclear"/],
+    '2026-10-19-no-change.md': ['# Lesson: x\n\n- outcome: no change\n\n## Edits\n\nNo change.\n', /no edit has a verdict/],
+    '2026-10-19-mail.md': [lesson(['helped'], ' Ask bob@corp.io.'), /an e-mail address/],
+    '2026-10-19-secret.md': [lesson(['helped'], ' Set api_key = abcdef123456.'), /a secret/],
+    '2026-10-19-named.md': [lesson(['helped'], ' Seen in the ACME portal.'), /the project name "acme"/],
+    '2026-10-19-path.md': [lesson(['helped'], ' See /Users/bob/notes.md.'), /an absolute path/],
+  }
+  for (const [name, [text, error]] of Object.entries(cases)) {
+    put(root, { [`.agents/lessons/${name}`]: text })
+    const r = promoteLesson({ AC: ac, root, file: `.agents/lessons/${name}` })
+    assert.equal(r.ok, false, name)
+    assert.match(r.errors.join('\n'), error, name)
+  }
+  assert.match(promoteLesson({ AC: ac, root, file: 'notes/2026-10-19-x.md' }).errors[0], /a lesson is \.agents\/lessons\//)
+  assert.match(promoteLesson({ AC: ac, root, file: '.agents/lessons/2026-10-19-missing.md' }).errors[0], /is not a file/)
+  assert.ok(!existsSync(join(ac, 'lessons')), 'nothing was written')
+})
+
+test('ac promote --lesson takes no skill name, and --dry writes nothing', async () => {
+  const { root } = setup()
+  put(root, { '.agents/lessons/2026-10-19-retry-tests.md': lesson(['helped']) })
+  const bin = join(REPO, 'bin/ac.mjs')
+  assert.equal((await runNode([bin, 'promote', 'plain', '--lesson', '.agents/lessons/2026-10-19-retry-tests.md', '--root', root])).code, 2)
+  const dry = await runNode([bin, 'promote', '--lesson', '.agents/lessons/2026-10-19-retry-tests.md', '--root', root, '--dry'])
+  assert.equal(dry.code, 0, dry.stderr)
+  assert.match(dry.stdout, /Nothing written/)
+  assert.ok(!existsSync(join(REPO, 'lessons/2026-10-19-retry-tests.md')))
 })

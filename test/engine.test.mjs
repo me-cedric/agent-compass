@@ -380,7 +380,7 @@ test('the real compass assets sync into an empty project and pass doctor', async
   const init = await ac(REPO, host, 'init')
   assert.equal(init.code, 0, init.stderr)
   const copilot = JSON.parse(read(host, '.github/hooks/compass.json')).hooks
-  assert.deepEqual(Object.keys(copilot), ['PreToolUse', 'Stop', 'SessionStart'])
+  assert.deepEqual(Object.keys(copilot), ['PreToolUse', 'Stop', 'SessionStart', 'PostToolUseFailure'])
   assert.equal(copilot.PreToolUse[0].matcher, settingsOf(host).hooks.PreToolUse[0].matcher)
   assert.equal((await ac(REPO, host, 'check', '--frozen')).code, 0)
   const doc = await ac(REPO, host, 'doctor')

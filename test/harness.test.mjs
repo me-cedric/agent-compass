@@ -42,7 +42,7 @@ test('init installs the harness and every generated JSON and TOML file parses', 
   assert.equal(settings.hooks.PreToolUse[0].hooks[0].onFailure, 'block')
   assert.equal(settings.hooks.Stop[0].hooks[0].onFailure, undefined, 'Stop does not take onFailure')
   const codexHooks = JSON.parse(read(host, '.codex/hooks.json')).hooks
-  assert.deepEqual(Object.keys(codexHooks), ['PreToolUse', 'Stop', 'SessionStart'])
+  assert.deepEqual(Object.keys(codexHooks), ['PreToolUse', 'Stop', 'SessionStart', 'PostToolUse'])
   assert.equal(codexHooks.PreToolUse[0].matcher, 'Bash|apply_patch|mcp__.*')
 
   const config = parseToml(read(host, '.codex/config.toml'))

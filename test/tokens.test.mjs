@@ -37,3 +37,18 @@ test('estimatePlan: an empty plan has the listing items and no style', () => {
   const r = estimatePlan({ blocks: new Map(), files: new Map(), keys: new Map() })
   assert.deepEqual([r.items.map((i) => i.name), r.skills, r.agents, r.total], [['skill listing', 'agent listing'], {}, {}, 0])
 })
+
+test('a block-scalar description is read whole, so the listing counts it', async () => {
+  const { frontmatter } = await import('../engine/util.mjs')
+  const { listingLine } = await import('../engine/tokens.mjs')
+  const folded = '---\nname: guard\ndescription: >-\n  Use when a session is long,\n  or after compaction.\n\n  Keeps the rules.\nmetadata:\n  stacks: [web]\n---\nBody.\n'
+  assert.equal(frontmatter(folded).data.description, 'Use when a session is long, or after compaction. Keeps the rules.')
+  assert.equal(frontmatter(folded).data.stacks, '[web]', 'a nested key after the block still reads as a top-level key')
+  assert.equal(listingLine(folded), '- guard: Use when a session is long, or after compaction. Keeps the rules.')
+  const literal = '---\nname: lit\ndescription: |\n  First line.\n  Second line.\n---\nBody.\n'
+  assert.equal(frontmatter(literal).data.description, 'First line.\nSecond line.')
+  const last = '---\nname: end\ndescription: >\n  Ends at the closing line.\n---\nBody.\n'
+  assert.equal(frontmatter(last).data.description, 'Ends at the closing line.')
+  assert.equal(frontmatter('---\nname: plain\ndescription: Plain text.\n---\n').data.description, 'Plain text.')
+  assert.equal(frontmatter('---\ndescription: >-\nname: empty\n---\n').data.name, 'empty', 'an empty block ends at the next key')
+})

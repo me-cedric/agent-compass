@@ -42,6 +42,17 @@
         ]
       }
     ],
+    "hooks.PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.agents/hooks/compass.mjs\" hint",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "permissions.deny": [
       "Read(**/.env)",
       "Read(**/.env.local)",
@@ -183,6 +194,17 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/compass.mjs\" start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "hooks.PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.agents/hooks/compass.mjs\" hint",
             "timeout": 10
           }
         ]

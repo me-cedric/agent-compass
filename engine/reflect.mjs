@@ -1,4 +1,4 @@
-// reflect.mjs — ac reflect: rank the Claude sessions of this project by trouble signals, write their redacted trajectories,
+// reflect.mjs — ac reflect: rank the Claude and Codex sessions of this project by trouble signals, write their redacted trajectories,
 // list the harness pieces with their owner, and show the signals before and after each lesson in .agents/lessons/.
 // No model call and no network. The output goes to .agents/reflect/<timestamp>/, and .agents/reflect/.gitignore holds "*".
 // Method: the edit verdicts and the one lesson of google-research/harness2, with later real sessions as the probes (ADR 0007).
@@ -8,6 +8,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { EMAIL_RE, findIssues, SECRET_RE } from '../scripts/lib/redact.mjs'
 import { CONFIG, konvoyOwns, LOCK, loadKonvoy } from './config.mjs'
+import { SECRET_NAME } from './run.mjs'
 import { outside, readLock } from './sync.mjs'
 import { repoOf, textOf } from './usage.mjs'
 import { dirs, failCommand, hostRoot, parseCommand, readJson, safeRel, usageError, walk, writeNew } from './util.mjs'
@@ -16,11 +17,13 @@ const USAGE = `Usage: ac reflect [--since YYYY-MM-DD] [--sessions <n>] [--root <
        ac reflect owner <path>... [--root <dir>] [--json]
        ac reflect lesson --from <file.json> [--root <dir>] [--json]
 
-Read the Claude Code transcripts of this project in ~/.claude/projects. Rank the sessions by trouble
-signals: blocked actions (guard and hook denials, stop blocks), failed tool calls, and repeated failed
-commands. Write a redacted trajectory for each of the top <n> sessions (default 5), the setup pieces
-with their owner (compass, konvoy, shared or project), and the signals before and after each lesson in
-.agents/lessons/. The output goes to .agents/reflect/<timestamp>/, which git ignores.
+Read the Claude Code transcripts (~/.claude/projects) and the Codex sessions (~/.codex/sessions;
+CODEX_HOME moves it) of this project. Rank the sessions by trouble signals: blocked actions (guard
+and hook denials, stop blocks), failed tool calls, and repeated failed commands. Write a redacted
+trajectory for each of the top <n> sessions (default 5), the setup pieces with their owner
+(compass, konvoy, shared or project), the signals before and after each lesson in .agents/lessons/,
+and the lessons in lessons/ of the compass checkout that fit the sessions. The output goes to
+.agents/reflect/<timestamp>/, which git ignores.
 --since is the first day to read (default: 14 days ago). --dry prints the result and writes nothing.
 
 owner   Print the owner of each path. Exit 1 when compass or Konvoy owns one, or when one leaves the
@@ -30,7 +33,9 @@ lesson  Write .agents/lessons/<today>-<slug>.md from a JSON file with "slug", "s
         "evidence", "confidence" (high, medium or low) and "edits" (each: "path", "change", "observed",
         "sessions", "verdict": helped, hurt, no effect or unclear). A verdict from fewer than 2 sessions
         becomes unclear. No edit is a valid outcome: "no change". Exit 1 for a compass or Konvoy path,
-        a secret or an e-mail address, or an existing file. It never commits.`
+        a secret or an e-mail address, or an existing file. It never commits.
+        An optional "hint" ({ "tool", "match", "hint" }) goes to .agents/hints.json: the hint hook adds
+        it after a failed call whose error holds "match". A duplicate match or a 51st hint is refused.`
 
 export const OUT = '.agents/reflect'
 export const LESSONS = '.agents/lessons'
@@ -38,7 +43,8 @@ const CAP = 50_000
 const HEAD = 400
 const DAY_MS = 86_400_000
 const BLOCKED = /compass: the (read of|edit of|command|tool) |\bhook\b.*\b(denied|blocked)\b|\bpermission\b.*\bdenied\b/i
-const URL_CREDENTIALS = /:\/\/[^\s/:@]+:[^\s/@]+@/
+// Formats that SECRET_RE and SECRET_NAME do not catch: a JWT, and the key prefixes of OpenAI, Anthropic, Stripe, Slack, Google and GitLab.
+const KEY_FORMATS = /\beyJ[\w-]{8,}\.[\w-]{8,}\.|\b(?:sk|pk|rk)[-_](?:[a-z]+[-_])?[A-Za-z0-9]{16,}|\bxox[abprs]-[\w-]{10,}|\bAIza[\w-]{30,}|\bglpat-[\w-]{20,}/
 const EMAILS = new RegExp(EMAIL_RE.source, 'gi')
 // A read of a real .env file. A template (.env.example, .sample, .template) is not secret.
 const ENV_READ = /(^|[\s/'"=])\.env(\.(?!example\b|sample\b|template\b)[\w-]+)*(?=$|[\s'"|;&)])/
@@ -55,24 +61,40 @@ const median = (values) => {
 // One redacted line of text. The check runs on the whole text, before the cut, so a cut cannot hide a secret.
 export const redact = (text, max = HEAD) => {
   const flat = String(text ?? '').replace(/\s+/g, ' ').trim()
-  if (SECRET_RE.test(flat) || URL_CREDENTIALS.test(flat)) return '[redacted]'
+  if (SECRET_RE.test(flat) || SECRET_NAME.test(flat) || KEY_FORMATS.test(flat)) return '[redacted]'
   const clean = flat.replace(EMAILS, '[email]')
   return clean.length > max ? `${clean.slice(0, max)}…` : clean
 }
 
 const inputOf = (input) => {
   const i = input && typeof input === 'object' ? input : {}
-  return i.command ?? i.file_path ?? i.path ?? i.pattern ?? i.skill ?? i.url ?? i.description ?? JSON.stringify(i)
+  const cmd = Array.isArray(i.cmd) ? i.cmd.join(' ') : Array.isArray(i.command) ? i.command.join(' ') : i.cmd
+  return cmd ?? i.command ?? i.file_path ?? i.path ?? i.pattern ?? i.skill ?? i.url ?? i.description ?? JSON.stringify(i)
 }
+// The command of a Codex custom tool call: the cmd inside an exec script, the files of a patch, or the input head.
+const customInput = (name, input) => {
+  const text = String(input ?? '')
+  const cmd = /"cmd":\s*"((?:[^"\\]|\\.)*)"/.exec(text)?.[1]
+  if (cmd !== undefined) return json(`"${cmd}"`) ?? cmd
+  if (name === 'apply_patch') return [...text.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)].map((m) => m[1]).join(', ') || 'patch'
+  return text
+}
+const COMMAND_TOOLS = new Set(['Bash', 'exec_command', 'exec', 'shell', 'local_shell', 'write_stdin'])
+// A failed Codex call: a non-zero exit code in the head of its output, or a patch that did not apply.
+const CODEX_FAIL = /(^|\n)Exit code: [1-9]\d*|Process exited with code [1-9]\d*|verification failed/
 
-// The lines of each session of this project, in time order. A line is parsed only when its cwd belongs to the root.
-const readSessions = ({ home, root, first }) => {
-  const base = join(home, '.claude/projects')
+const projectRoots = (root) => {
   const roots = new Set([root])
   try { roots.add(realpathSync(root)) } catch {}
-  const cache = new Map()
+  return roots
+}
+const recent = (base, first, pattern) => walk(base).filter((f) => pattern.test(f) && statSync(join(base, f)).mtimeMs >= first)
+
+// The lines of each Claude session of this project, in time order. A line is parsed only when its cwd belongs to the root.
+const claudeSessions = ({ home, roots, first, cache }) => {
+  const base = join(home, '.claude/projects')
   const sessions = new Map()
-  for (const file of walk(base).filter((f) => f.endsWith('.jsonl') && statSync(join(base, f)).mtimeMs >= first)) {
+  for (const file of recent(base, first, /\.jsonl$/)) {
     for (const line of readFileSync(join(base, file), 'utf8').split('\n')) {
       const cwd = CWD.exec(line)?.[1]
       if (!cwd || !roots.has(repoOf(json(`"${cwd}"`) ?? cwd, cache))) continue
@@ -83,46 +105,81 @@ const readSessions = ({ home, root, first }) => {
       sessions.get(d.sessionId).push({ t, d })
     }
   }
-  return [...sessions].map(([id, lines]) => ({ id, lines: lines.sort((a, b) => a.t - b.t) }))
+  return [...sessions].map(([id, lines]) => ({ id, provider: 'claude', lines: lines.sort((a, b) => a.t - b.t) }))
 }
 
-// The signals and the trajectory steps of one session. Each tool_use and tool_result id counts once.
-export const analyse = ({ id, lines }) => {
+// One Codex file is one session. Its session_meta line gives the id and the cwd, so a file of another project is not parsed.
+const codexSessions = ({ home, roots, first, cache }) => {
+  const base = join(process.env.CODEX_HOME || join(home, '.codex'), 'sessions')
+  return recent(base, first, /(^|\/)rollout-[^/]*\.jsonl$/).flatMap((file) => {
+    const lines = readFileSync(join(base, file), 'utf8').split('\n').filter((l) => l.trim())
+    const meta = json(lines.find((l) => l.includes('"type":"session_meta"')) ?? '')?.payload
+    if (typeof meta?.cwd !== 'string' || !roots.has(repoOf(meta.cwd, cache))) return []
+    const kept = lines.map(json).map((d) => ({ t: new Date(d?.timestamp).getTime(), d })).filter((x) => x.d && x.t >= first)
+    return kept.length ? [{ id: String(meta.id || file), provider: 'codex', lines: kept }] : []
+  })
+}
+
+// The signals and the trajectory steps of one session. Each call and result id counts once.
+const tracker = () => {
   const [tools, seen, failedCommands, steps] = [new Map(), new Set(), new Map(), []]
   let [blocked, failed] = [0, 0]
-  for (const { d } of lines) {
+  const once = (key) => !seen.has(key) && seen.add(key)
+  return {
+    stop: (key) => { if (once(`s:${key}`)) { blocked++; steps.push('[BLOCKED] stop hook prevented the end of the turn') } },
+    user: (text) => { if (String(text).trim()) steps.push(`[USER] ${redact(text)}`) },
+    action: (id, name, input, side = '') => {
+      if (!id || !once(`a:${id}`)) return
+      tools.set(id, { name: String(name), input })
+      steps.push(`[ACTION]${side} ${name}: ${redact(input)}`)
+    },
+    result: (id, text, error, side = '') => {
+      if (!once(`r:${id}`)) return
+      const tool = tools.get(id)
+      const head = tool && ENV_READ.test(tool.input) ? '[redacted: env file]' : redact(text)
+      if (!error) return steps.push(`[OBSERVATION]${side} ${head}`)
+      if (BLOCKED.test(text)) { blocked++; return steps.push(`[BLOCKED]${side} ${head}`) }
+      failed++
+      steps.push(`[ERROR]${side} ${head}`)
+      if (COMMAND_TOOLS.has(tool?.name)) failedCommands.set(tool.input, (failedCommands.get(tool.input) ?? 0) + 1)
+    },
+    done: ({ id, provider, lines }) => {
+      const repeated = [...failedCommands.values()].reduce((sum, n) => sum + n - 1, 0)
+      const start = lines[0]?.t ?? 0
+      return { id, provider, day: localDay(start), start, blocked, failed, repeated, score: blocked + failed + repeated, steps }
+    },
+  }
+}
+
+export const analyse = (session) => {
+  const s = tracker()
+  for (const { d } of session.lines) {
     const c = d.message?.content
     const side = d.isSidechain ? ' (subagent)' : ''
-    if (d.type === 'system' && d.subtype === 'stop_hook_summary' && d.preventedContinuation === true && !seen.has(d.uuid)) {
-      seen.add(d.uuid)
-      blocked++
-      steps.push('[BLOCKED] stop hook prevented the end of the turn')
-    } else if (d.type === 'assistant' && Array.isArray(c)) {
-      for (const x of c.filter((x) => x?.type === 'tool_use' && x.id && !seen.has(x.id))) {
-        seen.add(x.id)
-        tools.set(x.id, { name: String(x.name), input: inputOf(x.input) })
-        steps.push(`[ACTION]${side} ${x.name}: ${redact(inputOf(x.input))}`)
-      }
+    if (d.type === 'system' && d.subtype === 'stop_hook_summary' && d.preventedContinuation === true) s.stop(d.uuid)
+    else if (d.type === 'assistant' && Array.isArray(c)) {
+      for (const x of c.filter((x) => x?.type === 'tool_use')) s.action(x.id, x.name, inputOf(x.input), side)
     } else if (d.type === 'user' && Array.isArray(c) && c.some((x) => x?.type === 'tool_result')) {
-      for (const x of c.filter((x) => x?.type === 'tool_result' && !seen.has(`r:${x.tool_use_id}`))) {
-        seen.add(`r:${x.tool_use_id}`)
-        const tool = tools.get(x.tool_use_id)
-        const text = textOf(x.content)
-        const head = tool && ENV_READ.test(tool.input) ? '[redacted: env file]' : redact(text)
-        if (x.is_error !== true) { steps.push(`[OBSERVATION]${side} ${head}`); continue }
-        if (BLOCKED.test(text)) { blocked++; steps.push(`[BLOCKED]${side} ${head}`); continue }
-        failed++
-        steps.push(`[ERROR]${side} ${head}`)
-        if (tool?.name === 'Bash') failedCommands.set(tool.input, (failedCommands.get(tool.input) ?? 0) + 1)
-      }
-    } else if (d.type === 'user' && !d.isMeta && !d.isSidechain && (typeof c === 'string' || Array.isArray(c))) {
-      const text = textOf(c)
-      if (text.trim()) steps.push(`[USER] ${redact(text)}`)
+      for (const x of c.filter((x) => x?.type === 'tool_result')) s.result(x.tool_use_id, textOf(x.content), x.is_error === true, side)
+    } else if (d.type === 'user' && !d.isMeta && !d.isSidechain && (typeof c === 'string' || Array.isArray(c))) s.user(textOf(c))
+  }
+  return s.done({ provider: 'claude', ...session })
+}
+
+export const analyseCodex = (session) => {
+  const s = tracker()
+  for (const { d } of session.lines) {
+    const p = d.payload ?? {}
+    if (d.type === 'event_msg' && p.type === 'user_message') s.user(p.message)
+    else if (d.type !== 'response_item') continue
+    else if (p.type === 'function_call') s.action(p.call_id, p.name, inputOf(json(p.arguments) ?? { command: p.arguments }))
+    else if (p.type === 'custom_tool_call') s.action(p.call_id, p.name, customInput(p.name, p.input))
+    else if (p.type === 'function_call_output' || p.type === 'custom_tool_call_output') {
+      const text = typeof p.output === 'string' ? p.output : textOf(p.output)
+      s.result(p.call_id, text, CODEX_FAIL.test(text.slice(0, 2000)) || BLOCKED.test(text.slice(0, 2000)))
     }
   }
-  const repeated = [...failedCommands.values()].reduce((sum, n) => sum + n - 1, 0)
-  const start = lines[0]?.t ?? 0
-  return { id, day: localDay(start), start, blocked, failed, repeated, score: blocked + failed + repeated, steps }
+  return s.done(session)
 }
 
 // The trajectory text of one session, cut at CAP characters.
@@ -160,7 +217,8 @@ const kindOf = (rel, lock) => (/\/skills\//.test(rel) ? 'skill' : rel.startsWith
   : rel.startsWith('.agents/hooks/') ? 'hook' : Object.hasOwn(lock.blocks, rel) ? 'block' : Object.hasOwn(lock.keys, rel) ? 'keys' : 'file')
 
 const pieces = (root, led) => {
-  const rels = new Set([...Object.keys(led.lock.files), ...Object.keys(led.lock.keys), ...Object.keys(led.lock.blocks)])
+  const skillDir = (rel) => rel.replace(/^(\.(?:claude|agents)\/skills\/[^/]+\/).+$/, '$1')
+  const rels = new Set([...Object.keys(led.lock.files).map(skillDir), ...Object.keys(led.lock.keys), ...Object.keys(led.lock.blocks)])
   for (const dir of ['.claude/skills', '.agents/skills']) for (const name of dirs(join(root, dir))) rels.add(`${dir}/${name}/`)
   for (const file of walk(join(root, '.claude/agents')).filter((f) => f.endsWith('.md') && !f.includes('/'))) rels.add(`.claude/agents/${file}`)
   return [...rels].sort().map((path) => ({ path, kind: kindOf(path, led.lock), owner: ownerOf(path, led) }))
@@ -181,24 +239,50 @@ export const lessonTrends = (root, sessions) => {
   })
 }
 
-const row = (s, i) => `${String(i + 1).padStart(2)}. ${s.id.slice(0, 8)}  ${s.day}  score ${s.score}  blocked ${s.blocked}  failed ${s.failed}  repeated ${s.repeated}  steps ${s.steps.length}`
+const row = (s, i) => `${String(i + 1).padStart(2)}. ${s.id.slice(0, 8)}  ${s.provider.padEnd(6)} ${s.day}  score ${s.score}  blocked ${s.blocked}  failed ${s.failed}  repeated ${s.repeated}  steps ${s.steps.length}`
 const trendLine = (l) => `${l.file}  before ${l.before.sessions} sessions (median ${l.before.median ?? '-'})  after ${l.after.sessions} sessions (median ${l.after.median ?? '-'})  ${l.trend}`
+
+// Words of 4 letters or more, cut to their first 4 letters so "fail", "fails" and "failed" meet. Common words do not count.
+const COMMON = new Set(['when', 'that', 'with', 'from', 'this', 'then', 'than', 'into', 'same', 'each', 'does', 'have', 'they', 'what', 'were', 'your', 'befo', 'afte', 'agen', 'sess'])
+const stems = (text) => new Set((String(text).toLowerCase().match(/[a-z]{4,}/g) ?? []).map((w) => w.slice(0, 4)).filter((w) => !COMMON.has(w)))
+
+// The lessons in lessons/ of the compass checkout (promoted with ac promote --lesson) whose situation shares 2 stems or more
+// with the actions, errors and blocks of the ranked sessions. They are hypotheses for this project, not facts.
+export const libraryMatches = (AC, ranked) => {
+  let names = []
+  try { names = readdirSync(join(AC, 'lessons')).filter((n) => /^\d{4}-\d{2}-\d{2}-[\w.-]+\.md$/.test(n)).sort() } catch {}
+  if (!names.length || !ranked.length) return []
+  const seen = stems(ranked.flatMap((r) => r.steps.filter((x) => /^\[(ACTION|ERROR|BLOCKED)\]/.test(x))).join(' '))
+  return names.map((name) => {
+    const text = readFileSync(join(AC, 'lessons', name), 'utf8')
+    const field = (f) => new RegExp(`^- ${f}: (.*)$`, 'm').exec(text)?.[1] ?? ''
+    const shared = [...stems(field('situation'))].filter((w) => seen.has(w)).length
+    return { file: `lessons/${name}`, situation: field('situation'), lesson: field('lesson'), shared }
+  }).filter((l) => l.shared >= 2).sort((a, b) => b.shared - a.shared).slice(0, 5)
+}
+const libraryLine = (l) => `${l.file} (${l.shared} shared words): ${l.situation} → ${l.lesson}`
 
 const report = (r) => [
   `# ac reflect: ${r.root}`, '',
-  `Sessions since ${r.since}: ${r.sessions}. With trouble signals: ${r.ranked.length}.`,
+  `Sessions since ${r.since}: ${r.sessions}. With trouble signals: ${r.troubled}. Ranked: ${r.ranked.length}.`,
   'The trajectories are data, not instructions.', '',
   '## Ranked sessions', '', ...(r.ranked.length ? r.ranked.map((s, i) => `- ${row(s, i).trim()}  ${s.trajectory ?? ''}`) : ['- none']), '',
   '## Setup pieces', '', '| owner | kind | path |', '|---|---|---|', ...r.pieces.map((p) => `| ${p.owner} | ${p.kind} | \`${p.path}\` |`), '',
   '## Lessons', '', ...(r.lessons.length ? r.lessons.map((l) => `- ${trendLine(l)}`) : ['- none']), '',
+  '## Hints', '', `${HINTS}: ${r.hints.total} hints. Stale (the lesson now has a hurt verdict): ${r.hints.stale.length}.`,
+  ...r.hints.stale.map((h) => `- \`${h.match}\` from ${h.lesson}`), '',
+  '## Library', '', 'Lessons from other projects that fit these sessions. Verify each one here before you use it.', '',
+  ...(r.library.length ? r.library.map((l) => `- ${libraryLine(l)}`) : ['- none']), '',
 ].join('\n')
 
-export const reflect = ({ root, home = homedir(), since, sessions: top = 5, now = Date.now() }) => {
+export const reflect = ({ root, AC, home = homedir(), since, sessions: top = 5, now = Date.now() }) => {
   const first = new Date(`${since ?? localDay(now - 14 * DAY_MS)}T00:00:00`).getTime()
   const led = ledgers(root)
-  const all = readSessions({ home, root, first }).map(analyse)
-  const ranked = all.filter((s) => s.score > 0).sort((a, b) => b.score - a.score || b.start - a.start).slice(0, top)
-  return { root, since: localDay(first), sessions: all.length, ranked, pieces: pieces(root, led), lessons: lessonTrends(root, all), warnings: led.errors }
+  const ctx = { home, roots: projectRoots(root), first, cache: new Map() }
+  const all = [...claudeSessions(ctx).map(analyse), ...codexSessions(ctx).map(analyseCodex)]
+  const troubled = all.filter((s) => s.score > 0)
+  const ranked = troubled.sort((a, b) => b.score - a.score || b.start - a.start).slice(0, top)
+  return { root, since: localDay(first), sessions: all.length, troubled: troubled.length, ranked, pieces: pieces(root, led), lessons: lessonTrends(root, all), library: AC ? libraryMatches(AC, ranked) : [], hints: staleHints(root), warnings: led.errors }
 }
 
 const write = (root, result, now) => {
@@ -219,6 +303,39 @@ const CONFIDENCE = ['high', 'medium', 'low']
 const FIELDS = ['situation', 'lesson', 'evidence']
 export const EDITABLE = ['project', 'shared']
 const cell = (v) => String(v ?? '').replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim()
+export const HINTS = '.agents/hints.json'
+export const HINT_CAPS = { hints: 50, match: 200, hint: 300 }
+
+// The optional hint of a lesson: { tool, match, hint }. The hook matches `match` as plain text in a failed call (phase 13).
+const hintErrors = (h) => {
+  if (h === undefined) return []
+  if (!h || typeof h !== 'object') return ['"hint" needs an object with "match" and "hint"']
+  const errors = []
+  if (typeof h.match !== 'string' || !h.match.trim() || h.match.length > HINT_CAPS.match) errors.push(`"hint.match" needs a text of 1 to ${HINT_CAPS.match} characters`)
+  if (typeof h.hint !== 'string' || !h.hint.trim() || h.hint.length > HINT_CAPS.hint) errors.push(`"hint.hint" needs a text of 1 to ${HINT_CAPS.hint} characters`)
+  if (h.tool !== undefined && (typeof h.tool !== 'string' || !/^[\w.-]{1,64}$/.test(h.tool))) errors.push('"hint.tool" needs a tool name')
+  return errors
+}
+
+// The hints file with the new entry, or { error }. A missing file starts empty; a duplicate match or a full file is refused.
+const addHint = (root, h, lesson) => {
+  if (outside(root, HINTS)) return { error: `${HINTS} is a symlink or leaves the project root; compass does not write there` }
+  const data = existsSync(join(root, HINTS)) ? readJson(join(root, HINTS)) : { version: 1, hints: [] }
+  if (!data || !Array.isArray(data.hints)) return { error: `${HINTS} is not valid: it needs a "hints" list` }
+  if (data.hints.some((x) => x?.match === h.match)) return { error: `${HINTS} has a hint for "${h.match}" already` }
+  if (data.hints.length >= HINT_CAPS.hints) return { error: `${HINTS} has ${HINT_CAPS.hints} hints; remove one first` }
+  data.hints.push({ ...(h.tool && { tool: h.tool }), match: h.match, hint: h.hint, lesson })
+  return { text: `${JSON.stringify(data, null, 2)}\n` }
+}
+
+// The hints whose lesson now has a "hurt" verdict: they can go.
+export const staleHints = (root) => {
+  const list = readJson(join(root, HINTS))?.hints
+  if (!Array.isArray(list)) return { total: 0, stale: [] }
+  const hurt = (rel) => { try { return /\|\s*hurt\s*\|\s*$/m.test(readFileSync(join(root, rel), 'utf8')) } catch { return false } }
+  const stale = list.filter((h) => typeof h?.lesson === 'string' && safeRel(h.lesson) && hurt(h.lesson)).map((h) => ({ match: h.match, lesson: h.lesson }))
+  return { total: list.length, stale }
+}
 
 // The text of a lesson file, or { errors }. One session is never enough evidence, so its verdict is unclear.
 export const lessonText = (data, led, day) => {
@@ -227,6 +344,7 @@ export const lessonText = (data, led, day) => {
   if (typeof data.slug !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(data.slug)) errors.push('"slug" needs lower-case words joined by "-"')
   for (const f of FIELDS) if (typeof data[f] !== 'string' || !data[f].trim()) errors.push(`"${f}" needs a text`)
   if (!CONFIDENCE.includes(data.confidence)) errors.push(`"confidence" needs ${CONFIDENCE.join(', ')}`)
+  errors.push(...hintErrors(data.hint))
   const edits = data.edits ?? []
   if (!Array.isArray(edits)) errors.push('"edits" needs a list')
   const rows = (Array.isArray(edits) ? edits : []).map((e, i) => {
@@ -242,7 +360,8 @@ export const lessonText = (data, led, day) => {
     `- date: ${day}`,
     `- outcome: ${rows.length ? 'changed' : 'no change'}`,
     ...FIELDS.map((f) => `- ${f}: ${cell(data[f])}`),
-    `- confidence: ${data.confidence}`, '',
+    `- confidence: ${data.confidence}`,
+    ...(data.hint ? [`- hint: when \`${cell(data.hint.tool ?? 'a tool')}\` fails with \`${cell(data.hint.match)}\`: ${cell(data.hint.hint)}`] : []), '',
     '## Edits', '',
     ...(rows.length
       ? ['| path | change | observed | sessions | verdict |', '|---|---|---|---|---|', ...rows.map((r) => `| \`${cell(r.path)}\` | ${cell(r.change)} | ${cell(r.observed)} | ${r.sessions} | ${r.verdict} |`)]
@@ -273,9 +392,12 @@ const lessonCommand = (root, from, json) => {
   if (out.errors) return failCommand(json, out.errors.join('; '))
   const rel = `${LESSONS}/${day}-${data.slug}.md`
   if (outside(root, rel)) return failCommand(json, `${LESSONS} is a symlink or leaves the project root; compass does not write there`)
+  const hints = data.hint ? addHint(root, data.hint, rel) : null
+  if (hints?.error) return failCommand(json, hints.error)
   try { writeNew(root, rel, out.text) } catch (err) { return failCommand(json, err.code === 'EEXIST' ? `${rel} exists; use another slug` : err.message) }
-  if (json) console.log(JSON.stringify({ ok: true, file: rel, edits: out.rows.map((r) => ({ path: r.path, verdict: r.verdict })) }, null, 2))
-  else console.log(`Lesson: ${rel}. Review it, then commit it yourself.`)
+  if (hints) writeFileSync(join(root, HINTS), hints.text)
+  if (json) console.log(JSON.stringify({ ok: true, file: rel, hint: Boolean(hints), edits: out.rows.map((r) => ({ path: r.path, verdict: r.verdict })) }, null, 2))
+  else console.log(`Lesson: ${rel}.${hints ? ` Hint added to ${HINTS}.` : ''} Review it, then commit it yourself.`)
   return 0
 }
 
@@ -302,7 +424,7 @@ export const cli = (argv, { AC }) => {
   const host = hostRoot(AC, v.root)
   if (host.error) return failCommand(v.json, host.error)
   const now = Date.now()
-  const result = reflect({ root: host.root, since: v.since, sessions: top, now })
+  const result = reflect({ root: host.root, AC, since: v.since, sessions: top, now })
   const out = v.dry ? {} : write(host.root, result, now)
   if (out.error) return failCommand(v.json, out.error)
   if (v.json) {
@@ -311,11 +433,13 @@ export const cli = (argv, { AC }) => {
   }
   const owners = ['compass', 'konvoy', 'shared', 'project'].map((o) => `${o} ${result.pieces.filter((p) => p.owner === o).length}`).join(', ')
   console.log([
-    `ac reflect: ${result.sessions} sessions since ${result.since}; ${result.ranked.length} with trouble signals.`,
+    `ac reflect: ${result.sessions} sessions since ${result.since}; ${result.troubled} with trouble signals.`,
     ...result.warnings.map((w) => `warn: ${w}`),
     'Ranked sessions', ...(result.ranked.length ? result.ranked.map((s, i) => `  ${row(s, i)}`) : ['  none']),
     `Setup pieces: ${result.pieces.length} (${owners})`,
     `Lessons: ${result.lessons.length}`, ...result.lessons.map((l) => `  ${trendLine(l)}`),
+    `Library: ${result.library.length} lessons from other projects fit`, ...result.library.map((l) => `  ${libraryLine(l)}`),
+    `Hints: ${result.hints.total} (stale ${result.hints.stale.length})`, ...result.hints.stale.map((h) => `  stale: "${h.match}" from ${h.lesson}`),
     out.dir ? `Output: ${out.dir}/report.md` : 'Dry run: nothing written.',
   ].join('\n'))
   return 0

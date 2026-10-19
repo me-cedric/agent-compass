@@ -61,7 +61,7 @@ Sync stops with an error in these cases. It writes nothing.
 ### Your own hooks and permissions
 
 `.claude/settings.json` and `.codex/hooks.json` can hold your hook groups. `.claude/settings.json` can hold your `permissions.deny` and `permissions.ask` strings.
-Compass adds its own entries after yours in `hooks.PreToolUse`, `hooks.Stop`, `hooks.SessionStart`, `permissions.deny` and `permissions.ask`.
+Compass adds its own entries after yours in `hooks.PreToolUse`, `hooks.Stop`, `hooks.SessionStart`, `hooks.PostToolUseFailure` (Codex: `hooks.PostToolUse`), `permissions.deny` and `permissions.ask`.
 It does not change, remove or reorder an entry of yours. It writes that array again with the indent of the file (2 spaces when the file has no indent), so the layout of your entries can change.
 
 - Compass removes an entry of its own when the plan drops it and you did not edit it.
@@ -75,7 +75,7 @@ See [rule 12 of the ownership contract](../contract/ownership.md#array-keys).
 ### Copilot hooks
 
 Compass writes `.github/hooks/compass.json` from its hook keys in `.claude/settings.json`. The Copilot cloud agent and the Copilot CLI read this file.
-The file uses the events `PreToolUse`, `Stop` and `SessionStart`. With these PascalCase names, Copilot sends the Claude payload and uses the Claude tool names and matcher.
+The file uses the events `PreToolUse`, `Stop`, `SessionStart` and `PostToolUseFailure`. With these PascalCase names, Copilot sends the Claude payload and uses the Claude tool names and matcher.
 Each entry runs in the repository root (`"cwd": "."`).
 
 - The `guard` blocks a tool call in Copilot as in Claude: exit code 2 is a deny.
@@ -96,7 +96,7 @@ If no one uses the Copilot cloud agent, add `.github/hooks/compass.json` to `exc
 | `.claude/rules/stack-*.md`, `.agents/skills/stack-*/` | Claude, Copilot / Codex | Stack rules. Codex gets them as skills. |
 | `.claude/agents/*.md`, `.codex/agents/*.toml`, `.github/agents/*.agent.md` | Claude / Codex / Copilot | Role agents with model pins. |
 | `.claude/output-styles/compass.md`, `.claude/workflows/deliver.js` | Claude | Output style and the `deliver` workflow. |
-| `.agents/hooks/compass.mjs` | Claude, Codex, Copilot | The `guard`, `gate` and `start` hooks. |
+| `.agents/hooks/compass.mjs` | Claude, Codex, Copilot | The `guard`, `gate`, `start` and `hint` hooks. |
 | `.github/hooks/compass.json` | Copilot | The hook entries for Copilot. See [Copilot hooks](#copilot-hooks). |
 | Keys in `.claude/settings.json`, `.codex/config.toml`, `.codex/hooks.json` | Claude / Codex | Output style, hooks, permissions, `model_verbosity`. |
 | Keys in `.mcp.json`, `.codex/config.toml`, `.vscode/mcp.json` | Claude / Codex / Copilot | MCP servers. |

@@ -54,6 +54,15 @@ test('release fails when CHANGELOG.md has no title line, and writes nothing', as
   assert.equal(JSON.parse(read(dir, 'package.json')).version, '1.2.3')
 })
 
+test('release turns the "## Unreleased" heading into the version heading', async () => {
+  const dir = makeRepo()
+  writeFileSync(join(dir, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- new thing\n\n## 1.2.3 — 2026-01-01\n\n- change\n')
+  const r = await runNode([script, '2.0.0'], { cwd: dir })
+  assert.equal(r.code, 0, r.stderr)
+  assert.match(read(dir, 'CHANGELOG.md'), /^# Changelog\n\n## 2\.0\.0 — \d{4}-\d{2}-\d{2}\n\n- new thing\n\n## 1\.2\.3 — 2026-01-01\n/)
+  assert.ok(!read(dir, 'CHANGELOG.md').includes('Unreleased'))
+})
+
 test('release --dry writes nothing', async () => {
   const dir = makeRepo()
   const r = await runNode([script, '2.0.0', '--dry'], { cwd: dir })

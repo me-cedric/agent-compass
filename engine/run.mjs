@@ -19,7 +19,7 @@ Run a command from ${REGISTRY} by name, without a shell. The output goes to
 
 const LOG_CAP = 5 * 1024 * 1024
 // ponytail: a heuristic, like scripts/lib/redact.mjs. Bounded \w{0,64}, so a long line cannot block the event loop.
-const SECRET_NAME = /(secret|password|passwd|passphrase|token|api[_-]?key|private[_-]?key|credential|authorization)\w{0,64}["']?\s*[:=]|:\/\/[^\s/:@]+:[^\s/@]+@/i
+export const SECRET_NAME = /(secret|password|passwd|passphrase|token|api[_-]?key|private[_-]?key|credential|authorization)\w{0,64}["']?\s*[:=]|:\/\/[^\s/:@]+:[^\s/@]+@/i
 
 // Junit XML and HTML report files that changed after the start. ponytail: depth 5; a deeper report is not seen.
 const reports = (root, since) => {

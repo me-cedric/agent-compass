@@ -1,6 +1,6 @@
 ---
 name: spec-flow
-description: Write, validate and archive OpenSpec specs with the konvoy-delivery schema. Also maps screens, converts documents, drafts specs from code and triages spec drift. Use before code for a feature or unclear task.
+description: Write, validate and archive OpenSpec specs (konvoy-delivery schema); map screens, convert docs, draft specs from code, triage drift. Use before code for a feature or unclear task.
 risk_level: medium
 writes_files: true
 requires_tools: [openspec, git]

@@ -120,7 +120,7 @@ export const jsonDelete = (text, key) => {
 // Array keys: compass owns its own entries in the array, not the array. An entry is known by the sha of its canonical JSON.
 export const entrySha = (entry) => sha(JSON.stringify(entry, (_, v) => (isObj(v) ? sorted(v) : v)))
 
-// The compass script subcommands (guard, gate, start) that the hook commands of a group run.
+// The compass script subcommands (guard, gate, start, hint) that the hook commands of a group run.
 const subcommands = (e) => (isObj(e) && Array.isArray(e.hooks) ? e.hooks : [])
   .flatMap((h) => (typeof h?.command === 'string' ? [/\.agents\/hooks\/compass\.mjs["']?\s+(\w+)/.exec(h.command)?.[1]] : []))
   .filter(Boolean)

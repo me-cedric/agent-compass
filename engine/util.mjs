@@ -67,14 +67,25 @@ export const dirs = (dir) => (isDir(dir)
 
 const unquote = (s) => s.trim().replace(/^"(.*)"$|^'(.*)'$/, '$1$2')
 
-// ponytail: flat YAML only. Nested keys (metadata.stacks) read as top-level keys; block scalars are not parsed.
+// ponytail: flat YAML only. Nested keys (metadata.stacks) read as top-level keys.
+// A block scalar (> or |, with an optional chomp sign) takes the lines indented below its key.
+// shortcut: each line is trimmed, and folded lines join with spaces, so a value keeps no inner indent; use a YAML parser when a field needs the exact text.
 export const frontmatter = (text) => {
   const m = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text)
   if (!m) return { data: {}, body: text }
   const data = {}
-  for (const line of m[1].split(/\r?\n/)) {
-    const kv = /^\s*([\w-]+):\s*(.*)$/.exec(line)
-    if (kv && !(kv[1] in data)) data[kv[1]] = unquote(kv[2])
+  const lines = m[1].split(/\r?\n/)
+  for (let i = 0; i < lines.length; i++) {
+    const kv = /^(\s*)([\w-]+):\s*(.*)$/.exec(lines[i])
+    if (!kv) continue
+    let value = unquote(kv[3])
+    const block = /^([>|])[-+]?$/.exec(value)
+    if (block) {
+      const parts = []
+      while (i + 1 < lines.length && (!lines[i + 1].trim() || lines[i + 1].search(/\S/) > kv[1].length)) parts.push(lines[++i].trim())
+      value = block[1] === '>' ? parts.filter(Boolean).join(' ') : parts.join('\n').trim()
+    }
+    if (!(kv[2] in data)) data[kv[2]] = value
   }
   return { data, body: text.slice(m[0].length) }
 }

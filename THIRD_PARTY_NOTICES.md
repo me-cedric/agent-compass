@@ -28,6 +28,7 @@ This file records what Agent Compass tracks, not what it ships. A host that inst
 | `apple-macos` | [`rshankras/claude-code-apple-skills`](https://github.com/rshankras/claude-code-apple-skills) | MIT | Ravishankar | `ui-review-tahoe`, `macos-capabilities` |
 | `winui` | [`microsoft/winappCli`](https://github.com/microsoft/winappCli) | MIT | Microsoft Corporation and Contributors | `winui-design`, `winui-code-review`, `winui-dev-workflow` |
 | `gtk` | [`alex-oleshkevich/glimpse`](https://github.com/alex-oleshkevich/glimpse) | BSD-3-Clause | Alex Oleshkevich | `developing-gtk-apps` |
+| `wshobson` | [`wshobson/agents`](https://github.com/wshobson/agents) | MIT | Seth Hobson | `session-guard`, `ai-debt-detector` |
 | `devops-security` | [`BagelHole/DevOps-Security-Agent-Skills`](https://github.com/BagelHole/DevOps-Security-Agent-Skills) | MIT | Toby Miller | 18 ops and security skills under `devops/`, `security/` and `infrastructure/`. `upstream.json` lists them. |
 
 Some licences carry an obligation:

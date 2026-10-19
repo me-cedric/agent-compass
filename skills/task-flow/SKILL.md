@@ -1,6 +1,6 @@
 ---
 name: task-flow
-description: Move work through the tracker lifecycle on Jira Cloud, Jira Server or Data Center, GitLab issues and GitHub issues. Draft ticket text from specs and assign work by profile. Use when the user names a ticket or asks to write, split or assign tickets.
+description: Draft, split, assign and move tickets on Jira, GitLab or GitHub issues, from specs. Use when the user names a ticket or asks to write, split or assign tickets.
 risk_level: medium
 writes_files: true
 requires_tools: [gh, glab]

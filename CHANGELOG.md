@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- `ac reflect` reads the Claude and Codex sessions of the project, with no model call and no network call. It ranks the sessions by blocked actions, failed tool calls and repeated failed commands. It writes redacted trajectories, the setup pieces with their owner, and the signals before and after each lesson to the git-ignored `.agents/reflect/`.
+- `ac reflect owner <path>` refuses a path that compass or Konvoy owns. `ac reflect lesson --from <file>` writes `.agents/lessons/<date>-<slug>.md`. A verdict from fewer than 2 sessions becomes `unclear`. ADR 0007 records the decision.
+- The skill `harness-improve` runs `ac reflect`, edits project-owned harness files only and records one lesson. It is model-invoked: about 45 always-on tokens. When the user did not ask for it, it reports and asks before it edits.
+- The descriptions of `task-flow`, `debug` and `spec-flow` are shorter, so the listing of model-invoked skills stays at 3,000 characters or fewer.
+- The source `wshobson` (by hand) brings `session-guard` and `ai-debt-detector` from wshobson/agents.
+- `npm run release` turns an `## Unreleased` heading into the version heading.
+- `ac promote --lesson <file>` copies a project lesson with evidence into `lessons/` of the compass checkout. `ac reflect` lists the library lessons that fit the sessions of a project.
+- New hook `hint` (`PostToolUseFailure` in Claude Code and Copilot, `PostToolUse` in Codex): after a failed call, it adds the fix of the first entry of `.agents/hints.json` whose text is in the error. `ac reflect lesson` writes the entry from a lesson `hint`. The hook never prints the error text.
+- The guard blocks `git commit --no-verify`, `git commit -n` and `git push --no-verify`.
+- `ac doctor --tokens`, `ac assets` and the skill listing read a YAML block-scalar description (`description: >-`) whole. Before, such a skill counted as one word.
+
 ## 1.0.0 — 2026-10-16
 
 Compass 1.0 is a rewrite. Install it with `ac init`. Move a 0.4 to 0.9 install with `ac migrate`.

@@ -393,6 +393,17 @@
         "angular-new-app"
       ]
     },
+    "wshobson": {
+      "repo": "https://github.com/wshobson/agents",
+      "sha": "0874a27b17a22e2b7c2e2bcd725768e0803cad06",
+      "licence": "MIT",
+      "holder": "Seth Hobson",
+      "recommend": "manual",
+      "skills": [
+        "plugins/skill-forge-essentials/skills/session-guard",
+        "plugins/skill-forge-essentials/skills/ai-debt-detector"
+      ]
+    },
     "devops-security": {
       "repo": "https://github.com/BagelHole/DevOps-Security-Agent-Skills",
       "sha": "0365f57a079b1332f95cf26e31dd2d5332a8399f",

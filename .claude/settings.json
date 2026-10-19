@@ -41,6 +41,17 @@
           }
         ]
       }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/core/files/.agents/hooks/compass.mjs\" hint",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "permissions": {

@@ -197,7 +197,10 @@ test('a user-invoked skill is marked and costs no always-on tokens', () => {
 test('switching the compass hook script off also switches off the hook keys that call it', () => {
   const root = makeHost(WEB_HOST)
   const hook = find(listAssets({ AC: REPO, root }), 'file', '.agents/hooks/compass.mjs')
-  assert.deepEqual(hook.also.sort(), ['.claude/settings.json', '.codex/hooks.json'].flatMap((f) => ['PreToolUse', 'SessionStart', 'Stop'].map((e) => `${f}#hooks.${e}`)))
+  assert.deepEqual(hook.also.sort(), [
+    '.claude/settings.json#hooks.PostToolUseFailure', ...['PreToolUse', 'SessionStart', 'Stop'].map((e) => `.claude/settings.json#hooks.${e}`),
+    '.codex/hooks.json#hooks.PostToolUse', ...['PreToolUse', 'SessionStart', 'Stop'].map((e) => `.codex/hooks.json#hooks.${e}`),
+  ])
   const off = setAsset(cfgOf(root), hook, false)
   assert.deepEqual(off.exclude, ['.agents/hooks/compass.mjs', ...hook.also])
   const plan = planOf(root, off)
@@ -401,6 +404,7 @@ test('key assets: one per owned key; off drops the key from the plan and on rest
     '.claude/settings.json#hooks.PreToolUse': 'guard',
     '.claude/settings.json#hooks.Stop': 'gate',
     '.claude/settings.json#hooks.SessionStart': 'start',
+    '.claude/settings.json#hooks.PostToolUseFailure': 'hint',
     '.claude/settings.json#permissions.deny': 'tracker deny',
     '.claude/settings.json#permissions.ask': 'tracker ask',
     '.claude/settings.json#attribution': 'attribution',
@@ -409,6 +413,7 @@ test('key assets: one per owned key; off drops the key from the plan and on rest
     '.codex/hooks.json#hooks.PreToolUse': 'Codex guard',
     '.codex/hooks.json#hooks.Stop': 'Codex gate',
     '.codex/hooks.json#hooks.SessionStart': 'Codex start',
+    '.codex/hooks.json#hooks.PostToolUse': 'Codex hint',
   })
   for (const a of keys) {
     assert.deepEqual([a.source, a.on, a.available, a.recommended, a.reason], ['core', true, true, true, 'baseline'], a.id)

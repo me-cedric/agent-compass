@@ -48,15 +48,24 @@ const mcpBlock = (name) => MCP_DENY.test(name.split('__').slice(2).join('__')) &
 
 const shortFlag = (args, c) => args.some((a) => /^-[a-zA-Z]+$/.test(a) && a.includes(c))
 const GIT_OPTS_WITH_VALUE = ['-C', '-c', '--git-dir', '--work-tree', '--namespace']
-const gitDanger = (w) => {
+const gitArgs = (w) => {
   let i = w.indexOf('git') + 1
-  if (!i) return false
+  if (!i) return []
   while (w[i]?.startsWith('-')) i += GIT_OPTS_WITH_VALUE.includes(w[i]) ? 2 : 1
-  const [sub, ...args] = w.slice(i)
+  return w.slice(i)
+}
+const gitDanger = (w) => {
+  const [sub, ...args] = gitArgs(w)
   if (sub === 'push') return args.some((a) => a.startsWith('--force') || a.startsWith('+')) || shortFlag(args, 'f')
   if (sub === 'reset') return args.includes('--hard')
   if (sub === 'clean') return args.includes('--force') || shortFlag(args, 'f')
   return false
+}
+// A commit or push that skips the git hooks hides a failed check. `-n` is --no-verify for commit only.
+// shortcut: a word "-n" inside an unquoted-looking commit message also matches; parse the -m value when that bites.
+const gitSkip = (w) => {
+  const [sub, ...args] = gitArgs(w)
+  return (sub === 'commit' && (args.includes('--no-verify') || shortFlag(args, 'n'))) || (sub === 'push' && args.includes('--no-verify'))
 }
 const RISKY = new Set(['/', '~', '~/', '.', './', '..', '../', '*', '$HOME', '${HOME}'])
 // `git rm` is undoable. A redirection ends the arguments. The command may be a path such as /bin/rm.
@@ -75,9 +84,12 @@ const rmDanger = (w, cwd, root) => {
 }
 const danger = (cmd, cwd) => {
   const root = process.env.CLAUDE_PROJECT_DIR || cwd
-  const hit = cmd.split(/&&|\|\||[;|&\n]/).map((s) => s.trim())
-    .find((s) => { const w = s.split(/\s+/).map((x) => x.replace(/^['"]|['"]$/g, '')).filter(Boolean); return gitDanger(w) || rmDanger(w, cwd, root) })
-  return hit && `compass: the command \`${hit}\` is blocked because you cannot undo it. Ask the user to run it.`
+  for (const s of cmd.split(/&&|\|\||[;|&\n]/).map((x) => x.trim())) {
+    const w = s.split(/\s+/).map((x) => x.replace(/^['"]|['"]$/g, '')).filter(Boolean)
+    if (gitDanger(w) || rmDanger(w, cwd, root)) return `compass: the command \`${s}\` is blocked because you cannot undo it. Ask the user to run it.`
+    if (gitSkip(w)) return `compass: the command \`${s}\` is blocked because it skips the git hooks. Fix the hook failure, or ask the user to skip it.`
+  }
+  return null
 }
 
 const guard = (input) => {
@@ -139,13 +151,36 @@ const gate = (input) => {
     'and its result (passed, failed, or not run with the reason). Do not say "done" when a check did not run.'
 }
 
+// The hint of a failed tool call from .agents/hints.json, written by ac reflect lesson (ADR 0007, phase 13).
+// Claude and Copilot send a failure event with `error`. Codex sends PostToolUse for every call, so its output must show a failure.
+// The hint is a plain substring match on the first 20,000 characters. The output holds the hint, never the error text.
+const HINTS = '.agents/hints.json'
+const CAPS = { hints: 50, match: 200, hint: 300, text: 20_000 }
+const FAILED = /(^|\n)Exit code: [1-9]\d*|Process exited with code [1-9]\d*|verification failed|"exit_code":\s*[1-9]/
+const hint = (input) => {
+  const roots = [process.env.CLAUDE_PROJECT_DIR, join(dirname(fileURLToPath(import.meta.url)), '..', '..'), input.cwd, process.cwd()]
+  const file = roots.filter((r) => typeof r === 'string' && r).map((r) => join(r, HINTS)).find((f) => existsSync(f))
+  if (!file) return null
+  const raw = input.error ?? input.tool_response ?? input.toolResult
+  const text = (typeof raw === 'string' ? raw : JSON.stringify(raw ?? '')).slice(0, CAPS.text)
+  if (input.error === undefined && !FAILED.test(text)) return null
+  const tool = input.tool_name ?? input.toolName ?? ''
+  const list = JSON.parse(readFileSync(file, 'utf8'))?.hints
+  const hit = (Array.isArray(list) ? list.slice(0, CAPS.hints) : []).find((h) => typeof h?.match === 'string' && h.match &&
+    h.match.length <= CAPS.match && typeof h.hint === 'string' && (!h.tool || h.tool === tool) && text.includes(h.match))
+  if (!hit) return null
+  const lesson = typeof hit.lesson === 'string' ? ` (${hit.lesson.slice(0, 120)})` : ''
+  return `compass hint${lesson}: ${hit.hint.slice(0, CAPS.hint)}`
+}
+
 const read = () => { try { return JSON.parse(readFileSync(0, 'utf8') || '{}') } catch { return null } }
 
 // The compass lock marks a project with its own copy. That copy sits beside the lock: .agents/hooks/ and .agents/compass.lock.json.
 // A copy inside the project never steps back. A copy outside the project (the user plugin) steps back for an event only when
 // the project hook runs it: the project lock owns the hook key of that event, or the project settings file lists a compass hook
 // for it (the compass repository runs its own copy without a lock). A host that kept its own hooks still gets the .env guard.
-const EVENTS = { start: 'SessionStart', guard: 'PreToolUse', gate: 'Stop' }
+// The hint runs on PostToolUseFailure in Claude Code and on PostToolUse in Codex.
+const EVENTS = { start: 'SessionStart', guard: 'PreToolUse', gate: 'Stop', hint: process.env.CLAUDE_PROJECT_DIR ? 'PostToolUseFailure' : 'PostToolUse' }
 const deferred = (mode) => {
   const real = (p) => { try { return realpathSync(p) } catch { return p } }
   const me = real(fileURLToPath(import.meta.url))
@@ -163,15 +198,22 @@ const deferred = (mode) => {
 // Claude Code and Codex read plain stdout (start) and exit 2 with stderr (guard, gate). The Copilot cloud agent reads
 // JSON on stdout only: additionalContext for a session start, permissionDecision for a tool call, decision for a stop.
 // The generated .github/hooks/compass.json entries pass --copilot.
+// The hint adds context only, so it fails open: an error prints nothing. Claude and Codex read hookSpecificOutput.
 const mode = process.argv[2]
 const copilot = process.argv.includes('--copilot')
 const say = (text, json) => console.log(copilot ? JSON.stringify(json) : text)
-if (!['start', 'guard', 'gate'].includes(mode)) {
-  console.error('usage: compass.mjs guard|gate|start [--copilot]')
+if (!['start', 'guard', 'gate', 'hint'].includes(mode)) {
+  console.error('usage: compass.mjs guard|gate|start|hint [--copilot]')
   process.exitCode = 1
 } else if (!deferred(mode)) {
   if (mode === 'start') say(START, { additionalContext: START })
-  else {
+  else if (mode === 'hint') {
+    let input = null
+    let text = null
+    try { input = read(); text = input && hint(input) } catch { text = null }
+    const hookEventName = typeof input?.hook_event_name === 'string' ? input.hook_event_name : EVENTS.hint
+    if (text) console.log(JSON.stringify(copilot ? { additionalContext: text } : { hookSpecificOutput: { hookEventName, additionalContext: text } }))
+  } else {
     const input = read()
     let reason = null
     try { reason = input && (mode === 'guard' ? guard(input) : gate(input)) } catch { reason = null }

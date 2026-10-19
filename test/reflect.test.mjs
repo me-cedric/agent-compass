@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { findIssues } from '../scripts/lib/redact.mjs'
+import { reflect } from '../engine/reflect.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -19,6 +20,8 @@ const temp = (prefix) => {
 }
 
 const TOKEN = `ghp_${'a'.repeat(36)}`
+const JWT = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJl'
+const OPENAI = `sk-proj-${'b'.repeat(24)}`
 // Local noon, so the local day is the same in every time zone.
 const at = (day, minute = 0) => new Date(2026, 9, day, 12, minute).toISOString()
 const use = (id, name, input) => ({ type: 'tool_use', id, name, input })
@@ -33,7 +36,7 @@ const fixture = () => {
   spawnSync('git', ['init', '-q', root])
   const files = {
     '.agents/compass.lock.json': JSON.stringify({
-      lockVersion: 2, version: '1.0.0', skills: ['review'], files: { '.agents/hooks/compass.mjs': { sha: 'x', owner: 'compass' }, 'renovate.json': { sha: 'y', owner: 'project' } },
+      lockVersion: 2, version: '1.0.0', skills: ['review'], files: { '.agents/hooks/compass.mjs': { sha: 'x', owner: 'compass' }, '.claude/skills/review/SKILL.md': { sha: 'r', owner: 'compass' }, '.claude/skills/review/references/a.md': { sha: 's', owner: 'compass' }, 'renovate.json': { sha: 'y', owner: 'project' } },
       keys: { '.claude/settings.json': { outputStyle: 'z' } }, blocks: { 'AGENTS.md': 'w' },
     }),
     '.agents/konvoy.json': JSON.stringify({ owns: { skills: ['kv'] } }),
@@ -66,6 +69,10 @@ const fixture = () => {
     assistant('bad', root, 10, 9, [use('t5', 'Bash', { command: 'git log -1' })]),
     user('bad', root, 10, 10, [result('t5', `author alice@corp.io pushed ${TOKEN}`)]),
     user('bad', root, 10, 10, [result('t5', 'the same result twice counts once', true)]),
+    assistant('bad', root, 10, 11, [use('t6', 'Bash', { command: 'curl -s localhost/me' })]),
+    user('bad', root, 10, 12, [result('t6', `jwt ${JWT}`)]),
+    assistant('bad', root, 10, 13, [use('t7', 'Bash', { command: 'printenv' })]),
+    user('bad', root, 10, 14, [result('t7', `OPENAI=${OPENAI}`)]),
   ])
   put('-root/clean.jsonl', [
     assistant('clean', root, 11, 0, [use('c1', 'Read', { file_path: 'README.md' })]),
@@ -80,11 +87,30 @@ const fixture = () => {
     user('stop', wt, 13, 1, [result('w1', 'ok')]),
     line('stop', wt, 13, 2, { type: 'system', subtype: 'stop_hook_summary', preventedContinuation: true, uuid: 'u1' }),
   ])
+  const codex = (rel, cwd, items) => {
+    mkdirSync(dirname(join(home, '.codex/sessions', rel)), { recursive: true })
+    writeFileSync(join(home, '.codex/sessions', rel), `${items.map(([type, payload], i) => JSON.stringify({ timestamp: at(14, i), type, payload })).join('\n')}\n`)
+  }
+  codex('2026/10/14/rollout-a.jsonl', root, [
+    ['session_meta', { id: 'codex-1', cwd: root }],
+    ['event_msg', { type: 'user_message', message: 'run the tests, mail carol@corp.io' }],
+    ['response_item', { type: 'function_call', name: 'exec_command', call_id: 'k1', arguments: JSON.stringify({ cmd: 'npm test' }) }],
+    ['response_item', { type: 'function_call_output', call_id: 'k1', output: 'Chunk ID: a1 | Wall time: 1 seconds | Process exited with code 1 | FAIL' }],
+    ['response_item', { type: 'custom_tool_call', name: 'exec', call_id: 'k2', input: 'const r = await tools.exec_command({"cmd":"cat .env.production"})' }],
+    ['response_item', { type: 'custom_tool_call_output', call_id: 'k2', output: [{ type: 'input_text', text: 'Script completed\nOutput:\nDB_PASS=hunter2hunter2' }] }],
+    ['response_item', { type: 'custom_tool_call', name: 'apply_patch', call_id: 'k3', input: '*** Begin Patch\n*** Update File: src/a.ts\n*** End Patch' }],
+    ['response_item', { type: 'custom_tool_call_output', call_id: 'k3', output: 'apply_patch verification failed: Failed to find expected lines' }],
+  ])
+  codex('2026/10/14/rollout-b.jsonl', '/y/other', [
+    ['session_meta', { id: 'codex-other', cwd: '/y/other' }],
+    ['response_item', { type: 'function_call', name: 'exec_command', call_id: 'o1', arguments: '{"cmd":"make"}' }],
+    ['response_item', { type: 'function_call_output', call_id: 'o1', output: 'Exit code: 2' }],
+  ])
   put('-y-other/other.jsonl', [
     assistant('other', '/y/other', 10, 0, [use('o1', 'Bash', { command: 'make' })]),
     user('other', '/y/other', 10, 1, [result('o1', 'boom', true)]),
   ])
-  return { root, env: { ...process.env, HOME: home, USERPROFILE: home } }
+  return { root, env: { ...process.env, HOME: home, USERPROFILE: home, CODEX_HOME: '' } }
 }
 
 const reflectRun = (root, env, ...args) => runNode([BIN, 'reflect', '--root', root, '--since', '2026-10-01', ...args], { env })
@@ -93,13 +119,14 @@ test('ac reflect ranks the sessions of this project and prints the ranked list',
   const { root, env } = fixture()
   const text = await reflectRun(root, env)
   assert.equal(text.code, 0, text.stderr)
-  assert.match(text.stdout, /4 sessions since 2026-10-01; 3 with trouble signals/)
+  assert.match(text.stdout, /5 sessions since 2026-10-01; 4 with trouble signals/)
   assert.match(text.stdout, /Ranked sessions\n {3}1\. bad .* score 4 {2}blocked 1 {2}failed 2 {2}repeated 1/)
   assert.match(text.stdout, /Output: \.agents\/reflect\/.+\/report\.md/)
 
   const json = JSON.parse((await reflectRun(root, env, '--json', '--dry')).stdout)
-  assert.deepEqual(json.ranked.map((s) => [s.id, s.score]), [['bad', 4], ['stop', 1], ['mild', 1]])
-  assert.equal(json.sessions, 4, 'the session of /y/other is not read')
+  assert.deepEqual(json.ranked.map((s) => [s.id, s.score]), [['bad', 4], ['codex-1', 2], ['stop', 1], ['mild', 1]])
+  assert.equal(json.sessions, 5, 'the sessions of /y/other are not read')
+  assert.deepEqual(json.ranked.map((s) => s.provider), ['claude', 'codex', 'claude', 'claude'])
   assert.equal(json.output, null)
 })
 
@@ -108,6 +135,7 @@ test('ac reflect lists each setup piece with its owner', async () => {
   const { pieces } = JSON.parse((await reflectRun(root, env, '--json', '--dry')).stdout)
   const owner = Object.fromEntries(pieces.map((p) => [p.path, `${p.owner} ${p.kind}`]))
   assert.equal(owner['.claude/skills/review/'], 'compass skill')
+  assert.ok(!pieces.some((p) => p.path.startsWith('.claude/skills/review/') && p.path !== '.claude/skills/review/'), 'skill files group under the skill dir')
   assert.equal(owner['.claude/skills/kv/'], 'konvoy skill')
   assert.equal(owner['.claude/skills/mine/'], 'project skill')
   assert.equal(owner['.claude/agents/helper.md'], 'project agent')
@@ -122,7 +150,7 @@ test('ac reflect shows the signals around each lesson; one session is unclear', 
   const { lessons } = JSON.parse((await reflectRun(root, env, '--json', '--dry')).stdout)
   assert.deepEqual(lessons, [{
     file: '.agents/lessons/2026-10-11-retry-tests.md', day: '2026-10-11',
-    before: { sessions: 1, median: 4 }, after: { sessions: 2, median: 1 }, trend: 'unclear',
+    before: { sessions: 1, median: 4 }, after: { sessions: 3, median: 1 }, trend: 'unclear',
   }])
 })
 
@@ -133,19 +161,25 @@ test('ac reflect writes redacted trajectories below a git-ignored folder', async
   const [run] = readdirSync(join(root, '.agents/reflect')).filter((n) => n !== '.gitignore')
   const out = join(root, '.agents/reflect', run)
   const files = ['report.md', ...readdirSync(join(out, 'trajectories')).map((f) => `trajectories/${f}`)]
-  assert.equal(files.length, 4)
+  assert.equal(files.length, 5)
   for (const f of files) {
     const ignored = spawnSync('git', ['-C', root, 'check-ignore', '-q', `.agents/reflect/${run}/${f}`])
     assert.equal(ignored.status, 0, `${f} is not git-ignored`)
     const text = readFileSync(join(out, f), 'utf8')
     assert.deepEqual(findIssues(text), [], `${f} holds a secret or an e-mail address`)
-    for (const leak of ['ghp_', 'alice@corp.io', 'bob@corp.io', 'abc123xyz']) assert.ok(!text.includes(leak), `${f} holds ${leak}`)
+    for (const leak of ['ghp_', 'alice@corp.io', 'bob@corp.io', 'carol@corp.io', 'abc123xyz', 'hunter2', 'eyJhbGciOi', 'sk-proj-']) assert.ok(!text.includes(leak), `${f} holds ${leak}`)
   }
   const bad = readFileSync(join(out, files.find((f) => f.endsWith('-bad.md'))), 'utf8')
   for (const tag of ['[USER]', '[ACTION] Bash: npm test', '[ERROR] FAIL 3 tests', '[ACTION] Read: ', '[BLOCKED] [redacted: env file]', '[OBSERVATION] [redacted: env file]', '[OBSERVATION] [redacted]']) {
     assert.ok(bad.includes(tag), `the trajectory has no "${tag}"`)
   }
   assert.ok(bad.includes('[USER] please fix the tests, mail [email]'))
+  assert.equal((bad.match(/\[OBSERVATION\] \[redacted\]/g) ?? []).length, 3, 'the token, the JWT and the API key are redacted')
+  const cx = readFileSync(join(out, files.find((f) => f.endsWith('-codex-1.md'))), 'utf8')
+  for (const tag of ['[USER] run the tests, mail [email]', '[ACTION] exec_command: npm test', '[ERROR] Chunk ID', '[ACTION] exec: cat .env.production',
+    '[OBSERVATION] [redacted: env file]', '[ACTION] apply_patch: src/a.ts', '[ERROR] apply_patch verification failed']) {
+    assert.ok(cx.includes(tag), `the Codex trajectory has no "${tag}"`)
+  }
   assert.equal((bad.match(/\[ERROR\]/g) ?? []).length, 2, 'a repeated tool_result id counts once')
 })
 
@@ -225,4 +259,41 @@ test('ac reflect lesson accepts no change, and refuses a secret or a bad field',
   }
   assert.equal(lessonFiles(root).length, 1)
   assert.equal((await runNode([BIN, 'reflect', 'lesson', '--root', root], { env })).code, 2)
+})
+
+test('ac reflect lists the compass library lessons whose situation fits the sessions', async () => {
+  const { root, env } = fixture()
+  const ac = temp('ac-reflect-ac-')
+  const entry = (situation) => `# Lesson\n\n- situation: ${situation}\n- lesson: Do the fix.\n`
+  mkdirSync(join(ac, 'lessons'))
+  writeFileSync(join(ac, 'lessons/2026-09-01-flaky-tests.md'), entry('A test command fails the same way twice.'))
+  writeFileSync(join(ac, 'lessons/2026-09-02-gradle-memory.md'), entry('A Gradle build runs out of memory on Windows.'))
+  const r = reflect({ root, AC: ac, home: env.HOME, since: '2026-10-01' })
+  assert.deepEqual(r.library.map((l) => l.file), ['lessons/2026-09-01-flaky-tests.md'])
+  assert.ok(r.library[0].shared >= 2)
+  assert.deepEqual(reflect({ root, home: env.HOME, since: '2026-10-01' }).library, [], 'no compass checkout, no library')
+  const text = await reflectRun(root, env)
+  assert.match(text.stdout, /Library: \d+ lessons from other projects fit/)
+  const [run] = readdirSync(join(root, '.agents/reflect')).filter((n) => n !== '.gitignore')
+  assert.match(readFileSync(join(root, '.agents/reflect', run, 'report.md'), 'utf8'), /## Library\n\nLessons from other projects that fit these sessions\. Verify each one here before you use it\./)
+})
+
+test('ac reflect lesson with a hint writes .agents/hints.json, refuses a duplicate, and ac reflect lists stale hints', async () => {
+  const { root, env } = fixture()
+  const hint = { tool: 'Bash', match: 'FAIL 3 tests', hint: 'Run the one failing test file first.' }
+  const first = await lessonRun(root, env, { ...LESSON, hint, edits: [{ path: '.claude/skills/mine/SKILL.md', change: 'c', observed: 'o', sessions: 3, verdict: 'hurt' }] })
+  assert.equal(first.code, 0, first.stdout)
+  const [file] = lessonFiles(root)
+  const hints = JSON.parse(readFileSync(join(root, '.agents/hints.json'), 'utf8'))
+  assert.deepEqual(hints, { version: 1, hints: [{ ...hint, lesson: `.agents/lessons/${file}` }] })
+  assert.match(readFileSync(join(root, '.agents/lessons', file), 'utf8'), /^- hint: when `Bash` fails with `FAIL 3 tests`: Run the one failing test file first\.$/m)
+  const again = await lessonRun(root, env, { ...LESSON, slug: 'other', hint, edits: [] })
+  assert.equal(again.code, 1)
+  assert.match(JSON.parse(again.stdout).errors[0], /has a hint for "FAIL 3 tests" already/)
+  assert.equal(lessonFiles(root).length, 1, 'a refused hint writes no lesson')
+  for (const bad of [{ match: '', hint: 'x' }, { match: 'x'.repeat(201), hint: 'x' }, { match: 'y', hint: 'z'.repeat(301) }, { match: 'y', hint: 'z', tool: 'a b' }]) {
+    assert.equal((await lessonRun(root, env, { ...LESSON, slug: 'bad-hint', hint: bad, edits: [] })).code, 1, JSON.stringify(bad).slice(0, 60))
+  }
+  const { hints: listed } = JSON.parse((await reflectRun(root, env, '--json', '--dry')).stdout)
+  assert.deepEqual(listed, { total: 1, stale: [{ match: 'FAIL 3 tests', lesson: `.agents/lessons/${file}` }] })
 })

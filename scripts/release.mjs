@@ -13,6 +13,7 @@ const { values, positionals } = parseCliArgs({
   script: 'release.mjs',
   summary: `Set <version> in ${VERSION_FILES.map((v) => v.file).join(', ')}.
 Add a "## <version> — <date>" heading to CHANGELOG.md, with the asset files that changed since the last tag.
+An "## Unreleased" heading becomes that heading, and its entries stay.
 Commit, tag and push by hand.`,
   positionals: [{ name: 'version', required: true }],
   options: { dry: { type: 'boolean', desc: 'Print the changes. Write nothing.' } },
@@ -51,7 +52,11 @@ const writes = VERSION_FILES.map(({ file, path }) => {
 if (heading.test(changelog)) console.log(`CHANGELOG.md has a heading for ${version}: left as it is`)
 else {
   const note = assetNote()
-  const next = changelog.replace(/^(# .*\r?\n)(\r?\n)?/, (_, title) => `${title}\n## ${version} — ${date}\n\n${note}`)
+  // An "## Unreleased" section becomes the release section; its entries stay below the asset note.
+  const unreleased = /^## Unreleased\r?\n/m
+  const next = unreleased.test(changelog)
+    ? changelog.replace(unreleased, `## ${version} — ${date}\n${note ? `\n${note.trimEnd()}\n` : ''}`)
+    : changelog.replace(/^(# .*\r?\n)(\r?\n)?/, (_, title) => `${title}\n## ${version} — ${date}\n\n${note}`)
   if (next === changelog) {
     console.error('CHANGELOG.md must start with a "# " title line. Add it, then run the release again.')
     process.exit(1)

@@ -66,6 +66,8 @@ const KEY_TEXT = {
   'hooks.PreToolUse': ['guard', 'Blocks a read of a secret file, an edit of a lock file, a tracker worklog or delete tool, and a destructive git or rm command, before the tool runs.'],
   'hooks.Stop': ['gate', 'Asks once for the completion summary when a turn that edited files ends.'],
   'hooks.SessionStart': ['start', 'Prints the style reminder when a session starts.'],
+  'hooks.PostToolUseFailure': ['hint', 'Adds the fix from .agents/hints.json after a tool call fails with a known error.'],
+  'hooks.PostToolUse': ['hint', 'Adds the fix from .agents/hints.json after a tool call fails with a known error.'],
   'permissions.deny': ['tracker deny', 'Blocks the tracker delete tools, the repository delete commands and the read of .env files, and holds the deny patterns of the MCP servers.'],
   attribution: ['attribution', 'Keeps AI attribution lines out of commits and pull requests.'],
   'permissions.ask': ['tracker ask', 'Asks before a tracker write tool or an issue or pull request write command runs.'],

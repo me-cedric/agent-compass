@@ -163,6 +163,7 @@ Each skill of a source is a `skill` asset with the source `upstream:<id>`. It is
 | `android`, `swift-ios`, `dimillian`, `agent-device` | Native and device skills. See [native.md](native.md). | Native and Expo stacks |
 | `dimillian-more`, `agent-device-tools` | The other SwiftUI skills; `android-emulator`, `dogfood`, `ios-simulator` (by hand) | Native and Expo stacks |
 | `apple-macos`, `winui`, `gtk` | Desktop review and development | `macos-desktop`, `winui-desktop`, `gtk-desktop` |
+| `wshobson` | `session-guard` (long sessions and compaction drift) and `ai-debt-detector` (failure modes, orphaned resources, invented dependencies after generated code), by hand. The other skills of the repository overlap the `android`, `swift-ios`, `expo` and `taste` sources, or are stale. The two descriptions are about 360 characters each: about 190 always-on tokens. | All |
 | `devops-security` | 18 ops and security skills for a Kubernetes, Helm, ArgoCD, Grafana, GitLab or GitHub host: `kubernetes-ops`, `helm-charts`, `argocd-gitops`, `prometheus-grafana`, `opentelemetry`, `gitlab-ci`, `github-actions`, `postgresql`, `sops-encryption`, `sbom-supply-chain` and more (by hand). The source has 163 skills; the other ones are out of scope or put a secret in a command argument. The 18 together add about 1,000 always-on tokens: keep the ones the host uses and put the rest in `exclude`. | All |
 
 A third-party skill is text that you did not write. It cannot relax a compass rule.
@@ -175,10 +176,10 @@ A key is one owned key that a `keys.json` sets. The title says what the key does
 | Title | Key | What it does |
 |---|---|---|
 | output style | `.claude/settings.json#outputStyle` | Selects the compass output style. |
-| guard, gate, start | `.claude/settings.json#hooks.PreToolUse`, `#hooks.Stop`, `#hooks.SessionStart` | The three hooks of `.agents/hooks/compass.mjs`. |
+| guard, gate, start, hint | `.claude/settings.json#hooks.PreToolUse`, `#hooks.Stop`, `#hooks.SessionStart`, `#hooks.PostToolUseFailure` | The four hooks of `.agents/hooks/compass.mjs`. |
 | tracker deny, tracker ask | `.claude/settings.json#permissions.deny`, `#permissions.ask` | Block or ask for a tracker write. The deny patterns of the MCP servers join `permissions.deny`, so one switch removes them all. |
 | Codex verbosity, Codex reasoning summary | `.codex/config.toml#model_verbosity`, `#model_reasoning_summary` | Keep the Codex answers short. |
-| Codex guard, Codex gate, Codex start | `.codex/hooks.json#hooks.PreToolUse`, `#hooks.Stop`, `#hooks.SessionStart` | The same three hooks for Codex. |
+| Codex guard, Codex gate, Codex start, Codex hint | `.codex/hooks.json#hooks.PreToolUse`, `#hooks.Stop`, `#hooks.SessionStart`, `#hooks.PostToolUse` | The same four hooks for Codex. |
 
 A hook key is not available while its script `.agents/hooks/compass.mjs` is off: switch the script on first, so no hook calls a missing file.
 A key is also not available when Konvoy owns its file, or a key that overlaps it.

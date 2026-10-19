@@ -291,3 +291,65 @@ test('the user copy steps back when the project settings list a compass hook for
   const edited = JSON.stringify({ transcript_path: transcript(claudeTurn('Fixed it.')) })
   assert.equal((await runNode([user, 'gate'], { input: edited, ...claude })).code, 2, 'Stop is not listed, so the user copy runs it')
 })
+
+test('guard blocks a commit or push that skips the git hooks, and passes the other -n forms', async () => {
+  for (const command of ['git commit --no-verify -m wip', 'git commit -n -m wip', 'git commit -anm wip', 'git -C app push --no-verify origin main']) {
+    const r = await bash(command)
+    assert.equal(r.code, 2, command)
+    assert.match(r.stderr, /blocked because it skips the git hooks\. Fix the hook failure, or ask the user to skip it\./)
+  }
+  for (const command of ['git log -n 5', 'git commit -m "fix it"', 'git push origin main', 'git diff --no-index a b']) assert.equal((await bash(command)).code, 0, command)
+})
+
+const hintProject = (hints) => {
+  const root = mkdtempSync(join(dir, 'hint-'))
+  mkdirSync(join(root, '.agents'))
+  writeFileSync(join(root, '.agents/hints.json'), JSON.stringify({ version: 1, hints }))
+  return root
+}
+const DB = { tool: 'Bash', match: 'ECONNREFUSED 127.0.0.1:5432', hint: 'Start the database with ac dev up first.', lesson: '.agents/lessons/2026-10-19-db-first.md' }
+const hintRun = (root, input, { claude = true, copilot = false } = {}) => {
+  const env = { ...process.env }
+  delete env.CLAUDE_PROJECT_DIR
+  if (claude) env.CLAUDE_PROJECT_DIR = root
+  return runNode([HOOK, 'hint', ...(copilot ? ['--copilot'] : [])], { input: JSON.stringify({ cwd: root, ...input }), env })
+}
+const FAIL = 'Exit code 1\nconnect ECONNREFUSED 127.0.0.1:5432\nDB_PASSWORD=hunter2hunter2'
+
+test('hint adds the fix of a matching hint after a failed call, for Claude, Codex and Copilot', async () => {
+  const root = hintProject([DB])
+  const claude = await hintRun(root, { hook_event_name: 'PostToolUseFailure', tool_name: 'Bash', error: FAIL })
+  assert.equal(claude.code, 0)
+  assert.deepEqual(JSON.parse(claude.stdout), { hookSpecificOutput: { hookEventName: 'PostToolUseFailure',
+    additionalContext: 'compass hint (.agents/lessons/2026-10-19-db-first.md): Start the database with ac dev up first.' } })
+  const codex = await hintRun(root, { hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_response: `Process exited with code 1\n${FAIL}` }, { claude: false })
+  assert.equal(JSON.parse(codex.stdout).hookSpecificOutput.hookEventName, 'PostToolUse')
+  const copilot = await hintRun(root, { tool_name: 'Bash', error: FAIL }, { copilot: true })
+  assert.match(JSON.parse(copilot.stdout).additionalContext, /^compass hint/)
+  for (const r of [claude, codex, copilot]) assert.ok(!r.stdout.includes('hunter2') && !r.stdout.includes('ECONNREFUSED'), 'the error text is never echoed')
+})
+
+test('hint prints nothing without a file, without a match, for another tool or for a Codex call that passed', async () => {
+  const root = hintProject([DB])
+  const silent = [
+    await hintRun(mkdtempSync(join(dir, 'none-')), { tool_name: 'Bash', error: FAIL }),
+    await hintRun(root, { tool_name: 'Bash', error: 'Exit code 1\nsomething else' }),
+    await hintRun(root, { tool_name: 'Read', error: FAIL }),
+    await hintRun(root, { hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_response: 'Process exited with code 0\nconnect ECONNREFUSED 127.0.0.1:5432' }, { claude: false }),
+    await hintRun(hintProject('not a list'), { tool_name: 'Bash', error: FAIL }),
+  ]
+  for (const r of silent) assert.deepEqual([r.code, r.stdout], [0, ''])
+  const broken = mkdtempSync(join(dir, 'broken-'))
+  mkdirSync(join(broken, '.agents'))
+  writeFileSync(join(broken, '.agents/hints.json'), '{ not json')
+  assert.deepEqual([(await hintRun(broken, { tool_name: 'Bash', error: FAIL })).code, (await hintRun(broken, { tool_name: 'Bash', error: FAIL })).stdout], [0, ''], 'the hint fails open')
+})
+
+test('hint keeps its caps: 50 hints, a match of 200 characters, a hint of 300 characters', async () => {
+  const filler = Array.from({ length: 50 }, (_, i) => ({ match: `never-${i}`, hint: 'x' }))
+  assert.equal((await hintRun(hintProject([...filler, DB]), { tool_name: 'Bash', error: FAIL })).stdout, '', 'the 51st hint is not read')
+  const long = { match: 'E'.repeat(201), hint: 'too long a match' }
+  assert.equal((await hintRun(hintProject([long]), { tool_name: 'Bash', error: `Exit code 1 ${'E'.repeat(201)}` })).stdout, '')
+  const big = await hintRun(hintProject([{ match: 'ECONNREFUSED', hint: 'y'.repeat(400) }]), { tool_name: 'Bash', error: FAIL })
+  assert.equal(JSON.parse(big.stdout).hookSpecificOutput.additionalContext, `compass hint: ${'y'.repeat(300)}`)
+})
