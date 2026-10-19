@@ -34,6 +34,8 @@ const LOCKS = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'pnpm-lock.ya
   'Package.resolved', 'gradle.lockfile', 'Cargo.lock', 'composer.lock', 'Gemfile.lock', 'poetry.lock', 'uv.lock'])
 const COMPASS_LOCK = /(^|[/\\])\.agents[/\\]compass\.lock\.json$/
 const PATCH_FILE = /^\*\*\* (?:(?:Update|Add|Delete) File|Move to): (.+)$/gm
+// The git internals and the secret stores of a project: an agent edits none of them.
+const PROTECTED_DIR = /(^|[/\\])(\.git|secrets|credentials)[/\\]/
 const lockEdit = (paths) => {
   const hit = paths.find((p) => COMPASS_LOCK.test(p) || LOCKS.has(basename(p)))
   if (!hit) return null
@@ -67,6 +69,14 @@ const gitSkip = (w) => {
   const [sub, ...args] = gitArgs(w)
   return (sub === 'commit' && (args.includes('--no-verify') || shortFlag(args, 'n'))) || (sub === 'push' && args.includes('--no-verify'))
 }
+// Every project rebases: a merge commit, or a pull that merges, is blocked. Ending a merge and a fast-forward stay allowed.
+const MERGE_OK = ['--abort', '--continue', '--quit', '--ff-only']
+const gitMerge = (w) => {
+  const [sub, ...args] = gitArgs(w)
+  if (sub === 'merge') return !args.some((a) => MERGE_OK.includes(a))
+  if (sub === 'pull') return !args.some((a) => a === '-r' || a === '--ff-only' || (/^--rebase(=|$)/.test(a) && a !== '--rebase=false'))
+  return false
+}
 const RISKY = new Set(['/', '~', '~/', '.', './', '..', '../', '*', '$HOME', '${HOME}'])
 // `git rm` is undoable. A redirection ends the arguments. The command may be a path such as /bin/rm.
 const rmDanger = (w, cwd, root) => {
@@ -88,6 +98,10 @@ const danger = (cmd, cwd) => {
     const w = s.split(/\s+/).map((x) => x.replace(/^['"]|['"]$/g, '')).filter(Boolean)
     if (gitDanger(w) || rmDanger(w, cwd, root)) return `compass: the command \`${s}\` is blocked because you cannot undo it. Ask the user to run it.`
     if (gitSkip(w)) return `compass: the command \`${s}\` is blocked because it skips the git hooks. Fix the hook failure, or ask the user to skip it.`
+    if (gitMerge(w)) {
+      return `compass: the command \`${s}\` is blocked because the project rebases instead of merging. Run \`git fetch origin && git rebase origin/<base>\`. ` +
+        'A rebased branch needs `git push --force-with-lease`: ask the user to run it.'
+    }
   }
   return null
 }
@@ -99,7 +113,10 @@ const guard = (input) => {
   if (name.startsWith('mcp__')) return mcpBlock(name)
   if (EDITS.has(name)) {
     const patch = [cmd, t.input, t.patch].filter((s) => typeof s === 'string').join('\n')
-    return lockEdit([t.file_path, t.notebook_path, ...[...patch.matchAll(PATCH_FILE)].map((m) => m[1].trim())].filter((p) => typeof p === 'string'))
+    const targets = [t.file_path, t.notebook_path, ...[...patch.matchAll(PATCH_FILE)].map((m) => m[1].trim())].filter((p) => typeof p === 'string')
+    const kept = targets.find((p) => PROTECTED_DIR.test(p))
+    if (kept) return `compass: the edit of ${kept} is blocked because .git/, secrets/ and credentials/ are not for agents. Ask the user.`
+    return lockEdit(targets)
   }
   const paths = [t.file_path, t.path, t.notebook_path].filter((p) => typeof p === 'string')
   // Glob lists file names and reads no content, so only the Grep glob counts.

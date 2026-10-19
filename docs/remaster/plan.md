@@ -93,6 +93,7 @@ Each phase runs as one `/goal` with a stated check and a turn cap. State lives i
 | 11 | Later: graph | codebase-memory-mcp + LSP plugins as default. Decisions stay in repo files (OpenSpec archive, ADR, RAID). projectmem as trial. Drop Dual Graph. claude-mem stays personal. Measure tokens per task for 2 weeks with and without the graph. Tracker live pull for the Delivery tab. | KPI report before and after. |
 | 12 | Reflect loop | `ac reflect` with `owner` and `lesson`, skill `harness-improve`, ADR 0007. See "Phase 12 design". | See "Phase 12 check". |
 | 13 | Hint hook | `compass.mjs hint` on tool failures, fed by `.agents/hints.json`; `--no-verify` in the guard. See "Phase 13 design". | See "Phase 13 check". |
+| 14 | Forge flow | `review` posts PR/MR reviews (recap, then summary, inline comments, verdict) with `post-review.mjs`; skill `pr-flow`; PR/MR template seeds; rebase-only and protected-dir guard rules; Jira states in `task-flow`. | `test/post-review.test.mjs` and `test/hooks.test.mjs` green; listing at most 3,000 characters; `npm run check` green. |
 
 ## Phase 12 design: reflect loop
 
@@ -169,6 +170,17 @@ Hook: `.agents/hooks/compass.mjs hint`.
 4. `ac doctor --tokens` gives the same always-on tokens. `ac sync` on a fresh host writes the new keys, and `ac check --frozen` exits 0. `npm run check` is green.
 
 Open: the minimum Claude Code version with `PostToolUseFailure` is not known; an older CLI ignores the key, so the hint does not run there. Codex loads the hooks only after the user trusts them in `/hooks`.
+
+## Phase 14 design: forge flow
+
+Source: the PR/MR rules of parcus-plus, numeric-emploi and StoryArc, and the 0.9.6 `pr-review-governance` and `pr-workflow` skills (read on 2026-10-19).
+Owner choices (2026-10-19): a recap and a yes before a review is posted; draft by default for PRs and MRs; the rebase-only guard in every project; the self-review stays local, before the PR or MR opens.
+
+1. `review`: "review PR N" or "review MR N" ends with a posted review after the recap. Verdict: request changes with a `P0` or `P1`, approve when none is left and the checks have evidence, else comment. The author's own request gets a comment.
+2. `skills/review/scripts/post-review.mjs`: the forge comes from the `origin` remote (github.com, a host with "gitlab", else `glab` then `gh` probes). GitHub: one review call with `commit_id`, `event` and `comments[]` (`side: RIGHT`). GitLab: the summary note, then one discussion for each comment with a JSON `position` (`old_line` too for a context line), then `glab mr approve --sha`, or `glab mr revoke` and the `mergeRequestRequestChanges` GraphQL mutation (Premium, 17.2 and later). A comment outside the diff goes into the summary; a duplicate of an existing thread is skipped; a lost anchor fails the run.
+3. `pr-flow`: base, draft, labels (type from the commit type, area from the paths, no judgement label), assignee and reviewer, the body contract in `references/body.md`, add-only updates (`--assignee "+$me"` on GitLab), ready and merge on a yes with `--squash` and the head SHA, delivery checked by tree.
+4. Guard: `git merge` (except `--abort`, `--continue`, `--quit`, `--ff-only`) and `git pull` without `--rebase`, `-r` or `--ff-only`; an edit under `.git/`, `secrets/` or `credentials/`. The guard still blocks `git push --force-with-lease`: the user runs it.
+5. Project-local, not in compass: StoryArc `preview-proof`, `delta-drop` and `line-cap`; the numeric-emploi e2e shard budget and ERD sync; the 800-line file cap.
 
 ## Execution method (token economy)
 

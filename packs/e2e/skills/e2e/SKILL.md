@@ -1,6 +1,6 @@
 ---
 name: e2e
-description: Run end-to-end suites through ac run, read the result and the reports, and fix failures. Covers Playwright with its test agents, Maestro and agent-device. Use when you run, write or heal e2e tests.
+description: Run, write or heal end-to-end tests through ac run: Playwright and its test agents, Maestro, agent-device. Read the result and the reports.
 risk_level: medium
 writes_files: true
 requires_tools: [ac, npx]

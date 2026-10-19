@@ -72,7 +72,9 @@ Three hooks enforce the basics. Their code is `.agents/hooks/compass.mjs`.
   - an edit of a lock file (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Podfile.lock`, `Package.resolved` and others). Run the package manager. For `.agents/compass.lock.json`, run `ac sync`;
   - an MCP tool with `worklog` or `delete` in its name. Codex has no permission rules, so this rule copies the Claude deny rules;
   - `git push --force`, `git push -f`, a `+` refspec, `git reset --hard`, `git clean -f`, and a recursive `rm` on `/`, `~`, `.`, `..`, `*` or a path outside the project. Ask the user to run the command;
-  - `git commit --no-verify`, `git commit -n` and `git push --no-verify`: they skip the git hooks. Fix the hook failure, or ask the user to skip it.
+  - `git commit --no-verify`, `git commit -n` and `git push --no-verify`: they skip the git hooks. Fix the hook failure, or ask the user to skip it;
+  - `git merge` and `git pull` without `--rebase`: every project rebases. `git merge --abort`, `--continue`, `--quit` and `--ff-only` pass. A rebased branch needs `git push --force-with-lease`, which the user runs;
+  - an edit under `.git/`, `secrets/` or `credentials/`.
   The Claude guard entry has `"onFailure": "block"`: from Claude Code 2.1.295, the tool call stops when the script cannot start or times out. An older CLI drops the key and lets the call go on.
   `gh api` with `-f` or `-F` asks, so a read-only GraphQL query (`gh api graphql -f query=...`) asks too: run it yourself, or use `gh` subcommands for reads.
 - `gate` (at Stop) asks once for the summary after a turn that edited files and ended with no result word.

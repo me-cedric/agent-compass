@@ -7,7 +7,7 @@ Each skill is a folder `skills/<name>/SKILL.md`. `ac sync` copies the skills int
 | Compass | `compass` (init, update, migrate, extend, promote) |
 | Specs | `spec-flow`, `grill`, `adr`, `architecture-advisor` |
 | Tickets and delivery | `task-flow`, `remaining-work`, `delivery-digest`, `impact-analysis` |
-| Quality | `review`, `ui-conformance`, `api-contract-sync`, `ci-triage`, `debug` |
+| Quality | `review`, `pr-flow`, `ui-conformance`, `api-contract-sync`, `ci-triage`, `debug` |
 | Long work and memory | `harness-loop`, `harness-improve`, `project-memory` |
 | Routers to pinned sources | `working-style-skills`, `native-mobile-skills`, `design-taste-skills` |
 

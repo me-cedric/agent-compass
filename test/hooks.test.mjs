@@ -353,3 +353,26 @@ test('hint keeps its caps: 50 hints, a match of 200 characters, a hint of 300 ch
   const big = await hintRun(hintProject([{ match: 'ECONNREFUSED', hint: 'y'.repeat(400) }]), { tool_name: 'Bash', error: FAIL })
   assert.equal(JSON.parse(big.stdout).hookSpecificOutput.additionalContext, `compass hint: ${'y'.repeat(300)}`)
 })
+
+test('guard blocks a merge commit and a pull that merges, and passes rebase, fast-forward and ending a merge', async () => {
+  for (const command of ['git merge main', 'git merge --no-ff feature/x', 'git pull', 'git pull origin develop', 'git pull --no-rebase', 'git pull --rebase=false', 'cd app && git -C . merge develop']) {
+    const r = await bash(command)
+    assert.equal(r.code, 2, command)
+    assert.match(r.stderr, /blocked because the project rebases instead of merging\. Run `git fetch origin && git rebase origin\/<base>`/)
+  }
+  for (const command of ['git merge --abort', 'git merge --continue', 'git merge --ff-only main', 'git pull --rebase', 'git pull -r origin develop',
+    'git pull --rebase=merges', 'git pull --ff-only', 'git rebase origin/develop', 'git log --merges']) assert.equal((await bash(command)).code, 0, command)
+})
+
+test('guard blocks an edit under .git/, secrets/ or credentials/, in Claude and Codex shapes', async () => {
+  for (const file_path of ['/repo/.git/config', '/repo/secrets/prod.yaml', 'credentials/gcp.json', 'apps/api/secrets/key.txt']) {
+    const r = await hook('guard', { tool_name: 'Write', tool_input: { file_path, content: 'x' } })
+    assert.equal(r.code, 2, file_path)
+    assert.match(r.stderr, /blocked because \.git\/, secrets\/ and credentials\/ are not for agents/)
+  }
+  const patch = '*** Begin Patch\n*** Update File: .git/hooks/pre-commit\n*** End Patch'
+  assert.equal((await hook('guard', { tool_name: 'apply_patch', tool_input: { command: patch } })).code, 2)
+  for (const file_path of ['/repo/.github/workflows/ci.yml', '/repo/docs/secrets.md', '/repo/src/credentials.ts', '/repo/.gitignore']) {
+    assert.equal((await hook('guard', { tool_name: 'Edit', tool_input: { file_path } })).code, 0, file_path)
+  }
+})

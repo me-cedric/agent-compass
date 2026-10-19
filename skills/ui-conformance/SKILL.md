@@ -1,6 +1,6 @@
 ---
 name: ui-conformance
-description: Prove a screen matches its design in four layers, from tokens and computed style to a Playwright baseline. Use when you change a component, style, token or layout, or build from Figma.
+description: Prove a screen matches its design: tokens, computed style, structure, then a Playwright baseline. Use when you change UI or build from Figma.
 risk_level: low
 writes_files: true
 requires_tools: [playwright]

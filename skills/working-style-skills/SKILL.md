@@ -1,6 +1,6 @@
 ---
 name: working-style-skills
-description: Route a request for terse, minimal or unambiguous output to the pinned style skills. Use for caveman, ponytail, i-have-adhd or asd-ste100 requests, or to install them.
+description: Route requests for terse, minimal or unambiguous output to the pinned style skills: caveman, ponytail, i-have-adhd, asd-ste100.
 risk_level: low
 writes_files: false
 requires_tools: [ac]

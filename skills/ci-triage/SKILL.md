@@ -1,6 +1,6 @@
 ---
 name: ci-triage
-description: Triage a failed CI job. Read the log, classify it as flaky, environment or real, reproduce it locally, make the smallest fix and rerun. Use when a pipeline, workflow or check is red.
+description: Triage a red CI job: read the log, classify it as flaky, environment or real, reproduce it, fix small and rerun. Use when a pipeline or check is red.
 risk_level: low
 writes_files: false
 requires_tools: [gh, glab]

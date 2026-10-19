@@ -31,7 +31,8 @@ Find the ticket key in the branch name, the commit subjects or the PR text.
 1. Read the ticket and its comments. Read the linked spec in `{{OPENSPEC_DIR}}`.
 2. Check the scope. The ticket text must match the change. If it does not, ask the user.
 3. On Jira, call `jira_get_transitions`. Use only the transition names that it returns. Never guess a name.
-4. Move the ticket to "in progress" when the work starts. Move it to "review" when the PR opens.
+4. Move the ticket to "in progress" when the work starts. Move it to "in review" when the PR or MR leaves draft, not when the draft opens.
+   After the merge, move it to the next state of the project workflow. A sub-task moves first. The parent moves when all its sub-tasks reached that state.
 5. Put the key in the branch name and in each commit subject.
 6. End the task with the ticket key and its state.
 

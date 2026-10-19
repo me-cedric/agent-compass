@@ -11,6 +11,12 @@
 - `ac promote --lesson <file>` copies a project lesson with evidence into `lessons/` of the compass checkout. `ac reflect` lists the library lessons that fit the sessions of a project.
 - New hook `hint` (`PostToolUseFailure` in Claude Code and Copilot, `PostToolUse` in Codex): after a failed call, it adds the fix of the first entry of `.agents/hints.json` whose text is in the error. `ac reflect lesson` writes the entry from a lesson `hint`. The hook never prints the error text.
 - The guard blocks `git commit --no-verify`, `git commit -n` and `git push --no-verify`.
+- "Review PR N" or "review MR N" posts the review after a recap and a yes: the summary, the inline comments, then the verdict (approve, request changes or comment). The script `skills/review/scripts/post-review.mjs` uses `gh` or `glab` from the `origin` remote, moves a comment outside the diff into the summary, skips a duplicate thread, and records "request changes" on GitLab with the GraphQL mutation where the instance has it. The report has `P0` to `P3`, the `[pre-existing]` and `[revealed by this change]` tags and a mandatory correction plan.
+- New skill `pr-flow`: open a PR or MR as draft with `gh` or `glab`, on the declared base (else `develop`, else the default branch), with existing labels only, yourself as assignee and at least one reviewer, and an evidence body. Updates only add labels and assignees. Ready and merge need a yes. A local self-review runs before the PR or MR opens.
+- The `ci-github` and `ci-gitlab` packs seed a PR or MR template when the project has none.
+- The guard blocks `git merge` and `git pull` without `--rebase` in every project, and an edit under `.git/`, `secrets/` or `credentials/`.
+- `task-flow` moves a ticket to "in review" when the PR or MR leaves draft, and after the merge to the next state; a sub-task moves before its parent.
+- The descriptions of `review`, `ui-conformance`, `ci-triage`, `working-style-skills` and `e2e` are shorter, to pay for `pr-flow` in the listing.
 - `ac doctor --tokens`, `ac assets` and the skill listing read a YAML block-scalar description (`description: >-`) whole. Before, such a skill counted as one word.
 
 ## 1.0.0 — 2026-10-16
