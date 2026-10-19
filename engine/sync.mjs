@@ -74,9 +74,15 @@ const dropArray = (doc, key, was) => {
   return { doc: rest.length ? jsonSet(doc, key, rest) : jsonDelete(doc, key), action: 'remove' }
 }
 
+// True when the text is JSON after its comments and trailing commas go (strings stay as they are).
+const jsonc = (text) => {
+  try { return isObj(JSON.parse(text.replace(/("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '$1').replace(/("(?:\\.|[^"\\])*")|,(\s*[}\]])/g, '$1$2'))) } catch { return false }
+}
+
 export const reconcile = (root, plan, lock) => {
   const changes = []
   const errors = []
+  const warnings = []
   const writes = new Map()
   // The planned content of each kept file, for ac check --diff.
   const kept = new Map()
@@ -140,7 +146,14 @@ export const reconcile = (root, plan, lock) => {
     const doc0 = toml || raw.trim() ? raw : '{}\n'
     if (!toml) {
       let data
-      try { data = JSON.parse(doc0) } catch (err) { errors.push(`${file}: ${err.message}`); continue }
+      try { data = JSON.parse(doc0) } catch (err) {
+        // VS Code reads its JSON files with comments and trailing commas. Compass keeps such a file as it is and edits no key.
+        if (!file.startsWith('.vscode/') || !jsonc(doc0)) { errors.push(`${file}: ${err.message}`); continue }
+        for (const k of want.keys()) note('kept', file, k)
+        if (Object.keys(prev).length) keys[file] = prev
+        warnings.push(`${file} has comments or trailing commas, so compass keeps it and writes none of its keys. Remove them to let compass manage the keys.`)
+        continue
+      }
       if (!isObj(data)) { errors.push(`${file}: the file must hold a JSON object`); continue }
     }
     let doc = doc0
@@ -232,7 +245,7 @@ export const reconcile = (root, plan, lock) => {
     keys: sorted(keys),
     blocks: sorted(blocks),
   }, null, 2)}\n`
-  return { changes, errors, writes, kept, lockText, lockChanged: read(LOCK)?.toString('utf8') !== lockText }
+  return { changes, errors, warnings, writes, kept, lockText, lockChanged: read(LOCK)?.toString('utf8') !== lockText }
 }
 
 export const prune = (root, dir) => {
@@ -332,7 +345,7 @@ const steps = ({ AC, root, apply, init, diff, downgrade }, version, tag) => {
   const diffs = diff ? [...rec.kept].map(([path, content]) => ({ path, diff: unifiedDiff(root, path, content) })) : undefined
   // Codex runs a new or changed project hook only after the user approves it in /hooks.
   const trust = changes.some((c) => c.path === CODEX_HOOKS && ['create', 'update'].includes(c.action)) ? [CODEX_TRUST] : []
-  return { ...out, warnings: [...out.warnings, ...trust], ok: true, changes, drift, ...(diffs && { diffs }) }
+  return { ...out, warnings: [...out.warnings, ...rec.warnings, ...trust], ok: true, changes, drift, ...(diffs && { diffs }) }
 }
 
 // One pass for init, sync and check. apply=false writes nothing. diff adds a unified diff of each kept file.

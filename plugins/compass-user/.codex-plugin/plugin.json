@@ -1,6 +1,6 @@
 {
   "name": "compass-user",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Style contract for every repository: the compass hooks, the answer-shape output style, the compass-style and asd-ste100 skills and a cache-aware status line.",
   "author": {
     "name": "CGI"

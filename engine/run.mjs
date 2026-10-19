@@ -6,7 +6,7 @@ import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, 
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { SECRET_RE } from '../scripts/lib/redact.mjs'
-import { MAX_SECONDS, names, prepare, REGISTRY, runnable } from './run-plan.mjs'
+import { MAX_SECONDS, names, prepare, REGISTRY, runnable, windowsStart } from './run-plan.mjs'
 import { outside } from './sync.mjs'
 import { failCommand, hostRoot, isObj, parseCommand, readJson, usageError } from './util.mjs'
 
@@ -43,8 +43,9 @@ const reports = (root, since) => {
 
 // Start the child in its own process group. Stop the group on a timeout (SIGTERM, then SIGKILL after 5 s) and on SIGINT or SIGTERM.
 // Windows has no process group signal: taskkill /T stops the child and its tree.
-const execute = ({ root, argv, env, limit }, emit) => new Promise((done) => {
-  const child = spawn(argv[0], argv.slice(1), { cwd: root, detached: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
+const execute = ({ root, argv, env, limit, win }, emit) => new Promise((done) => {
+  const [cmd, args] = win ? [win.cmd, win.args] : [argv[0], argv.slice(1)]
+  const child = spawn(cmd, args, { cwd: root, detached: true, windowsHide: true, windowsVerbatimArguments: Boolean(win), stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
   const kill = (sig) => {
     if (process.platform === 'win32') { spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', timeout: 10_000 }); return }
     try { process.kill(-child.pid, sig) } catch { /* the group is gone */ }
@@ -86,6 +87,8 @@ export const cli = async (argv, { AC }) => {
   if (!runnable(entry)) return failCommand(v.json, `${name} is not in ${REGISTRY}. Do not invent a command. Use ac run --list.`)
   const plan = prepare(name, entry, { confirm: v.confirm, seconds })
   if (plan.error) return failCommand(v.json, plan.error)
+  const win = process.platform === 'win32' ? windowsStart(plan.argv, { env: { ...process.env, ...plan.env }, cwd: root }) : null
+  if (win?.error) return failCommand(v.json, `${name}: ${win.error}.`)
 
   const startedMs = Date.now()
   const dir = `.agents/runs/${new Date(startedMs).toISOString().replace(/[:.]/g, '-')}-${name.replace(/[^\w.-]/g, '_')}`
@@ -111,7 +114,7 @@ export const cli = async (argv, { AC }) => {
     size += out.length + 1
     writeSync(fd, size > LOG_CAP ? `[output cut at ${LOG_CAP / 1024 / 1024} MB]\n` : `${out}\n`)
   }
-  const { exitCode, signal, timedOut } = await execute({ root, ...plan }, emit)
+  const { exitCode, signal, timedOut } = await execute({ root, ...plan, win }, emit)
   closeSync(fd)
 
   const ok = exitCode === 0 && !timedOut

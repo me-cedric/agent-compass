@@ -1,5 +1,7 @@
 // run-plan.mjs — turn an agent-compass.commands.json entry into argv, env words and a time limit. No shell is used.
 
+import { statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { isObj } from './util.mjs'
 
 export const REGISTRY = 'agent-compass.commands.json'
@@ -44,4 +46,23 @@ export const prepare = (name, entry, { confirm, seconds }) => {
   if (isObj(entry) && entry.timeout > MAX_SECONDS) return { error: `${name} has a timeout above ${MAX_SECONDS} seconds.` }
   const env = Object.fromEntries(words.slice(0, split).map((w) => [w.slice(0, w.indexOf('=')), w.slice(w.indexOf('=') + 1)]))
   return { cmd, argv: words.slice(split), env, limit: (seconds ?? (isObj(entry) && entry.timeout > 0 ? entry.timeout : 1800)) * 1000 }
+}
+
+const isFile = (p) => { try { return statSync(p).isFile() } catch { return false } }
+
+// Windows starts a .cmd or .bat file (npm, npx, pnpm) only through cmd.exe, and Node does not look it up on PATH.
+// Find argv[0] with PATHEXT. For a .cmd or .bat file, give the cmd.exe line; otherwise null (spawn it as it is).
+// cmd.exe expands % and ^, and a " ends the quoted argument, so an argument with one of them is refused (BatBadBut).
+// A relative command path counts from cwd, the folder that the command runs in.
+export const windowsStart = (argv, { env = process.env, exists = isFile, cwd } = {}) => {
+  const [name, ...args] = argv
+  const exts = ['', ...(env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)]
+  const dirs = /[\\/]/.test(name) ? [''] : (env.PATH ?? env.Path ?? '').split(';').filter(Boolean)
+  const found = dirs.flatMap((dir) => exts.map((ext) => (dir ? join(dir, name + ext) : name + ext))).find((p) => exists(cwd ? resolve(cwd, p) : p))
+  if (!found || !/\.(cmd|bat)$/i.test(found)) return null
+  const bad = argv.find((a) => /["%^\r\n]/.test(a))
+  if (bad !== undefined) return { error: `cmd.exe runs ${name}, so an argument cannot hold ", %, ^ or a line break (found in ${bad})` }
+  // A trailing backslash would escape the closing quote for the program that reads the arguments.
+  const line = [found, ...args].map((a) => `"${a.replace(/(\\+)$/, '$1$1')}"`).join(' ')
+  return { cmd: env.ComSpec || env.COMSPEC || 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`] }
 }

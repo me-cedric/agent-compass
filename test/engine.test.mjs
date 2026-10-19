@@ -169,6 +169,25 @@ test('CRLF line ends and a UTF-8 BOM are not edits: the sync reports no change',
   assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0)
 })
 
+test('a .vscode JSON file with comments is kept with a warning; another file with comments is an error', async () => {
+  const compass = makeCompass({ 'core/keys.json': JSON.stringify({ ...KEYS, '.vscode/mcp.json': { 'servers.docs': { command: 'docs-mcp' } } }) })
+  const host = makeHost()
+  assert.equal((await ac(compass, host, 'init')).code, 0)
+  const commented = '{\n  // my servers\n  "servers": { "docs": { "command": "docs-mcp", }, },\n}\n'
+  put(host, { '.vscode/mcp.json': commented })
+  const r = await ac(compass, host, 'sync')
+  assert.equal(r.code, 0, r.stderr)
+  assert.deepEqual(actions(r), ['kept .vscode/mcp.json#servers.docs'])
+  assert.match(r.json.warnings.join('\n'), /\.vscode\/mcp\.json has comments or trailing commas/)
+  assert.equal(read(host, '.vscode/mcp.json'), commented)
+  put(host, { '.vscode/mcp.json': '{ "servers": ' })
+  assert.equal((await ac(compass, host, 'sync')).code, 1)
+  put(host, { '.vscode/mcp.json': commented, '.mcp.json': '{\n  // no\n  "mcpServers": {}\n}\n' })
+  const strict = await ac(compass, host, 'sync')
+  assert.equal(strict.code, 1)
+  assert.match(strict.json.errors.join('\n'), /^\.mcp\.json: /m)
+})
+
 test('onPath finds a Windows command through PATHEXT', () => {
   const dir = temp('ac-path-')
   put(dir, { 'tool.CMD': '@echo off\n' })
@@ -178,7 +197,7 @@ test('onPath finds a Windows command through PATHEXT', () => {
     process.env.PATH = dir
     process.env.PATHEXT = '.EXE;.CMD'
     assert.equal(onPath('tool', true), true)
-    assert.equal(onPath('tool', false), process.platform === 'win32' || false)
+    assert.equal(onPath('tool', false), false)
   } finally { [process.env.PATH, process.env.PATHEXT] = saved }
 })
 

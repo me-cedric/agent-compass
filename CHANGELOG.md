@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 — 2026-10-19
+
+- `ac run` starts a `.cmd` or `.bat` command (`npm`, `npx`, `pnpm`) on Windows. It finds the command with `PATHEXT` and runs the file through `cmd.exe`. An argument with `"`, `%`, `^` or a line break is refused for such a command, because `cmd.exe` would read it.
+- `ac sync` keeps a `.vscode/` JSON file with comments or trailing commas, with a warning, and edits none of its keys. Before, the whole sync stopped with an error. Another JSON file with comments is still an error.
+- The test of `onPath` passes on Windows. The 1.0.1 CI run failed on it; the product code was correct.
+
 ## 1.0.1 — 2026-10-19
 
 Asset changes since v1.0.0:

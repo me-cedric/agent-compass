@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { windowsStart } from '../engine/run-plan.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -229,6 +230,26 @@ test('ac run passes the child exit code and the arguments without a shell', asyn
   assert.deepEqual(args.tail, ['["a b","c d","e"]'])
   const env = JSON.parse((await ac(root, ['env', '--json'])).stdout)
   assert.deepEqual(env.tail, ['bar|two words'])
+})
+
+test('windowsStart runs a .cmd or .bat found with PATHEXT through cmd.exe, and leaves an .exe to spawn', () => {
+  const files = new Set([join('C:\\tools', 'npm.cmd'), join('C:\\bin', 'git.exe'), 'scripts\\build.bat'])
+  const opts = { env: { PATH: 'C:\\bin;C:\\tools', PATHEXT: '.exe;.cmd;.bat', ComSpec: 'C:\\Windows\\cmd.exe' }, exists: (p) => files.has(p) }
+  const npm = join('C:\\tools', 'npm.cmd')
+  assert.deepEqual(windowsStart(['npm', 'run', 'test', 'a b', 'C:\\out\\'], opts),
+    { cmd: 'C:\\Windows\\cmd.exe', args: ['/d', '/s', '/c', `""${npm}" "run" "test" "a b" "C:\\out\\\\""`] })
+  assert.equal(windowsStart(['git', 'status'], opts), null)
+  assert.equal(windowsStart(['missing'], opts), null)
+  assert.equal(windowsStart(['scripts\\build'], opts).args[3], '""scripts\\build.bat""')
+  for (const arg of ['50%', 'a^b', 'say "hi"', 'a\nb']) assert.match(windowsStart(['npm', arg], opts).error, /cannot hold/, arg)
+})
+
+test('ac run starts a .cmd file on PATH on Windows', { skip: process.platform !== 'win32' && 'Windows only' }, async () => {
+  const root = host({ wintool: 'wintool hello "a b"' })
+  writeFileSync(join(root, 'wintool.cmd'), `@"${process.execPath}" "%~dp0child.mjs" args %*\r\n`)
+  const r = await runNode([BIN, 'run', 'wintool', '--json', '--root', root], { env: { ...process.env, PATH: `${root};${process.env.PATH}` } })
+  assert.equal(r.code, 0, r.stdout + r.stderr)
+  assert.deepEqual(JSON.parse(r.stdout).tail, ['["hello","a b"]'])
 })
 
 test('ac run reports a command that cannot start', async () => {
