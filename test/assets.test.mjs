@@ -277,10 +277,10 @@ test('listAssets follows setAsset for every kind', () => {
 
 test('the recommended set per stack: no user-level or large upstream sources; api-contract-sync for API and web stacks only', () => {
   const lib = listAssets({ AC: REPO, root: makeHost({ 'package.json': JSON.stringify({ name: 'lib', dependencies: { zod: '4' } }) }) })
-  assert.deepEqual(lib.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id), ['mattpocock'])
+  assert.deepEqual(lib.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id), ['mattpocock', 'security-audit'])
   assert.equal(find(lib, 'skill', 'api-contract-sync').available, false)
   const ios = listAssets({ AC: REPO, root: makeHost({ 'Package.swift': '// swift-tools-version:6.0\n', 'App.xcodeproj/project.pbxproj': 'SDKROOT = iphoneos;\n' }) })
-  assert.deepEqual(ios.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id).sort(), ['agent-device', 'dimillian', 'mattpocock'])
+  assert.deepEqual(ios.assets.filter((a) => a.kind === 'upstream' && a.recommended).map((a) => a.id).sort(), ['agent-device', 'dimillian', 'mattpocock', 'security-audit'])
   assert.equal(find(ios, 'upstream', 'swift-ios').recommended, false)
   const web = listAssets({ AC: REPO, root: makeHost(WEB_HOST) })
   assert.equal(find(web, 'skill', 'api-contract-sync').recommended, true)
@@ -316,7 +316,7 @@ test('recommendedConfig applies the recommended set and keeps the other excludes
   assert.ok(next.mcp.includes('grafana') && next.mcp.includes('github') && next.mcp.includes('sonarqube') && next.mcp.includes('context7'))
   assert.ok(!next.mcp.includes('playwright') && !next.mcp.includes('codebase-memory'), 'a stack server stays automatic')
   assert.equal(next.plugins, undefined, 'a stack plugin stays automatic')
-  assert.deepEqual(next.upstream, ['mattpocock', 'playwright-cli'], 'style sources are user level; taste is switched on by hand; the Playwright CLI skill fits web stacks')
+  assert.deepEqual(next.upstream, ['mattpocock', 'playwright-cli', 'security-audit'], 'style sources are user level; taste is switched on by hand; the Playwright CLI skill fits web stacks')
   assert.deepEqual(next.paths, {})
 
   writeConfig(root, next)
@@ -549,7 +549,7 @@ test('upstream skills are child skill assets: available when the source is on, w
   assert.deepEqual(setAsset(cfgOf(root), grill(after), true).exclude, [])
 
   const next = recommendedConfig({ AC: REPO, root, config: { ...cfgOf(root), upstream: [], exclude: ['grill-me', 'keep-me'] } })
-  assert.deepEqual([next.upstream, next.exclude], [['mattpocock', 'playwright-cli'], ['keep-me']])
+  assert.deepEqual([next.upstream, next.exclude], [['mattpocock', 'playwright-cli', 'security-audit'], ['keep-me']])
 }))
 
 test('the text of an upstream skill is found by name, by path and as the root entry', () => withCache((cache) => {

@@ -430,6 +430,15 @@
         "security/scanning/supply-chain-attack-response",
         "security/ai/mcp-server-security"
       ]
+    },
+    "security-audit": {
+      "repo": "https://github.com/cloudflare/security-audit-skill",
+      "sha": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "licence": "MIT",
+      "holder": "Cloudflare, Inc.",
+      "skills": [
+        "skills/security-audit"
+      ]
     }
   }
 }

@@ -30,6 +30,7 @@ This file records what Agent Compass tracks, not what it ships. A host that inst
 | `gtk` | [`alex-oleshkevich/glimpse`](https://github.com/alex-oleshkevich/glimpse) | BSD-3-Clause | Alex Oleshkevich | `developing-gtk-apps` |
 | `wshobson` | [`wshobson/agents`](https://github.com/wshobson/agents) | MIT | Seth Hobson | `session-guard`, `ai-debt-detector` |
 | `devops-security` | [`BagelHole/DevOps-Security-Agent-Skills`](https://github.com/BagelHole/DevOps-Security-Agent-Skills) | MIT | Toby Miller | 18 ops and security skills under `devops/`, `security/` and `infrastructure/`. `upstream.json` lists them. |
+| `security-audit` | [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) | MIT | Cloudflare, Inc. | `security-audit` |
 
 Some licences carry an obligation:
 

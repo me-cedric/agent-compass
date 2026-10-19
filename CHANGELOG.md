@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The source `security-audit` (recommended in every project) brings the `security-audit` skill from cloudflare/security-audit-skill (MIT). It gives security guidance by default and runs the full six-phase audit only on an explicit audit or pen-test request.
+
 ## 1.0.2 — 2026-10-19
 
 - `ac run` starts a `.cmd` or `.bat` command (`npm`, `npx`, `pnpm`) on Windows. It finds the command with `PATHEXT` and runs the file through `cmd.exe`. An argument with `"`, `%`, `^` or a line break is refused for such a command, because `cmd.exe` would read it.
