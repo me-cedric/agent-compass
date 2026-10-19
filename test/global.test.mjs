@@ -232,3 +232,38 @@ test('the options of doctor --global are checked', async () => {
     assert.equal(r.code, 2, args.join(' '))
   }
 })
+
+test('the 0.9 global-setup leftovers are todo items: skill links into compass or nowhere, the manifest and the pointer files', async () => {
+  const { symlinkSync } = await import('node:fs')
+  const home = makeHome()
+  const old = temp()
+  put(old, { 'skills/kept/SKILL.md': '---\nname: kept\n---\n' })
+  put(home, {
+    '.agent-compass/manifest.json': { schema: 1, source: old, mode: 'symlink' },
+    '.claude/skills/mine/SKILL.md': '---\nname: mine\n---\n',
+    '.agents/skills/real/SKILL.md': '---\nname: real\n---\n',
+    '.claude/CLAUDE.md': `# Global Claude Agent Compass Pointer\n\nPrefer project-local AGENTS.md or CLAUDE.md. If absent, use:\n${old}/AGENTS.md\n`,
+    '.codex/AGENTS.md': '# Global Notes\n\nMy own text.\n',
+  })
+  const link = (target, path) => symlinkSync(target, join(home, path), 'dir')
+  link(join(old, 'skills/kept'), '.claude/skills/kept')
+  link(join(old, 'skills/gone'), '.claude/skills/gone')
+  link(join(home, '.agents/skills/real'), '.claude/skills/real')
+  link(join(home, '.agents/skills/missing'), '.claude/skills/dangling')
+  link(join(old, 'skills/gone'), '.agents/skills/gone')
+  const r = doctorGlobal({ AC, root: home, home, env: {} })
+  assert.equal(r.ok, true, r.errors.join('\n'))
+  const left = r.recommended.filter((c) => !c.ok && /^0\.9 /.test(c.name))
+  assert.deepEqual(left.map((c) => c.name), ['0.9 skill links', '0.9 skill links', '0.9 manifest', '0.9 pointer'])
+  assert.deepEqual(left[0].links, ['dangling', 'gone', 'kept'])
+  assert.match(left[0].fix, new RegExp(`3 link\\(s\\) .*${join(home, '.claude/skills').replace(/[\\]/g, '\\\\')}`))
+  assert.deepEqual(left[1].links, ['gone'])
+  assert.match(left[3].fix, /CLAUDE\.md/)
+  assert.ok(left[3].fix.includes(join(AC, 'core/blocks/AGENTS.md')))
+  assert.match(formatGlobal(r), /todo +0\.9 skill links: move 3 link/)
+})
+
+test('a clean 1.0 user level has no 0.9 item', () => {
+  const home = makeHome({ extra: { '.claude/CLAUDE.md': `@${join(AC, 'core/blocks/AGENTS.md')}\n`, '.claude/skills/mine/SKILL.md': 'x' } })
+  assert.deepEqual(doctorGlobal({ AC, root: home, home, env: {} }).recommended.filter((c) => /^0\.9 /.test(c.name)), [])
+})

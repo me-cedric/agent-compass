@@ -2,9 +2,9 @@
 // It only reads files. With `measure` it also runs each SessionStart hook once, as Claude Code does.
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve, sep } from 'node:path'
 import { isObj, SHELL } from './util.mjs'
 
 export const LIMITS = { plugins: 15, mcp: 10, hookChars: 1000, totalChars: 2000 }
@@ -70,6 +70,40 @@ const measureHooks = (hooks, root) => hooks.filter((h, i, all) => h.event === 'S
   return { from: h.from, command: h.command, chars: (r.stdout || '').length, ...(error && { error }) }
 })
 
+// The 0.9 global-setup linked every skill into three user folders and wrote pointer files.
+const leftovers = ({ AC, home, claudeDir, codexDir, errors }) => {
+  const manifest = join(home, '.agent-compass/manifest.json')
+  const roots = [AC, load(manifest, errors).source].filter((r) => typeof r === 'string').map((r) => resolve(r))
+  const stale = (dir, name) => {
+    const path = join(dir, name)
+    try {
+      if (!lstatSync(path).isSymbolicLink()) return false
+      const target = resolve(dir, readlinkSync(path))
+      return !existsSync(path) || roots.some((r) => target === r || target.startsWith(r + sep))
+    } catch { return false }
+  }
+  const items = []
+  for (const dir of [join(claudeDir, 'skills'), join(home, '.agents/skills'), join(codexDir, 'skills')]) {
+    let names = []
+    try { names = readdirSync(dir).sort() } catch { continue }
+    const links = names.filter((n) => stale(dir, n))
+    if (links.length) items.push({ name: '0.9 skill links', ok: false, links, fix: `move ${links.length} link(s) out of ${dir}; they point into a compass checkout or to nothing (--json lists them)` })
+  }
+  if (existsSync(manifest)) items.push({ name: '0.9 manifest', ok: false, fix: `move ${dirname(manifest)} out; compass 1.0 does not read it` })
+  const pointers = [
+    [join(claudeDir, 'CLAUDE.md'), `import "@${join(AC, 'core/blocks/AGENTS.md')}" instead`],
+    [join(codexDir, 'AGENTS.md'), 'keep your own notes only; the compass-user plugin carries the style'],
+  ]
+  for (const [file, todo] of pointers) {
+    let text = ''
+    try { text = readFileSync(file, 'utf8') } catch { continue }
+    if (/^# Global (Claude|Codex) Agent Compass Pointer/m.test(text) || roots.some((r) => text.includes(join(r, 'AGENTS.md')))) {
+      items.push({ name: '0.9 pointer', ok: false, fix: `${file} points to the compass 0.9 contract; ${todo}` })
+    }
+  }
+  return items
+}
+
 export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env = process.env }) => {
   const errors = []
   const warnings = []
@@ -96,7 +130,8 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
     hooks.push(...hooksOf(load(join(dir, 'hooks/hooks.json'), errors).hooks, id, dir))
   }
 
-  const toml = join(env.CODEX_HOME || join(home, '.codex'), 'config.toml')
+  const codexDir = env.CODEX_HOME || join(home, '.codex')
+  const toml = join(codexDir, 'config.toml')
   let codex = { mcp: [], plugins: [] }
   try { if (existsSync(toml)) codex = codexOf(readFileSync(toml, 'utf8')) } catch (err) { errors.push(`${toml}: ${err.message}`) }
 
@@ -120,6 +155,7 @@ export const doctorGlobal = ({ AC, root, measure = false, home = homedir(), env 
     settings.statusLine?.command
       ? { name: 'statusLine', ok: true }
       : { name: 'statusLine', ok: false, fix: `add to ~/.claude/settings.json: ${JSON.stringify({ statusLine: { type: 'command', command: `node "${script}"` } })}` },
+    ...leftovers({ AC, home, claudeDir, codexDir, errors }),
   ]
 
   const seen = new Map()

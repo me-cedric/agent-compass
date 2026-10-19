@@ -64,7 +64,7 @@ Options:
   --to <tag>     With sync: check out this compass tag, then sync with it.
   --tokens       With doctor: measure the always-on context and check the budgets.
   --global       With doctor: report the user-level Claude Code and Codex setup (plugins, MCP
-                 servers, hooks) and the recommended set. Read only.
+                 servers, hooks), the recommended set and the 0.9 leftovers. Read only.
   --measure      With doctor --global: run each SessionStart hook once and count its output.
   --docs         With check: check only the docs layout. With migrate: migrate the docs layout.
   --from-specs <dir>

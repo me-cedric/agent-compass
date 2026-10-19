@@ -182,6 +182,11 @@ copilot plugin marketplace add <path> && copilot plugin install compass-user@age
 `ac doctor --global` reads your user-level Claude Code and Codex setup and writes nothing. It lists the enabled plugins, the MCP servers and the hooks of four events: `SessionStart`, `UserPromptSubmit`, `SubagentStart` and `PreCompact`. These events put text into the context.
 It names each item of the recommended set that is missing, with the command that fixes it. `--measure` runs each `SessionStart` hook once and counts its output.
 It warns above 15 plugins, 10 MCP servers, 1,000 characters for one hook and 2,000 characters for all hooks.
+It also gives a `todo` line for each leftover of the compass 0.9 `global-setup`. Move each item to a backup folder yourself:
+
+- The symlinks in `~/.claude/skills`, `~/.agents/skills` and `~/.codex/skills` that point into a compass checkout or to nothing. `--json` lists their names.
+- The folder `~/.agent-compass`.
+- A `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md` that points to the 0.9 contract. In `~/.claude/CLAUDE.md`, import `core/blocks/AGENTS.md` of the compass checkout.
 
 ## Migrate a 0.x project
 
