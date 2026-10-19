@@ -27,7 +27,8 @@ const ROOT = resolve(values.root || positionals[0] || dirname(dirname(fileURLToP
 const SELF = basename(fileURLToPath(import.meta.url))
 const IGNORE = new Set(['.git', 'node_modules'])
 // docs/remaster holds evidence about named team projects, so it is exempt.
-const IGNORE_PATHS = new Set(['docs/remaster'])
+// .claude/worktrees holds the other git worktrees of the main checkout; git ignores them.
+const IGNORE_PATHS = new Set(['docs/remaster', '.claude/worktrees'])
 const TEXT = new Set(['.md', '.mjs', '.cjs', '.js', '.ts', '.tsx', '.json', '.yml', '.yaml', '.toml', '.properties', '.sh', '.tpl', '.txt', ''])
 
 // Forbidden tokens (case-insensitive regex fragments). Extend as new projects
@@ -59,7 +60,7 @@ const checkSkillFrontmatter = (full, txt) => {
 const walk = (dir) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, e.name)
-    if (IGNORE.has(e.name) || IGNORE_PATHS.has(full.slice(ROOT.length + 1))) continue
+    if (IGNORE.has(e.name) || IGNORE_PATHS.has(full.slice(ROOT.length + 1).replaceAll('\\', '/'))) continue
     if (e.isDirectory()) walk(full)
     else if (basename(e.name) !== SELF && TEXT.has(extname(e.name))) {
       let txt

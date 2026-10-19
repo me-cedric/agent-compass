@@ -54,3 +54,21 @@ test('check-naming rejects project names and malformed skills', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('check-naming skips the worktree copies under .claude/worktrees, and still checks the rest of .claude', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-naming-'))
+  const name = ['par', 'cus'].join('')
+  try {
+    await mkdir(join(dir, '.claude', 'worktrees', 'other', 'docs'), { recursive: true })
+    await writeFile(join(dir, '.claude', 'worktrees', 'other', 'docs', 'notes.md'), `copy: ${name}\n`)
+    assert.equal((await runNode([script, '--root', dir], { cwd: root })).code, 0)
+
+    await writeFile(join(dir, '.claude', 'notes.md'), `tracked: ${name}\n`)
+    const result = await runNode([script, '--root', dir], { cwd: root })
+    assert.equal(result.code, 1)
+    assert.match(result.stderr, /\.claude[\\/]notes\.md:1/)
+    assert.doesNotMatch(result.stderr, /worktrees/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
