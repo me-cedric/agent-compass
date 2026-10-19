@@ -15,6 +15,7 @@
 - New skill `pr-flow`: open a PR or MR as draft with `gh` or `glab`, on the declared base (else `develop`, else the default branch), with existing labels only, yourself as assignee and at least one reviewer, and an evidence body. Updates only add labels and assignees. Ready and merge need a yes. A local self-review runs before the PR or MR opens.
 - The `ci-github` and `ci-gitlab` packs seed a PR or MR template when the project has none.
 - The guard blocks `git merge` and `git pull` without `--rebase` in every project, and an edit under `.git/`, `secrets/` or `credentials/`.
+- The guard asks before `git push --force-with-lease` instead of blocking it: Claude Code and Copilot show a permission prompt, and Codex runs it after the agent asks in chat. A bare `--force` stays blocked.
 - `task-flow` moves a ticket to "in review" when the PR or MR leaves draft, and after the merge to the next state; a sub-task moves before its parent.
 - The descriptions of `review`, `ui-conformance`, `ci-triage`, `working-style-skills` and `e2e` are shorter, to pay for `pr-flow` in the listing.
 - `ac doctor --tokens`, `ac assets` and the skill listing read a YAML block-scalar description (`description: >-`) whole. Before, such a skill counted as one word.

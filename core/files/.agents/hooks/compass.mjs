@@ -56,9 +56,13 @@ const gitArgs = (w) => {
   while (w[i]?.startsWith('-')) i += GIT_OPTS_WITH_VALUE.includes(w[i]) ? 2 : 1
   return w.slice(i)
 }
+// --force-with-lease refuses to overwrite commits that the remote gained, so a rebased branch can use it after a yes.
+// --force-if-includes only adds a check to it. A bare --force, -f or a + refspec stays blocked.
+const LEASE = /^--force-(with-lease|if-includes)(=|$)/
+const gitLease = (w) => { const [sub, ...args] = gitArgs(w); return sub === 'push' && args.some((a) => /^--force-with-lease(=|$)/.test(a)) }
 const gitDanger = (w) => {
   const [sub, ...args] = gitArgs(w)
-  if (sub === 'push') return args.some((a) => a.startsWith('--force') || a.startsWith('+')) || shortFlag(args, 'f')
+  if (sub === 'push') return args.some((a) => (a.startsWith('--force') && !LEASE.test(a)) || a.startsWith('+')) || shortFlag(args, 'f')
   if (sub === 'reset') return args.includes('--hard')
   if (sub === 'clean') return args.includes('--force') || shortFlag(args, 'f')
   return false
@@ -94,16 +98,18 @@ const rmDanger = (w, cwd, root) => {
 }
 const danger = (cmd, cwd) => {
   const root = process.env.CLAUDE_PROJECT_DIR || cwd
+  let ask = null
   for (const s of cmd.split(/&&|\|\||[;|&\n]/).map((x) => x.trim())) {
     const w = s.split(/\s+/).map((x) => x.replace(/^['"]|['"]$/g, '')).filter(Boolean)
     if (gitDanger(w) || rmDanger(w, cwd, root)) return `compass: the command \`${s}\` is blocked because you cannot undo it. Ask the user to run it.`
     if (gitSkip(w)) return `compass: the command \`${s}\` is blocked because it skips the git hooks. Fix the hook failure, or ask the user to skip it.`
     if (gitMerge(w)) {
       return `compass: the command \`${s}\` is blocked because the project rebases instead of merging. Run \`git fetch origin && git rebase origin/<base>\`. ` +
-        'A rebased branch needs `git push --force-with-lease`: ask the user to run it.'
+        'A rebased branch needs `git push --force-with-lease`, which asks the user first.'
     }
+    if (!ask && gitLease(w)) ask = { ask: `compass: \`${s}\` rewrites the remote branch. Approve it only for your own branch after a rebase.` }
   }
-  return null
+  return ask
 }
 
 const guard = (input) => {
@@ -234,7 +240,12 @@ if (!['start', 'guard', 'gate', 'hint'].includes(mode)) {
     const input = read()
     let reason = null
     try { reason = input && (mode === 'guard' ? guard(input) : gate(input)) } catch { reason = null }
-    if (reason && mode === 'guard') {
+    if (reason?.ask) {
+      // Claude Code and Copilot show the user a permission prompt. Codex has no ask decision (its input has a turn_id):
+      // the call passes, the contract makes the agent ask in chat first, and the Codex network approval covers the push.
+      if (copilot) console.log(JSON.stringify({ permissionDecision: 'ask', permissionDecisionReason: reason.ask }))
+      else if (!input.turn_id) console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: reason.ask } }))
+    } else if (reason && mode === 'guard') {
       if (copilot) console.log(JSON.stringify({ permissionDecision: 'deny', permissionDecisionReason: reason }))
       console.error(reason)
       process.exitCode = 2

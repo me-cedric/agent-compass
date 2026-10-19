@@ -125,7 +125,7 @@ test('guard blocks a worklog or delete MCP tool (Codex has no deny rules) and pa
 })
 
 test('guard blocks a destructive git or rm command and passes the safe forms', async () => {
-  const blocked = ['git push --force', 'git push -f origin main', 'git push origin +main', 'git push --force-with-lease origin x',
+  const blocked = ['git push --force', 'git push -f origin main', 'git push origin +main', 'git push --force-with-lease --force origin x', 'git push --force-with-lease origin +x',
     'git reset --hard HEAD~1', 'git clean -fd', 'git -C sub clean -xdf', 'npm test && git reset --hard',
     'rm -rf /', 'rm -rf ~', 'rm -rf ~/', 'rm -rf .', 'rm -rf ./', 'rm -rf ..', 'rm -rf ../other', 'rm -rf /tmp/x', 'rm -fr "$HOME"', 'rm -r -f *', 'sudo rm -Rf /etc',
     'rm -rf ./*', '/bin/rm -rf ~', 'rm -vrf ~']
@@ -375,4 +375,21 @@ test('guard blocks an edit under .git/, secrets/ or credentials/, in Claude and 
   for (const file_path of ['/repo/.github/workflows/ci.yml', '/repo/docs/secrets.md', '/repo/src/credentials.ts', '/repo/.gitignore']) {
     assert.equal((await hook('guard', { tool_name: 'Edit', tool_input: { file_path } })).code, 0, file_path)
   }
+})
+
+test('guard asks before git push --force-with-lease in Claude and Copilot, and lets Codex run it', async () => {
+  for (const command of ['git push --force-with-lease', 'git push --force-with-lease origin feature/x', 'git push origin x --force-with-lease=x:abc123 --force-if-includes']) {
+    const r = await bash(command)
+    assert.equal(r.code, 0, command)
+    const out = JSON.parse(r.stdout).hookSpecificOutput
+    assert.deepEqual([out.hookEventName, out.permissionDecision], ['PreToolUse', 'ask'], command)
+    assert.match(out.permissionDecisionReason, /rewrites the remote branch\. Approve it only for your own branch after a rebase\./)
+  }
+  const copilot = await runNode([HOOK, 'guard', '--copilot'], { input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git push --force-with-lease' } }) })
+  assert.equal(JSON.parse(copilot.stdout).permissionDecision, 'ask')
+  const codex = await hook('guard', { tool_name: 'Bash', turn_id: 't1', tool_input: { command: 'git push --force-with-lease origin x' } })
+  assert.deepEqual([codex.code, codex.stdout], [0, ''])
+  const mixed = await bash('git push --force-with-lease && git reset --hard')
+  assert.equal(mixed.code, 2, 'a blocked segment wins over an ask')
+  assert.equal((await bash('git push --force-if-includes origin x')).stdout, '', 'without a lease it is not a force push')
 })

@@ -21,6 +21,8 @@ Check the login first: `gh auth status` or `glab auth status`.
 1. `git status --short`. Commit only the files of this change.
 2. Branch name: the project pattern, else `<type>/<TICKET>-<short-kebab>`. Rename a tool branch (`claude/…`, `codex/…`) before the first push.
 3. Rebase onto the base: `git fetch origin && git rebase origin/<base>`. The guard blocks `git merge` and `git pull` without `--rebase`.
+   Push a rebased branch with `git push --force-with-lease origin <branch>`, never `--force`. Ask the user in chat first.
+   Claude Code and Copilot also show a permission prompt for it.
 4. Review your own change locally with `review` ("Review your own change"). Post nothing. Fix the findings.
 5. Run the gates (lint, typecheck, tests) and keep the exact counts for the body.
 6. When a `CHANGELOG.md` of a touched app has `## [Unreleased]`, add the entry in this change.
