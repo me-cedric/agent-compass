@@ -208,12 +208,22 @@ const locate = (lines, key) => {
     const m = code[i] && /^\s*([^=#[]+?)\s*=/.exec(lines[i])
     if (m && normKey(m[1]) === key) return { start: i, end: i + 1, table: false, first }
   }
+  // The key in another form: a line in a parent table, a dotted line key or a sub-table. It is there, and compass keeps it.
+  let table = ''
+  for (let i = 0; i < lines.length; i++) {
+    const h = header(i) && HEADER.exec(lines[i])
+    if (h) table = normKey(h[1])
+    const m = !h && code[i] && /^\s*([^=#[]+?)\s*=/.exec(lines[i])
+    const full = h ? table : m && (table ? `${table}.${normKey(m[1])}` : normKey(m[1]))
+    if (full === key || full?.startsWith?.(`${key}.`)) return { foreign: true, first }
+  }
   return { first }
 }
 
 export const tomlGet = (text, key) => {
   const lines = text.split('\n')
   const at = locate(lines, key)
+  if (at.foreign) return '# the project wrote this key in another form'
   return at.table === undefined ? undefined : lines.slice(at.start, at.end).join('\n').replace(/\r$/gm, '')
 }
 
@@ -229,6 +239,7 @@ export const tomlSet = (text, key, value) => {
   const lines = text.split('\n')
   const rendered = tomlRender(key, value)
   const at = locate(lines, key)
+  if (at.foreign) return text
   if (at.table === isObj(value)) return [...lines.slice(0, at.start), rendered, ...lines.slice(at.end)].join('\n')
   if (at.table !== undefined) return tomlSet(tomlDelete(text, key), key, value)
   const body = text.replace(/\n+$/, '')

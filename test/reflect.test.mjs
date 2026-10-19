@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { findIssues } from '../scripts/lib/redact.mjs'
-import { reflect } from '../engine/reflect.mjs'
+import { redact, reflect } from '../engine/reflect.mjs'
 import { runNode } from './helpers.mjs'
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -296,4 +296,11 @@ test('ac reflect lesson with a hint writes .agents/hints.json, refuses a duplica
   }
   const { hints: listed } = JSON.parse((await reflectRun(root, env, '--json', '--dry')).stdout)
   assert.deepEqual(listed, { total: 1, stale: [{ match: 'FAIL 3 tests', lesson: `.agents/lessons/${file}` }] })
+})
+
+test('redact hides the key formats of Anthropic, GitHub, npm and Grafana, and keeps plain text', () => {
+  for (const key of [`sk-ant-api03-${'c'.repeat(24)}`, `github_pat_${'d'.repeat(30)}`, `npm_${'e'.repeat(36)}`, `glsa_${'f'.repeat(32)}`]) {
+    assert.equal(redact(`use ${key} here`), '[redacted]', key)
+  }
+  assert.equal(redact('npm test passed in sk-learn'), 'npm test passed in sk-learn')
 })

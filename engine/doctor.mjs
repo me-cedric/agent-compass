@@ -15,9 +15,13 @@ import { BUDGET, measureTokens } from './tokens.mjs'
 import { readJson, run, versionCmp } from './util.mjs'
 
 // True when an executable file with this name is in a directory of PATH.
-export const onPath = (name) => (process.env.PATH ?? '').split(delimiter).some((dir) => {
-  try { accessSync(join(dir, name), constants.X_OK); return statSync(join(dir, name)).isFile() } catch { return false }
-})
+// Windows finds a command with each PATHEXT extension too, such as npx.cmd.
+export const onPath = (name, win = process.platform === 'win32') => {
+  const exts = win ? ['', ...(process.env.PATHEXT || '.EXE;.CMD;.BAT').split(';').filter(Boolean)] : ['']
+  return (process.env.PATH ?? '').split(delimiter).some((dir) => exts.some((ext) => {
+    try { accessSync(join(dir, name + ext), constants.X_OK); return statSync(join(dir, name + ext)).isFile() } catch { return false }
+  }))
+}
 
 // One warning for each command of a selected MCP server that is not on PATH. No network.
 const commandChecks = ({ commands }) => Object.entries(commands).filter(([cmd]) => !onPath(cmd))

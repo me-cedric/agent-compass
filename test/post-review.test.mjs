@@ -150,7 +150,8 @@ test('a self-hosted GitLab host is found with glab, and a bad review file is ref
   const r = await run(['--dry'])
   assert.equal(r.code, 0, r.stderr)
   assert.match(r.stdout, /gitlab #3/)
-  for (const bad of [{ ...REVIEW, verdict: 'lgtm' }, { ...REVIEW, summary: '' }, { ...REVIEW, summary: 'Generated with a tool' }]) {
+  for (const bad of [{ ...REVIEW, verdict: 'lgtm' }, { ...REVIEW, summary: '' }, { ...REVIEW, summary: 'Generated with a tool' },
+    { ...REVIEW, comments: [null] }, { ...REVIEW, comments: [{ path: 'src/a.ts', line: 2 }] }, { ...REVIEW, comments: [{ path: 'src/a.ts', line: 'x', body: 'b' }] }]) {
     const { run: again } = setup(bad)
     assert.equal((await again(['--dry'])).code, 1, JSON.stringify(bad).slice(0, 50))
   }

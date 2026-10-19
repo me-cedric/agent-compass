@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 — 2026-10-19
+
+Asset changes since v1.0.0:
+
+- Added: packs/ci-github/seed/.github/PULL_REQUEST_TEMPLATE.md, packs/ci-gitlab/seed/.gitlab/merge_request_templates/default.md, skills/harness-improve/SKILL.md, skills/pr-flow/SKILL.md, skills/pr-flow/references/body.md, skills/review/references/report.md, skills/review/scripts/post-review.mjs
+- Changed: core/files/.agents/hooks/compass.mjs, core/keys.json, packs/e2e/skills/e2e/SKILL.md, skills/README.md, skills/ci-triage/SKILL.md, skills/debug/SKILL.md, skills/review/SKILL.md, skills/spec-flow/SKILL.md, skills/task-flow/SKILL.md, skills/ui-conformance/SKILL.md, skills/working-style-skills/SKILL.md, upstream.json
 
 - `ac reflect` reads the Claude and Codex sessions of the project, with no model call and no network call. It ranks the sessions by blocked actions, failed tool calls and repeated failed commands. It writes redacted trajectories, the setup pieces with their owner, and the signals before and after each lesson to the git-ignored `.agents/reflect/`.
 - `ac reflect owner <path>` refuses a path that compass or Konvoy owns. `ac reflect lesson --from <file>` writes `.agents/lessons/<date>-<slug>.md`. A verdict from fewer than 2 sessions becomes `unclear`. ADR 0007 records the decision.
@@ -19,6 +24,16 @@
 - `task-flow` moves a ticket to "in review" when the PR or MR leaves draft, and after the merge to the next state; a sub-task moves before its parent.
 - The descriptions of `review`, `ui-conformance`, `ci-triage`, `working-style-skills` and `e2e` are shorter, to pay for `pr-flow` in the listing.
 - `ac doctor --tokens`, `ac assets` and the skill listing read a YAML block-scalar description (`description: >-`) whole. Before, such a skill counted as one word.
+
+### Fixes
+
+- `post-review.mjs` runs on Windows. Before, it printed nothing and exited 0 there, because the start check compared a path with backslashes.
+- The guard also finds a command in a subshell, in `$(…)` or in backticks, and a `git` called by its full path. It blocks a unique prefix of `--no-verify` (for example `--no-verif`) and `-c core.hooksPath=…` on a commit or push. It allows `git -c pull.rebase=true pull`. `rm -rf` on a path with a `git` part (for example `~/src/git`) is no longer let through.
+- `ac reflect` redacts Anthropic (`sk-ant-…`), GitHub (`github_pat_…`), npm (`npm_…`) and Grafana (`glsa_…`) keys, and a read of a `.env` file with the `rc` suffix.
+- `post-review.mjs` counts up to 100 posted GitHub comments (not 30), keeps posting on GitLab when one discussion is refused, and refuses a comment without a `path`, a `line` or a `body`.
+- `ac sync` keeps a TOML key that the project wrote in another form (a line in a parent table, a dotted key, a sub-table) as `kept`. Before, it added a second table with the same name, and Codex refused the file.
+- `ac sync` and `ac check --frozen` treat CRLF line ends (Windows `core.autocrlf`) as no change, and read a JSON or TOML file that starts with a UTF-8 BOM.
+- `ac doctor` finds a Windows command through `PATHEXT` (for example `npx.cmd`).
 
 ## 1.0.0 — 2026-10-16
 

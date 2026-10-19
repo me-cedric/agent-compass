@@ -86,6 +86,9 @@ export const reconcile = (root, plan, lock) => {
     if (st && !st.isFile()) throw new Error(`${rel} is not a regular file`)
     return st ? readFileSync(join(root, rel)) : null
   }
+  // A Windows checkout with core.autocrlf gives CRLF line ends: the same text with LF ends is not an edit.
+  // latin1 keeps each byte, so a binary file compares as it is.
+  const lf = (buf, want) => (buf && !want.includes('\r') && buf.includes('\r\n') ? Buffer.from(buf.toString('latin1').replace(/\r\n/g, '\n'), 'latin1') : buf)
   // A path that the plan gives to another mechanism leaves the lock here, without a write.
   const claimed = (rel) => plan.files.has(rel) || plan.keys.has(rel) || plan.blocks.has(rel)
 
@@ -100,7 +103,7 @@ export const reconcile = (root, plan, lock) => {
       else { writes.set(rel, want); files[rel] = { sha: wantSha, owner: 'project' }; note('seed', rel) }
       continue
     }
-    const haveSha = have && sha(have)
+    const haveSha = have && sha(lf(have, want.content))
     if (haveSha === wantSha) files[rel] = { sha: wantSha, owner: 'compass' }
     else if (!have || (prev?.owner === 'compass' && prev.sha === haveSha)) {
       writes.set(rel, want)
@@ -132,7 +135,8 @@ export const reconcile = (root, plan, lock) => {
     const want = plan.keys.get(file) || new Map()
     const prev = lock.keys[file] || {}
     const toml = file.endsWith('.toml')
-    const raw = read(file)?.toString('utf8') || ''
+    // A UTF-8 BOM (PowerShell 5 writes one) is not part of the JSON or TOML text; the write drops it.
+    const raw = read(file)?.toString('utf8').replace(/^\uFEFF/, '') || ''
     const doc0 = toml || raw.trim() ? raw : '{}\n'
     if (!toml) {
       let data
@@ -199,7 +203,7 @@ export const reconcile = (root, plan, lock) => {
     const raw = read(file)?.toString('utf8') ?? null
     let found
     try { found = raw === null ? null : blockFind(raw) } catch (err) { errors.push(`${file}: ${err.message}`); continue }
-    const cur = found ? sha(found.inner) : null
+    const cur = found ? sha(body === undefined ? found.inner : lf(Buffer.from(found.inner), blockInner(body)).toString()) : null
     const prev = lock.blocks[file]
     if (body === undefined) {
       if (cur === null) continue

@@ -51,7 +51,7 @@ const mcpBlock = (name) => MCP_DENY.test(name.split('__').slice(2).join('__')) &
 const shortFlag = (args, c) => args.some((a) => /^-[a-zA-Z]+$/.test(a) && a.includes(c))
 const GIT_OPTS_WITH_VALUE = ['-C', '-c', '--git-dir', '--work-tree', '--namespace']
 const gitArgs = (w) => {
-  let i = w.indexOf('git') + 1
+  let i = w.findIndex((x) => basename(x) === 'git') + 1
   if (!i) return []
   while (w[i]?.startsWith('-')) i += GIT_OPTS_WITH_VALUE.includes(w[i]) ? 2 : 1
   return w.slice(i)
@@ -71,20 +71,24 @@ const gitDanger = (w) => {
 // shortcut: a word "-n" inside an unquoted-looking commit message also matches; parse the -m value when that bites.
 const gitSkip = (w) => {
   const [sub, ...args] = gitArgs(w)
-  return (sub === 'commit' && (args.includes('--no-verify') || shortFlag(args, 'n'))) || (sub === 'push' && args.includes('--no-verify'))
+  // Git takes a unique prefix of a long option, so --no-verif is --no-verify. A -c core.hooksPath= value skips the hooks too.
+  const noVerify = args.some((a) => /^--no-veri/.test(a))
+  const hooksPath = w.some((x, n) => w[n - 1] === '-c' && /^core\.hookspath=/i.test(x))
+  return ['commit', 'push'].includes(sub) && (noVerify || hooksPath || (sub === 'commit' && shortFlag(args, 'n')))
 }
 // Every project rebases: a merge commit, or a pull that merges, is blocked. Ending a merge and a fast-forward stay allowed.
 const MERGE_OK = ['--abort', '--continue', '--quit', '--ff-only']
 const gitMerge = (w) => {
   const [sub, ...args] = gitArgs(w)
   if (sub === 'merge') return !args.some((a) => MERGE_OK.includes(a))
+  if (sub === 'pull' && w.some((x, n) => w[n - 1] === '-c' && /^pull\.rebase=(true|merges|interactive)$/i.test(x))) return false
   if (sub === 'pull') return !args.some((a) => a === '-r' || a === '--ff-only' || (/^--rebase(=|$)/.test(a) && a !== '--rebase=false'))
   return false
 }
 const RISKY = new Set(['/', '~', '~/', '.', './', '..', '../', '*', '$HOME', '${HOME}'])
 // `git rm` is undoable. A redirection ends the arguments. The command may be a path such as /bin/rm.
 const rmDanger = (w, cwd, root) => {
-  if (w.some((x) => basename(x) === 'git')) return false
+  if (basename(w.find((x) => !/^\w+=/.test(x)) ?? '') === 'git') return false
   const i = w.findIndex((x) => basename(x) === 'rm')
   if (i < 0) return false
   const stop = w.findIndex((x, n) => n > i && /^\d*>/.test(x))
@@ -99,7 +103,7 @@ const rmDanger = (w, cwd, root) => {
 const danger = (cmd, cwd) => {
   const root = process.env.CLAUDE_PROJECT_DIR || cwd
   let ask = null
-  for (const s of cmd.split(/&&|\|\||[;|&\n]/).map((x) => x.trim())) {
+  for (const s of cmd.split(/&&|\|\||[;|&\n()`]/).map((x) => x.trim())) {
     const w = s.split(/\s+/).map((x) => x.replace(/^['"]|['"]$/g, '')).filter(Boolean)
     if (gitDanger(w) || rmDanger(w, cwd, root)) return `compass: the command \`${s}\` is blocked because you cannot undo it. Ask the user to run it.`
     if (gitSkip(w)) return `compass: the command \`${s}\` is blocked because it skips the git hooks. Fix the hook failure, or ask the user to skip it.`

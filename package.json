@@ -1,6 +1,6 @@
 {
   "name": "agent-compass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Shared operating kit for AI coding agents (Claude Code, Codex, GitHub Copilot) in team repositories.",

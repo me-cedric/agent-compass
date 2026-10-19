@@ -72,7 +72,7 @@ const github = (n, review, dry) => {
   if (dry) return { ...p, head: pr.headRefOid }
   const body = { commit_id: pr.headRefOid, body: p.summary, event: EVENT[p.verdict], comments: p.inline.map((c) => ({ path: c.path, line: c.line, side: 'RIGHT', body: c.body })) }
   const posted = json(call('gh', ['api', `repos/{owner}/{repo}/pulls/${n}/reviews`, '--method', 'POST', '--input', '-'], JSON.stringify(body)))
-  const count = Number(call('gh', ['api', `repos/{owner}/{repo}/pulls/${n}/reviews/${posted.id}/comments`, '--jq', 'length']).trim())
+  const count = Number(call('gh', ['api', `repos/{owner}/{repo}/pulls/${n}/reviews/${posted.id}/comments?per_page=100`, '--jq', 'length']).trim())
   return { ...p, head: pr.headRefOid, url: posted.html_url, degraded: count === p.inline.length ? [] : [`${p.inline.length - count} inline comments missing`] }
 }
 
@@ -102,9 +102,12 @@ const gitlab = (n, review, dry) => {
   const degraded = []
   for (const c of p.inline) {
     const position = { position_type: 'text', base_sha: refs.base_sha, start_sha: refs.start_sha, head_sha: refs.head_sha, old_path: c.path, new_path: c.path, new_line: c.line, ...(c.old !== null && { old_line: c.old }) }
-    const d = post(`projects/:id/merge_requests/${n}/discussions`, { body: c.body, position })
-    // A note without a position is a general thread: GitLab could not anchor it.
-    if (!d.notes?.[0]?.position) degraded.push(`${c.path}:${c.line}`)
+    // A refused post or a note without a position (a general thread) is a comment that GitLab could not anchor.
+    // The run goes on, so the verdict still posts; a re-run skips the anchored ones.
+    try {
+      const d = post(`projects/:id/merge_requests/${n}/discussions`, { body: c.body, position })
+      if (!d.notes?.[0]?.position) degraded.push(`${c.path}:${c.line}`)
+    } catch { degraded.push(`${c.path}:${c.line}`) }
   }
   const notes = []
   if (p.verdict === 'approve') call('glab', ['mr', 'approve', String(n), '--sha', refs.head_sha])
@@ -158,6 +161,8 @@ const main = () => {
   if (typeof review.summary !== 'string' || !review.summary.trim()) throw new Error('review.json needs a "summary" text')
   if (!VERDICTS.includes(review.verdict)) throw new Error(`review.json needs a "verdict": ${VERDICTS.join(', ')}`)
   if (!Array.isArray(review.comments ?? [])) throw new Error('review.json "comments" must be a list')
+  const bad = (review.comments ?? []).findIndex((c) => typeof c?.path !== 'string' || typeof c.body !== 'string' || !Number.isInteger(Number(c.line)) || Number(c.line) < 1)
+  if (bad >= 0) throw new Error(`review.json comment ${bad + 1} needs a "path" text, a "line" number and a "body" text`)
   if (/co-authored-by|generated with/i.test(JSON.stringify(review))) throw new Error('the review holds an attribution line; remove it')
   const forge = v.forge ?? forgeOf()
   if (!['github', 'gitlab'].includes(forge)) throw new Error('the forge is not known from the origin remote; pass --forge github or --forge gitlab')
@@ -166,6 +171,7 @@ const main = () => {
   return r.degraded?.length ? 1 : 0
 }
 
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
+// Compare the file name only: Windows gives argv[1] with backslashes, and a symlinked skill dir gives another path.
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split(/[\\/]/).pop())) {
   try { process.exitCode = main() } catch (err) { console.error(`error: ${err.message}`); process.exitCode = 1 }
 }

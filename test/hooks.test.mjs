@@ -128,7 +128,8 @@ test('guard blocks a destructive git or rm command and passes the safe forms', a
   const blocked = ['git push --force', 'git push -f origin main', 'git push origin +main', 'git push --force-with-lease --force origin x', 'git push --force-with-lease origin +x',
     'git reset --hard HEAD~1', 'git clean -fd', 'git -C sub clean -xdf', 'npm test && git reset --hard',
     'rm -rf /', 'rm -rf ~', 'rm -rf ~/', 'rm -rf .', 'rm -rf ./', 'rm -rf ..', 'rm -rf ../other', 'rm -rf /tmp/x', 'rm -fr "$HOME"', 'rm -r -f *', 'sudo rm -Rf /etc',
-    'rm -rf ./*', '/bin/rm -rf ~', 'rm -vrf ~']
+    'rm -rf ./*', '/bin/rm -rf ~', 'rm -vrf ~', '(git push --force)', 'echo $(git push -f)', 'echo `git push -f`', '/usr/bin/git push -f',
+    'rm -rf ~/src/git', 'rm -rf / git']
   for (const command of blocked) {
     const r = await bash(command)
     assert.equal(r.code, 2, command)
@@ -293,7 +294,8 @@ test('the user copy steps back when the project settings list a compass hook for
 })
 
 test('guard blocks a commit or push that skips the git hooks, and passes the other -n forms', async () => {
-  for (const command of ['git commit --no-verify -m wip', 'git commit -n -m wip', 'git commit -anm wip', 'git -C app push --no-verify origin main']) {
+  for (const command of ['git commit --no-verify -m wip', 'git commit -n -m wip', 'git commit -anm wip', 'git -C app push --no-verify origin main',
+    'git commit --no-verif -m wip', 'git -c core.hooksPath=/dev/null commit -m wip', 'git -c core.hookspath=x push origin main']) {
     const r = await bash(command)
     assert.equal(r.code, 2, command)
     assert.match(r.stderr, /blocked because it skips the git hooks\. Fix the hook failure, or ask the user to skip it\./)
@@ -361,7 +363,7 @@ test('guard blocks a merge commit and a pull that merges, and passes rebase, fas
     assert.match(r.stderr, /blocked because the project rebases instead of merging\. Run `git fetch origin && git rebase origin\/<base>`/)
   }
   for (const command of ['git merge --abort', 'git merge --continue', 'git merge --ff-only main', 'git pull --rebase', 'git pull -r origin develop',
-    'git pull --rebase=merges', 'git pull --ff-only', 'git rebase origin/develop', 'git log --merges']) assert.equal((await bash(command)).code, 0, command)
+    'git pull --rebase=merges', 'git pull --ff-only', 'git rebase origin/develop', 'git log --merges', 'git -c pull.rebase=true pull']) assert.equal((await bash(command)).code, 0, command)
 })
 
 test('guard blocks an edit under .git/, secrets/ or credentials/, in Claude and Codex shapes', async () => {

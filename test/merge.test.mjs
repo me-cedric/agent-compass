@@ -68,6 +68,16 @@ const group = (matcher, command, extra = {}) => ({ ...(matcher && { matcher }), 
 const own = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo ours' }] }
 const shas = (list) => list.map(entrySha)
 
+test('TOML: a key that the project wrote in another form is there, and set and delete leave it as it is', () => {
+  for (const text of ['[mcp_servers]\ncontext7 = { command = "npx" }\n', 'mcp_servers.context7.command = "npx"\n', '[mcp_servers.context7.env]\nA = "1"\n',
+    '[mcp_servers]\n"context7" = { command = "npx" }\n']) {
+    assert.notEqual(tomlGet(text, 'mcp_servers.context7'), undefined, text)
+    assert.equal(tomlSet(text, 'mcp_servers.context7', { command: 'x' }), text, text)
+    assert.equal(tomlDelete(text, 'mcp_servers.context7'), text, text)
+  }
+  assert.equal(tomlGet('[mcp_servers.context70]\ncommand = "x"\n', 'mcp_servers.context7'), undefined)
+})
+
 test('entrySha ignores key order at any depth, also inside arrays', () => {
   const a = { matcher: 'Bash', hooks: [{ type: 'command', command: 'x', timeout: 10 }] }
   const b = { hooks: [{ timeout: 10, command: 'x', type: 'command' }], matcher: 'Bash' }

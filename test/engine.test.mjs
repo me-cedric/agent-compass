@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { onPath } from '../engine/doctor.mjs'
 import { entrySha } from '../engine/merge.mjs'
 import { sha, walk } from '../engine/util.mjs'
 import { runNode } from './helpers.mjs'
@@ -154,6 +155,31 @@ test('sync twice gives no diff', async () => {
   assert.deepEqual(r.json.changes, [])
   assert.equal(r.json.drift, false)
   assert.deepEqual(snapshot(host), before)
+})
+
+test('CRLF line ends and a UTF-8 BOM are not edits: the sync reports no change', async () => {
+  const compass = makeCompass()
+  const host = makeHost()
+  await ac(compass, host, 'init')
+  for (const rel of ['.claude/output-styles/compass.md', 'AGENTS.md']) put(host, { [rel]: read(host, rel).replace(/\n/g, '\r\n') })
+  put(host, { '.claude/settings.json': `\uFEFF${read(host, '.claude/settings.json')}` })
+  const r = await ac(compass, host, 'sync')
+  assert.equal(r.code, 0, r.stderr)
+  assert.deepEqual(actions(r), [])
+  assert.equal((await ac(compass, host, 'check', '--frozen')).code, 0)
+})
+
+test('onPath finds a Windows command through PATHEXT', () => {
+  const dir = temp('ac-path-')
+  put(dir, { 'tool.CMD': '@echo off\n' })
+  chmodSync(join(dir, 'tool.CMD'), 0o755)
+  const saved = [process.env.PATH, process.env.PATHEXT]
+  try {
+    process.env.PATH = dir
+    process.env.PATHEXT = '.EXE;.CMD'
+    assert.equal(onPath('tool', true), true)
+    assert.equal(onPath('tool', false), process.platform === 'win32' || false)
+  } finally { [process.env.PATH, process.env.PATHEXT] = saved }
 })
 
 test('an edited managed file, key and block are kept and reported; unedited ones update', async () => {

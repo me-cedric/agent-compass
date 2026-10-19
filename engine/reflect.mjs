@@ -43,11 +43,12 @@ const CAP = 50_000
 const HEAD = 400
 const DAY_MS = 86_400_000
 const BLOCKED = /compass: the (read of|edit of|command|tool) |\bhook\b.*\b(denied|blocked)\b|\bpermission\b.*\bdenied\b/i
-// Formats that SECRET_RE and SECRET_NAME do not catch: a JWT, and the key prefixes of OpenAI, Anthropic, Stripe, Slack, Google and GitLab.
-const KEY_FORMATS = /\beyJ[\w-]{8,}\.[\w-]{8,}\.|\b(?:sk|pk|rk)[-_](?:[a-z]+[-_])?[A-Za-z0-9]{16,}|\bxox[abprs]-[\w-]{10,}|\bAIza[\w-]{30,}|\bglpat-[\w-]{20,}/
+// Formats that SECRET_RE and SECRET_NAME do not catch: a JWT, and the key prefixes of OpenAI, Anthropic, Stripe, Slack, Google,
+// GitLab, GitHub, npm and Grafana.
+const KEY_FORMATS = /\beyJ[\w-]{8,}\.[\w-]{8,}\.|\b(?:sk|pk|rk)[-_](?:[a-z0-9]+[-_]){0,2}[A-Za-z0-9]{16,}|\bgithub_pat_\w{20,}|\bnpm_\w{30,}|\bglsa_\w{20,}|\bxox[abprs]-[\w-]{10,}|\bAIza[\w-]{30,}|\bglpat-[\w-]{20,}/
 const EMAILS = new RegExp(EMAIL_RE.source, 'gi')
 // A read of a real .env file. A template (.env.example, .sample, .template) is not secret.
-const ENV_READ = /(^|[\s/'"=])\.env(\.(?!example\b|sample\b|template\b)[\w-]+)*(?=$|[\s'"|;&)])/
+const ENV_READ = /(^|[\s/'"=])\.env(rc)?(\.(?!example\b|sample\b|template\b)[\w-]+)*(?=$|[\s'"|;&)])/
 const CWD = /"cwd":"((?:[^"\\]|\\.)*)"/
 
 const localDay = (t) => new Date(t).toLocaleDateString('sv-SE')
