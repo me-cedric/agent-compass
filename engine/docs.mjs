@@ -1,7 +1,7 @@
 // docs.mjs — the docs layout checks of `ac check`: the RAID register, the ADRs, a root specs/ folder,
 // the screens registry and the OpenSpec CLI. Konvoy reads these files (docs/contract/ownership.md). Read only.
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { projectPaths } from './config.mjs'
 import { frontmatter, isDir, isObj, run, walk } from './util.mjs'
@@ -134,9 +134,17 @@ const summary = (r) => {
   return (r.err || r.out || 'no output').split('\n')[0]
 }
 
+// A project that pins the CLI as a dev dependency has it in node_modules/.bin, not on PATH.
+// Not on Windows: there the shim is a .cmd file, which spawnSync runs only through a shell.
+const openspecCli = (root) => {
+  const local = join(root, 'node_modules', '.bin', 'openspec')
+  return process.platform !== 'win32' && existsSync(local) ? local : 'openspec'
+}
+
 const checkOpenspec = (root, paths, out) => {
   if (!isDir(join(root, paths.openspec))) return
-  if (!run('openspec', ['--version'], { timeout: 10_000, env: OPENSPEC_ENV }).ok) {
+  const cli = openspecCli(root)
+  if (!run(cli, ['--version'], { timeout: 10_000, env: OPENSPEC_ENV }).ok) {
     out.warnings.push('the openspec CLI is not installed, so "openspec validate" did not run')
     return
   }
@@ -145,10 +153,10 @@ const checkOpenspec = (root, paths, out) => {
     return
   }
   const cwd = join(root, dirname(paths.openspec))
-  const validate = run('openspec', ['validate', '--all', '--strict', '--json'], { cwd, timeout: 120_000, env: OPENSPEC_ENV })
+  const validate = run(cli, ['validate', '--all', '--strict', '--json'], { cwd, timeout: 120_000, env: OPENSPEC_ENV })
   if (!validate.ok) out.errors.push(`openspec validate --all --strict: ${summary(validate)}`)
   // ponytail: `status` needs --change or --all; --all is from a review run on OpenSpec 1.14.2.
-  const status = run('openspec', ['status', '--all', '--json'], { cwd, timeout: 60_000, env: OPENSPEC_ENV })
+  const status = run(cli, ['status', '--all', '--json'], { cwd, timeout: 60_000, env: OPENSPEC_ENV })
   if (!status.ok) out.warnings.push(`openspec status: ${summary(status)}`)
 }
 

@@ -163,6 +163,14 @@ test('the openspec CLI runs with a timeout in the parent of the OpenSpec dir, on
 
     process.env.PATH = temp('ac-empty-')
     assert.ok(has(check(root).warnings, /the openspec CLI is not installed/))
+
+    // A dev dependency: the CLI is in the project's node_modules/.bin and not on PATH.
+    const pinned = host({ 'docs/openspec/project.md': 'x\n' })
+    mkdirSync(join(pinned, 'node_modules/.bin'), { recursive: true })
+    cpSync(join(bin, 'openspec'), join(pinned, 'node_modules/.bin/openspec'))
+    const local = check(pinned)
+    assert.deepEqual(local.errors, [])
+    assert.ok(!has(local.warnings, /not installed/), 'the CLI in node_modules/.bin is found')
     assert.equal(check(host({})).warnings.length, 0)
   } finally {
     Object.assign(process.env, saved)

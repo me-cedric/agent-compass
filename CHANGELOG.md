@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `ac check` finds the OpenSpec CLI in the project's `node_modules/.bin` (a dev dependency) before it looks on `PATH`. Before, such a project got "the openspec CLI is not installed" and no `openspec validate` ran.
 - The source `security-audit` (recommended in every project) brings the `security-audit` skill from cloudflare/security-audit-skill (MIT). It gives security guidance by default and runs the full six-phase audit only on an explicit audit or pen-test request.
 
 ## 1.0.2 — 2026-10-19
