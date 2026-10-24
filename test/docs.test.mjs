@@ -177,6 +177,30 @@ test('the openspec CLI runs with a timeout in the parent of the OpenSpec dir, on
   }
 })
 
+test('a change that reads as ready, and a MODIFIED delta that drops a scenario, are named', () => {
+  const main = '# Spec\n\n## Requirements\n\n### Requirement: Login\n\nThe app SHALL log in.\n\n#### Scenario: Good password\n\nok\n\n#### Scenario: Bad password\n\nno\n'
+  const delta = (body) => `## MODIFIED Requirements\n\n### Requirement: ${body}\n`
+  const root = host({
+    'docs/openspec/specs/auth/spec.md': main,
+    'docs/openspec/changes/partial/tasks.md': '- [x] 1.1 one\n- [~] 1.2 two\n',
+    'docs/openspec/changes/done/tasks.md': '- [x] 1.1 one\n  - [x] 1.2 two\n',
+    'docs/openspec/changes/open/tasks.md': '- [x] 1.1 one\n- [~] 1.2 two\n- [ ] 1.3 three\n',
+    'docs/openspec/changes/drops/specs/auth/spec.md': delta('Login\n\nThe app SHALL log in.\n\n#### Scenario: Good password\n\nok\n'),
+    'docs/openspec/changes/ghost/specs/auth/spec.md': delta('Logout\n\n#### Scenario: Leave\n\nok\n'),
+    'docs/openspec/changes/archive/old/tasks.md': '- [x] 1.1 done long ago\n',
+  })
+  const { errors, warnings } = check(root)
+  assert.ok(has(warnings, /changes\/partial: no task is open and 1 are partial/))
+  assert.ok(has(warnings, /changes\/done: every task is ticked/))
+  assert.ok(!has(warnings, /changes\/open:/), 'an open task means the change is not ready')
+  assert.ok(!has(warnings, /archive\/old/), 'archived changes are left alone')
+  assert.ok(has(warnings, /changes\/drops\/specs\/auth\/spec.md: MODIFIED "Login" omits the scenario\(s\) "Bad password"/))
+  assert.ok(has(errors, /changes\/ghost\/specs\/auth\/spec.md: MODIFIED "Logout" is in no main spec/))
+
+  put(root, { 'docs/openspec/changes/drops/specs/auth/spec.md': delta('Login\n\n#### Scenario: Good password\n\nok\n\n#### Scenario: Bad password\n\nno\n') })
+  assert.ok(!has(check(root).warnings, /changes\/drops/), 'a delta that carries every scenario passes')
+})
+
 // Ownership rules that need both ledgers (docs/contract/ownership.md).
 const compass = () => {
   const ac = temp('ac-own-')

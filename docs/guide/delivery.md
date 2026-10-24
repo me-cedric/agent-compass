@@ -17,6 +17,7 @@ The paths below are the defaults. Skills write them as placeholders such as `{{D
 | `docs/planning/`, `docs/costing/`, `docs/api/`, `docs/data-models/` | Planning, costing, OpenAPI and data models. |
 
 `ac check` also checks this layout: RAID files, ADR names and frontmatter, the screens registry, `Screen:` tags and `openspec validate`.
+It also checks the active OpenSpec changes. A change with no open task and some `[~]` partials, and a change with every task ticked and not archived, are warnings. A MODIFIED requirement that is in no main spec is an error, and a main-spec scenario that a MODIFIED delta omits is a warning: the archive replaces the whole block and drops it.
 `ac check --docs` runs only these checks and does not need `.agents/compass.json`. An error exits 1. A warning does not.
 The rules are in the [ownership contract](../contract/ownership.md#docs-layout-checks).
 

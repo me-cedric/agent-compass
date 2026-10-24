@@ -1,8 +1,9 @@
 // docs.mjs — the docs layout checks of `ac check`: the RAID register, the ADRs, a root specs/ folder,
-// the screens registry and the OpenSpec CLI. Konvoy reads these files (docs/contract/ownership.md). Read only.
+// the screens registry, the OpenSpec changes (changes.mjs) and the OpenSpec CLI. Konvoy reads these files (docs/contract/ownership.md). Read only.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
+import { checkChanges } from './changes.mjs'
 import { projectPaths } from './config.mjs'
 import { frontmatter, isDir, isObj, run, walk } from './util.mjs'
 
@@ -165,7 +166,7 @@ export const checkDocs = ({ AC, root }) => {
   if (errors.length) return { ok: false, errors, warnings, paths: {}, pathsFrom: null }
   const out = { errors: [], warnings: [...warnings] }
   try {
-    for (const check of [checkRaid, checkAdrs, checkRootSpecs, checkScreens, checkOpenspec]) check(root, paths, out)
+    for (const check of [checkRaid, checkAdrs, checkRootSpecs, checkScreens, checkChanges, checkOpenspec]) check(root, paths, out)
   } catch (err) {
     out.errors.push(err.message)
   }
