@@ -141,11 +141,11 @@ const layerAssets = ({ AC, plan, stacks, why }) => [['compass', AC], ['core', jo
   })
 
 // The OpenSpec schema dir. Compass installs it when the OpenSpec folder exists and Konvoy does not own the schema.
-const schemaAssets = ({ root, plan, paths }) => {
-  const id = schemaDir(paths)
+const schemaAssets = ({ root, plan, paths, config }) => {
+  const id = schemaDir(paths, config.schema)
   const found = isDir(join(root, paths.openspec))
   return [asset('schema', id, 'core', {
-    title: SCHEMA,
+    title: config.schema ?? SCHEMA,
     description: 'OpenSpec schema of the delivery flow. Compass copies it into the OpenSpec folder.',
     on: [...plan.files.keys()].some((f) => f.startsWith(id)),
     available: found,

@@ -146,6 +146,14 @@ test('listAssets reports a broken config and works without .agents/compass.json'
   assert.match(broken.errors.join('\n'), /unknown pack "nope"/)
   assert.deepEqual(broken.assets, [])
   assert.deepEqual(listAssets({ AC: REPO, root: makeHost() }).errors, [])
+  assert.match(listAssets({ AC: REPO, root: makeHost({ '.agents/compass.json': '{ "schema": "../x" }' }) }).errors.join('\n'), /unknown schema "..\/x"/)
+})
+
+test('listAssets: the schema asset follows compass.json "schema"; the default stays konvoy-delivery', () => {
+  const dir = { 'docs/openspec/.keep': '' }
+  const pick = find(listAssets({ AC: REPO, root: makeHost({ ...dir, '.agents/compass.json': '{ "schema": "shipyard-delivery" }' }) }), 'schema', 'docs/openspec/schemas/shipyard-delivery/')
+  assert.equal(pick.title, 'shipyard-delivery')
+  assert.equal(find(listAssets({ AC: REPO, root: makeHost(dir) }), 'schema', 'docs/openspec/schemas/konvoy-delivery/').title, 'konvoy-delivery')
 })
 
 test('the plan honours agent: and pack: excludes', () => {

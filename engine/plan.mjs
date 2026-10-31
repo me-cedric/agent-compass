@@ -215,8 +215,8 @@ export const buildPlan =({ AC, root, config, paths, konvoy = false }) => {
   const copilot = copilotHooks(keys.get(settings))
   if (copilot) addFile(COPILOT_HOOKS, Buffer.from(copilot))
 
-  const schema = join(AC, 'core/openspec', SCHEMA)
-  if (!konvoy && isDir(join(root, paths.openspec))) for (const rel of walk(schema)) copy(join(schema, rel), `${schemaDir(paths)}${rel}`, 'managed')
+  const schema = join(AC, 'core/openspec', config.schema ?? SCHEMA)
+  if (!konvoy && isDir(join(root, paths.openspec))) for (const rel of walk(schema)) copy(join(schema, rel), `${schemaDir(paths, config.schema)}${rel}`, 'managed')
   if (isDir(join(root, paths.designs))) addFile(screensFile(paths), Buffer.from(SCREENS_SEED), 'seed')
 
   // Upstream skills are third-party text: copied as they are, with the source licence file beside each one.

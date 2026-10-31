@@ -30,7 +30,7 @@ export const PATH_DEFAULTS = {
 }
 
 // The OpenSpec schema dir. Compass installs the schema there only when the Konvoy ledger is absent.
-export const schemaDir = (paths) => `${paths.openspec}/schemas/${SCHEMA}/`
+export const schemaDir = (paths, schema = SCHEMA) => `${paths.openspec}/schemas/${schema}/`
 
 // Konvoy writes its MCP server under these keys in the provider files.
 const KONVOY_KEYS = { '.mcp.json': ['mcpServers.konvoy'], '.codex/config.toml': ['mcp_servers.konvoy'], '.vscode/mcp.json': ['servers.konvoy'] }
@@ -78,6 +78,7 @@ export const loadConfig = (root, AC, { init = false } = {}) => {
       if (!/^[a-z0-9-]+$/.test(pack) || !isDir(join(AC, 'packs', pack))) errors.push(`${CONFIG}: unknown pack "${pack}"`)
     }
   }
+  if (data.schema !== undefined && (typeof data.schema !== 'string' || !/^[a-z0-9-]+$/.test(data.schema) || !isDir(join(AC, 'core/openspec', data.schema)))) errors.push(`${CONFIG}: unknown schema "${data.schema}"`)
   const [mcp, plugins] = [data.mcp, data.plugins].map((v) => (strings(v) ? v : []))
   return { config: { ...config, upstream: strings(data.upstream) ? data.upstream : [], mcp, plugins, paths: readPaths(data.paths, CONFIG, errors, true) }, errors }
 }
@@ -123,7 +124,7 @@ export const projectPaths = (root, AC) => {
   const kv = loadKonvoy(root)
   const errors = [...cfg.errors, ...kv.errors]
   if (errors.length) return { errors, warnings: [] }
-  return { ...resolvePaths(cfg.config, kv.konvoy), konvoy: kv.konvoy, errors }
+  return { ...resolvePaths(cfg.config, kv.konvoy), konvoy: kv.konvoy, schema: cfg.config.schema, errors }
 }
 
 export const konvoyOwns = (konvoy, rel) => konvoy.files.has(rel) || konvoy.prefixes.some((p) => rel.startsWith(p))

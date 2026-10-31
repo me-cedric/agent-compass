@@ -119,6 +119,7 @@ See the [ownership contract](../contract/ownership.md).
 | `exclude` | Names and paths that sync does not install. |
 | `upstream` | Ids of the pinned upstream skill sources to install. |
 | `mcp` | Names of the MCP servers to install. |
+| `schema` | Name of the OpenSpec schema to install. It is a folder in `core/openspec/`: `konvoy-delivery` (default) or `shipyard-delivery`. |
 | `paths` | Docs path keys. Compass ignores them when `.agents/konvoy.json` exists. |
 
 Choose `packs`, `exclude`, `upstream` and `mcp` in [assets.md](assets.md). The path keys are in the [ownership contract](../contract/ownership.md#path-keys).

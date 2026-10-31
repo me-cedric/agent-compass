@@ -70,6 +70,21 @@ test('init --from-specs creates the layout, stages the documents and prints the 
   }
 })
 
+test('a host can pick the shipyard-delivery schema; an unknown name is a config error', async () => {
+  const input = put(temp('ac-in-'), { 'brief.md': '# Brief\n' })
+  const root = put(temp('ac-host-'), { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], schema: 'shipyard-delivery' }) })
+  const r = await ac('init', '--from-specs', input, '--root', root)
+  assert.equal(r.code, 0, r.stderr)
+  assert.equal(readFileSync(join(root, 'docs/openspec/config.yaml'), 'utf8'), 'schema: shipyard-delivery\n')
+  assert.ok(existsSync(join(root, 'docs/openspec/schemas/shipyard-delivery/schema.yaml')))
+  assert.ok(!existsSync(join(root, 'docs/openspec/schemas/konvoy-delivery')), 'only the chosen schema is installed')
+
+  const bad = put(temp('ac-host-'), { '.agents/compass.json': JSON.stringify({ version: 1, packs: [], exclude: [], schema: 'nope' }) })
+  const e = await ac('init', '--from-specs', input, '--root', bad)
+  assert.equal(e.code, 1)
+  assert.match(e.stderr, /unknown schema "nope"/)
+})
+
 test('the CLI refuses --docs and --from-specs on the wrong command; migrate without --docs is the 0.x migration', async () => {
   const root = temp('ac-host-')
   const legacy = await ac('migrate', '--dry', '--json', '--root', root)

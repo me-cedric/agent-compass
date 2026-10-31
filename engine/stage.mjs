@@ -14,7 +14,7 @@ const hidden = (rel) => /(^|\/)\./.test(rel)
 
 export const stageSpecs = ({ AC, root, input, apply }) => {
   const fail = (errors) => ({ ok: false, changes: [], errors, warnings: [] })
-  const { paths, errors } = projectPaths(root, AC)
+  const { paths, schema = SCHEMA, errors } = projectPaths(root, AC)
   if (errors.length) return fail(errors)
   const src = resolve(input)
   const st = statSync(src, { throwIfNoEntry: false })
@@ -27,7 +27,7 @@ export const stageSpecs = ({ AC, root, input, apply }) => {
 
   const staged = `${inboxDir(paths)}/${basename(src)}`
   const dirsToMake = [`${paths.openspec}/changes`, `${paths.openspec}/specs`, questionsDir(paths), paths.adr, paths.designs].filter((d) => !isDir(join(root, d)))
-  const seeds = [[screensFile(paths), SCREENS_SEED], [`${paths.openspec}/config.yaml`, `schema: ${SCHEMA}\n`]]
+  const seeds = [[screensFile(paths), SCREENS_SEED], [`${paths.openspec}/config.yaml`, `schema: ${schema}\n`]]
   const writes = seeds.filter(([rel]) => !existsSync(join(root, rel))).map(([rel, text]) => [rel, Buffer.from(text), 'create'])
   const docs = st.isFile() ? [[src, staged]] : walk(src).filter((f) => !hidden(f)).map((f) => [join(src, f), `${staged}/${f}`])
   const clashes = []
