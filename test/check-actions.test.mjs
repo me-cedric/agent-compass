@@ -38,3 +38,17 @@ test('check-actions rejects stale action majors', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('check-actions reads the version from a pinned SHA comment', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'ac-actions-'))
+  const sha = '3d3c42e5aac5ba805825da76410c181273ba90b1'
+  try {
+    await mkdir(join(dir, '.github', 'workflows'), { recursive: true })
+    await writeFile(join(dir, '.github', 'workflows', 'ci.yml'), `steps:\n  - uses: actions/checkout@${sha} # v7\n`)
+    assert.equal((await runNode([script, '--root', dir], { cwd: root })).code, 0)
+    await writeFile(join(dir, '.github', 'workflows', 'ci.yml'), `steps:\n  - uses: actions/checkout@${sha} # v4\n`)
+    assert.equal((await runNode([script, '--root', dir], { cwd: root })).code, 1)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})

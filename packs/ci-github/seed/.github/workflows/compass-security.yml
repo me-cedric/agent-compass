@@ -22,10 +22,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # osv-scanner exits 1 when it finds a vulnerability. The gate step decides.
       - name: Scan with the offline database
-        uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
         continue-on-error: true
         with:
           scan-args: |-
@@ -36,19 +36,19 @@ jobs:
             --format=sarif
             --output-file=osv.sarif
             ./
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
       # The scanner runs in a container, so its paths start with /github/workspace.
       - name: Gate on CVSS 9.0
         run: node .agents/skills/vuln-triage/scripts/sarif-merge.mjs --root /github/workspace --fail-at 9 --out merged.sarif osv.sarif
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ !cancelled() }}
         with:
           name: security-sarif
           path: merged.sarif
           if-no-files-found: ignore
-      - uses: github/codeql-action/upload-sarif@v4
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         if: ${{ !cancelled() && vars.CODE_SCANNING == 'true' && hashFiles('merged.sarif') != '' }}
         with:
           sarif_file: merged.sarif

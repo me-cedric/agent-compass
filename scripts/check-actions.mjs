@@ -40,8 +40,10 @@ for (const dir of SCAN_DIRS) {
   walk(join(ROOT, dir), (file) => {
     if (!['.yml', '.yaml'].includes(extname(file))) return
     const text = readFileSync(file, 'utf8')
-    for (const match of text.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)@([^\s#]+)/g)) {
-      const [, action, version] = match
+    for (const match of text.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)@([^\s#]+)(?:[ \t]+#[ \t]*(\S+))?/g)) {
+      // A pinned ref is a commit SHA; its `# vN` comment names the version.
+      const [, action, ref, tag] = match
+      const version = /^[0-9a-f]{40}$/.test(ref) && tag ? tag : ref
       const required = REQUIRED.get(action)
       if (required && version !== required) {
         hits.push(`${relative(ROOT, file).split(sep).join('/')}: ${action}@${version} should be ${action}@${required}`)
