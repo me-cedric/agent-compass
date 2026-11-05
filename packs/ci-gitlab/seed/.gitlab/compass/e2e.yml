@@ -2,14 +2,21 @@
 # Include it from .gitlab-ci.yml:
 #   include:
 #     - local: .gitlab/compass/e2e.yml
-# Use the image tag of your @playwright/test version. Edit the install command.
+# Use the image tag of your @playwright/test version. Edit the install command and the cache key.
+# The npm cache is keyed on the lockfile. GitLab keeps the caches of protected branches apart by default,
+# so the first pipeline of a merge request starts cold. Keep that setting: a shared cache lets any branch write what main reads.
 
 compass-e2e:
   stage: test
   image: mcr.microsoft.com/playwright:v1.62.0-noble
+  interruptible: true
+  cache:
+    key:
+      files: [package-lock.json] # edit: your lockfile
+    paths: [.npm/]
   parallel: 4
   script:
-    - npm ci # edit: your install command
+    - npm ci --cache .npm --prefer-offline # edit: your install command
     - npx playwright test --shard="$CI_NODE_INDEX/$CI_NODE_TOTAL" --reporter=blob
   artifacts:
     when: always
@@ -21,11 +28,16 @@ compass-e2e:
 compass-e2e-report:
   stage: test
   image: mcr.microsoft.com/playwright:v1.62.0-noble
+  interruptible: true
+  cache:
+    key:
+      files: [package-lock.json] # edit: your lockfile
+    paths: [.npm/]
   needs: [compass-e2e]
   variables:
     PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit.xml
   script:
-    - npm ci # edit: your install command
+    - npm ci --cache .npm --prefer-offline # edit: your install command
     - npx playwright merge-reports --reporter=html,junit ./blob-report
   artifacts:
     when: always

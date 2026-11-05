@@ -1,14 +1,21 @@
 # compass-e2e: Playwright in 4 shards, then one HTML report and one JUnit file.
-# Edit the install command. Keep the shard count in the matrix.
+# Edit the install command and the cache. Keep the shard count in the matrix.
+# The run on main tests the merged code and saves the dependency cache that new pull requests restore.
 
 name: compass-e2e
 
 on:
   pull_request:
+  push:
+    branches: [main] # edit: your default branch
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
@@ -23,6 +30,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm # edit: pnpm needs pnpm/action-setup before this step
       - run: npm ci # edit: your install command
       - run: npx playwright install --with-deps
       - name: Run the shard
@@ -44,6 +52,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm # edit: pnpm needs pnpm/action-setup before this step
       - run: npm ci # edit: your install command
       - uses: actions/download-artifact@v8
         with:

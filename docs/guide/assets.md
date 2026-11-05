@@ -82,6 +82,7 @@ A `seed/` file is written once. A folder `extras/` holds reference files that sy
 | `security` | `.osv-scanner.toml` or `sonar-project*.properties` exists | Skill `vuln-triage`, seed `.osv-scanner.toml`. |
 | `ci-github` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | The managed workflow `compass-check.yml` and four seed workflows `compass-*.yml`. |
 | `ci-gitlab` | Opt in. Not in the recommended set: set the install and test commands in each seed first. | The managed file `.gitlab/compass/check.yml` and four seed files in `.gitlab/compass/`. |
+| `git-hooks` | Opt in. Turn the hook on once in each clone: `git config core.hooksPath .githooks`. | Seed `.githooks/pre-push`: format, lint and typecheck before each push. |
 | `renovate` | Opt in. Recommended with the compass submodule and no Renovate config. | Seed `renovate.json`. |
 
 Use the packs in [dev-loop.md](dev-loop.md) and [quality.md](quality.md).

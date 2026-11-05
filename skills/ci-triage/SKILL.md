@@ -1,6 +1,6 @@
 ---
 name: ci-triage
-description: Triage a red CI job: read the log, classify it as flaky, environment or real, reproduce it, fix small and rerun. Use when a pipeline or check is red.
+description: Triage a red or slow CI job: classify a failure as flaky, environment or real, fix and rerun, or audit the job time. Use when CI is red or slow.
 risk_level: low
 writes_files: false
 requires_tools: [gh, glab]
@@ -43,6 +43,18 @@ An exit code is not a build result for an installer, an image, an APK or a binar
 4. A zero exit can ship the previous build, because a bundler may reuse an existing output directory. Delete the output before the build.
 5. A non-zero exit can still leave a good artifact, because packaging runs last. Look before you call the build failed.
 6. Clean the leftover state at the start of each build, not after a failure.
+
+## Slow CI audit
+
+Use it when CI is green but slow, or when the same job is rerun often. The audit reads. It changes nothing.
+
+1. Take the last 50 runs or more. GitHub: `gh run list --limit 50 --json databaseId,event,headBranch,headSha,conclusion`. GitLab: `glab ci list`.
+2. Split each job into wait, setup and run time.
+   - GitHub: `gh api repos/<owner>/<repo>/actions/runs/<id>/jobs`. Wait is `started_at - created_at`. Setup is the steps before the first build, lint or test step.
+   - GitLab: `glab api projects/:id/pipelines/<id>/jobs`. Wait is `queued_duration`. Run is `duration`.
+3. Find the largest share for the slowest job, and fix that first. A pull request waits for its slowest job, not for the sum.
+4. Look for a cache that misses on most pull request runs. Look for the same commit run more than once: each rerun hides a flaky or environment cause.
+5. Report a table: job, median wait, setup and run, cache hits, reruns. Then name the levers from [references/speed.md](references/speed.md), largest saving first.
 
 ## Report
 
