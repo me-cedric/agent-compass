@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--
+  Template of the slide-deck skill. Copy this file, then change the theme and the slides.
+  The stage and print CSS come from frontend-slides by Zara Zhang (MIT, see LICENSE-frontend-slides):
+  https://github.com/zarazhangrui/frontend-slides
+  Keep this comment in each deck.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck title</title>
+<style>
+/* ---------- Theme: one preset from presets.md. Change only these values. ---------- */
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --title: 112px;
+  --heading: 72px;
+  --body: 34px;
+  --pad: 120px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --slow: 700ms;
+  --fast: 300ms;
+}
+
+/* ---------- Stage: slides are 1920 x 1080 and the script scales the stage. ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+body { color: var(--text); font: var(--body)/1.4 var(--font-body); }
+.deck { position: fixed; inset: 0; overflow: hidden; }
+.stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: var(--bg); overflow: hidden; }
+.slide { position: absolute; inset: 0; padding: var(--pad); display: flex; flex-direction: column; justify-content: center; gap: 40px; background: var(--bg); visibility: hidden; opacity: 0; transform: translateX(60px); transition: opacity var(--slow) var(--ease), transform var(--slow) var(--ease), visibility 0s var(--slow); }
+.slide.active { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; z-index: 1; }
+.slide.before { transform: translateX(-60px); }
+h1 { font: 800 var(--title)/1.05 var(--font-display); letter-spacing: -0.02em; }
+h2 { font: 700 var(--heading)/1.1 var(--font-display); }
+p, li { max-width: 1400px; }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+ul { display: grid; gap: 20px; padding-left: 1.2em; }
+.counter { position: fixed; right: 24px; bottom: 16px; z-index: 2; font: 16px var(--font-mono); color: #fff; opacity: 0.6; }
+
+/* ---------- Entrance: the base style is the final state. Motion goes from a start state. ---------- */
+.slide.active .rise { animation: rise var(--slow) var(--ease) backwards; }
+.slide.active .rise:nth-child(2) { animation-delay: 80ms; }
+.slide.active .rise:nth-child(3) { animation-delay: 160ms; }
+.slide.active .rise:nth-child(4) { animation-delay: 240ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(40px); } }
+
+/* ---------- Steps: the script hides each later step; print and no script show them all. ---------- */
+[data-step] { transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
+[data-step].later { opacity: 0; transform: translateY(24px); }
+
+/* ---------- Animated diagram: the lines draw in, the boxes fade in. ---------- */
+.diagram { width: 1500px; height: 560px; }
+.diagram .box { fill: var(--surface); stroke: var(--accent); stroke-width: 3; }
+.diagram text { fill: var(--text); font: 600 30px var(--font-body); }
+.diagram .link { fill: none; stroke: var(--accent); stroke-width: 4; stroke-dasharray: 400; stroke-dashoffset: 0; }
+.slide.active .diagram .link { animation: draw 1.2s var(--ease) 400ms backwards; }
+.slide.active .diagram .node { animation: rise var(--slow) var(--ease) backwards; }
+.slide.active .diagram .node:nth-of-type(2) { animation-delay: 200ms; }
+.slide.active .diagram .node:nth-of-type(3) { animation-delay: 400ms; }
+@keyframes draw { from { stroke-dashoffset: 400; } }
+
+/* ---------- Animated chart: the bars grow from the axis. ---------- */
+.chart { width: 1400px; height: 520px; }
+.chart .bar { fill: var(--accent); transform-box: fill-box; transform-origin: bottom; }
+.chart text { fill: var(--muted); font: 26px var(--font-body); }
+.slide.active .chart .bar { animation: grow 900ms var(--ease) backwards; }
+.slide.active .chart .bar:nth-of-type(2) { animation-delay: 120ms; }
+.slide.active .chart .bar:nth-of-type(3) { animation-delay: 240ms; }
+.slide.active .chart .bar:nth-of-type(4) { animation-delay: 360ms; }
+@keyframes grow { from { transform: scaleY(0); } }
+
+/* ---------- Reduced motion: no transition and no animation. Everything shows in its final state. ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .slide, .slide.before { transform: none; }
+}
+
+/* ---------- Print: one page per slide, every step in its final state, no motion. ---------- */
+@page { size: 1920px 1080px; margin: 0; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: none; }
+  .deck { position: static; overflow: visible; }
+  .stage { position: static; width: 1920px; height: auto; transform: none !important; overflow: visible; }
+  .slide { position: relative; width: 1920px; height: 1080px; visibility: visible !important; opacity: 1 !important; transform: none !important; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  [data-step].later { opacity: 1; transform: none; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .counter { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+<main class="stage" id="stage">
+
+  <section class="slide active" aria-label="1">
+    <p class="muted rise">Project name</p>
+    <h1 class="rise">Deck title</h1>
+    <p class="rise">One line that says why this deck exists.</p>
+  </section>
+
+  <section class="slide" aria-label="2">
+    <h2>Three points, one at a time</h2>
+    <ul>
+      <li data-step>The first point.</li>
+      <li data-step>The second point.</li>
+      <li data-step>The third point.</li>
+    </ul>
+  </section>
+
+  <section class="slide" aria-label="3">
+    <h2>How it connects</h2>
+    <svg class="diagram" viewBox="0 0 1500 560" role="img" aria-label="Client to service to store">
+      <g class="node"><rect class="box" x="0" y="200" width="360" height="160" rx="20"/><text x="180" y="290" text-anchor="middle">Client</text></g>
+      <g class="node"><rect class="box" x="570" y="200" width="360" height="160" rx="20"/><text x="750" y="290" text-anchor="middle">Service</text></g>
+      <g class="node"><rect class="box" x="1140" y="200" width="360" height="160" rx="20"/><text x="1320" y="290" text-anchor="middle">Store</text></g>
+      <path class="link" d="M360 280 H570"/>
+      <path class="link" d="M930 280 H1140"/>
+    </svg>
+  </section>
+
+  <section class="slide" aria-label="4">
+    <h2>Numbers that grow</h2>
+    <svg class="chart" viewBox="0 0 1400 520" role="img" aria-label="Q1 20, Q2 35, Q3 50, Q4 65">
+      <rect class="bar" x="100" y="320" width="200" height="140"/>
+      <rect class="bar" x="420" y="215" width="200" height="245"/>
+      <rect class="bar" x="740" y="110" width="200" height="350"/>
+      <rect class="bar" x="1060" y="5" width="200" height="455"/>
+      <text x="200" y="505" text-anchor="middle">Q1</text>
+      <text x="520" y="505" text-anchor="middle">Q2</text>
+      <text x="840" y="505" text-anchor="middle">Q3</text>
+      <text x="1160" y="505" text-anchor="middle">Q4</text>
+    </svg>
+  </section>
+
+</main>
+</div>
+<div class="counter" id="counter" aria-live="polite"></div>
+<script>
+// Controller: scale, keys, steps and the messages of a host frame. No network and no storage:
+// the deck runs in a sandbox with no origin.
+(() => {
+  const stage = document.getElementById("stage");
+  const counter = document.getElementById("counter");
+  const slides = [...document.querySelectorAll(".slide")];
+  let at = 0;
+  let step = 0;
+  const steps = (i) => [...slides[i].querySelectorAll("[data-step]")];
+
+  const scale = () => {
+    const f = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `translate(${(innerWidth - 1920 * f) / 2}px, ${(innerHeight - 1080 * f) / 2}px) scale(${f})`;
+  };
+
+  const show = (i, s) => {
+    at = Math.max(0, Math.min(i, slides.length - 1));
+    step = Math.max(0, Math.min(s, steps(at).length));
+    slides.forEach((el, j) => {
+      el.classList.toggle("active", j === at);
+      el.classList.toggle("before", j < at);
+    });
+    steps(at).forEach((el, j) => el.classList.toggle("later", j >= step));
+    counter.textContent = `${at + 1} / ${slides.length}`;
+  };
+
+  const next = () => (step < steps(at).length ? show(at, step + 1) : at < slides.length - 1 && show(at + 1, 0));
+  // Back to the previous slide shows it with all its steps.
+  const back = () => (step > 0 ? show(at, step - 1) : at > 0 && show(at - 1, steps(at - 1).length));
+
+  const key = (k) => {
+    if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(k)) next();
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(k)) back();
+    else if (k === "Home") show(0, 0);
+    else if (k === "End") show(slides.length - 1, steps(slides.length - 1).length);
+    else return false;
+    return true;
+  };
+
+  addEventListener("keydown", (e) => {
+    if (key(e.key)) e.preventDefault();
+    // In a host frame, Escape goes to the host: it leaves the present mode there.
+    else if (e.key === "Escape" && parent !== window) parent.postMessage({ deckKey: "Escape" }, "*");
+  });
+  // The host gives the keys when the frame has no focus.
+  addEventListener("message", (e) => {
+    if (e.source === parent && e.data && typeof e.data.deckKey === "string") key(e.data.deckKey);
+  });
+  addEventListener("click", (e) => (e.clientX > innerWidth / 3 ? next() : back()));
+  addEventListener("resize", scale);
+  scale();
+  show(0, 0);
+})();
+</script>
+</body>
+</html>

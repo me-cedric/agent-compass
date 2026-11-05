@@ -2,7 +2,9 @@
 
 ## Upstream Sources
 
-Agent Compass ships no copy of an upstream skill, with one exception: the user plugin `compass-user` carries `asd-ste100` at the sha that `upstream.json` pins, with its LICENSE, because that source has no plugin marketplace of its own. The file `upstream.json` pins each source by commit sha.
+Agent Compass ships no copy of an upstream skill, with one exception: the user plugin `compass-user` carries `asd-ste100` at the sha that `upstream.json` pins, with its LICENSE, because that source has no plugin marketplace of its own.
+
+The own skill `slide-deck` carries an adapted copy of the stage, print and preset text of [`zarazhangrui/frontend-slides`](https://github.com/zarazhangrui/frontend-slides) (MIT, Zara Zhang, commit `9906a34`), with its licence in `skills/slide-deck/references/LICENSE-frontend-slides`. Its diagram patterns take ideas, not code, from [`nicobailon/visual-explainer`](https://github.com/nicobailon/visual-explainer) (MIT, Nico Bailon). The file `upstream.json` pins each source by commit sha.
 
 The command `ac sync` fetches a source into the user cache. It copies the skills of that source into a host only when the host lists the source id in `upstream` in `.agents/compass.json`.
 
