@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   MIGRATIONS_DIR: drizzle # edit: the migrations directory
 
@@ -22,6 +26,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          filter: blob:none # full history, file contents on demand: faster than a full clone
+      # A wrong MIGRATIONS_DIR makes both gates pass on nothing. This step makes it fail.
+      - name: The migrations directory has migrations
+        run: |
+          if [ -z "$(git ls-files -- "$MIGRATIONS_DIR/*.sql")" ]; then
+            echo "::error::No .sql file in $MIGRATIONS_DIR. Set MIGRATIONS_DIR to the migrations directory."
+            exit 1
+          fi
       - name: Applied migrations do not change
         run: |
           git fetch --quiet origin "$GITHUB_BASE_REF"
@@ -34,6 +46,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm # edit: pnpm needs pnpm/action-setup before this step
       - run: npm ci # edit: your install command
       - run: npx drizzle-kit generate # edit: your migration generator
       - name: The schema has its migrations

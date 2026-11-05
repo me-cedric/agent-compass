@@ -1,0 +1,10 @@
+#!/bin/sh
+# compass pre-push: fast checks before each push. Agents skip a line in AGENTS.md. A hook runs each time.
+# Compass writes this file once. Then the project owns it: edit the commands.
+# Turn it on once in each clone: git config core.hooksPath .githooks
+# With husky, put the commands in .husky/pre-push instead.
+# Keep it below about 10 seconds. CI still runs the full check.
+set -e
+npm run --if-present format:check # edit: your package manager and script names
+npm run --if-present lint
+npm run --if-present typecheck

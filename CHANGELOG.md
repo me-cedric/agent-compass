@@ -4,6 +4,11 @@
 
 - `ac check` checks the active OpenSpec changes: a change that reads as ready while it carries `[~]` partials, a change with every task ticked that nobody archived, a MODIFIED requirement that is in no main spec (error), and a main-spec scenario that a MODIFIED delta would drop on archive. Ported from the StoryArc host, where each one caught a real slip.
 - `ac check` finds the OpenSpec CLI in the project's `node_modules/.bin` (a dev dependency) before it looks on `PATH`. Before, such a project got "the openspec CLI is not installed" and no `openspec validate` ran.
+- `ci-triage` has a slow CI audit: it splits each job into wait, setup and run time over the last runs. `skills/ci-triage/references/speed.md` lists the free levers, with numbers measured on compass: Oxlint before ESLint, TypeScript 7 for the CLI typecheck next to 6.0, Vitest `isolate: false` with its reset rule. `bun check` and `tsrs` are not adopted.
+- New opt-in pack `git-hooks`: the seed `.githooks/pre-push` runs format, lint and typecheck before each push.
+- CI seeds: the dependency cache on the lockfile (the GitHub e2e workflow also runs on main, so that new pull requests restore a warm cache), cancel of a superseded run, a blob-filtered clone for the migrations history, and a migrations check that fails when `MIGRATIONS_DIR` holds no `.sql` file. Before, a wrong directory passed both gates on nothing. The managed check files cancel a superseded run too.
+- `ac run` shows the output of a `.cmd` or `.bat` command on Windows. The child was detached, so `cmd.exe` had no console and the program that it started wrote to a new, hidden console. The command ran with exit 0 and an empty log. On Windows the child is no longer detached; `taskkill /T` still stops the whole tree. This was the red Windows CI job since 1.0.1.
+- The compass CI cancels a superseded pull request run and clones with `filter: blob:none`.
 - The source `security-audit` (recommended in every project) brings the `security-audit` skill from cloudflare/security-audit-skill (MIT). It gives security guidance by default and runs the full six-phase audit only on an explicit audit or pen-test request.
 
 ## 1.0.2 — 2026-10-19

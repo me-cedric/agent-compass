@@ -4,15 +4,28 @@
 # Include it from .gitlab-ci.yml:
 #   include:
 #     - local: .gitlab/compass/migrations.yml
-# Edit MIGRATIONS_DIR, the install command and the generator. The generator must run without a database.
+# Edit MIGRATIONS_DIR, the install command, the cache key and the generator. The generator must run without a database.
+# The npm cache is keyed on the lockfile. GitLab keeps the caches of protected branches apart by default,
+# so the first pipeline of a merge request starts cold. Keep that setting: a shared cache lets any branch write what main reads.
 
 compass-migrations:
   stage: test
   image: node:24
+  interruptible: true
+  cache:
+    key:
+      files: [package-lock.json] # edit: your lockfile
+    paths: [.npm/]
   variables:
     MIGRATIONS_DIR: drizzle # edit: the migrations directory
     GIT_DEPTH: 0
   script:
+    # A wrong MIGRATIONS_DIR makes both gates pass on nothing. This check makes it fail.
+    - |
+      if [ -z "$(git ls-files -- "$MIGRATIONS_DIR/*.sql")" ]; then
+        echo "No .sql file in $MIGRATIONS_DIR. Set MIGRATIONS_DIR to the migrations directory."
+        exit 1
+      fi
     - git fetch --quiet origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - changed=$(git diff --name-only --diff-filter=MDR FETCH_HEAD...HEAD -- "$MIGRATIONS_DIR/*.sql")
     - |
@@ -21,7 +34,7 @@ compass-migrations:
         echo "$changed"
         exit 1
       fi
-    - npm ci # edit: your install command
+    - npm ci --cache .npm --prefer-offline # edit: your install command
     - npx drizzle-kit generate # edit: your migration generator
     - |
       drift=$(git status --porcelain -- "$MIGRATIONS_DIR")
