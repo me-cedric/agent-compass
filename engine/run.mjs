@@ -43,9 +43,10 @@ const reports = (root, since) => {
 
 // Start the child in its own process group. Stop the group on a timeout (SIGTERM, then SIGKILL after 5 s) and on SIGINT or SIGTERM.
 // Windows has no process group signal: taskkill /T stops the child and its tree.
+// Not detached on Windows: a detached cmd.exe has no console, so the program that it starts gets a new console and its output never reaches the pipe.
 const execute = ({ root, argv, env, limit, win }, emit) => new Promise((done) => {
   const [cmd, args] = win ? [win.cmd, win.args] : [argv[0], argv.slice(1)]
-  const child = spawn(cmd, args, { cwd: root, detached: true, windowsHide: true, windowsVerbatimArguments: Boolean(win), stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
+  const child = spawn(cmd, args, { cwd: root, detached: process.platform !== 'win32', windowsHide: true, windowsVerbatimArguments: Boolean(win), stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env } })
   const kill = (sig) => {
     if (process.platform === 'win32') { spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', timeout: 10_000 }); return }
     try { process.kill(-child.pid, sig) } catch { /* the group is gone */ }

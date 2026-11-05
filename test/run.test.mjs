@@ -249,7 +249,8 @@ test('ac run starts a .cmd file on PATH on Windows', { skip: process.platform !=
   writeFileSync(join(root, 'wintool.cmd'), `@"${process.execPath}" "%~dp0child.mjs" args %*\r\n`)
   const r = await runNode([BIN, 'run', 'wintool', '--json', '--root', root], { env: { ...process.env, PATH: `${root};${process.env.PATH}` } })
   assert.equal(r.code, 0, r.stdout + r.stderr)
-  assert.deepEqual(JSON.parse(r.stdout).tail, ['["hello","a b"]'])
+  // An empty tail with exit 0 means that the output went to another console, not to the pipe.
+  assert.deepEqual(JSON.parse(r.stdout).tail, ['["hello","a b"]'], r.stdout)
 })
 
 test('ac run reports a command that cannot start', async () => {
