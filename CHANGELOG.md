@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-11-05
+
+Asset changes since v1.0.2:
+
+- Added: packs/git-hooks/seed/.githooks/pre-push, skills/ci-triage/references/speed.md
+- Changed: packs/ci-github/files/.github/workflows/compass-check.yml, packs/ci-github/seed/.github/workflows/compass-e2e.yml, packs/ci-github/seed/.github/workflows/compass-migrations.yml, packs/ci-gitlab/files/.gitlab/compass/check.yml, packs/ci-gitlab/seed/.gitlab/compass/e2e.yml, packs/ci-gitlab/seed/.gitlab/compass/migrations.yml, skills/ci-triage/SKILL.md, upstream.json
 
 - `ac check` checks the active OpenSpec changes: a change that reads as ready while it carries `[~]` partials, a change with every task ticked that nobody archived, a MODIFIED requirement that is in no main spec (error), and a main-spec scenario that a MODIFIED delta would drop on archive. Ported from the StoryArc host, where each one caught a real slip.
 - `ac check` finds the OpenSpec CLI in the project's `node_modules/.bin` (a dev dependency) before it looks on `PATH`. Before, such a project got "the openspec CLI is not installed" and no `openspec validate` ran.
