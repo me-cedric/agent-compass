@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-11-05
+
+Asset changes since v1.1.0:
+
+- Added: core/openspec/shipyard-delivery/schema.yaml, core/openspec/shipyard-delivery/templates/checklist.md, core/openspec/shipyard-delivery/templates/plan.md, core/openspec/shipyard-delivery/templates/proposal.md, core/openspec/shipyard-delivery/templates/spec.md, core/openspec/shipyard-delivery/templates/tasks.md, skills/plugin-author/SKILL.md, skills/slide-deck/SKILL.md, skills/slide-deck/references/LICENSE-frontend-slides, skills/slide-deck/references/presets.md, skills/slide-deck/references/template.html
+- Changed: packs/ci-github/files/.github/workflows/compass-check.yml, packs/ci-github/seed/.github/workflows/compass-e2e.yml, packs/ci-github/seed/.github/workflows/compass-helm-bump.yml, packs/ci-github/seed/.github/workflows/compass-migrations.yml, packs/ci-github/seed/.github/workflows/compass-security.yml, skills/README.md
+
+- The user-invoked skill `slide-deck` writes a deck as one self-contained HTML file in the slides folder: style presets, a template with slide transitions, step reveals, animated SVG diagrams and charts, a reduced-motion block, a print style sheet for PDF (one page per slide), and grep checks. It runs in a sandboxed frame with no origin. Based on frontend-slides (MIT).
+- The user-invoked skill `plugin-author` explains how to write a Shipyard plugin: a folder with `manifest.json` and `files/`, packaged as a `.zip`.
+- `.agents/compass.json` accepts an optional `schema` key. It picks the OpenSpec schema that `ac sync` installs and that `ac init --from-specs` writes in `config.yaml`. The new neutral schema `shipyard-delivery` is available. The default stays `konvoy-delivery`, so a project without the key does not change.
+- The `ci-github` workflows pin each action to a commit SHA, with the version in a `# vN` comment. `check-actions.mjs` reads the version from that comment.
+
 ## 1.1.0 — 2026-11-05
 
 Asset changes since v1.0.2:
@@ -7,8 +19,6 @@ Asset changes since v1.0.2:
 - Added: packs/git-hooks/seed/.githooks/pre-push, skills/ci-triage/references/speed.md
 - Changed: packs/ci-github/files/.github/workflows/compass-check.yml, packs/ci-github/seed/.github/workflows/compass-e2e.yml, packs/ci-github/seed/.github/workflows/compass-migrations.yml, packs/ci-gitlab/files/.gitlab/compass/check.yml, packs/ci-gitlab/seed/.gitlab/compass/e2e.yml, packs/ci-gitlab/seed/.gitlab/compass/migrations.yml, skills/ci-triage/SKILL.md, upstream.json
 
-- The user-invoked skill `slide-deck` writes a deck as one self-contained HTML file in the slides folder: style presets, a template with slide transitions, step reveals, animated SVG diagrams and charts, a reduced-motion block, a print style sheet for PDF (one page per slide), and grep checks. It runs in a sandboxed frame with no origin. Based on frontend-slides (MIT).
-- `.agents/compass.json` accepts an optional `schema` key. It picks the OpenSpec schema that `ac sync` installs and that `ac init --from-specs` writes in `config.yaml`. The new neutral schema `shipyard-delivery` is available. The default stays `konvoy-delivery`, so a project without the key does not change.
 - `ac check` checks the active OpenSpec changes: a change that reads as ready while it carries `[~]` partials, a change with every task ticked that nobody archived, a MODIFIED requirement that is in no main spec (error), and a main-spec scenario that a MODIFIED delta would drop on archive. Ported from the StoryArc host, where each one caught a real slip.
 - `ac check` finds the OpenSpec CLI in the project's `node_modules/.bin` (a dev dependency) before it looks on `PATH`. Before, such a project got "the openspec CLI is not installed" and no `openspec validate` ran.
 - `ci-triage` has a slow CI audit: it splits each job into wait, setup and run time over the last runs. `skills/ci-triage/references/speed.md` lists the free levers, with numbers measured on compass: Oxlint before ESLint, TypeScript 7 for the CLI typecheck next to 6.0, Vitest `isolate: false` with its reset rule. `bun check` and `tsrs` are not adopted.
