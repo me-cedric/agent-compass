@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The user-invoked skill `untangle-codebase` plans and runs a whole-codebase refactor: it lists hidden links, needless links, surplus and special cases in a decision log, redesigns, shows the plan, then fixes. It has opt-in comment and test clean-up, a 3-pass bound, and a rule that no check passes by a removed test. Adapted from `caldoai/skills` (MIT).
+
 ## 1.2.0 — 2026-11-05
 
 Asset changes since v1.1.0:
