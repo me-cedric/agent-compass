@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-11-21
+
+Asset changes since v1.2.0:
+
+- Added: skills/untangle-codebase/SKILL.md, skills/untangle-codebase/references/LICENSE-caldoai-skills, skills/untangle-codebase/references/decision-log.md
+- Changed: skills/README.md, skills/design-taste-skills/SKILL.md, upstream.json
 
 - Five new upstream sources for frontend design. `interface-polish` (`make-interfaces-feel-better`, jakubkrehel, MIT) and `vercel-web` (`web-design-guidelines`, vercel-labs, MIT) are recommended for web stacks. `impeccable` (pbakaus, Apache-2.0), `emil` (six motion skills, emilkowalski, MIT) and `vercel-react` (three React skills, vercel-labs, MIT) are by hand.
 - The `design-taste-skills` router covers the new sources: one direction skill for each surface, plus the polish, rule and motion skills that go with any direction. `taste` stays at v2.0.0.
