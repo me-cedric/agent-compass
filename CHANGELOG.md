@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Five new upstream sources for frontend design. `interface-polish` (`make-interfaces-feel-better`, jakubkrehel, MIT) and `vercel-web` (`web-design-guidelines`, vercel-labs, MIT) are recommended for web stacks. `impeccable` (pbakaus, Apache-2.0), `emil` (six motion skills, emilkowalski, MIT) and `vercel-react` (three React skills, vercel-labs, MIT) are by hand.
+- The `design-taste-skills` router covers the new sources: one direction skill for each surface, plus the polish, rule and motion skills that go with any direction. `taste` stays at v2.0.0.
 - The user-invoked skill `untangle-codebase` plans and runs a whole-codebase refactor: it lists hidden links, needless links, surplus and special cases in a decision log, redesigns, shows the plan, then fixes. It has opt-in comment and test clean-up, a 3-pass bound, and a rule that no check passes by a removed test. Adapted from `caldoai/skills` (MIT).
 
 ## 1.2.0 — 2026-11-05

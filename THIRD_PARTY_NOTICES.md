@@ -32,14 +32,19 @@ This file records what Agent Compass tracks, not what it ships. A host that inst
 | `gtk` | [`alex-oleshkevich/glimpse`](https://github.com/alex-oleshkevich/glimpse) | BSD-3-Clause | Alex Oleshkevich | `developing-gtk-apps` |
 | `wshobson` | [`wshobson/agents`](https://github.com/wshobson/agents) | MIT | Seth Hobson | `session-guard`, `ai-debt-detector` |
 | `devops-security` | [`BagelHole/DevOps-Security-Agent-Skills`](https://github.com/BagelHole/DevOps-Security-Agent-Skills) | MIT | Toby Miller | 18 ops and security skills under `devops/`, `security/` and `infrastructure/`. `upstream.json` lists them. |
+| `interface-polish` | [`jakubkrehel/make-interfaces-feel-better`](https://github.com/jakubkrehel/make-interfaces-feel-better) | MIT | Jakub Krehel | `make-interfaces-feel-better` |
+| `vercel-web`, `vercel-react` | [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills) | MIT (README and frontmatter; no licence file in the repository) | Vercel, Inc. | `web-design-guidelines`; `react-best-practices`, `composition-patterns`, `react-view-transitions` |
+| `impeccable` | [`pbakaus/impeccable`](https://github.com/pbakaus/impeccable) | Apache-2.0 | Paul Bakaus | `impeccable` |
+| `emil` | [`emilkowalski/skills`](https://github.com/emilkowalski/skills) | MIT | Emil Kowalski | `emil-design-eng`, `animate`, `choreograph`, `review-animations`, `improve-animations`, `animation-performance` |
 | `security-audit` | [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill) | MIT | Cloudflare, Inc. | `security-audit` |
 
 Some licences carry an obligation:
 
 - **MIT** requires the copyright notice and the licence text in every copy. The licence file that the engine copies meets this.
 - **BSD-3-Clause** (`gtk`) requires the same notice, the conditions and the disclaimer in every copy. Do not use the holder name to endorse a product. The upstream skill file has no author line, and its text matches a skill in several repositories without a licence. The risk is low and recorded here on purpose.
-- **Apache-2.0** (`android`, `playwright-cli`, `caveman`) requires attribution with any copy. The engine copies the licence file (`LICENSE.txt` in the android repository). `caveman` moved from MIT to Apache-2.0 at 3.0.0; its `NOTICE` text is below, and the engine copies the root `LICENSE` only, not the engine directories.
+- **Apache-2.0** (`android`, `playwright-cli`, `caveman`, `impeccable`) requires attribution with any copy. For `impeccable` the engine copies the root `LICENSE` and `NOTICE.md`. The engine copies the licence file (`LICENSE.txt` in the android repository). `caveman` moved from MIT to Apache-2.0 at 3.0.0; its `NOTICE` text is below, and the engine copies the root `LICENSE` only, not the engine directories.
 - **PolyForm Perimeter 1.0.0** (`swift-ios`) permits distribution only for a purpose that does not compete with the licensor. It requires the Required Notice line in every copy. Agent Compass distributes nothing from it. The licence file that the engine copies carries this line: `Required Notice: Copyright (c) 2025 dpearson2699 (https://github.com/dpearson2699)`.
+- **MIT without a licence file** (`vercel-web`, `vercel-react`): the README states `MIT` and three skills state `license: MIT` in their frontmatter. `upstream.json` carries the MIT text with the holder Vercel, Inc. in `licenceText`.
 - **MIT without a licence file** (`angular`): the repository states `license: MIT` and `Copyright 2026 Google LLC` in each skill's frontmatter and ships no licence file. `upstream.json` carries the MIT text in `licenceText`, and the engine writes it as `LICENSE` beside each installed skill. The owner accepted this on 2026-10-17.
 
 ### NOTICE of `caveman` (Apache-2.0)

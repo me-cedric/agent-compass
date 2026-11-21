@@ -7,7 +7,7 @@ Platform APIs change each year. Your memory of them mixes old and new patterns. 
 | Router skill | Use for | Source ids |
 |---|---|---|
 | `native-mobile-skills` | Kotlin, Compose, Gradle, Swift, SwiftUI, Xcode, an emulator or a simulator. | `android`, `swift-ios`, `dimillian`, `agent-device` |
-| `design-taste-skills` | A landing page, redesign, brand system or mockup-to-code task. Not a bug fix. | `taste` |
+| `design-taste-skills` | A landing page, redesign, UI polish, animation or mockup-to-code task. Not a bug fix. | `interface-polish`, `vercel-web`, `impeccable`, `taste`, `emil`, `vercel-react` |
 | `working-style-skills` | A request for terse, minimal or unambiguous output. See [agents.md](agents.md#style-contract). | `ponytail`, `caveman`, `i-have-adhd`, `asd-ste100` |
 | `ui-conformance` | Proof that a screen matches its design. Desktop review skills come from `apple-macos`, `winui` and `gtk`. | See [assets.md](assets.md#upstream-sources) |
 

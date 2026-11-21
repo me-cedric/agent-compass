@@ -146,7 +146,7 @@ Only Claude Code reads the `enabledPlugins` setting.
 ## Upstream sources
 
 `upstream.json` pins third-party skill sources. Each source has a repository, a 40-character `sha`, a licence, a list of skills, optional `stacks` and an optional `recommend`.
-`recommend: "user"` marks a style source that the `compass-user` plugin covers (ponytail, caveman, i-have-adhd, asd-ste100). `recommend: "manual"` marks a large set (taste, swift-ios). Neither one is in the recommended set; you can still switch it on.
+`recommend: "user"` marks a style source that the `compass-user` plugin covers (ponytail, caveman, i-have-adhd, asd-ste100). `recommend: "manual"` marks a large set or a skill with side effects (taste, swift-ios, impeccable). Neither one is in the recommended set; you can still switch it on.
 Three repositories have two entries: a small core in the recommended set (`mattpocock`, `dimillian`, `agent-device`) and the rest by hand (`mattpocock-more`, `dimillian-more`, `agent-device-tools`). Each model-invoked skill adds its description to the always-on listing, so the recommended set keeps a mobile or multi-stack host below 2,000 tokens.
 Compass keeps no copy. `ac sync` fetches the commit of each source in `upstream` into `~/.cache/agent-compass/upstream/` (`AC_CACHE` changes it).
 It copies the skills as they are, with the licence file beside each one. A failed fetch is a warning, and the installed copy stays.
@@ -159,6 +159,11 @@ Each skill of a source is a `skill` asset with the source `upstream:<id>`. It is
 | `mattpocock-more` | `grill-with-docs`, `to-questionnaire`, `wayfinder`, `handoff`, `tdd` (by hand) | All |
 | `taste` | Frontend design direction (v2 inspector in `taste-skill`; `taste-skill-v1` is the old one) | `react-web`, `next-web`, `angular-web` |
 | `expo` | The official Expo and EAS skills (23, by hand) | `expo-mobile` |
+| `interface-polish` | `make-interfaces-feel-better`: the detail pass (radius, shadows, icons, text wrap, hit areas, press and exit motion), in quick or full review mode. The description is about 140 always-on tokens. | `react-web`, `next-web`, `angular-web` |
+| `vercel-web` | `web-design-guidelines`: Vercel's Web Interface Guidelines as a `file:line` review. The rules are in the skill; it makes no network call. The repository has no licence file, so `upstream.json` carries the MIT text. | `react-web`, `next-web`, `angular-web` |
+| `vercel-react` | `react-best-practices`, `composition-patterns`, `react-view-transitions` (by hand) | `react-web`, `next-web` |
+| `impeccable` | `impeccable`: design director with modes (Persuade, Operate, Read, Experience) and commands (`critique`, `audit`, `polish`, `animate` and more), by hand. Its launcher downloads a checksum-checked platform binary on the first run. | `react-web`, `next-web`, `angular-web`, `expo-mobile` |
+| `emil` | Emil Kowalski's motion skills: `emil-design-eng`, `animate`, `choreograph`, `review-animations`, `improve-animations`, `animation-performance` (by hand). The five model-invoked descriptions add about 660 always-on tokens. | `react-web`, `next-web`, `angular-web`, `expo-mobile` |
 | `playwright-cli` | Browser automation through the Playwright CLI: fewer tokens than the MCP server for short runs | `react-web`, `next-web`, `angular-web` |
 | `angular` | The official Angular skills (by hand; the repository has no licence file, so `upstream.json` carries the MIT text) | `angular-web` |
 | `android`, `swift-ios`, `dimillian`, `agent-device` | Native and device skills. See [native.md](native.md). | Native and Expo stacks |
@@ -167,6 +172,9 @@ Each skill of a source is a `skill` asset with the source `upstream:<id>`. It is
 | `wshobson` | `session-guard` (long sessions and compaction drift) and `ai-debt-detector` (failure modes, orphaned resources, invented dependencies after generated code), by hand. The other skills of the repository overlap the `android`, `swift-ios`, `expo` and `taste` sources, or are stale. The two descriptions are about 360 characters each: about 190 always-on tokens. | All |
 | `devops-security` | 18 ops and security skills for a Kubernetes, Helm, ArgoCD, Grafana, GitLab or GitHub host: `kubernetes-ops`, `helm-charts`, `argocd-gitops`, `prometheus-grafana`, `opentelemetry`, `gitlab-ci`, `github-actions`, `postgresql`, `sops-encryption`, `sbom-supply-chain` and more (by hand). The source has 163 skills; the other ones are out of scope or put a secret in a command argument. The 18 together add about 1,000 always-on tokens: keep the ones the host uses and put the rest in `exclude`. | All |
 | `security-audit` | Cloudflare's source-first security review. Guidance by default; the six-phase audit with report files runs only when you ask for a full audit or a pen test. The skill ships two zero-dependency Node validators (`.cjs`) and their tests. The description is about 95 always-on tokens. | All |
+
+The `design-taste-skills` router tells the agent which design source fits a surface.
+These sources were read and not pinned (2026-11-21): `nextlevelbuilder/ui-ux-pro-max-skill` (Python scripts and CSV data, generic advice), `Nutlope/hallmark` (a third landing-page direction next to `taste` and `impeccable`), `benjitaylor/skills` (`stageshow`, faux product UI for marketing art, with a Vite playground), `uizze/uizze` (its playbooks repackage Impeccable; the references need the paid Uizze MCP) and `anthropics/skills` `frontend-design` (the official Claude plugin `frontend-design` installs it). `taste` stays at v2.0.0: v2.5 keeps one skill of eleven, adds a Stop hook in the skill frontmatter and fetches photographs from the web.
 
 A third-party skill is text that you did not write. It cannot relax a compass rule.
 The `swift-ios` source has a PolyForm Perimeter licence. Read each `licence` in `upstream.json` before you install a source.

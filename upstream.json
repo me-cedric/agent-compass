@@ -439,6 +439,89 @@
       "skills": [
         "skills/security-audit"
       ]
+    },
+    "interface-polish": {
+      "repo": "https://github.com/jakubkrehel/make-interfaces-feel-better",
+      "sha": "6d9f2f1df10e8ce2ae1708598a73b0506fb98794",
+      "licence": "MIT",
+      "holder": "Jakub Krehel",
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web"
+      ],
+      "skills": [
+        "skills/make-interfaces-feel-better"
+      ]
+    },
+    "vercel-web": {
+      "repo": "https://github.com/vercel-labs/agent-skills",
+      "sha": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "licence": "MIT",
+      "holder": "Vercel, Inc.",
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web"
+      ],
+      "licenceText": "MIT License\n\nCopyright (c) Vercel, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+      "skills": [
+        "skills/web-design-guidelines"
+      ]
+    },
+    "vercel-react": {
+      "repo": "https://github.com/vercel-labs/agent-skills",
+      "sha": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "licence": "MIT",
+      "holder": "Vercel, Inc.",
+      "stacks": [
+        "react-web",
+        "next-web"
+      ],
+      "recommend": "manual",
+      "licenceText": "MIT License\n\nCopyright (c) Vercel, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+      "skills": [
+        "skills/react-best-practices",
+        "skills/composition-patterns",
+        "skills/react-view-transitions"
+      ]
+    },
+    "impeccable": {
+      "repo": "https://github.com/pbakaus/impeccable",
+      "sha": "b49177d32788f2dc585c42831d845dacf1ebed2c",
+      "licence": "Apache-2.0",
+      "holder": "Paul Bakaus",
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web",
+        "expo-mobile"
+      ],
+      "recommend": "manual",
+      "skills": [
+        ".claude/skills/impeccable"
+      ]
+    },
+    "emil": {
+      "repo": "https://github.com/emilkowalski/skills",
+      "sha": "64eb3deb9a5fbfa041faf783e0bc3fd635872e9c",
+      "licence": "MIT",
+      "holder": "Emil Kowalski",
+      "stacks": [
+        "react-web",
+        "next-web",
+        "angular-web",
+        "expo-mobile"
+      ],
+      "recommend": "manual",
+      "skills": [
+        "skills/emil-design-eng",
+        "skills/animate",
+        "skills/choreograph",
+        "skills/review-animations",
+        "skills/improve-animations",
+        "skills/animation-performance"
+      ]
     }
   }
 }
